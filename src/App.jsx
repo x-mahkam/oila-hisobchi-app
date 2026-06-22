@@ -403,8 +403,12 @@ export default function App(){
     const email=resetInput.trim().toLowerCase();
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"To'g'ri email kiriting":"Enter valid email","err");
     // Avval email ro'yxatda bormi - o'zimiz tekshiramiz (Firebase buni aytmaydi)
+    // Keshni chetlab, to'g'ridan-to'g'ri tekshiramiz
     let exists=false;
-    try{const uid=await db.g("em_"+email);if(uid)exists=true;}catch(e){}
+    try{
+      const uid=await db.gFresh("em_"+email);
+      if(uid)exists=true;
+    }catch(e){exists=false;}
     if(!exists){
       // Ro'yxatdan o'tmagan - ro'yxatga yo'naltiramiz
       ok$(lg==="uz"?"Bu email ro'yxatdan o'tmagan. Ro'yxatdan o'ting.":"Email not registered. Please sign up.","err");

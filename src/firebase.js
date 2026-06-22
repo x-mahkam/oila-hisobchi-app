@@ -53,6 +53,13 @@ const DB = "oilaV7_";
 // Firestore document ID xavfsizligi: maxsus belgilarni tozalash
 const safeKey = (k) => (DB + k).replace(/[+\/\\#?]/g, "_").replace(/\s/g, "_");
 export const db = {
+  // Keshsiz to'g'ridan-to'g'ri o'qish (mavjudligini aniq tekshirish uchun)
+  async gFresh(k) {
+    const ref = doc(fbDB, "appdata", safeKey(k));
+    const snap = await getDoc(ref);
+    if (snap.exists()) { const d = snap.data(); return d.v !== undefined ? d.v : null; }
+    return null;
+  },
   async g(k) {
     try {
       const ref = doc(fbDB, "appdata", safeKey(k));
