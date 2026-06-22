@@ -386,33 +386,34 @@ export default function App(){
   const [showPw,setShowPw]=useState(false);
   const [showResetConfirm,setShowResetConfirm]=useState(false);
   const [resetEmail,setResetEmail]=useState("");
+  const [showResetScreen,setShowResetScreen]=useState(false);
+  const [resetInput,setResetInput]=useState("");
+  const [resetSent,setResetSent]=useState(false);
   const genPassword=()=>{
     const chars="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
     let p="";for(let i=0;i<10;i++)p+=chars[Math.floor(Math.random()*chars.length)];
     setFPw(p);setShowPw(true);
     ok$(lg==="uz"?"Parol yaratildi! Eslab qoling yoki saqlang.":"Password generated!");
   };
-  const handleResetPw=async()=>{
-    let email=fEm.trim().toLowerCase();
-    // Telefon kiritilgan bo'lsa - undan ro'yxatdagi emailni topamiz
-    if(!email&&fTel.trim()){
-      const n9=normTel(fTel);
-      const found=await db.g("tphone_"+n9);
-      if(found)email=found;
-      else return ok$(lg==="uz"?"Bu telefon ro'yxatda topilmadi":"Phone not found","err");
-    }
-    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"Avval telefon raqam yoki email kiriting":"Enter phone or email first","err");
-    // Tasdiqlash: qaysi emailga yuborilishini ko'rsatamiz
-    setResetEmail(email);setShowResetConfirm(true);
+  const handleResetPw=()=>{
+    // Alohida tiklash ekranini ochamiz
+    setResetInput(fEm.trim()||"");setResetSent(false);setShowResetScreen(true);
   };
-  const confirmReset=async()=>{
-    setShowResetConfirm(false);
+  const sendResetEmail=async()=>{
+    const email=resetInput.trim().toLowerCase();
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"To'g'ri email kiriting":"Enter valid email","err");
     try{
-      await auth.resetPassword(resetEmail);
-      ok$(lg==="uz"?"✅ Tiklash xati yuborildi! "+resetEmail+" pochtangizni (va Spam papkasini) tekshiring.":"Reset email sent to "+resetEmail);
+      await auth.resetPassword(email);
+      setResetSent(true);
+      ok$(lg==="uz"?"✅ Xat yuborildi!":"Email sent!");
     }catch(e){
-      const msg=e.code==="auth/user-not-found"?(lg==="uz"?"Bu email ro'yxatdan o'tmagan":"Email not registered"):(lg==="uz"?"Xato: "+(e.code||e.message):"Error");
-      ok$(msg,"err");
+      if(e.code==="auth/user-not-found"){
+        // Email ro'yxatdan o'tmagan - ro'yxatga taklif
+        ok$(lg==="uz"?"Bu email ro'yxatdan o'tmagan. Ro'yxatdan o'ting.":"Email not registered. Please sign up.","err");
+        setTimeout(()=>{setShowResetScreen(false);setReg(true);setFEm(email);},1500);
+      }else{
+        ok$(lg==="uz"?"Xato: "+(e.code||e.message):"Error","err");
+      }
     }
   };
   const doAuth=async()=>{
@@ -1456,19 +1457,27 @@ export default function App(){
   return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
     <input ref={fRef} type="file" accept="image/*" style={{display:"none"}} onChange={doPhoto}/>
-    {showResetConfirm&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetConfirm(false)}>
-      <div style={{background:th.bg,borderRadius:20,maxWidth:380,width:"100%",padding:"24px 20px"}} onClick={e=>e.stopPropagation()}>
-        <div style={{fontSize:40,textAlign:"center",marginBottom:12}}>📧</div>
-        <div style={{fontSize:17,fontWeight:800,color:th.t1,textAlign:"center",marginBottom:8}}>{lg==="uz"?"Parolni tiklash":lg==="ru"?"Сброс пароля":"Reset password"}</div>
-        <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:6}}>{lg==="uz"?"Tiklash havolasi quyidagi emailga yuboriladi:":"Reset link will be sent to:"}</div>
-        <div style={{fontSize:14,fontWeight:700,color:th.ac,textAlign:"center",background:th.ac+"11",borderRadius:10,padding:"10px",marginBottom:18,wordBreak:"break-all"}}>{resetEmail}</div>
-        <div style={{display:"flex",gap:10}}>
-          <button onClick={()=>setShowResetConfirm(false)} style={{flex:1,background:"transparent",border:"1.5px solid "+th.bor,borderRadius:13,padding:"13px",color:th.t2,cursor:"pointer",fontWeight:700,fontSize:14}}>{lg==="uz"?"Bekor":lg==="ru"?"Отмена":"Cancel"}</button>
-          <button onClick={confirmReset} style={{flex:2,...S.bt(),marginBottom:0}}>{lg==="uz"?"Xat yuborish":lg==="ru"?"Отправить":"Send email"}</button>
-        </div>
-        <div style={{fontSize:11,color:th.t2,textAlign:"center",marginTop:12,opacity:.7}}>{lg==="uz"?"Email noto'g'ri bo'lsa, telefon raqamingizni to'g'ri kiriting":"If email is wrong, check your phone number"}</div>
+    {showResetScreen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetScreen(false)}>
+      <div style={{background:th.bg,borderRadius:20,maxWidth:400,width:"100%",padding:"26px 22px"}} onClick={e=>e.stopPropagation()}>
+        {!resetSent?<>
+          <div style={{fontSize:44,textAlign:"center",marginBottom:14}}>🔑</div>
+          <div style={{fontSize:18,fontWeight:800,color:th.t1,textAlign:"center",marginBottom:8}}>{lg==="uz"?"Parolni tiklash":lg==="ru"?"Сброс пароля":"Reset password"}</div>
+          <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18}}>{lg==="uz"?"Ro'yxatdan o'tgan emailingizni kiriting. Tiklash havolasini yuboramiz.":"Enter your registered email."}</div>
+          <label style={S.lb}>Email</label>
+          <input style={S.ip} type="email" value={resetInput} onChange={e=>setResetInput(e.target.value)} placeholder="email@example.com" autoFocus/>
+          <button onClick={sendResetEmail} style={{...S.bt(),marginTop:6,marginBottom:10}}>{lg==="uz"?"Tiklash xatini yuborish":lg==="ru"?"Отправить":"Send reset link"}</button>
+          <button onClick={()=>setShowResetScreen(false)} style={{width:"100%",background:"transparent",border:"none",color:th.t2,cursor:"pointer",fontSize:13,fontWeight:600,padding:"8px"}}>{lg==="uz"?"Bekor qilish":"Cancel"}</button>
+        </>:<>
+          <div style={{fontSize:44,textAlign:"center",marginBottom:14}}>📧</div>
+          <div style={{fontSize:18,fontWeight:800,color:th.gr,textAlign:"center",marginBottom:8}}>{lg==="uz"?"Xat yuborildi!":"Email sent!"}</div>
+          <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.7,marginBottom:8}}>{lg==="uz"?"Parolni tiklash havolasi yuborildi:":"Reset link sent to:"}</div>
+          <div style={{fontSize:14,fontWeight:700,color:th.ac,textAlign:"center",background:th.ac+"11",borderRadius:10,padding:"10px",marginBottom:14,wordBreak:"break-all"}}>{resetInput}</div>
+          <div style={{fontSize:12,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18}}>{lg==="uz"?"📌 Pochtangizni oching va havolani bosing. Ko'rinmasa, Spam papkasini tekshiring.":"Check inbox and Spam."}</div>
+          <button onClick={()=>setShowResetScreen(false)} style={{...S.bt(),marginBottom:0}}>{lg==="uz"?"Tushunarli":"Got it"}</button>
+        </>}
       </div>
     </div>}
+
     {inviteQarz&&(()=>{
       const iq=inviteQarz;
       const link=(window.location.origin+"/?ref=")+(user?.id||"");
