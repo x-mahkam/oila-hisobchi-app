@@ -389,6 +389,12 @@ export default function App(){
   const [showResetScreen,setShowResetScreen]=useState(false);
   const [resetInput,setResetInput]=useState("");
   const [resetSent,setResetSent]=useState(false);
+  const switchAuthMode=(toReg)=>{
+    // Ro'yxat <-> Kirish almashganda maydonlarni tozalaymiz
+    setReg(toReg);
+    setFIsm("");setFEm("");setFPw("");setFTel("");setFKd("");setFRel("");setFON("");
+    setShowPw(false);setJoin(false);
+  };
   const genPassword=()=>{
     const chars="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
     let p="";for(let i=0;i<10;i++)p+=chars[Math.floor(Math.random()*chars.length)];
@@ -1392,8 +1398,8 @@ export default function App(){
         <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...S.ch(true,th.t2),padding:"5px 12px",display:"flex",alignItems:"center",gap:4}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?(lg==="uz"?"Kunduz":"Light"):(lg==="uz"?"Tungi":"Dark")}</button>
       </div>
       <div style={{display:"flex",gap:8,marginBottom:18}}>
-        <button onClick={()=>setReg(false)} style={S.tb(!reg)}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
-        <button onClick={()=>setReg(true)} style={S.tb(reg)}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
+        <button onClick={()=>switchAuthMode(false)} style={S.tb(!reg)}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
+        <button onClick={()=>switchAuthMode(true)} style={S.tb(reg)}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
       </div>
       <div style={S.cd}>
         {reg&&<><label style={S.lb}>{lg==="uz"?"Ism familiya":lg==="ru"?"Имя и фамилия":"Full name"}</label><input style={S.ip} value={fIsm} onChange={e=>setFIsm(e.target.value)} placeholder={lg==="uz"?"Ism familiyangiz":lg==="ru"?"Имя Фамилия":"First and last name"}/>
