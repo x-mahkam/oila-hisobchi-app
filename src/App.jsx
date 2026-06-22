@@ -1925,7 +1925,42 @@ export default function App(){
           </div>
         );})}
       </div>}
-      {scr==="bosh"&&!showS&&<div>
+      {/* ===== BOLA BOSH SAHIFASI ===== */}
+      {scr==="bosh"&&!showS&&isKid&&<div>
+        <div className="anim-fadeUp" style={{background:"linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%)",borderRadius:24,padding:"24px 22px",marginBottom:16,position:"relative",overflow:"hidden",boxShadow:"0 12px 40px #ec489940"}}>
+          <div style={{position:"absolute",top:-30,right:-30,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,0.12)"}}/>
+          <div style={{position:"absolute",bottom:-40,left:-20,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,0.08)"}}/>
+          <div style={{position:"relative"}}>
+            <div style={{fontSize:15,color:"rgba(255,255,255,0.9)",marginBottom:2}}>{(()=>{const h=new Date().getHours();return h<12?(lg==="uz"?"Xayrli tong":"Good morning"):h<18?(lg==="uz"?"Xayrli kun":"Good afternoon"):(lg==="uz"?"Xayrli kech":"Good evening");})()}</div>
+            <div style={{fontSize:22,fontWeight:800,color:"#fff",marginBottom:16}}>{user?.ism} 👋</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.8)",marginBottom:4}}>{lg==="uz"?"Mening cho'ntak pulim":lg==="ru"?"Мои деньги":"My pocket money"}</div>
+            <div style={{fontSize:34,fontWeight:800,color:"#fff"}}>{f(kidBalances[user.id]||0,true)}</div>
+          </div>
+        </div>
+        {/* Bola statistikasi */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:18}}>
+          {(()=>{const myV=vazifalar.filter(v=>v.assignedTo===user.id);const done=myV.filter(v=>v.status==="approved").length;const pend=myV.filter(v=>v.status==="pending"||v.status==="done").length;const ball=done*10;return[{ic:"🏆",l:lg==="uz"?"Bajarildi":"Done",v:done,c:"#10b981"},{ic:"⏳",l:lg==="uz"?"Vazifa":"To do",v:pend,c:"#f59e0b"},{ic:"⭐",l:lg==="uz"?"Ball":"Points",v:ball,c:"#8b5cf6"}].map((s,i)=>(
+            <div key={i} className="anim-fadeUp" style={{background:"linear-gradient(135deg,"+s.c+"0d,"+th.sur+")",borderRadius:15,padding:"14px 8px",textAlign:"center",border:"1px solid "+s.c+"22",animationDelay:(i*0.08)+"s"}}>
+              <div style={{fontSize:24,marginBottom:4}}>{s.ic}</div>
+              <div style={{fontSize:20,fontWeight:800,color:s.c}}>{s.v}</div>
+              <div style={{fontSize:10,color:th.t2,fontWeight:600}}>{s.l}</div>
+            </div>
+          ));})()}
+        </div>
+        {/* Faol vazifalar */}
+        <SL ch={lg==="uz"?"Bajarish kerak":lg==="ru"?"Нужно сделать":"To do"}/>
+        {(()=>{const active=vazifalar.filter(v=>v.assignedTo===user.id&&(v.status==="pending"||v.status==="done"));
+          if(active.length===0)return <div style={{textAlign:"center",padding:"30px 20px",color:th.t2}}><div style={{fontSize:44,marginBottom:10}}>🎉</div><div style={{fontSize:15,fontWeight:700,color:th.t1}}>{lg==="uz"?"Barakalla! Hamma vazifa bajarilgan":"All done!"}</div></div>;
+          return active.slice(0,4).map(v=>{const st=v.status;return(
+            <div key={v.id} className="anim-fadeUp" style={{background:th.sur,borderRadius:16,padding:"14px",marginBottom:10,border:"1px solid "+th.bor,display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:46,height:46,borderRadius:13,background:th.ac+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>{v.emoji}</div>
+              <div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{v.title}</div><div style={{fontSize:13,fontWeight:800,color:th.gr}}>+{f(v.reward,true)}</div></div>
+              {st==="pending"?<button onClick={()=>vazifaDone(v.id)} style={{background:th.ac,border:"none",borderRadius:11,padding:"10px 16px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>✓ {lg==="uz"?"Bajardim":"Done"}</button>:<span style={{fontSize:11,color:th.am,fontWeight:600}}>⏳</span>}
+            </div>
+          );})})()}
+      </div>}
+      {/* ===== KATTALAR BOSH SAHIFASI ===== */}
+      {scr==="bosh"&&!showS&&!isKid&&<div>
         <div className="anim-fadeUp" style={{background:"linear-gradient(135deg,"+th.ac+" 0%,"+th.ac2+" 60%,#a78bfa 100%)",borderRadius:24,padding:"20px 22px",marginBottom:16,position:"relative",overflow:"hidden",boxShadow:"0 12px 40px "+th.ac+"40"}}>
           <div style={{position:"absolute",top:-30,right:-30,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,0.10)",pointerEvents:"none"}}/>
           <div style={{position:"absolute",bottom:-40,left:-20,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,0.06)",pointerEvents:"none"}}/>
@@ -2203,6 +2238,30 @@ export default function App(){
         </div>}
         {/* OTA-ONA: vazifa qo'shish tugmasi */}
         {!isKid&&<button onClick={()=>{buzz(10);setShowAddVazifa(true);}} style={{...S.bt(),marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Yangi vazifa berish":lg==="ru"?"Новое задание":"New task"}</button>}
+        {/* REYTING (leaderboard) - bolalar bor bo'lsa */}
+        {(()=>{
+          const kids=azolar.filter(a=>a.rol==="kid");
+          if(kids.length===0)return null;
+          const ranked=kids.map(k=>{
+            const done=vazifalar.filter(v=>v.assignedTo===k.id&&v.status==="approved").length;
+            return {...k,done,ball:done*10,bal:kidBalances[k.id]||0};
+          }).sort((a,b)=>b.ball-a.ball);
+          const medals=["🥇","🥈","🥉"];
+          return <div style={{...S.cd,marginBottom:16,background:"linear-gradient(135deg,#8b5cf60a,"+th.sur+")",border:"1px solid #8b5cf622"}}>
+            <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>🏆 {lg==="uz"?"Bolalar reytingi":lg==="ru"?"Рейтинг детей":"Kids leaderboard"}</div>
+            {ranked.map((k,i)=>(
+              <div key={k.id} style={{display:"flex",alignItems:"center",gap:11,padding:"9px 0",borderBottom:i<ranked.length-1?"1px solid "+th.bor:"none"}}>
+                <div style={{fontSize:20,width:28,textAlign:"center"}}>{medals[i]||(i+1)}</div>
+                <div style={{width:38,height:38,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ec4899)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👶</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:th.t1}}>{k.ism}</div>
+                  <div style={{fontSize:11,color:th.t2}}>🏆 {k.done} {lg==="uz"?"vazifa":"tasks"} · 💰 {f(k.bal,true)}</div>
+                </div>
+                <div style={{textAlign:"right"}}><div style={{fontSize:16,fontWeight:800,color:"#8b5cf6"}}>{k.ball}</div><div style={{fontSize:9,color:th.t2}}>{lg==="uz"?"ball":"pts"}</div></div>
+              </div>
+            ))}
+          </div>;
+        })()}
         {/* VAZIFALAR RO'YXATI */}
         {(()=>{
           const myTasks=isKid?vazifalar.filter(v=>v.assignedTo===user.id):vazifalar;
@@ -2632,11 +2691,11 @@ export default function App(){
               {Ico.right(th.t2)}
             </button>
           ))}
-          <button onClick={()=>setShowReferral(true)} style={{width:"100%",background:"linear-gradient(135deg,#10b98115,#05966908)",border:"1.5px solid #10b98144",borderRadius:16,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:10,textAlign:"left"}}>
+          {!isKid&&<button onClick={()=>setShowReferral(true)} style={{width:"100%",background:"linear-gradient(135deg,#10b98115,#05966908)",border:"1.5px solid #10b98144",borderRadius:16,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:10,textAlign:"left"}}>
             <div style={{width:40,height:40,borderRadius:12,background:"#10b98122",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:20}}>🎁</div>
             <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:th.gr}}>{lg==="uz"?"Do'stlarni taklif qiling":lg==="ru"?"Пригласить друзей":"Invite friends"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"3 ta do'st = 1 oy Premium bepul!":"3 friends = 1 month Premium free!"}</div></div>
             {Ico.right(th.gr)}
-          </button>
+          </button>}
           <div style={{background:th.sur,border:"1px solid "+th.bor,borderRadius:16,padding:"14px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:10}}>
             <div style={{width:40,height:40,borderRadius:12,background:th.ac+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{Ico.version(th.ac)}</div>
             <span style={{flex:1,fontSize:15,fontWeight:600,color:th.t1}}>{t.ver}</span>
