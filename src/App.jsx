@@ -17,6 +17,20 @@ const ONB_SLIDES=[
 ];
 const COUNTRIES=[{code:"uz",dial:"+998",flag:"🇺🇿",uz:"O'zbekiston",ru:"Узбекистан",en:"Uzbekistan",val:"uzs"},{code:"ru",dial:"+7",flag:"🇷🇺",uz:"Rossiya",ru:"Россия",en:"Russia",val:"rub"},{code:"kz",dial:"+7",flag:"🇰🇿",uz:"Qozog'iston",ru:"Казахстан",en:"Kazakhstan",val:"kzt"},{code:"kg",dial:"+996",flag:"🇰🇬",uz:"Qirg'iziston",ru:"Кыргызстан",en:"Kyrgyzstan",val:"kgs"},{code:"tj",dial:"+992",flag:"🇹🇯",uz:"Tojikiston",ru:"Таджикистан",en:"Tajikistan",val:"tjs"},{code:"tr",dial:"+90",flag:"🇹🇷",uz:"Turkiya",ru:"Турция",en:"Turkey",val:"try"},{code:"us",dial:"+1",flag:"🇺🇸",uz:"AQSH",ru:"США",en:"USA",val:"usd"},{code:"ae",dial:"+971",flag:"🇦🇪",uz:"BAA (Dubay)",ru:"ОАЭ",en:"UAE",val:"aed"},{code:"gb",dial:"+44",flag:"🇬🇧",uz:"Buyuk Britaniya",ru:"Великобритания",en:"UK",val:"gbp"},{code:"eu",dial:"+",flag:"🇪🇺",uz:"Yevropa",ru:"Европа",en:"Europe",val:"eur"}];
 const QUICK_ADD=[{emoji:"\ud83c\udf54",kat:"oziq",uz:"Ovqat",ru:"\u0415\u0434\u0430",en:"Food"},{emoji:"\ud83d\ude95",kat:"transport",uz:"Transport",ru:"\u0422\u0440\u0430\u043d\u0441\u043f\u043e\u0440\u0442",en:"Transport"},{emoji:"\u2615",kat:"oziq",uz:"Kofe",ru:"\u041a\u043e\u0444\u0435",en:"Coffee"},{emoji:"\ud83d\uded2",kat:"oziq",uz:"Bozor",ru:"\u041f\u0440\u043e\u0434\u0443\u043a\u0442\u044b",en:"Groceries"},{emoji:"\u26fd",kat:"transport",uz:"Benzin",ru:"\u0411\u0435\u043d\u0437\u0438\u043d",en:"Fuel"},{emoji:"\ud83d\udc8a",kat:"sog",uz:"Dorixona",ru:"\u0410\u043f\u0442\u0435\u043a\u0430",en:"Pharmacy"}];
+const VAZIFA_PRESETS=[
+  {emoji:"🧹",uz:"Xonani yig'ishtirish",ru:"Убрать комнату",en:"Clean room",reward:20000},
+  {emoji:"📚",uz:"Kitob o'qish",ru:"Читать книгу",en:"Read a book",reward:15000},
+  {emoji:"🛏️",uz:"To'shakni yig'ish",ru:"Заправить кровать",en:"Make the bed",reward:5000},
+  {emoji:"🍽️",uz:"Idishlarni yuvish",ru:"Помыть посуду",en:"Wash dishes",reward:10000},
+  {emoji:"🦷",uz:"Tish yuvish",ru:"Почистить зубы",en:"Brush teeth",reward:3000},
+  {emoji:"🕌",uz:"Namoz o'qish",ru:"Совершить намаз",en:"Pray",reward:10000},
+  {emoji:"🎓",uz:"Dars tayyorlash",ru:"Сделать уроки",en:"Do homework",reward:25000},
+  {emoji:"🏃",uz:"Mashq qilish",ru:"Зарядка",en:"Exercise",reward:8000},
+  {emoji:"🌱",uz:"Gullarni sug'orish",ru:"Полить цветы",en:"Water plants",reward:5000},
+  {emoji:"🐕",uz:"Hayvonga qarash",ru:"Покормить питомца",en:"Feed pet",reward:7000},
+  {emoji:"🗑️",uz:"Axlatni chiqarish",ru:"Вынести мусор",en:"Take out trash",reward:5000},
+  {emoji:"📖",uz:"Ingliz tili so'z yodlash",ru:"Учить англ. слова",en:"Learn English words",reward:20000}
+];
 const GOAL_PRESETS=[{emoji:"🏠",uz:"Uy xarid qilish",ru:"Покупка дома",en:"Buy a house",rang:"#10b981"},{emoji:"🚗",uz:"Mashina xarid qilish",ru:"Покупка машины",en:"Buy a car",rang:"#3b82f6"},{emoji:"✈️",uz:"Sayohat",ru:"Путешествие",en:"Travel",rang:"#f59e0b"},{emoji:"🕋",uz:"Umra ziyorati",ru:"Умра",en:"Umrah",rang:"#8b5cf6"},{emoji:"🕌",uz:"Haj amallari",ru:"Хадж",en:"Hajj",rang:"#06b6d4"},{emoji:"💍",uz:"To'y marosimi",ru:"Свадьба",en:"Wedding",rang:"#ec4899"},{emoji:"📱",uz:"Telefon / Texnika",ru:"Телефон",en:"Phone / Gadget",rang:"#6366f1"},{emoji:"🎓",uz:"Ta'lim / O'qish",ru:"Образование",en:"Education",rang:"#ef4444"},{emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",en:"Emergency",rang:"#14b8a6"},{emoji:"💼",uz:"Biznes boshlash",ru:"Бизнес",en:"Business",rang:"#f97316"}];
 
 const RELATIONS=[{id:"ota",emoji:"\ud83d\udc68",uz:"Ota",ru:"\u041e\u0442\u0435\u0446",en:"Father"},{id:"ona",emoji:"\ud83d\udc69",uz:"Ona",ru:"\u041c\u0430\u0442\u044c",en:"Mother"},{id:"turmush",emoji:"\ud83d\udc91",uz:"Turmush o'rtoq",ru:"\u0421\u0443\u043f\u0440\u0443\u0433(\u0430)",en:"Spouse"},{id:"farzand",emoji:"\ud83d\udc66",uz:"Farzand",ru:"\u0420\u0435\u0431\u0451\u043d\u043e\u043a",en:"Child"},{id:"aka",emoji:"\ud83d\udc68",uz:"Aka",ru:"\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Older brother"},{id:"uka",emoji:"\ud83d\udc66",uz:"Uka",ru:"\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Younger brother"},{id:"opa",emoji:"\ud83d\udc69",uz:"Opa",ru:"\u0421\u0442\u0430\u0440\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Older sister"},{id:"singil",emoji:"\ud83d\udc67",uz:"Singil",ru:"\u041c\u043b\u0430\u0434\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Younger sister"},{id:"boshqa",emoji:"\ud83d\udc64",uz:"Boshqa",ru:"\u0414\u0440\u0443\u0433\u043e\u0435",en:"Other"}];
@@ -1602,14 +1616,16 @@ export default function App(){
           <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div>
         {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
-        {!reg&&<><label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
-        <div style={{display:"flex",gap:8,marginBottom:11}}>
+        {!reg&&<><label style={S.lb}>{lg==="uz"?"Telefon yoki bola logini":lg==="ru"?"Телефон или логин ребёнка":"Phone or kid login"}</label>
+        <div style={{display:"flex",gap:8,marginBottom:6}}>
           <div style={{display:"flex",alignItems:"center",gap:4,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 10px",flexShrink:0,width:96}}>
             <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.dial===fDial)||{flag:"🌐"}).flag}</span>
             <input style={{background:"none",border:"none",outline:"none",color:th.t1,fontSize:14,fontWeight:700,width:52}} type="tel" value={fDial} onChange={e=>{let v=e.target.value.replace(/[^0-9+]/g,"");if(!v.startsWith("+"))v="+"+v;setFDial(v);const c=COUNTRIES.find(x=>x.dial===v);if(c)setFCountry(c.code);}} placeholder="+998"/>
           </div>
-          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
-        </div></>}
+          <input style={{...S.ip,marginBottom:0,flex:1}} type="text" value={fTel} onChange={e=>setFTel(e.target.value)} placeholder={lg==="uz"?"Telefon yoki login":"Phone or login"}/>
+        </div>
+        <div style={{fontSize:11,color:th.t2,marginBottom:10,marginTop:6,display:"flex",alignItems:"center",gap:5,background:th.ac+"0d",borderRadius:8,padding:"7px 10px"}}>👶 {lg==="uz"?"Bola akkaunti: login va parolni yozing (kod shart emas)":lg==="ru"?"Детский аккаунт: введите логин и пароль":"Kid account: enter login and password"}</div>
+        <div style={{fontSize:10,color:th.t2,marginBottom:11,paddingLeft:4}}>👶 {lg==="uz"?"Bola bo'lsangiz, loginingizni yozing (masalan: mohichehra25)":"Kids: enter your login"}</div></>}
         {reg&&<><label style={S.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
         <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
         <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
@@ -1665,9 +1681,10 @@ export default function App(){
   </div>;
 
   const isKid=user?.rol==="kid";
+  const vazLb=lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks";
   const navItems=isKid
-    ?[{id:"bosh",lb:t.home},{id:"vazifa",lb:lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks"},{id:"maqsad",lb:t.goal}]
-    :[{id:"bosh",lb:t.home},{id:"vazifa",lb:lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks"},{id:"qoshish",pr:true},{id:"maqsad",lb:t.goal},{id:"hisobot",lb:t.rep}];
+    ?[{id:"bosh",lb:t.home},{id:"vazifa",lb:vazLb},{id:"maqsad",lb:t.goal}]
+    :[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"vazifa",lb:vazLb},{id:"hisobot",lb:t.rep}];
 
   return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
@@ -1676,8 +1693,19 @@ export default function App(){
     {showAddVazifa&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowAddVazifa(false)}>
       <div className="anim-fadeUp" style={{background:th.bg,borderRadius:"24px 24px 0 0",maxWidth:480,width:"100%",padding:"24px 20px 32px",maxHeight:"88vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
         <div style={{width:40,height:4,borderRadius:2,background:th.bor,margin:"0 auto 18px"}}/>
-        <div style={{fontSize:18,fontWeight:800,color:th.t1,marginBottom:18,textAlign:"center"}}>🎯 {lg==="uz"?"Yangi vazifa":lg==="ru"?"Новое задание":"New task"}</div>
-        <label style={S.lb}>{lg==="uz"?"Vazifa nomi":lg==="ru"?"Название":"Task name"}</label>
+        <div style={{fontSize:18,fontWeight:800,color:th.t1,marginBottom:14,textAlign:"center"}}>🎯 {lg==="uz"?"Yangi vazifa":lg==="ru"?"Новое задание":"New task"}</div>
+        <label style={S.lb}>{lg==="uz"?"Tayyor vazifalardan tanlang":lg==="ru"?"Готовые задания":"Quick templates"}</label>
+        <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,marginBottom:14}}>
+          {VAZIFA_PRESETS.map((p,i)=>(
+            <button key={i} onClick={()=>{buzz(6);setVTitle(p[lg]||p.uz);setVEmoji(p.emoji);setVReward(String(p.reward));}} style={{flexShrink:0,display:"flex",flexDirection:"column",alignItems:"center",gap:4,background:vTitle===(p[lg]||p.uz)?th.ac+"18":th.sur,border:"1.5px solid "+(vTitle===(p[lg]||p.uz)?th.ac:th.bor),borderRadius:13,padding:"10px 12px",cursor:"pointer",minWidth:80}}>
+              <span style={{fontSize:24}}>{p.emoji}</span>
+              <span style={{fontSize:10,fontWeight:600,color:th.t1,textAlign:"center",lineHeight:1.2}}>{p[lg]||p.uz}</span>
+              <span style={{fontSize:9,color:th.gr,fontWeight:700}}>{f(p.reward,true)}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{height:1,background:th.bor,marginBottom:14}}/>
+        <label style={S.lb}>{lg==="uz"?"Yoki o'zingiz yozing":lg==="ru"?"Или напишите сами":"Or write your own"}</label>
         <input style={S.ip} value={vTitle} onChange={e=>setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Xonani yig'ishtirish":"e.g. Clean room"}/>
         <label style={S.lb}>{lg==="uz"?"Belgi (emoji)":"Emoji"}</label>
         <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
@@ -1959,6 +1987,43 @@ export default function App(){
           <div style={{fontSize:11,color:th.t2,marginBottom:10,fontWeight:600,display:"flex",alignItems:"center",gap:5}}>{Ico.fire(th.rd)}{t.hm}</div>
           <Heat xar={xar} ac={th.ac}/>
         </div>
+        {/* MAQSAD KARTASI - bosh sahifada */}
+        {maq.length>0&&<div onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,cursor:"pointer",marginBottom:14,background:"linear-gradient(135deg,#8b5cf60d,#6366f10d)",border:"1px solid #8b5cf633"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+            <span style={{fontSize:18}}>🎯</span>
+            <span style={{fontSize:14,fontWeight:700,color:th.t1,flex:1}}>{lg==="uz"?"Maqsadlarim":lg==="ru"?"Мои цели":"My goals"}</span>
+            <span style={{fontSize:18,color:th.t2}}>›</span>
+          </div>
+          {maq.slice(0,2).map(m=>{const pct=m.summa>0?Math.min(100,Math.round((m.yiqilgan||0)/m.summa*100)):0;return(
+            <div key={m.id} style={{marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,color:th.t1,fontWeight:600}}>{m.emoji||"🎯"} {m.nom}</span><span style={{fontSize:11,color:th.ac,fontWeight:700}}>{pct}%</span></div>
+              <div style={{height:6,background:th.bg,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#8b5cf6,#6366f1)",borderRadius:3,transition:"width .5s"}}/></div>
+            </div>
+          );})}
+        </div>}
+        {maq.length===0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",cursor:"pointer",marginBottom:14,background:"linear-gradient(135deg,#8b5cf60d,#6366f10d)",border:"1px dashed #8b5cf644",display:"flex",alignItems:"center",gap:10,textAlign:"left"}}>
+          <span style={{fontSize:20}}>🎯</span>
+          <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:th.t1}}>{lg==="uz"?"Maqsad qo'shing":lg==="ru"?"Добавить цель":"Add a goal"}</div><div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Uy, mashina, sayohat uchun jamg'aring":"Save for your dreams"}</div></div>
+          <span style={{fontSize:18,color:th.t2}}>›</span>
+        </button>}
+        {/* MAQSADLAR KARTASI (navigatsiyadan ko'chirildi) */}
+        {maq.length>0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",marginBottom:14,cursor:"pointer",textAlign:"left",border:"1px solid "+th.bor,display:"block"}}>
+          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+            <div style={{fontSize:13,fontWeight:700,color:th.t1,display:"flex",alignItems:"center",gap:6}}>🎯 {lg==="uz"?"Maqsadlarim":lg==="ru"?"Мои цели":"My goals"}</div>
+            <span style={{fontSize:12,color:th.ac,fontWeight:600}}>{lg==="uz"?"Barchasi":"All"} ›</span>
+          </div>
+          {maq.slice(0,2).map(m=>{const pct=m.summa>0?Math.min(100,Math.round((m.yiqilgan||0)/m.summa*100)):0;return(
+            <div key={m.id} style={{marginBottom:8}}>
+              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,color:th.t1,fontWeight:600}}>{m.emoji||"🎯"} {m.nom}</span><span style={{fontSize:11,color:th.ac,fontWeight:700}}>{pct}%</span></div>
+              <div style={{height:7,background:th.bg,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+th.ac+","+th.ac2+")",borderRadius:4,transition:"width .5s"}}/></div>
+            </div>
+          );})}
+        </button>}
+        {maq.length===0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",marginBottom:14,cursor:"pointer",textAlign:"left",border:"1px dashed "+th.ac+"55",background:th.ac+"08",display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:42,height:42,borderRadius:12,background:th.ac+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎯</div>
+          <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Maqsad qo'ying":lg==="ru"?"Поставьте цель":"Set a goal"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Uy, mashina, sayohat uchun jamg'aring":"Save for your dreams"}</div></div>
+          <span style={{fontSize:18,color:th.ac}}>›</span>
+        </button>}
         <SL ch={lg==="uz"?"Oxirgi operatsiyalar":lg==="ru"?"\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438":"Recent transactions"}/>
         {xar.filter(x=>x.uid===user?.id).length===0&&dar.filter(d=>d.uid===user?.id).length===0?<div style={{textAlign:"center",padding:"40px 20px",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center"}}><div style={{width:80,height:80,borderRadius:"50%",background:th.ac+"11",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:14}}>\ud83d\udcb3</div><div style={{fontSize:16,fontWeight:700,color:th.t1,marginBottom:6}}>{lg==="uz"?"Hali xarajat kiritilmagan":lg==="ru"?"Пока нет операций":"No transactions yet"}</div><div style={{fontSize:13,color:th.t2,marginBottom:18,maxWidth:240}}>{lg==="uz"?"Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing":"Use quick add buttons above or tap + below"}</div><button onClick={()=>setScr("qoshish")} style={{...S.bt(),width:"auto",padding:"12px 28px",marginBottom:0,display:"flex",alignItems:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Xarajat qo'shish":lg==="ru"?"Добавить расход":"Add expense"}</button></div>
         :[...xar.filter(x=>x.uid===user?.id).slice(0,8).map(x=>({...x,tp:"x"})),...dar.filter(d=>d.uid===user?.id).slice(0,5).map(d=>({...d,tp:"d"}))].sort((a,b)=>b.id-a.id).slice(0,12).map(item=><TxRow key={item.tp+item.id} item={item}/>)}
@@ -3040,6 +3105,7 @@ export default function App(){
           {item.id==="grafik"&&Ico.navChart(scr===item.id?th.ac:th.t2)}
           {item.id==="qarz"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="3" y="6" width="20" height="14" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M3 10h20" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.3"/><path d="M7 14h5M16 14h3" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
           {item.id==="maqsad"&&Ico.navGoal(scr===item.id?th.ac:th.t2)}
+          {item.id==="vazifa"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="4" y="3" width="18" height="20" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M8 9l2 2 4-4" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 16h9" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
           {item.id==="hisobot"&&Ico.navRep(scr===item.id?th.ac:th.t2)}
           <span style={{fontSize:9,fontWeight:700,letterSpacing:.5,color:scr===item.id?th.ac:th.t2}}>{item.lb}</span>
         </button>
