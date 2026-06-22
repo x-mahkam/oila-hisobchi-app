@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -33,6 +33,11 @@ export const auth = {
   // Parolni tiklash (email orqali)
   async resetPassword(email) {
     await sendPasswordResetEmail(fbAuth, email);
+  },
+  // Anonim kirish (bolalar uchun - emailsiz)
+  async loginAnon() {
+    const cred = await signInAnonymously(fbAuth);
+    return cred.user;
   },
   // Chiqish
   async logout() {

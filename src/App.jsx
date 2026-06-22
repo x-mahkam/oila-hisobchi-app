@@ -218,6 +218,17 @@ export default function App(){
   const [xar,setXar]=useState([]);
   const [dar,setDar]=useState([]);
   const [maq,setMaq]=useState([]);
+  const [vazifalar,setVazifalar]=useState([]);
+  const [kidBalances,setKidBalances]=useState({});
+  const [showAddVazifa,setShowAddVazifa]=useState(false);
+  const [vTitle,setVTitle]=useState("");
+  const [vReward,setVReward]=useState("");
+  const [vAssignee,setVAssignee]=useState("");
+  const [vEmoji,setVEmoji]=useState("📚");
+  const [showAddKid,setShowAddKid]=useState(false);
+  const [kidName,setKidName]=useState("");
+  const [kidLogin,setKidLogin]=useState("");
+  const [kidPw,setKidPw]=useState("");
   const [scr,setScr]=useState("login");
   const [tst,setTst]=useState({msg:"",type:"ok"});
   const [dark,setDark]=useState(true);
@@ -324,7 +335,7 @@ export default function App(){
     setOila(o);setFBj(String(o.budjet||2000000));setFKL(o.katLimits||{});
     const ids=o.azolarIds||[];
     // PARALLEL yuklash - hammasi bir vaqtda (tez!)
-    const [ms,xArr,dArr,maqR,qarzR,qreqR,xreqR,notifR,refsR]=await Promise.all([
+    const [ms,xArr,dArr,maqR,qarzR,qreqR,xreqR,notifR,refsR,vazR,kidbR]=await Promise.all([
       Promise.all(ids.map(a=>db.g("user_"+a))),
       Promise.all(ids.map(a=>db.g("x_"+u.oilaId+"_"+a))),
       Promise.all(ids.map(a=>db.g("d_"+u.oilaId+"_"+a))),
@@ -333,7 +344,9 @@ export default function App(){
       u.tel?db.g("qreq_"+u.tel):Promise.resolve(null),
       db.g("xreq_"+u.id),
       db.g("notif_"+u.id),
-      db.g("refs_"+u.id)
+      db.g("refs_"+u.id),
+      db.g("vazifa_"+u.oilaId),
+      db.g("kidbal_"+u.oilaId)
     ]);
     setAzolar(ms.filter(Boolean));
     const aX=[],aD=[];
@@ -344,6 +357,8 @@ export default function App(){
     setXar(aX.sort((a,b)=>b.id-a.id));setDar(aD.sort((a,b)=>b.id-a.id));
     setMaq(maqR||[]);
     setQarzlar(qarzR||[]);
+    setVazifalar(vazR||[]);
+    setKidBalances(kidbR||{});
     if(u.tel)setQarzReqs(qreqR||[]);
     setXReqs(xreqR||[]);
     let uN=notifR||[];const nsK="news_v1_"+u.id;
@@ -507,6 +522,26 @@ export default function App(){
         localStorage.setItem("oilaV7",JSON.stringify({uid}));setUser(nu);setOila(no_);setAzolar([nu]);setXar([]);setDar([]);setMaq([]);setScr("bosh");ok$(t.fc3);
       }
     }else{
+      // BOLA LOGINI: agar email/telefon emas, oddiy login kiritilgan bo'lsa
+      const tryLogin=fTel.trim().toLowerCase();
+      if(tryLogin&&!tryLogin.includes("@")&&!/^[0-9+ ]+$/.test(tryLogin)){
+        // Bu bola logini (raqam ham email ham emas)
+        const kidUid=await db.gFresh("kidlogin_"+tryLogin);
+        if(kidUid){
+          const ku=await db.g("user_"+kidUid);
+          if(ku&&ku.rol==="kid"){
+            if(await hp(fPw)!==ku.ph)return ok$(lg==="uz"?"Parol noto'g'ri":"Wrong password","err");
+            buzz(15);
+            // Anonim Firebase Auth (Firestore o'qishi uchun request.auth kerak)
+            try{await auth.loginAnon();}catch(e){}
+            localStorage.setItem("oilaV7",JSON.stringify({uid:ku.id,kid:true}));
+            setUser(ku);await loadFam(ku);setScr("bosh");
+            ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+ku.ism+" 👋");
+            return;
+          }
+        }
+        return ok$(lg==="uz"?"Login yoki parol noto'g'ri":"Wrong login or password","err");
+      }
       // Telefon yoki email + parol bilan kirish (Firebase Auth)
       let email=fEm.trim().toLowerCase();
       // Telefon kiritilgan bo'lsa - tphone_ orqali emailni topamiz
@@ -689,6 +724,72 @@ export default function App(){
     const u={...oila,budjet:v,katLimits:fKL};await db.s("oila_"+oila.id,u);setOila(u);ok$(t.sa);
   };
   const logout=()=>{try{auth.logout();}catch(e){}localStorage.removeItem("oilaV7");setUser(null);setOila(null);setAzolar([]);setXar([]);setDar([]);setMaq([]);setScr("login");};
+  // ===== VAZIFALAR TIZIMI =====
+  // Vazifa qo'shish (faqat ota-ona/oila boshi)
+  const addVazifa=async()=>{
+    if(!vTitle.trim()||!vReward||Number(vReward)<=0||!vAssignee)return ok$(lg==="uz"?"Vazifa nomi, mukofot va bolani tanlang":"Fill all fields","err");
+    buzz(12);
+    const item={id:Date.now(),title:vTitle.trim(),reward:Number(vReward),emoji:vEmoji,assignedTo:vAssignee,createdBy:user.id,status:"pending",sana:td(),doneSana:"",paidSana:""};
+    const upd=[item,...vazifalar];
+    await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
+    setShowAddVazifa(false);setVTitle("");setVReward("");setVAssignee("");setVEmoji("📚");
+    ok$(lg==="uz"?"Vazifa qo'shildi! 🎯":"Task added!");
+  };
+  // Bola "bajardim" deydi
+  const vazifaDone=async(id)=>{
+    buzz(15);
+    const upd=vazifalar.map(v=>v.id===id?{...v,status:"done",doneSana:td()}:v);
+    await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
+    ok$(lg==="uz"?"Bajarildi deb belgilandi! Ota-ona tasdiqlaydi.":"Marked done!");
+  };
+  // Ota-ona tasdiqlaydi -> mukofot bolaning balansiga qo'shiladi
+  const vazifaApprove=async(id)=>{
+    buzz(20);
+    const v=vazifalar.find(x=>x.id===id);if(!v)return;
+    const upd=vazifalar.map(x=>x.id===id?{...x,status:"approved",paidSana:td()}:x);
+    await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
+    // Bola balansiga qo'shamiz
+    const kb={...kidBalances};
+    kb[v.assignedTo]=(kb[v.assignedTo]||0)+v.reward;
+    await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
+    // Bolaga bildirishnoma
+    try{const kn=(await db.g("notif_"+v.assignedTo))||[];await db.s("notif_"+v.assignedTo,[{id:Date.now(),text:(lg==="uz"?"🏆 Vazifa tasdiqlandi! +":"Task approved! +")+f(v.reward,true),sana:new Date().toISOString(),read:false},...kn]);}catch(e){}
+    ok$(lg==="uz"?"Tasdiqlandi! Bola "+f(v.reward,true)+" oldi 🎉":"Approved!");
+  };
+  // Vazifani rad etish (qayta bajarsin)
+  const vazifaReject=async(id)=>{
+    buzz(10);
+    const upd=vazifalar.map(x=>x.id===id?{...x,status:"pending",doneSana:""}:x);
+    await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
+    ok$(lg==="uz"?"Qaytarildi. Bola qayta bajaradi.":"Sent back","warn");
+  };
+  const delVazifa=async(id)=>{
+    buzz(10);
+    const upd=vazifalar.filter(x=>x.id!==id);
+    await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
+    ok$(lg==="uz"?"O'chirildi":"Deleted");
+  };
+  // Bola akkaunti yaratish (ota-ona profil orqali)
+  const addKidAccount=async()=>{
+    if(!kidName.trim()||!kidLogin.trim()||kidPw.length<4)return ok$(lg==="uz"?"Ism, login va parol (4+) kiriting":"Fill all fields","err");
+    buzz(12);
+    const loginKey=kidLogin.trim().toLowerCase();
+    // Login band emasmi
+    if(await db.gFresh("kidlogin_"+loginKey))return ok$(lg==="uz"?"Bu login band. Boshqasini tanlang.":"Login taken","err");
+    try{
+      const uid="kid"+Date.now();
+      const ph=await hp(kidPw);
+      const nu={id:uid,ism:kidName.trim(),login:loginKey,ph,oilaId:user.oilaId,rol:"kid",rel:"farzand",photo:null,parentId:user.id};
+      await db.s("user_"+uid,nu);
+      await db.s("kidlogin_"+loginKey,uid);
+      // Oilaga qo'shamiz
+      const o2={...oila,azolarIds:[...(oila.azolarIds||[]),uid]};
+      await db.s("oila_"+oila.id,o2);setOila(o2);
+      setAzolar([...azolar,nu]);
+      setShowAddKid(false);setKidName("");setKidLogin("");setKidPw("");
+      ok$(lg==="uz"?"Bola akkaunti yaratildi! 👶 Login: "+loginKey:"Kid account created!");
+    }catch(e){ok$(lg==="uz"?"Xato: "+(e.code||e.message):"Error","err");}
+  };
   const addQarz=async()=>{
     if(!qarzKim.trim()||!qarzSum||Number(qarzSum)<=0)return ok$(t.fa,"err");
     const item={id:Date.now(),uid:user.id,tur:qarzTur,kim:qarzKim.trim(),summa:Number(qarzSum),izoh:qarzIzoh,sana:qarzSana,qaytSana:qarzQaytSana,paid:false,paidSana:""};
@@ -1563,11 +1664,58 @@ export default function App(){
     </div>}
   </div>;
 
-  const navItems=[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"maqsad",lb:t.goal},{id:"hisobot",lb:t.rep}];
+  const isKid=user?.rol==="kid";
+  const navItems=isKid
+    ?[{id:"bosh",lb:t.home},{id:"vazifa",lb:lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks"},{id:"maqsad",lb:t.goal}]
+    :[{id:"bosh",lb:t.home},{id:"vazifa",lb:lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks"},{id:"qoshish",pr:true},{id:"maqsad",lb:t.goal},{id:"hisobot",lb:t.rep}];
 
   return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
     <input ref={fRef} type="file" accept="image/*" style={{display:"none"}} onChange={doPhoto}/>
+    {/* VAZIFA QO'SHISH MODAL */}
+    {showAddVazifa&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowAddVazifa(false)}>
+      <div className="anim-fadeUp" style={{background:th.bg,borderRadius:"24px 24px 0 0",maxWidth:480,width:"100%",padding:"24px 20px 32px",maxHeight:"88vh",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:40,height:4,borderRadius:2,background:th.bor,margin:"0 auto 18px"}}/>
+        <div style={{fontSize:18,fontWeight:800,color:th.t1,marginBottom:18,textAlign:"center"}}>🎯 {lg==="uz"?"Yangi vazifa":lg==="ru"?"Новое задание":"New task"}</div>
+        <label style={S.lb}>{lg==="uz"?"Vazifa nomi":lg==="ru"?"Название":"Task name"}</label>
+        <input style={S.ip} value={vTitle} onChange={e=>setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Xonani yig'ishtirish":"e.g. Clean room"}/>
+        <label style={S.lb}>{lg==="uz"?"Belgi (emoji)":"Emoji"}</label>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+          {["📚","🧹","🛏️","🍽️","🦷","🏃","🕌","🎨","🐕","💧","🌱","📝"].map(em=>(
+            <button key={em} onClick={()=>{buzz(6);setVEmoji(em);}} style={{width:44,height:44,borderRadius:12,border:"2px solid "+(vEmoji===em?th.ac:th.bor),background:vEmoji===em?th.ac+"18":th.sur,fontSize:22,cursor:"pointer"}}>{em}</button>
+          ))}
+        </div>
+        <label style={S.lb}>{lg==="uz"?"Mukofot (so'm)":lg==="ru"?"Награда":"Reward"}</label>
+        <MoneyInput value={vReward} onChange={setVReward} placeholder="20 000" th={th} style={S.ip}/>
+        <label style={S.lb}>{lg==="uz"?"Kimga (farzand)":lg==="ru"?"Кому":"Assign to"}</label>
+        <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:18}}>
+          {azolar.filter(a=>a.rol==="kid"||a.id!==user.id).length===0?<div style={{fontSize:12,color:th.t2,textAlign:"center",padding:"12px",background:th.sur,borderRadius:12}}>{lg==="uz"?"Avval profil orqali bola akkaunti yarating":"Create a kid account first via Profile"}</div>:azolar.filter(a=>a.id!==user.id).map(a=>(
+            <button key={a.id} onClick={()=>{buzz(6);setVAssignee(a.id);}} style={{display:"flex",alignItems:"center",gap:10,background:vAssignee===a.id?th.ac+"18":th.sur,border:"2px solid "+(vAssignee===a.id?th.ac:th.bor),borderRadius:13,padding:"11px 14px",cursor:"pointer"}}>
+              <div style={{width:36,height:36,borderRadius:"50%",background:th.ac+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18}}>{a.rol==="kid"?"👶":"👤"}</div>
+              <span style={{fontSize:14,fontWeight:600,color:th.t1}}>{a.ism}</span>
+              {a.rol==="kid"&&<span style={{fontSize:9,background:th.gr+"22",color:th.gr,borderRadius:6,padding:"2px 7px",fontWeight:700,marginLeft:"auto"}}>KIDS</span>}
+            </button>
+          ))}
+        </div>
+        <button onClick={addVazifa} style={{...S.bt(),marginBottom:0}}>{lg==="uz"?"Vazifa berish":lg==="ru"?"Создать":"Create task"}</button>
+      </div>
+    </div>}
+    {/* BOLA AKKAUNTI QO'SHISH MODAL */}
+    {showAddKid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowAddKid(false)}>
+      <div className="anim-fadeUp" style={{background:th.bg,borderRadius:"24px 24px 0 0",maxWidth:480,width:"100%",padding:"24px 20px 32px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:40,height:4,borderRadius:2,background:th.bor,margin:"0 auto 18px"}}/>
+        <div style={{fontSize:42,textAlign:"center",marginBottom:8}}>👶</div>
+        <div style={{fontSize:18,fontWeight:800,color:th.t1,marginBottom:6,textAlign:"center"}}>{lg==="uz"?"Bola akkaunti yaratish":lg==="ru"?"Создать детский аккаунт":"Create kid account"}</div>
+        <div style={{fontSize:12,color:th.t2,textAlign:"center",marginBottom:18,lineHeight:1.5}}>{lg==="uz"?"Farzandingiz uchun login va parol yarating. U shu login bilan kiradi.":"Create a login for your child."}</div>
+        <label style={S.lb}>{lg==="uz"?"Bola ismi":"Child's name"}</label>
+        <input style={S.ip} value={kidName} onChange={e=>setKidName(e.target.value)} placeholder={lg==="uz"?"Jahongir":"Name"}/>
+        <label style={S.lb}>{lg==="uz"?"Login (faqat harf/raqam)":"Login"}</label>
+        <input style={S.ip} value={kidLogin} onChange={e=>setKidLogin(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase())} placeholder="jahongir2015"/>
+        <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
+        <input style={S.ip} type="text" value={kidPw} onChange={e=>setKidPw(e.target.value)} placeholder={lg==="uz"?"Kamida 4 belgi":"Min 4 chars"}/>
+        <button onClick={addKidAccount} style={{...S.bt(),marginTop:6,marginBottom:0}}>{lg==="uz"?"Akkaunt yaratish":"Create account"}</button>
+      </div>
+    </div>}
     {showResetScreen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:1000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetScreen(false)}>
       <div style={{background:th.bg,borderRadius:20,maxWidth:400,width:"100%",padding:"26px 22px"}} onClick={e=>e.stopPropagation()}>
         {!resetSent?<>
@@ -1956,6 +2104,52 @@ export default function App(){
             {p>=100?<div style={{textAlign:"center",color:m.rang,fontWeight:700,fontSize:13}}>{t.ach}</div>:<div style={{...S.row}}><span style={{fontSize:11,color:th.t2}}>{t.rem}: {f(m.maqsad-m.jamg,true)}</span><button onClick={()=>{setTupId(m.id);setTupS("");}} style={{background:m.rang+"18",border:"1px solid "+m.rang+"44",borderRadius:9,padding:"5px 12px",color:m.rang,cursor:"pointer",fontWeight:700,fontSize:12}}>{t.am}</button></div>}
           </div>;
         })}
+      </div>}
+      {scr==="vazifa"&&<div>
+        {/* BOLA BALANSI (faqat bola yoki tanlangan) */}
+        {isKid&&<div className="anim-fadeUp" style={{background:"linear-gradient(135deg,#f59e0b 0%,#ec4899 60%,#8b5cf6 100%)",borderRadius:24,padding:"22px 20px",marginBottom:18,position:"relative",overflow:"hidden",boxShadow:"0 12px 40px #f59e0b40"}}>
+          <div style={{position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.12)"}}/>
+          <div style={{position:"relative"}}>
+            <div style={{fontSize:13,color:"rgba(255,255,255,0.9)",marginBottom:4}}>{lg==="uz"?"Mening cho'ntak pulim":lg==="ru"?"Мои карманные":"My pocket money"}</div>
+            <div style={{fontSize:32,fontWeight:800,color:"#fff",marginBottom:6}}>{f(kidBalances[user.id]||0,true)}</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {vazifalar.filter(v=>v.assignedTo===user.id&&v.status==="approved").length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"}</div>
+          </div>
+        </div>}
+        {/* OTA-ONA: vazifa qo'shish tugmasi */}
+        {!isKid&&<button onClick={()=>{buzz(10);setShowAddVazifa(true);}} style={{...S.bt(),marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Yangi vazifa berish":lg==="ru"?"Новое задание":"New task"}</button>}
+        {/* VAZIFALAR RO'YXATI */}
+        {(()=>{
+          const myTasks=isKid?vazifalar.filter(v=>v.assignedTo===user.id):vazifalar;
+          if(myTasks.length===0)return <div style={{textAlign:"center",padding:"40px 20px",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center"}}><div style={{width:80,height:80,borderRadius:"50%",background:th.ac+"11",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:14}}>🎯</div><div style={{fontSize:16,fontWeight:700,color:th.t1,marginBottom:6}}>{isKid?(lg==="uz"?"Hali vazifa yo'q":"No tasks yet"):(lg==="uz"?"Hali vazifa bermadingiz":"No tasks created")}</div><div style={{fontSize:13,color:th.t2,maxWidth:240}}>{isKid?(lg==="uz"?"Ota-onangiz tez orada vazifa beradi":"Your parent will add tasks soon"):(lg==="uz"?"Bolalaringizga vazifa berib, ularni rag'batlantiring":"Add tasks to motivate your kids")}</div></div>;
+          return myTasks.map(v=>{
+            const kid=azolar.find(a=>a.id===v.assignedTo);
+            const st=v.status;
+            const stColor=st==="approved"?th.gr:st==="done"?th.am:th.ac;
+            const stText=st==="approved"?(lg==="uz"?"Tasdiqlandi":"Approved"):st==="done"?(lg==="uz"?"Tekshirilmoqda":"Pending review"):(lg==="uz"?"Bajarilmagan":"To do");
+            return <div key={v.id} className="anim-fadeUp" style={{background:th.sur,borderRadius:16,padding:"14px 16px",marginBottom:10,border:"1px solid "+th.bor,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",left:0,top:0,bottom:0,width:4,background:stColor}}/>
+              <div style={{display:"flex",alignItems:"center",gap:12}}>
+                <div style={{width:46,height:46,borderRadius:13,background:stColor+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,flexShrink:0}}>{v.emoji}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:th.t1,marginBottom:2}}>{v.title}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                    <span style={{fontSize:13,fontWeight:800,color:th.gr}}>+{f(v.reward,true)}</span>
+                    {!isKid&&kid&&<span style={{fontSize:11,color:th.t2}}>👶 {kid.ism}</span>}
+                    <span style={{fontSize:10,background:stColor+"18",color:stColor,borderRadius:6,padding:"2px 8px",fontWeight:700}}>{stText}</span>
+                  </div>
+                </div>
+              </div>
+              {/* HARAKATLAR */}
+              <div style={{display:"flex",gap:8,marginTop:12}}>
+                {isKid&&st==="pending"&&<button onClick={()=>vazifaDone(v.id)} style={{flex:1,background:th.ac,border:"none",borderRadius:10,padding:"10px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>✓ {lg==="uz"?"Bajardim":"Done"}</button>}
+                {isKid&&st==="done"&&<div style={{flex:1,textAlign:"center",fontSize:12,color:th.am,fontWeight:600,padding:"10px"}}>⏳ {lg==="uz"?"Ota-ona tasdig'i kutilmoqda":"Awaiting approval"}</div>}
+                {isKid&&st==="approved"&&<div style={{flex:1,textAlign:"center",fontSize:12,color:th.gr,fontWeight:700,padding:"10px"}}>🎉 {lg==="uz"?"Mukofot olindi!":"Reward received!"}</div>}
+                {!isKid&&st==="done"&&<><button onClick={()=>vazifaApprove(v.id)} style={{flex:2,background:th.gr,border:"none",borderRadius:10,padding:"10px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>✓ {lg==="uz"?"Tasdiqlash":"Approve"}</button><button onClick={()=>vazifaReject(v.id)} style={{flex:1,background:th.am+"18",border:"1px solid "+th.am+"44",borderRadius:10,padding:"10px",color:th.am,cursor:"pointer",fontWeight:700,fontSize:13}}>↩</button></>}
+                {!isKid&&st!=="done"&&<button onClick={()=>delVazifa(v.id)} style={{width:"100%",background:th.rd+"11",border:"1px solid "+th.rd+"33",borderRadius:10,padding:"9px",color:th.rd,cursor:"pointer",fontWeight:600,fontSize:12}}>{lg==="uz"?"O'chirish":"Delete"}</button>}
+              </div>
+            </div>;
+          });
+        })()}
       </div>}
       {scr==="qarz"&&<div>
         <div style={{...S.row,marginBottom:16}}>
@@ -2389,6 +2583,14 @@ export default function App(){
           <div style={S.cd}><div style={{fontSize:10,color:th.t2,marginBottom:2,textTransform:"uppercase",letterSpacing:1}}>Email</div><div style={{fontSize:15,fontWeight:600,color:th.t1}}>{user?.email}</div></div>
           <div style={S.cd}><div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:10}}>{lg==="uz"?"Bu oy statistikasi":"Stats"}</div>{[{l:lg==="uz"?"Xarajat":"Expense",v:f(bX.filter(x=>x.uid===user.id).reduce((s,x)=>s+Number(x.summa||0),0),true),c:th.rd},{l:lg==="uz"?"Daromad":"Income",v:f(bD.filter(d=>d.uid===user.id).reduce((s,d)=>s+Number(d.summa||0),0),true),c:th.gr},{l:lg==="uz"?"Jami yozuvlar":"Total records",v:xar.filter(x=>x.uid===user.id).length+" ta",c:th.ac}].map(item=><div key={item.l} style={{...S.row,padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{item.l}</span><span style={{fontSize:13,fontWeight:700,color:item.c}}>{item.v}</span></div>)}</div>
           {user?.rol==="bosh"&&<div style={{...S.cd,background:th.ac+"0d",border:"1px solid "+th.ac+"33"}}><div style={{fontSize:11,color:th.t2,marginBottom:5,fontWeight:600}}>{Ico.key(th.ac)}{t.fc2}</div><div style={{fontFamily:"monospace",fontSize:12,color:th.ac,wordBreak:"break-all",fontWeight:700}}>{oila?.id}</div><div style={{fontSize:10,color:th.t2,marginTop:5}}>{t.fcd}</div></div>}
+          {user?.rol==="bosh"&&<button onClick={()=>{buzz(10);setShowAddKid(true);}} style={{...S.cd,width:"100%",background:"linear-gradient(135deg,#f59e0b0d,#ec48990d)",border:"1px solid #f59e0b33",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+            <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#f59e0b,#ec4899)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>\ud83d\udc76</div>
+            <div style={{flex:1}}>
+              <div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Bola akkaunti qo'shish":lg==="ru"?"Добавить ребёнка":"Add kid account"}</div>
+              <div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Farzandingizga login yarating":"Create a login for your child"}</div>
+            </div>
+            <span style={{fontSize:18,color:th.t2}}>\u203a</span>
+          </button>}
           {user?.rol==="bosh"&&azolar.length>1&&<div style={{...S.cd}}>
             <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:3,display:"flex",alignItems:"center",gap:6}}>👨‍👩‍👧‍👦 {lg==="uz"?"Oila a'zolari va ruxsatlar":lg==="ru"?"Участники и доступы":"Members & access"}</div>
             <div style={{fontSize:10,color:th.t2,marginBottom:12}}>{lg==="uz"?"Kimga umumiy hisobotni ko'rishga ruxsat berasiz?":"Who can view the full family report?"}</div>
