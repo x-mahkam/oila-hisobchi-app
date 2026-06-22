@@ -1,6 +1,6 @@
 import{useState,useEffect,useCallback,useMemo,useRef}from"react";
 import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
-import{db}from"./firebase.js";
+import{db,auth,fbAuth}from"./firebase.js";
 
 const MK=d=>d?{bg:"#090e1c",sur:"#111827",surH:"#192035",bor:"#1e293b",ac:"#6366f1",ac2:"#818cf8",gr:"#10b981",rd:"#ef4444",am:"#f59e0b",t1:"#f1f5f9",t2:"#94a3b8",dark:true}:{bg:"#eef2ff",sur:"#ffffff",surH:"#f5f7ff",bor:"#e2e8f0",ac:"#6366f1",ac2:"#4f46e5",gr:"#059669",rd:"#dc2626",am:"#d97706",t1:"#0f172a",t2:"#64748b",dark:false};
 
@@ -372,14 +372,33 @@ export default function App(){
     }
     setRateL(false);
   };
+  const handleResetPw=async()=>{
+    const email=fEm.trim().toLowerCase();
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"Avval emailingizni kiriting":"Enter your email first","err");
+    try{
+      await auth.resetPassword(email);
+      ok$(lg==="uz"?"Parolni tiklash xati "+email+" ga yuborildi! Pochtangizni tekshiring.":"Reset email sent to "+email);
+    }catch(e){
+      ok$(lg==="uz"?"Xato: "+(e.code||e.message):"Error","err");
+    }
+  };
   const auth=async()=>{
    try{
     const dialNow=reg?((COUNTRIES.find(c=>c.code===fCountry)||{}).dial||""):fDial;
     const telKey=(dialNow+fTel.trim()).replace(/[^0-9+]/g,"");
     if(reg){
-      if(!fIsm.trim()||!fTel.trim()||fPw.length<4)return ok$(lg==="uz"?"Ism, telefon va parol (4+ belgi) kiriting":"Enter name, phone and password","err");
+      if(!fIsm.trim()||!fTel.trim()||fPw.length<6)return ok$(lg==="uz"?"Ism, telefon va parol (6+ belgi) kiriting":"Enter name, phone and password (6+)","err");
+      if(!fEm.trim()||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fEm.trim()))return ok$(lg==="uz"?"To'g'ri email kiriting (parolni tiklash uchun zarur)":"Enter valid email","err");
       if(await db.g("tel9_"+normTel(fTel)))return ok$(lg==="uz"?"Bu telefon allaqachon ro'yxatda":"Phone already registered","err");
-      const uid="u"+Date.now(),ph=await hp(fPw);
+      // Firebase Auth orqali akkaunt yaratish (parol Firebase'da xavfsiz saqlanadi)
+      let authUser;
+      try{
+        authUser=await auth.register(fEm.trim().toLowerCase(),fPw);
+      }catch(e){
+        const msg=e.code==="auth/email-already-in-use"?(lg==="uz"?"Bu email allaqachon ishlatilgan":"Email already in use"):e.code==="auth/weak-password"?(lg==="uz"?"Parol juda zaif (6+ belgi)":"Weak password"):(lg==="uz"?"Ro'yxatda xato: ":"Register error: ")+(e.code||e.message);
+        return ok$(msg,"err");
+      }
+      const uid=authUser.uid,ph=await hp(fPw);
       if(join){
         if(!fKd.trim())return ok$(t.fa,"err");
         const o=await db.g("oila_"+fKd.trim());if(!o)return ok$(t.ffe,"err");
@@ -410,20 +429,21 @@ export default function App(){
         localStorage.setItem("oilaV7",JSON.stringify({uid}));setUser(nu);setOila(no_);setAzolar([nu]);setXar([]);setDar([]);setMaq([]);setScr("bosh");ok$(t.fc3);
       }
     }else{
-      if(!fTel.trim()||!fPw.trim())return ok$(lg==="uz"?"Telefon va parol kiriting":"Enter phone and password","err");
-      const n9=normTel(fTel);
-      // tel9_ asosiy kalit (oxirgi 9 raqam) - har doim bir xil
-      let uid=await db.g("tel9_"+n9);
-      if(!uid)uid=await db.g("tel_"+telKey);
-      if(!uid){
-        console.log("LOGIN: qidirilgan tel9_"+n9+", topilmadi. fTel="+fTel);
-        return ok$((lg==="uz"?"Topilmadi: ":"Not found: ")+n9+" ("+(lg==="uz"?"shu raqamni ro'yxatdan o'tkazganmisiz?":"registered?")+")","err");
+      // Email + parol bilan kirish (Firebase Auth)
+      const email=fEm.trim().toLowerCase();
+      if(!email||!fPw.trim())return ok$(lg==="uz"?"Email va parol kiriting":"Enter email and password","err");
+      let authUser;
+      try{
+        authUser=await auth.login(email,fPw);
+      }catch(e){
+        const msg=(e.code==="auth/wrong-password"||e.code==="auth/invalid-credential")?(lg==="uz"?"Email yoki parol noto'g'ri":"Wrong email or password"):e.code==="auth/user-not-found"?(lg==="uz"?"Foydalanuvchi topilmadi":"User not found"):e.code==="auth/too-many-requests"?(lg==="uz"?"Ko'p urinish. Biroz kuting.":"Too many attempts"):(lg==="uz"?"Kirishda xato: ":"Login error: ")+(e.code||e.message);
+        return ok$(msg,"err");
       }
-      const u=await db.g("user_"+uid);if(!u)return ok$(t.ue,"err");
-      if(await hp(fPw)!==u.ph)return ok$(t.we,"err");
-      // Eski akkauntga tel9 qo'shamiz (keyingi safar oson kirsin)
-      try{await db.s("tel9_"+n9,uid);}catch(e){}
-      localStorage.setItem("oilaV7",JSON.stringify({uid}));setUser(u);await loadFam(u);setScr("bosh");ok$(t.wc+", "+u.ism+" \ud83d\udc4b");
+      // Kirgandan keyin user ma'lumotini olamiz (endi request.auth bor)
+      let u=await db.g("user_"+authUser.uid);
+      if(!u){const oldUid=await db.g("em_"+email);if(oldUid)u=await db.g("user_"+oldUid);}
+      if(!u)return ok$(lg==="uz"?"Profil topilmadi":"Profile not found","err");
+      localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));setUser(u);await loadFam(u);setScr("bosh");ok$(t.wc+", "+u.ism+" \ud83d\udc4b");
     }
    }catch(err){
      console.error("AUTH ERROR:",err);
@@ -583,7 +603,7 @@ export default function App(){
     const v=Number(fBj);if(!v||v<=0)return ok$(t.ec,"err");
     const u={...oila,budjet:v,katLimits:fKL};await db.s("oila_"+oila.id,u);setOila(u);ok$(t.sa);
   };
-  const logout=()=>{localStorage.removeItem("oilaV7");setUser(null);setOila(null);setAzolar([]);setXar([]);setDar([]);setMaq([]);setScr("login");};
+  const logout=()=>{try{auth.logout();}catch(e){}localStorage.removeItem("oilaV7");setUser(null);setOila(null);setAzolar([]);setXar([]);setDar([]);setMaq([]);setScr("login");};
   const addQarz=async()=>{
     if(!qarzKim.trim()||!qarzSum||Number(qarzSum)<=0)return ok$(t.fa,"err");
     const item={id:Date.now(),uid:user.id,tur:qarzTur,kim:qarzKim.trim(),summa:Number(qarzSum),izoh:qarzIzoh,sana:qarzSana,qaytSana:qarzQaytSana,paid:false,paidSana:""};
@@ -1349,18 +1369,12 @@ export default function App(){
           <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div>
         {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
-        {!reg&&<><label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
-        <div style={{display:"flex",gap:8,marginBottom:11}}>
-          <div style={{display:"flex",alignItems:"center",gap:4,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 10px",flexShrink:0,width:96}}>
-            <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.dial===fDial)||{flag:"🌐"}).flag}</span>
-            <input style={{background:"none",border:"none",outline:"none",color:th.t1,fontSize:14,fontWeight:700,width:52}} type="tel" value={fDial} onChange={e=>{let v=e.target.value.replace(/[^0-9+]/g,"");if(!v.startsWith("+"))v="+"+v;setFDial(v);const c=COUNTRIES.find(x=>x.dial===v);if(c)setFCountry(c.code);}} placeholder="+998"/>
-          </div>
-          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
-        </div></>}
-        {reg&&<><label style={S.lb}>{lg==="uz"?"Email (ixtiyoriy)":lg==="ru"?"Email (необязательно)":"Email (optional)"}</label>
+        {!reg&&<><label style={S.lb}>{lg==="uz"?"Email":lg==="ru"?"Email":"Email"}</label>
+        <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
+        {reg&&<><label style={S.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
         <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
         <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
-        <input style={{...S.ip,marginBottom:reg?14:4}} type="password" value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 4 belgi":"Min 4 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
+        <input style={{...S.ip,marginBottom:reg?14:4}} type="password" value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 6 belgi":"Min 6 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
         {reg&&<>
           <div style={{display:"flex",gap:8,marginBottom:13}}>
             <button onClick={()=>setJoin(false)} style={S.tb(!join)}>{lg==="uz"?"Yangi oila":"New family"}</button>
@@ -1382,6 +1396,7 @@ export default function App(){
           </div></>}
         </>}
         <button onClick={auth} style={S.bt()}>{reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
+        {!reg&&<button onClick={handleResetPw} style={{background:"none",border:"none",color:th.ac,cursor:"pointer",fontSize:13,fontWeight:600,marginTop:14,width:"100%",textAlign:"center",padding:"6px"}}>{lg==="uz"?"Parolni unutdingizmi?":lg==="ru"?"Забыли пароль?":"Forgot password?"}</button>}
       </div>
     </div>
   </div>;

@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -13,6 +14,39 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const fbDB = getFirestore(app);
+export const fbAuth = getAuth(app);
+
+// ===== AUTHENTICATION (email + parol) =====
+export const auth = {
+  // Ro'yxatdan o'tish: email + parol
+  async register(email, password) {
+    const cred = await createUserWithEmailAndPassword(fbAuth, email, password);
+    // Tasdiqlash xati yuborish (ixtiyoriy, blokirovka qilmaymiz)
+    try { await sendEmailVerification(cred.user); } catch (e) {}
+    return cred.user; // user.uid - Firebase Auth ID
+  },
+  // Kirish: email + parol
+  async login(email, password) {
+    const cred = await signInWithEmailAndPassword(fbAuth, email, password);
+    return cred.user;
+  },
+  // Parolni tiklash (email orqali)
+  async resetPassword(email) {
+    await sendPasswordResetEmail(fbAuth, email);
+  },
+  // Chiqish
+  async logout() {
+    await signOut(fbAuth);
+  },
+  // Joriy foydalanuvchi
+  current() {
+    return fbAuth.currentUser;
+  },
+  // Holat kuzatuvi (kirgan/chiqqan)
+  onChange(cb) {
+    return onAuthStateChanged(fbAuth, cb);
+  }
+};
 
 // Ma'lumotlar qatlami (db.g / db.s) - Firestore bilan
 const DB = "oilaV7_";
