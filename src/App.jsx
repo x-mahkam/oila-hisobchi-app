@@ -402,18 +402,21 @@ export default function App(){
   const sendResetEmail=async()=>{
     const email=resetInput.trim().toLowerCase();
     if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"To'g'ri email kiriting":"Enter valid email","err");
+    // Avval email ro'yxatda bormi - o'zimiz tekshiramiz (Firebase buni aytmaydi)
+    let exists=false;
+    try{const uid=await db.g("em_"+email);if(uid)exists=true;}catch(e){}
+    if(!exists){
+      // Ro'yxatdan o'tmagan - ro'yxatga yo'naltiramiz
+      ok$(lg==="uz"?"Bu email ro'yxatdan o'tmagan. Ro'yxatdan o'ting.":"Email not registered. Please sign up.","err");
+      setTimeout(()=>{setShowResetScreen(false);setReg(true);setFEm(email);},1600);
+      return;
+    }
+    // Email ro'yxatda bor - tiklash xatini yuboramiz
     try{
       await auth.resetPassword(email);
       setResetSent(true);
-      ok$(lg==="uz"?"✅ Xat yuborildi!":"Email sent!");
     }catch(e){
-      if(e.code==="auth/user-not-found"){
-        // Email ro'yxatdan o'tmagan - ro'yxatga taklif
-        ok$(lg==="uz"?"Bu email ro'yxatdan o'tmagan. Ro'yxatdan o'ting.":"Email not registered. Please sign up.","err");
-        setTimeout(()=>{setShowResetScreen(false);setReg(true);setFEm(email);},1500);
-      }else{
-        ok$(lg==="uz"?"Xato: "+(e.code||e.message):"Error","err");
-      }
+      ok$(lg==="uz"?"Xato: "+(e.code||e.message):"Error","err");
     }
   };
   const doAuth=async()=>{
