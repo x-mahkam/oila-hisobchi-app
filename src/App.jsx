@@ -704,6 +704,9 @@ export default function App(){
 
       // Summани so'z bilan (oddiy)
       const summaText=fmtN(summaSom,val,false);
+      const verifyData="OILA-HISOBCHI|TILXAT|ID:"+q.id+"|"+qarzdor+"->"+kreditor+"|"+summaSom+"|"+sanaStr;
+      const verifyQR="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data="+encodeURIComponent(verifyData);
+      const hujjatRaqami="OH-"+String(q.id).slice(-8);
 
       const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
         @page{size:A4;margin:2cm}
@@ -720,29 +723,43 @@ export default function App(){
         .sign-line{border-top:1px solid #333;margin-top:40px;padding-top:6px;font-size:12px}
         .foot{margin-top:40px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:12px}
         .stamp{margin-top:20px;padding:12px;border:1.5px dashed #4f46e5;border-radius:8px;background:#4f46e508;font-size:11px;color:#4f46e5;text-align:center}
+        .doc-num{text-align:right;font-size:11px;color:#666;margin-bottom:8px}
+        .clause{margin:12px 0;text-align:justify}
+        .num{display:inline-block;width:22px;font-weight:bold}
+        .verify-box{margin-top:24px;display:flex;align-items:center;gap:16px;padding:14px 16px;border:2px solid #4f46e5;border-radius:10px;background:#4f46e506}
+        .verify-box img{width:90px;height:90px}
+        .legal{margin-top:18px;font-size:11px;color:#444;line-height:1.6;background:#fafafa;border-left:3px solid #4f46e5;padding:10px 14px}
       </style></head><body>
+        <div class="doc-num">${lg==="uz"?"Hujjat №":lg==="ru"?"Документ №":"Document №"} ${hujjatRaqami}</div>
         <div class="head">
           <div class="title">${lg==="uz"?"TILXAT":lg==="ru"?"РАСПИСКА":"RECEIPT"}</div>
-          <div class="sub">${lg==="uz"?"qarz olish to'g'risida":lg==="ru"?"о получении долга":"of debt"}</div>
+          <div class="sub">${lg==="uz"?"pul qarzi olinganligi to'g'risida":lg==="ru"?"о получении денежного займа":"of a monetary loan"}</div>
         </div>
         <div class="body">
-          <p>${lg==="uz"?"Men":lg==="ru"?"Я":"I"}, <span class="field">${qarzdor}</span>${qarzdorTel?" (tel: "+qarzdorTel+")":""}, ${lg==="uz"?"quyidagi shaxsdan":lg==="ru"?"получил(а) от":"received from"} <span class="field">${kreditor}</span>${kreditorTel?" (tel: "+kreditorTel+")":""} ${lg==="uz"?"qarz sifatida":lg==="ru"?"в долг":"as a loan"}:</p>
+          <p>${sanaStr}</p>
+          <div class="clause"><span class="num">1.</span>${lg==="uz"?"Men":lg==="ru"?"Я":"I"}, <span class="field">${qarzdor}</span>${qarzdorTel?", tel: "+qarzdorTel:""} (${lg==="uz"?"bundan keyin — Qarzdor":lg==="ru"?"далее — Должник":"hereinafter — Debtor"}), ${lg==="uz"?"o'z ixtiyorim bilan, quyidagi shaxsdan":lg==="ru"?"добровольно получил(а) от":"voluntarily received from"} <span class="field">${kreditor}</span>${kreditorTel?", tel: "+kreditorTel:""} (${lg==="uz"?"bundan keyin — Kreditor":lg==="ru"?"далее — Кредитор":"hereinafter — Creditor"}) ${lg==="uz"?"naqd pul mablag'ini qarz sifatida oldim":lg==="ru"?"денежные средства в долг":"a monetary loan"}:</div>
           <p style="text-align:center"><span class="sum">${summaText}</span></p>
-          <p>${lg==="uz"?"summasini naqd/o'tkazma orqali oldim.":lg==="ru"?"наличными/переводом.":"in cash/transfer."}</p>
-          <p>${lg==="uz"?"Qarz olingan sana":lg==="ru"?"Дата получения":"Date received"}: <span class="field">${sanaStr}</span></p>
-          <p>${lg==="uz"?"Qaytarish muddati":lg==="ru"?"Срок возврата":"Return by"}: <span class="field">${qaytStr}</span></p>
-          <p>${lg==="uz"?"Yuqorida ko'rsatilgan summani belgilangan muddatda to'liq qaytarishni zimmamga olaman.":lg==="ru"?"Обязуюсь вернуть указанную сумму в полном объёме в установленный срок.":"I undertake to return the full amount by the agreed date."}</p>
+          <div class="clause"><span class="num">2.</span>${lg==="uz"?"Yuqoridagi summani":lg==="ru"?"Указанную сумму обязуюсь вернуть до":"I undertake to repay the above amount by"} <span class="field">${qaytStr}</span> ${lg==="uz"?"sanasigacha to'liq qaytarishni zimmamga olaman.":""}</div>
+          <div class="clause"><span class="num">3.</span>${lg==="uz"?"Mazkur tilxat ikki tomonning erkin xohish-irodasi asosida tuzildi. Tomonlar hujjat mazmuni va oqibatlarini to'liq anglaydilar.":lg==="ru"?"Расписка составлена по доброй воле обеих сторон.":"Made by free will of both parties."}</div>
+          <div class="clause"><span class="num">4.</span>${lg==="uz"?"Nizo kelib chiqqan taqdirda, tomonlar uni muzokara yo'li bilan, kelisha olmagan holda esa O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etadilar.":lg==="ru"?"Споры решаются переговорами или в суде.":"Disputes resolved by negotiation or court."}</div>
         </div>
         <div class="sign">
-          <div class="sign-box"><div class="sign-line">${lg==="uz"?"Qarzdor (imzo)":lg==="ru"?"Должник (подпись)":"Debtor (signature)"}<br>${qarzdor}</div></div>
-          <div class="sign-box"><div class="sign-line">${lg==="uz"?"Kreditor (imzo)":lg==="ru"?"Кредитор (подпись)":"Creditor (signature)"}<br>${kreditor}</div></div>
+          <div class="sign-box"><div class="sign-line">${lg==="uz"?"Qarzdor":lg==="ru"?"Должник":"Debtor"}<br>${qarzdor}<br>${lg==="uz"?"(imzo)":lg==="ru"?"(подпись)":"(signature)"}</div></div>
+          <div class="sign-box"><div class="sign-line">${lg==="uz"?"Kreditor":lg==="ru"?"Кредитор":"Creditor"}<br>${kreditor}<br>${lg==="uz"?"(imzo)":lg==="ru"?"(подпись)":"(signature)"}</div></div>
         </div>
-        <div class="stamp">
-          🔒 ${lg==="uz"?"Bu hujjat 'Oila Hisobchi' ilovasida ikki tomon tomonidan elektron tasdiqlangan":lg==="ru"?"Документ подтверждён обеими сторонами в приложении 'Oila Hisobchi'":"Confirmed by both parties in 'Oila Hisobchi' app"}<br>
-          ${lg==="uz"?"Tasdiqlangan sana":"Confirmed"}: ${sanaStr} · ID: ${q.id}
+        <div class="verify-box">
+          <img src="${verifyQR}" alt="QR"/>
+          <div>
+            <div style="font-size:13px;font-weight:bold;color:#4f46e5">🔒 ${lg==="uz"?"Elektron tasdiq":lg==="ru"?"Электронное подтверждение":"Electronic confirmation"}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${lg==="uz"?"Ushbu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. QR kod hujjat haqiqiyligini bildiradi.":lg==="ru"?"Подтверждён обеими сторонами. QR удостоверяет подлинность.":"Confirmed by both parties. QR verifies authenticity."}</div>
+            <div style="font-size:10px;color:#888;margin-top:4px">${lg==="uz"?"Hujjat raqami":"Doc"}: ${hujjatRaqami} · ID: ${q.id}</div>
+          </div>
+        </div>
+        <div class="legal">
+          <b>${lg==="uz"?"Huquqiy eslatma:":lg==="ru"?"Правовая справка:":"Legal note:"}</b> ${lg==="uz"?"Mazkur tilxat O'zbekiston Respublikasi Fuqarolik kodeksining qarz shartnomasiga oid normalariga muvofiq tuzilgan va tomonlar o'rtasidagi kelishuvni qayd etuvchi yozma dalil hisoblanadi. To'liq yuridik kuchga ega bo'lishi uchun notarial tasdiqlash yoki E-IMZO tavsiya etiladi. Aniq holatlar bo'yicha malakali yuristga murojaat qiling.":lg==="ru"?"Расписка составлена согласно нормам ГК о займе. Для полной силы рекомендуется нотариус или ЭЦП.":"Drawn up per civil-law loan provisions. For full force, notarization or e-signature is recommended."}
         </div>
         <div class="foot">
-          ${lg==="uz"?"⚠️ Bu hujjat tomonlar o'rtasidagi kelishuvni qayd etadi va dalil sifatida xizmat qilishi mumkin. Yuridik maslahat uchun mutaxassisga murojaat qiling. Notarial tasdiqlash huquqiy kuchni oshiradi.":lg==="ru"?"⚠️ Документ фиксирует соглашение сторон. Для юридической силы обратитесь к нотариусу.":"⚠️ This document records the agreement. Consult a lawyer for legal force."}
+          ${lg==="uz"?"Oila Hisobchi ilovasi tomonidan yaratilgan":lg==="ru"?"Создано в Oila Hisobchi":"Generated by Oila Hisobchi"} · ${new Date().toLocaleDateString("uz-UZ")}
         </div>
       </body></html>`;
 
@@ -1370,9 +1387,9 @@ export default function App(){
         <button onClick={finish} style={{background:"none",border:"none",color:th.t2,cursor:"pointer",fontSize:14,fontWeight:600}}>{lg==="uz"?"O'tkazib yuborish":lg==="ru"?"\u041f\u0440\u043e\u043f\u0443\u0441\u0442\u0438\u0442\u044c":"Skip"}</button>
       </div>
       <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 32px",position:"relative",zIndex:2,textAlign:"center"}}>
-        <div style={{width:160,height:160,borderRadius:"50%",background:"linear-gradient(135deg,"+s.color+"22,"+s.color+"08)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:80,marginBottom:40,boxShadow:"0 20px 60px "+s.color+"33",transition:"all .4s"}}>{s.emoji}</div>
-        <div style={{fontSize:28,fontWeight:800,color:th.t1,marginBottom:14}}>{lg==="uz"?s.titleUz:lg==="ru"?s.titleRu:s.titleEn}</div>
-        <div style={{fontSize:15,color:th.t2,lineHeight:1.6,maxWidth:320}}>{lg==="uz"?s.descUz:lg==="ru"?s.descRu:s.descEn}</div>
+        <div className="anim-float" style={{width:160,height:160,borderRadius:"50%",background:"linear-gradient(135deg,"+s.color+"33,"+s.color+"0d)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:84,marginBottom:40,boxShadow:"0 24px 70px "+s.color+"44",transition:"all .4s",border:"1px solid "+s.color+"22"}} key={"emoji"+onbStep}>{s.emoji}</div>
+        <div className="anim-fadeUp" key={"t"+onbStep} style={{fontSize:29,fontWeight:800,color:th.t1,marginBottom:14,letterSpacing:"-0.5px"}}>{lg==="uz"?s.titleUz:lg==="ru"?s.titleRu:s.titleEn}</div>
+        <div className="anim-fadeUp" key={"d"+onbStep} style={{fontSize:15,color:th.t2,lineHeight:1.65,maxWidth:320,animationDelay:".1s"}}>{lg==="uz"?s.descUz:lg==="ru"?s.descRu:s.descEn}</div>
       </div>
       <div style={{padding:"24px 32px 44px",position:"relative",zIndex:2}}>
         <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:28}}>
@@ -2146,11 +2163,11 @@ export default function App(){
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginTop:6}}>
               <button onClick={exportExcel} disabled={exportLoading} style={{...S.bt("#10b981","#059669"),marginBottom:0,display:"flex",alignItems:"center",justifyContent:"center",gap:6,opacity:exportLoading?.6:1}}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2"/><path d="M5 6l2.5 3L5 12M9 12h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                {exportLoading?"...":"Excel"}
+                {exportLoading?"...":"Excel"}{!isPremium&&<span style={{position:"absolute",top:-6,right:-6,fontSize:8,background:"#f59e0b",color:"#fff",borderRadius:8,padding:"1px 5px",fontWeight:800}}>PRO</span>}
               </button>
-              <button onClick={exportPDF} style={{...S.bt("#ef4444","#dc2626"),marginBottom:0,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              <button onClick={exportPDF} style={{...S.bt("#ef4444","#dc2626"),marginBottom:0,position:"relative",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2"/><path d="M5 4h5l3 3v7H5V4z" stroke="white" strokeWidth="1.3" strokeLinejoin="round"/><line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth="1.2" strokeLinecap="round"/></svg>
-                PDF
+                PDF{!isPremium&&<span style={{position:"absolute",top:-6,right:-6,fontSize:8,background:"#f59e0b",color:"#fff",borderRadius:8,padding:"1px 5px",fontWeight:800}}>PRO</span>}
               </button>
             </div>
             <button onClick={aiAdv} style={{...S.bt(),marginTop:8,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.brain(th.ac)}{t.aa}</button>
