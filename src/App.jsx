@@ -333,8 +333,19 @@ export default function App(){
   },[]);
   useEffect(()=>{(async()=>{
     try{
-      const s=localStorage.getItem("oilaV7");
-      if(s){const{uid}=JSON.parse(s);const u=await db.g("user_"+uid);if(u){setUser(u);setScr("bosh");loadFam(u);}}
+      // Firebase Auth holatini kuzatamiz - faqat kirgan bo'lsa ma'lumot o'qiymiz
+      auth.onChange(async(fbUser)=>{
+        if(fbUser){
+          // Kirgan: localStorage'dagi uid yoki Auth uid bilan user topamiz
+          let uid=null;
+          try{const s=localStorage.getItem("oilaV7");if(s)uid=JSON.parse(s).uid;}catch(e){}
+          if(!uid)uid=fbUser.uid;
+          const u=await db.g("user_"+uid);
+          if(u){setUser(u);setScr("bosh");loadFam(u);}
+          else{const u2=await db.g("user_"+fbUser.uid);if(u2){setUser(u2);setScr("bosh");loadFam(u2);}}
+        }
+        // Kirmagan: login ekranida qoladi (ma'lumot o'qimaymiz)
+      });
       const dl=localStorage.getItem("oilaV7L");if(dl&&TL[dl])setLg(dl);
       const dd=localStorage.getItem("oilaV7D");if(dd!=null)setDark(dd!=="false");
       const dv=localStorage.getItem("oilaV7V");if(dv){const v=VALS.find(x=>x.id===dv);if(v)setVal(v);}
