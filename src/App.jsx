@@ -382,7 +382,13 @@ export default function App(){
     setRateL(true);
     let ok2=false;
     // Bir nechta CORS proxy orqali urinish (artifact tashqi APIni bloklashi mumkin)
-    const sources=["https://cbu.uz/uz/arkhiv-kursov-valyut/json/","https://corsproxy.io/?url=https://cbu.uz/uz/arkhiv-kursov-valyut/json/"];
+    const cbuUrl="https://cbu.uz/uz/arkhiv-kursov-valyut/json/";
+    const sources=[
+      "https://api.allorigins.win/raw?url="+encodeURIComponent(cbuUrl),
+      "https://corsproxy.io/?url="+encodeURIComponent(cbuUrl),
+      cbuUrl,
+      "https://api.codetabs.com/v1/proxy/?quest="+cbuUrl
+    ];
     for(const url of sources){
       try{
         const res=await fetch(url);
@@ -733,10 +739,12 @@ export default function App(){
       const summaSoz=lg==="uz"?sonSoz(summaSom):"";
       const summaText=summaRaqam+(summaSoz?" ("+summaSoz+" so'm)":"");
       const hujjatRaqami="OH-"+String(q.id).slice(-8);
-      // QR -> ilovaning tekshiruv havolasi (skanerlaganda hujjat ma'lumoti chiroyli ko'rinadi)
-      const verifyParams="tilxat="+encodeURIComponent(JSON.stringify({id:q.id,q:qarzdor,k:kreditor,s:summaSom,d:sanaStr,r:qaytStr,n:hujjatRaqami}));
-      const verifyUrl=window.location.origin+"/?"+verifyParams;
-      const verifyQR="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data="+encodeURIComponent(verifyUrl);
+      // QR -> ilovaning tekshiruv havolasi (skanerlaganda hujjat chiroyli ko'rinadi)
+      // Ixcham format: uzun bo'lib QR sig'masligi uchun qisqa
+      const tilxatJson=JSON.stringify({id:q.id,q:qarzdor,k:kreditor,s:summaSom,d:sanaStr,r:qaytStr,n:hujjatRaqami});
+      const verifyUrl=window.location.origin+"/?tilxat="+encodeURIComponent(tilxatJson);
+      // QR API uchun URL bir marta kodlanadi
+      const verifyQR="https://api.qrserver.com/v1/create-qr-code/?size=150x150&ecc=L&data="+encodeURIComponent(verifyUrl);
 
       const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
         @page{size:A4;margin:2cm}
@@ -1761,7 +1769,7 @@ export default function App(){
         </div>
         <div style={{...S.cd,marginBottom:14}}>
           <div style={{...S.row,marginBottom:12}}>
-            <div><div style={{fontSize:13,fontWeight:700,color:th.t1,display:"flex",alignItems:"center",gap:6}}>{Ico.bank(th.ac)}{t.rates}</div><div style={{fontSize:10,color:th.t2,marginTop:2}}>{t.rSub}</div></div>
+            <div><div style={{fontSize:13,fontWeight:700,color:th.t1,display:"flex",alignItems:"center",gap:6}}>{Ico.bank(th.ac)}{t.rates}</div><div style={{fontSize:10,color:th.t2,marginTop:2}}>{t.rSub}{(()=>{try{const rt=localStorage.getItem("oilaV7RatesT");if(rt){const d=new Date(rt);const today=new Date().toDateString()===d.toDateString();return " · "+(today?(lg==="uz"?"bugun":lg==="ru"?"сегодня":"today"):d.toLocaleDateString("uz-UZ"))+" "+d.toLocaleTimeString("uz-UZ",{hour:"2-digit",minute:"2-digit"});}}catch(e){}return"";})()}</div></div>
             <button onClick={fetchRates} style={{background:"none",border:"1px solid "+th.bor,borderRadius:9,padding:"4px 10px",cursor:"pointer",fontSize:11,color:th.t2,display:"flex",alignItems:"center",gap:4}}>{Ico.repeat(th.t2)}{lg==="uz"?"Yangilash":"Refresh"}</button>
           </div>
           {rateL&&<div style={{textAlign:"center",padding:"12px 0",color:th.t2,fontSize:13}}>{t.ldd}</div>}
