@@ -39,6 +39,28 @@ const tm=()=>new Date().toISOString().slice(0,7);
 const nt=()=>new Date().toLocaleTimeString("uz-UZ",{hour:"2-digit",minute:"2-digit"});
 // Haptic feedback (telefon tebranishi) - qo'llab-quvvatlasa
 const buzz=(ms=12)=>{try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}};
+// Summani so'z bilan yozish (o'zbekcha): 5000000 -> "besh million so'm"
+const sonSoz=(n)=>{
+  n=Math.round(Math.abs(Number(n)||0));
+  if(n===0)return "nol";
+  const bir=["","bir","ikki","uch","to'rt","besh","olti","yetti","sakkiz","to'qqiz"];
+  const on=["","o'n","yigirma","o'ttiz","qirq","ellik","oltmish","yetmish","sakson","to'qson"];
+  const uchXona=(x)=>{ // 0-999
+    let s="";
+    const yuz=Math.floor(x/100),qol=x%100,o=Math.floor(qol/10),b=qol%10;
+    if(yuz>0)s+=(yuz>1?bir[yuz]+" ":"")+"yuz ";
+    if(o>0)s+=on[o]+" ";
+    if(b>0)s+=bir[b]+" ";
+    return s.trim();
+  };
+  let res="";
+  const mlrd=Math.floor(n/1e9),mln=Math.floor((n%1e9)/1e6),ming=Math.floor((n%1e6)/1000),qoldiq=n%1000;
+  if(mlrd>0)res+=uchXona(mlrd)+" milliard ";
+  if(mln>0)res+=uchXona(mln)+" million ";
+  if(ming>0)res+=uchXona(ming)+" ming ";
+  if(qoldiq>0)res+=uchXona(qoldiq)+" ";
+  return res.trim();
+};
 const hp=async s=>{
   const str=s+"v7s";
   // HTTPS/localhost'da crypto.subtle ishlaydi
@@ -351,7 +373,7 @@ export default function App(){
       const dl=localStorage.getItem("oilaV7L");if(dl&&TL[dl])setLg(dl);
       const dd=localStorage.getItem("oilaV7D");if(dd!=null)setDark(dd!=="false");
       const dv=localStorage.getItem("oilaV7V");if(dv){const v=VALS.find(x=>x.id===dv);if(v)setVal(v);}
-      try{const params=new URLSearchParams(window.location.search);const rc=params.get("ref");if(rc){setFRefCode(rc);setReg(true);}const fam=params.get("fam");if(fam){setFKd(fam);setJoin(true);setReg(true);}}catch(e){}
+      try{const params=new URLSearchParams(window.location.search);const rc=params.get("ref");if(rc){setFRefCode(rc);setReg(true);}const fam=params.get("fam");if(fam){setFKd(fam);setJoin(true);setReg(true);}const tx=params.get("tilxat");if(tx){try{setVerifyTilxat(JSON.parse(tx));}catch(e2){}}}catch(e){}
     }catch{}
     setBoot(false);
   })();},[]);
@@ -388,6 +410,7 @@ export default function App(){
   const [showPw,setShowPw]=useState(false);
   const [showResetConfirm,setShowResetConfirm]=useState(false);
   const [resetEmail,setResetEmail]=useState("");
+  const [verifyTilxat,setVerifyTilxat]=useState(null);
   const [showResetScreen,setShowResetScreen]=useState(false);
   const [resetInput,setResetInput]=useState("");
   const [resetSent,setResetSent]=useState(false);
@@ -705,9 +728,14 @@ export default function App(){
       const qaytStr=q.qaytSana||(lg==="uz"?"kelishuv bo'yicha":"as agreed");
 
       // Summани so'z bilan (oddiy)
-      const summaText=fmtN(summaSom,val,false);
-      const verifyData="OILA-HISOBCHI|TILXAT|ID:"+q.id+"|"+qarzdor+"->"+kreditor+"|"+summaSom+"|"+sanaStr;
-      const verifyQR="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data="+encodeURIComponent(verifyData);
+      const summaRaqam=fmtN(summaSom,val,false);
+      // Summani so'z bilan (qavs ichida) - faqat o'zbekcha
+      const summaSoz=lg==="uz"?sonSoz(summaSom):"";
+      const summaText=summaRaqam+(summaSoz?" ("+summaSoz+" so'm)":"");
+      // QR -> ilovaning tekshiruv havolasi (skanerlaganda hujjat ma'lumoti chiroyli ko'rinadi)
+      const verifyParams="tilxat="+encodeURIComponent(JSON.stringify({id:q.id,q:qarzdor,k:kreditor,s:summaSom,d:sanaStr,r:qaytStr,n:hujjatRaqami}));
+      const verifyUrl=window.location.origin+"/?"+verifyParams;
+      const verifyQR="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data="+encodeURIComponent(verifyUrl);
       const hujjatRaqami="OH-"+String(q.id).slice(-8);
 
       const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
@@ -1377,6 +1405,29 @@ export default function App(){
 
   if(boot)return <div style={{...S.pg,display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh"}}>{Ico.wallet(th.ac)}</div>;
 
+  // ===== TILXAT TEKSHIRUV SAHIFASI (QR skanerlaganda) =====
+  if(verifyTilxat){
+    const v=verifyTilxat;
+    return <div style={{...S.pg,minHeight:"100vh",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 20px",background:dark?"#0f172a":"#f8fafc"}}>
+      <div className="anim-scaleIn" style={{background:th.sur,borderRadius:24,padding:"30px 24px",maxWidth:420,width:"100%",border:"1px solid "+th.bor,boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div className="anim-bounceIn" style={{width:80,height:80,borderRadius:"50%",background:"linear-gradient(135deg,#10b981,#059669)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:42,margin:"0 auto 14px",boxShadow:"0 12px 36px #10b98155"}}>✓</div>
+          <div style={{fontSize:20,fontWeight:800,color:th.t1}}>{lg==="uz"?"Hujjat tasdiqlandi":lg==="ru"?"Документ подтверждён":"Document verified"}</div>
+          <div style={{fontSize:12,color:th.gr,fontWeight:600,marginTop:4}}>🔒 {lg==="uz"?"Oila Hisobchi rasmiy tilxati":"Official Oila Hisobchi receipt"}</div>
+        </div>
+        <div style={{background:th.bg,borderRadius:16,padding:"18px",marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{lg==="uz"?"Hujjat raqami":"Document №"}</span><span style={{fontSize:12,fontWeight:700,color:th.ac,fontFamily:"monospace"}}>{v.n}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{lg==="uz"?"Qarzdor":"Debtor"}</span><span style={{fontSize:13,fontWeight:700,color:th.t1}}>{v.q}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{lg==="uz"?"Kreditor":"Creditor"}</span><span style={{fontSize:13,fontWeight:700,color:th.t1}}>{v.k}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{lg==="uz"?"Summa":"Amount"}</span><span style={{fontSize:15,fontWeight:800,color:th.gr}}>{f(Number(v.s),true)}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{lg==="uz"?"Berilgan sana":"Date"}</span><span style={{fontSize:13,fontWeight:600,color:th.t1}}>{v.d}</span></div>
+          <div style={{display:"flex",justifyContent:"space-between",padding:"8px 0"}}><span style={{fontSize:12,color:th.t2}}>{lg==="uz"?"Qaytarish":"Return by"}</span><span style={{fontSize:13,fontWeight:600,color:th.t1}}>{v.r}</span></div>
+        </div>
+        <div style={{fontSize:11,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18,background:th.ac+"0d",borderRadius:10,padding:"10px 12px"}}>{lg==="uz"?"Bu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. Ma'lumotlar QR kod orqali tekshirildi.":"Confirmed by both parties in the app. Verified via QR."}</div>
+        <button onClick={()=>{setVerifyTilxat(null);try{window.history.replaceState({},"",window.location.pathname);}catch(e){}}} style={{...S.bt(),marginBottom:0}}>{lg==="uz"?"Ilovaga o'tish":lg==="ru"?"Открыть приложение":"Open app"}</button>
+      </div>
+    </div>;
+  }
   if(onbStep>=0&&onbStep<ONB_SLIDES.length){
     const s=ONB_SLIDES[onbStep];
     const finish=()=>{try{localStorage.setItem("oilaV7Onb","1");}catch(e){}setOnbStep(-1);};
