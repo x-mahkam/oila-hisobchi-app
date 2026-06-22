@@ -258,6 +258,7 @@ export default function App(){
   const [tupId,setTupId]=useState(null);
   const [tupS,setTupS]=useState("");
   const [reg,setReg]=useState(false);
+  const [kidLoginMode,setKidLoginMode]=useState(false);
   const [join,setJoin]=useState(false);
   const [faqO,setFaqO]=useState(null);
   const [edN,setEdN]=useState(false);
@@ -449,9 +450,9 @@ export default function App(){
   const [showResetScreen,setShowResetScreen]=useState(false);
   const [resetInput,setResetInput]=useState("");
   const [resetSent,setResetSent]=useState(false);
-  const switchAuthMode=(toReg)=>{
-    // Ro'yxat <-> Kirish almashganda maydonlarni tozalaymiz
-    setReg(toReg);
+  const switchAuthMode=(toReg,kidMode=false)=>{
+    // Ro'yxat <-> Kirish <-> Bola almashganda maydonlarni tozalaymiz
+    setReg(toReg);setKidLoginMode(kidMode);
     setFIsm("");setFEm("");setFPw("");setFTel("");setFKd("");setFRel("");setFON("");
     setShowPw(false);setJoin(false);
   };
@@ -491,6 +492,22 @@ export default function App(){
   };
   const doAuth=async()=>{
    try{
+    // BOLA KIRISHI (login + parol, telefonsiz)
+    if(kidLoginMode){
+      const loginKey=fTel.trim().toLowerCase();
+      if(!loginKey||!fPw.trim())return ok$(lg==="uz"?"Login va parolni yozing":"Enter login and password","err");
+      const kidUid=await db.gFresh("kidlogin_"+loginKey);
+      if(!kidUid)return ok$(lg==="uz"?"Login topilmadi. Ota-onangdan so'ra.":"Login not found","err");
+      const ku=await db.g("user_"+kidUid);
+      if(!ku||ku.rol!=="kid")return ok$(lg==="uz"?"Login topilmadi":"Not found","err");
+      if(await hp(fPw)!==ku.ph)return ok$(lg==="uz"?"Parol noto'g'ri":"Wrong password","err");
+      buzz(15);
+      try{await auth.loginAnon();}catch(e){}
+      localStorage.setItem("oilaV7",JSON.stringify({uid:ku.id,kid:true}));
+      setUser(ku);await loadFam(ku);setScr("bosh");
+      ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+ku.ism+" 👋");
+      return;
+    }
     const dialNow=reg?((COUNTRIES.find(c=>c.code===fCountry)||{}).dial||""):fDial;
     const telKey=(dialNow+fTel.trim()).replace(/[^0-9+]/g,"");
     if(reg){
@@ -1590,9 +1607,10 @@ export default function App(){
         {["uz","ru","en"].map(l=><button key={l} onClick={()=>{setLg(l);localStorage.setItem("oilaV7L",l);}} style={{...S.ch(lg===l),padding:"5px 12px"}}>{l.toUpperCase()}</button>)}
         <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...S.ch(true,th.t2),padding:"5px 12px",display:"flex",alignItems:"center",gap:4}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?(lg==="uz"?"Kunduz":"Light"):(lg==="uz"?"Tungi":"Dark")}</button>
       </div>
-      <div style={{display:"flex",gap:8,marginBottom:18}}>
-        <button onClick={()=>switchAuthMode(false)} style={S.tb(!reg)}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
-        <button onClick={()=>switchAuthMode(true)} style={S.tb(reg)}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
+      <div style={{display:"flex",gap:6,marginBottom:18}}>
+        <button onClick={()=>switchAuthMode(false,false)} style={{...S.tb(!reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
+        <button onClick={()=>switchAuthMode(true,false)} style={{...S.tb(reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
+        <button onClick={()=>switchAuthMode(false,true)} style={{...S.tb(kidLoginMode),fontSize:13,padding:"11px 6px"}}>👶 {lg==="uz"?"Bola":lg==="ru"?"\u0420\u0435\u0431\u0451\u043d\u043e\u043a":"Kid"}</button>
       </div>
       <div style={S.cd}>
         {reg&&<><label style={S.lb}>{lg==="uz"?"Ism familiya":lg==="ru"?"Имя и фамилия":"Full name"}</label><input style={S.ip} value={fIsm} onChange={e=>setFIsm(e.target.value)} placeholder={lg==="uz"?"Ism familiyangiz":lg==="ru"?"Имя Фамилия":"First and last name"}/>
@@ -1616,16 +1634,19 @@ export default function App(){
           <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div>
         {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
-        {!reg&&<><label style={S.lb}>{lg==="uz"?"Telefon yoki bola logini":lg==="ru"?"Телефон или логин ребёнка":"Phone or kid login"}</label>
-        <div style={{display:"flex",gap:8,marginBottom:6}}>
+        {/* BOLA KIRISHI: faqat login + parol */}
+        {kidLoginMode&&<><div style={{textAlign:"center",marginBottom:14}}><div style={{fontSize:36,marginBottom:6}}>👶</div><div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ota-onang bergan login va parolni yoz":lg==="ru"?"Введи логин от родителей":"Enter the login your parent gave you"}</div></div>
+        <label style={S.lb}>{lg==="uz"?"Logining":"Your login"}</label>
+        <input style={S.ip} type="text" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase())} placeholder="mohichehra25" autoFocus/></>}
+        {/* ODDIY KIRISH: telefon */}
+        {!reg&&!kidLoginMode&&<><label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
+        <div style={{display:"flex",gap:8,marginBottom:11}}>
           <div style={{display:"flex",alignItems:"center",gap:4,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 10px",flexShrink:0,width:96}}>
             <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.dial===fDial)||{flag:"🌐"}).flag}</span>
             <input style={{background:"none",border:"none",outline:"none",color:th.t1,fontSize:14,fontWeight:700,width:52}} type="tel" value={fDial} onChange={e=>{let v=e.target.value.replace(/[^0-9+]/g,"");if(!v.startsWith("+"))v="+"+v;setFDial(v);const c=COUNTRIES.find(x=>x.dial===v);if(c)setFCountry(c.code);}} placeholder="+998"/>
           </div>
-          <input style={{...S.ip,marginBottom:0,flex:1}} type="text" value={fTel} onChange={e=>setFTel(e.target.value)} placeholder={lg==="uz"?"Telefon yoki login":"Phone or login"}/>
-        </div>
-        <div style={{fontSize:11,color:th.t2,marginBottom:10,marginTop:6,display:"flex",alignItems:"center",gap:5,background:th.ac+"0d",borderRadius:8,padding:"7px 10px"}}>👶 {lg==="uz"?"Bola akkaunti: login va parolni yozing (kod shart emas)":lg==="ru"?"Детский аккаунт: введите логин и пароль":"Kid account: enter login and password"}</div>
-        <div style={{fontSize:10,color:th.t2,marginBottom:11,paddingLeft:4}}>👶 {lg==="uz"?"Bola bo'lsangiz, loginingizni yozing (masalan: mohichehra25)":"Kids: enter your login"}</div></>}
+          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
+        </div></>}
         {reg&&<><label style={S.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
         <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
         <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
@@ -1654,8 +1675,8 @@ export default function App(){
             </div>}
           </div></>}
         </>}
-        <button onClick={doAuth} style={S.bt()}>{reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
-        {!reg&&<button onClick={handleResetPw} style={{background:"none",border:"none",color:th.ac,cursor:"pointer",fontSize:13,fontWeight:600,marginTop:14,width:"100%",textAlign:"center",padding:"6px"}}>{lg==="uz"?"Parolni unutdingizmi?":lg==="ru"?"Забыли пароль?":"Forgot password?"}</button>}
+        <button onClick={doAuth} style={S.bt()}>{kidLoginMode?(lg==="uz"?"👶 Kirish":"👶 Login"):reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
+        {!reg&&!kidLoginMode&&<button onClick={handleResetPw} style={{background:"none",border:"none",color:th.ac,cursor:"pointer",fontSize:13,fontWeight:600,marginTop:14,width:"100%",textAlign:"center",padding:"6px"}}>{lg==="uz"?"Parolni unutdingizmi?":lg==="ru"?"Забыли пароль?":"Forgot password?"}</button>}
       </div>
     </div>
     {showResetScreen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetScreen(false)}>
