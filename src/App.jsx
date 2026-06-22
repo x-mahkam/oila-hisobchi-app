@@ -37,6 +37,8 @@ const ADMIN_TEL="937414866";
 const td=()=>new Date().toISOString().slice(0,10);
 const tm=()=>new Date().toISOString().slice(0,7);
 const nt=()=>new Date().toLocaleTimeString("uz-UZ",{hour:"2-digit",minute:"2-digit"});
+// Haptic feedback (telefon tebranishi) - qo'llab-quvvatlasa
+const buzz=(ms=12)=>{try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}};
 const hp=async s=>{
   const str=s+"v7s";
   // HTTPS/localhost'da crypto.subtle ishlaydi
@@ -266,7 +268,7 @@ export default function App(){
   const th=useMemo(()=>MK(dark),[dark]);
   const t=useMemo(()=>TL[lg]||TL.uz,[lg]);
   const f=useCallback((n,sh)=>fmtN(n,val,sh),[val]);
-  const ok$=useCallback((msg,type="ok")=>{setTst({msg,type});setTimeout(()=>setTst({msg:"",type:"ok"}),3000);},[]);
+  const ok$=useCallback((msg,type="ok")=>{try{if(navigator.vibrate)navigator.vibrate(type==="err"?[8,40,8]:12);}catch(e){}setTst({msg,type});setTimeout(()=>setTst({msg:"",type:"ok"}),3000);},[]);
   const fireConfetti=useCallback(()=>{setConfetti(true);setTimeout(()=>setConfetti(false),2500);},[]);
   const S={
     pg:{minHeight:"100vh",background:th.bg,fontFamily:"'Inter',system-ui,sans-serif",color:th.t1,maxWidth:430,margin:"0 auto"},
@@ -1635,10 +1637,11 @@ export default function App(){
       </div>
       {showS&&<input autoFocus style={{...S.ip,marginBottom:0,marginTop:8}} value={srch} onChange={e=>setSrch(e.target.value)} placeholder={t.sch}/>}
       {scr==="bosh"&&!showS&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7}}>
-        {[{l:t.inc,v:myD,c:th.gr},{l:t.exp,v:myX,c:bRng},{l:t.bal,v:myBal,c:myBal>=0?th.gr:th.rd}].map(item=>(
-          <div key={item.l} style={{background:th.bg,borderRadius:12,padding:"9px 10px",textAlign:"center",border:"1px solid "+th.bor}}>
-            <div style={{fontSize:9,color:th.t2,fontWeight:600}}>{item.l}</div>
-            <div style={{fontSize:13,fontWeight:800,color:item.c,marginTop:2}}>{item.v<0?"-":""}{f(Math.abs(item.v),true)}</div>
+        {[{l:t.inc,v:myD,c:th.gr,ic:"📈"},{l:t.exp,v:myX,c:bRng,ic:"📉"},{l:t.bal,v:myBal,c:myBal>=0?th.gr:th.rd,ic:"💰"}].map((item,ix)=>(
+          <div key={item.l} className="anim-fadeUp" style={{background:"linear-gradient(135deg,"+item.c+"0d,"+th.bg+")",borderRadius:13,padding:"10px 10px",textAlign:"center",border:"1px solid "+item.c+"22",animationDelay:(ix*0.08)+"s",position:"relative",overflow:"hidden"}}>
+            <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:item.c,opacity:.6}}/>
+            <div style={{fontSize:9,color:th.t2,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:3}}><span style={{fontSize:10}}>{item.ic}</span>{item.l}</div>
+            <div style={{fontSize:13,fontWeight:800,color:item.c,marginTop:3}}>{item.v<0?"-":""}{f(Math.abs(item.v),true)}</div>
           </div>
         ))}
       </div>}
@@ -1667,8 +1670,10 @@ export default function App(){
         );})}
       </div>}
       {scr==="bosh"&&!showS&&<div>
-        <div style={{background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",borderRadius:20,padding:"18px 20px",marginBottom:16,position:"relative",overflow:"hidden"}}>
-          <div style={{position:"absolute",top:-20,right:-20,width:100,height:100,borderRadius:"50%",background:"rgba(255,255,255,0.08)",pointerEvents:"none"}}/>
+        <div className="anim-fadeUp" style={{background:"linear-gradient(135deg,"+th.ac+" 0%,"+th.ac2+" 60%,#a78bfa 100%)",borderRadius:24,padding:"20px 22px",marginBottom:16,position:"relative",overflow:"hidden",boxShadow:"0 12px 40px "+th.ac+"40"}}>
+          <div style={{position:"absolute",top:-30,right:-30,width:130,height:130,borderRadius:"50%",background:"rgba(255,255,255,0.10)",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",bottom:-40,left:-20,width:90,height:90,borderRadius:"50%",background:"rgba(255,255,255,0.06)",pointerEvents:"none"}}/>
+          <div style={{position:"absolute",top:20,right:40,width:8,height:8,borderRadius:"50%",background:"rgba(255,255,255,0.3)",pointerEvents:"none"}}/>
           <div style={{position:"relative"}}>
             <div style={{fontSize:14,color:"rgba(255,255,255,0.85)",marginBottom:2}}>{(()=>{const h=new Date().getHours();const greet=h<6?(lg==="uz"?"Xayrli tun":lg==="ru"?"Доброй ночи":"Good night"):h<12?(lg==="uz"?"Xayrli tong":lg==="ru"?"Доброе утро":"Good morning"):h<18?(lg==="uz"?"Xayrli kun":lg==="ru"?"Добрый день":"Good afternoon"):(lg==="uz"?"Xayrli kech":lg==="ru"?"Добрый вечер":"Good evening");return greet;})()}</div>
             <div style={{fontSize:20,fontWeight:800,color:"#fff",marginBottom:14}}>{user?.ism||""} 👋</div>
@@ -1691,7 +1696,7 @@ export default function App(){
           <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:4}}>
             {QUICK_ADD.map((q,i)=>{
               const kat=KATS.find(k=>k.id===q.kat);
-              return <button key={i} onClick={()=>{setQuickItem(q);setQuickSum("");}} style={{flexShrink:0,background:th.sur,border:"1px solid "+th.bor,borderRadius:14,padding:"10px 14px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:68}}>
+              return <button key={i} onClick={()=>{buzz(10);setQuickItem(q);setQuickSum("");}} style={{flexShrink:0,background:th.sur,border:"1px solid "+th.bor,borderRadius:14,padding:"10px 14px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:68}}>
                 <span style={{fontSize:24}}>{q.emoji}</span>
                 <span style={{fontSize:10,color:th.t2,fontWeight:600}}>{q[lg]||q.uz}</span>
               </button>;
@@ -2768,8 +2773,8 @@ export default function App(){
     </div>}
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:th.sur,borderTop:"1px solid "+th.bor,padding:"8px 12px 22px",display:"flex",justifyContent:"space-around",alignItems:"center",zIndex:20}}>
       {navItems.map(item=>item.pr
-        ?<button key="add" onClick={()=>setScr("qoshish")} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}}>{Ico.add("#fff")}</button>
-        :<button key={item.id} onClick={()=>setScr(item.id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,opacity:scr===item.id?1:0.5,transition:"opacity .2s",padding:"4px 8px"}}>
+        ?<button key="add" onClick={()=>{buzz(15);setScr("qoshish");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
+        :<button key={item.id} onClick={()=>{buzz(8);setScr(item.id);}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,opacity:scr===item.id?1:0.5,transition:"all .2s",padding:"4px 8px",transform:scr===item.id?"translateY(-2px)":"none"}}>
           {item.id==="bosh"&&Ico.navHome(scr===item.id?th.ac:th.t2)}
           {item.id==="grafik"&&Ico.navChart(scr===item.id?th.ac:th.t2)}
           {item.id==="qarz"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="3" y="6" width="20" height="14" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M3 10h20" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.3"/><path d="M7 14h5M16 14h3" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
