@@ -32,6 +32,20 @@ const VAZIFA_PRESETS=[
   {emoji:"📖",uz:"Ingliz tili so'z yodlash",ru:"Учить англ. слова",en:"Learn English words",reward:20000}
 ];
 const GOAL_PRESETS=[{emoji:"🏠",uz:"Uy xarid qilish",ru:"Покупка дома",en:"Buy a house",rang:"#10b981"},{emoji:"🚗",uz:"Mashina xarid qilish",ru:"Покупка машины",en:"Buy a car",rang:"#3b82f6"},{emoji:"✈️",uz:"Sayohat",ru:"Путешествие",en:"Travel",rang:"#f59e0b"},{emoji:"🕋",uz:"Umra ziyorati",ru:"Умра",en:"Umrah",rang:"#8b5cf6"},{emoji:"🕌",uz:"Haj amallari",ru:"Хадж",en:"Hajj",rang:"#06b6d4"},{emoji:"💍",uz:"To'y marosimi",ru:"Свадьба",en:"Wedding",rang:"#ec4899"},{emoji:"📱",uz:"Telefon / Texnika",ru:"Телефон",en:"Phone / Gadget",rang:"#6366f1"},{emoji:"🎓",uz:"Ta'lim / O'qish",ru:"Образование",en:"Education",rang:"#ef4444"},{emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",en:"Emergency",rang:"#14b8a6"},{emoji:"💼",uz:"Biznes boshlash",ru:"Бизнес",en:"Business",rang:"#f97316"}];
+const KID_GOAL_PRESETS=[
+  {emoji:"🚲",uz:"Velosiped",ru:"Велосипед",en:"Bicycle",rang:"#10b981"},
+  {emoji:"📱",uz:"Telefon",ru:"Телефон",en:"Phone",rang:"#6366f1"},
+  {emoji:"🎮",uz:"O'yin pristavka",ru:"Игровая приставка",en:"Game console",rang:"#8b5cf6"},
+  {emoji:"🧸",uz:"O'yinchoq",ru:"Игрушка",en:"Toy",rang:"#ec4899"},
+  {emoji:"⚽",uz:"Futbol to'pi",ru:"Мяч",en:"Football",rang:"#f59e0b"},
+  {emoji:"📚",uz:"Kitoblar",ru:"Книги",en:"Books",rang:"#ef4444"},
+  {emoji:"🎨",uz:"Rasm chizish to'plami",ru:"Набор для рисования",en:"Art set",rang:"#06b6d4"},
+  {emoji:"🛴",uz:"Samokat",ru:"Самокат",en:"Scooter",rang:"#14b8a6"},
+  {emoji:"🎧",uz:"Naushnik",ru:"Наушники",en:"Headphones",rang:"#a855f7"},
+  {emoji:"👟",uz:"Krossovka",ru:"Кроссовки",en:"Sneakers",rang:"#f97316"},
+  {emoji:"🎂",uz:"Tug'ilgan kun",ru:"День рождения",en:"Birthday",rang:"#ec4899"},
+  {emoji:"💰",uz:"Jamg'arma",ru:"Накопления",en:"Savings",rang:"#10b981"}
+];
 
 const RELATIONS=[{id:"ota",emoji:"\ud83d\udc68",uz:"Ota",ru:"\u041e\u0442\u0435\u0446",en:"Father"},{id:"ona",emoji:"\ud83d\udc69",uz:"Ona",ru:"\u041c\u0430\u0442\u044c",en:"Mother"},{id:"turmush",emoji:"\ud83d\udc91",uz:"Turmush o'rtoq",ru:"\u0421\u0443\u043f\u0440\u0443\u0433(\u0430)",en:"Spouse"},{id:"farzand",emoji:"\ud83d\udc66",uz:"Farzand",ru:"\u0420\u0435\u0431\u0451\u043d\u043e\u043a",en:"Child"},{id:"aka",emoji:"\ud83d\udc68",uz:"Aka",ru:"\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Older brother"},{id:"uka",emoji:"\ud83d\udc66",uz:"Uka",ru:"\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Younger brother"},{id:"opa",emoji:"\ud83d\udc69",uz:"Opa",ru:"\u0421\u0442\u0430\u0440\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Older sister"},{id:"singil",emoji:"\ud83d\udc67",uz:"Singil",ru:"\u041c\u043b\u0430\u0434\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Younger sister"},{id:"boshqa",emoji:"\ud83d\udc64",uz:"Boshqa",ru:"\u0414\u0440\u0443\u0433\u043e\u0435",en:"Other"}];
 const TL={
@@ -1892,7 +1906,7 @@ export default function App(){
         </div>
       </div>
       {showS&&<input autoFocus style={{...S.ip,marginBottom:0,marginTop:8}} value={srch} onChange={e=>setSrch(e.target.value)} placeholder={t.sch}/>}
-      {scr==="bosh"&&!showS&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7}}>
+      {scr==="bosh"&&!showS&&!isKid&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7}}>
         {[{l:t.inc,v:myD,c:th.gr,ic:"📈"},{l:t.exp,v:myX,c:bRng,ic:"📉"},{l:t.bal,v:myBal,c:myBal>=0?th.gr:th.rd,ic:"💰"}].map((item,ix)=>(
           <div key={item.l} className="anim-fadeUp" style={{background:"linear-gradient(135deg,"+item.c+"0d,"+th.bg+")",borderRadius:13,padding:"10px 10px",textAlign:"center",border:"1px solid "+item.c+"22",animationDelay:(ix*0.08)+"s",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:item.c,opacity:.6}}/>
@@ -2168,14 +2182,14 @@ export default function App(){
       </div>}
       {scr==="maqsad"&&<div>
         <div style={{...S.row,marginBottom:16}}>
-          <div style={{fontSize:16,fontWeight:700,color:th.t1}}>{t.goal}</div>
+          <div style={{fontSize:16,fontWeight:700,color:th.t1}}>{isKid?(lg==="uz"?"🌟 Orzularim":lg==="ru"?"🌟 Мои мечты":"🌟 My dreams"):t.goal}</div>
           <button onClick={()=>setAddM(v=>!v)} style={{background:th.ac,border:"none",borderRadius:10,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,boxShadow:"0 4px 12px "+th.ac+"44"}}>{Ico.add("#fff")}</button>
         </div>
         {addM&&<div style={{...S.cd,border:"1.5px solid "+th.ac+"55",marginBottom:14}}>
           <div style={{fontSize:13,fontWeight:700,color:th.ac,marginBottom:13}}>{lg==="uz"?"Yangi maqsad":"New goal"}</div>
           <label style={S.lb}>{lg==="uz"?"Tayyor maqsadlar":lg==="ru"?"Готовые цели":"Quick presets"}</label>
           <div style={{display:"flex",gap:8,overflowX:"auto",paddingBottom:8,marginBottom:12}}>
-            {GOAL_PRESETS.map((p,i)=>(
+            {(isKid?KID_GOAL_PRESETS:GOAL_PRESETS).map((p,i)=>(
               <button key={i} onClick={()=>{setMN(p[lg]||p.uz);setMR(p.rang);}} style={{flexShrink:0,background:mN===(p[lg]||p.uz)?p.rang+"18":th.bg,border:"1.5px solid "+(mN===(p[lg]||p.uz)?p.rang:th.bor),borderRadius:12,padding:"10px 12px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,minWidth:78}}>
                 <span style={{fontSize:24}}>{p.emoji}</span>
                 <span style={{fontSize:10,color:mN===(p[lg]||p.uz)?p.rang:th.t2,fontWeight:600,textAlign:"center",lineHeight:1.2}}>{p[lg]||p.uz}</span>
