@@ -464,7 +464,7 @@ export default function App(){
     }else{
       // Telefon yoki email + parol bilan kirish (Firebase Auth)
       let email=fEm.trim().toLowerCase();
-      // Telefon kiritilgan bo'lsa - login_ ko'rinishidan emailni topamiz
+      // Telefon kiritilgan bo'lsa - tphone_ orqali emailni topamiz
       if(!email&&fTel.trim()){
         const n9=normTel(fTel);
         const foundEmail=await db.g("tphone_"+n9);
