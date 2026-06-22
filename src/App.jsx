@@ -383,9 +383,20 @@ export default function App(){
     }
     setRateL(false);
   };
+  const [showPw,setShowPw]=useState(false);
+  const genPassword=()=>{
+    const chars="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    let p="";for(let i=0;i<10;i++)p+=chars[Math.floor(Math.random()*chars.length)];
+    setFPw(p);setShowPw(true);
+    ok$(lg==="uz"?"Parol yaratildi! Eslab qoling yoki saqlang.":"Password generated!");
+  };
   const handleResetPw=async()=>{
-    const email=fEm.trim().toLowerCase();
-    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"Avval emailingizni kiriting":"Enter your email first","err");
+    let email=fEm.trim().toLowerCase();
+    // Telefon kiritilgan bo'lsa - undan emailni topamiz
+    if(!email&&fTel.trim()){
+      const n9=normTel(fTel);const found=await db.g("login_"+n9);if(found)email=found;
+    }
+    if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))return ok$(lg==="uz"?"Telefon yoki email kiriting (email ro'yxatdan o'tgan bo'lishi kerak)":"Enter phone or email","err");
     try{
       await auth.resetPassword(email);
       ok$(lg==="uz"?"Parolni tiklash xati "+email+" ga yuborildi! Pochtangizni tekshiring.":"Reset email sent to "+email);
@@ -393,7 +404,7 @@ export default function App(){
       ok$(lg==="uz"?"Xato: "+(e.code||e.message):"Error","err");
     }
   };
-  const auth=async()=>{
+  const doAuth=async()=>{
    try{
     const dialNow=reg?((COUNTRIES.find(c=>c.code===fCountry)||{}).dial||""):fDial;
     const telKey=(dialNow+fTel.trim()).replace(/[^0-9+]/g,"");
@@ -420,7 +431,7 @@ export default function App(){
         const dialC=(COUNTRIES.find(c=>c.code===fCountry)||{}).dial||"";const tel=(dialC+fTel.trim()).replace(/[^0-9+]/g,"");const n9=normTel(fTel);
         const nu={id:uid,ism:fIsm.trim(),email:fEm.trim().toLowerCase(),tel,ph,oilaId:fKd.trim(),rol:"azo",rel:fRel||"boshqa",photo:null};
         await db.s("user_"+uid,nu);if(fEm.trim())await db.s("em_"+fEm.toLowerCase(),uid);
-        if(n9){await db.s("tel9_"+n9,uid);await db.s("tel_"+tel,uid);}
+        if(n9){await db.s("tel9_"+n9,uid);await db.s("tel_"+tel,uid);await db.s("tphone_"+n9,fEm.trim().toLowerCase());}
         if(fRefCode.trim()){const refUid=fRefCode.trim();const refUser=await db.g("user_"+refUid);if(refUser&&refUid!==uid){const refList=(await db.g("refs_"+refUid))||[];if(!refList.find(r=>r.uid===uid)){refList.push({uid,ism:fIsm.trim(),sana:new Date().toISOString()});await db.s("refs_"+refUid,refList);const rn={id:Date.now()+Math.random(),type:"yangilik",title:lg==="uz"?"Yangi taklif! \ud83c\udf89":"New referral!",body:(fIsm.trim())+" "+(lg==="uz"?"sizning havolangiz orqali qo'shildi":"joined via your link"),sana:new Date().toISOString(),read:false};const rc=(await db.g("notif_"+refUid))||[];await db.s("notif_"+refUid,[rn,...rc].slice(0,100));if(refList.length>=3){const ru=await db.g("user_"+refUid);if(ru){/* premium granted on their next load */}}}}}
         await db.s("x_"+fKd.trim()+"_"+uid,[]);await db.s("d_"+fKd.trim()+"_"+uid,[]);
         o.azolarIds=[...(o.azolarIds||[]),uid];await db.s("oila_"+o.id,o);
@@ -433,16 +444,23 @@ export default function App(){
         const nu={id:uid,ism:fIsm.trim(),email:fEm.trim().toLowerCase(),tel,ph,oilaId:oid,rol:"bosh",rel:"bosh",photo:null};
         const no_={id:oid,nomi:fON.trim(),boshId:uid,azolarIds:[uid],budjet:2000000,katLimits:{}};
         await db.s("user_"+uid,nu);if(fEm.trim())await db.s("em_"+fEm.toLowerCase(),uid);
-        if(n9){await db.s("tel9_"+n9,uid);await db.s("tel_"+tel,uid);}
+        if(n9){await db.s("tel9_"+n9,uid);await db.s("tel_"+tel,uid);await db.s("tphone_"+n9,fEm.trim().toLowerCase());}
         if(fRefCode.trim()){const refUid=fRefCode.trim();const refUser=await db.g("user_"+refUid);if(refUser&&refUid!==uid){const refList=(await db.g("refs_"+refUid))||[];if(!refList.find(r=>r.uid===uid)){refList.push({uid,ism:fIsm.trim(),sana:new Date().toISOString()});await db.s("refs_"+refUid,refList);const rn={id:Date.now()+Math.random(),type:"yangilik",title:lg==="uz"?"Yangi taklif! \ud83c\udf89":"New referral!",body:(fIsm.trim())+" "+(lg==="uz"?"sizning havolangiz orqali qo'shildi":"joined via your link"),sana:new Date().toISOString(),read:false};const rc=(await db.g("notif_"+refUid))||[];await db.s("notif_"+refUid,[rn,...rc].slice(0,100));}}}
         await db.s("oila_"+oid,no_);await db.s("x_"+oid+"_"+uid,[]);await db.s("d_"+oid+"_"+uid,[]);
         const cV=COUNTRIES.find(c=>c.code===fCountry);if(cV){const vv=VALS.find(x=>x.id===cV.val);if(vv){setVal(vv);localStorage.setItem("oilaV7V",vv.id);}}
         localStorage.setItem("oilaV7",JSON.stringify({uid}));setUser(nu);setOila(no_);setAzolar([nu]);setXar([]);setDar([]);setMaq([]);setScr("bosh");ok$(t.fc3);
       }
     }else{
-      // Email + parol bilan kirish (Firebase Auth)
-      const email=fEm.trim().toLowerCase();
-      if(!email||!fPw.trim())return ok$(lg==="uz"?"Email va parol kiriting":"Enter email and password","err");
+      // Telefon yoki email + parol bilan kirish (Firebase Auth)
+      let email=fEm.trim().toLowerCase();
+      // Telefon kiritilgan bo'lsa - login_ ko'rinishidan emailni topamiz
+      if(!email&&fTel.trim()){
+        const n9=normTel(fTel);
+        const foundEmail=await db.g("tphone_"+n9);
+        if(foundEmail)email=foundEmail;
+        else return ok$(lg==="uz"?"Bu telefon topilmadi. Email bilan kiring yoki ro'yxatdan o'ting.":"Phone not found","err");
+      }
+      if(!email||!fPw.trim())return ok$(lg==="uz"?"Telefon/email va parol kiriting":"Enter phone/email and password","err");
       let authUser;
       try{
         authUser=await auth.login(email,fPw);
@@ -1380,12 +1398,22 @@ export default function App(){
           <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div>
         {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
-        {!reg&&<><label style={S.lb}>{lg==="uz"?"Email":lg==="ru"?"Email":"Email"}</label>
-        <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
+        {!reg&&<><label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
+        <div style={{display:"flex",gap:8,marginBottom:11}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 10px",flexShrink:0,width:96}}>
+            <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.dial===fDial)||{flag:"🌐"}).flag}</span>
+            <input style={{background:"none",border:"none",outline:"none",color:th.t1,fontSize:14,fontWeight:700,width:52}} type="tel" value={fDial} onChange={e=>{let v=e.target.value.replace(/[^0-9+]/g,"");if(!v.startsWith("+"))v="+"+v;setFDial(v);const c=COUNTRIES.find(x=>x.dial===v);if(c)setFCountry(c.code);}} placeholder="+998"/>
+          </div>
+          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
+        </div></>}
         {reg&&<><label style={S.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
         <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
         <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
-        <input style={{...S.ip,marginBottom:reg?14:4}} type="password" value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 6 belgi":"Min 6 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
+        <div style={{position:"relative",marginBottom:reg?14:4}}>
+          <input style={{...S.ip,marginBottom:0,paddingRight:reg?108:44}} type={showPw?"text":"password"} value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 6 belgi":"Min 6 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
+          <button onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:reg?64:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:4}} title={showPw?"Yashirish":"Ko'rsatish"}>{showPw?"🙈":"👁"}</button>
+          {reg&&<button onClick={genPassword} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:th.ac+"18",border:"1px solid "+th.ac+"44",borderRadius:8,cursor:"pointer",fontSize:11,padding:"5px 9px",color:th.ac,fontWeight:700}} title={lg==="uz"?"Parol yaratish":"Generate"}>🎲</button>}
+        </div>
         {reg&&<>
           <div style={{display:"flex",gap:8,marginBottom:13}}>
             <button onClick={()=>setJoin(false)} style={S.tb(!join)}>{lg==="uz"?"Yangi oila":"New family"}</button>
@@ -1406,7 +1434,7 @@ export default function App(){
             </div>}
           </div></>}
         </>}
-        <button onClick={auth} style={S.bt()}>{reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
+        <button onClick={doAuth} style={S.bt()}>{reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
         {!reg&&<button onClick={handleResetPw} style={{background:"none",border:"none",color:th.ac,cursor:"pointer",fontSize:13,fontWeight:600,marginTop:14,width:"100%",textAlign:"center",padding:"6px"}}>{lg==="uz"?"Parolni unutdingizmi?":lg==="ru"?"Забыли пароль?":"Forgot password?"}</button>}
       </div>
     </div>
