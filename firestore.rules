@@ -1,0 +1,10 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // SINOV REJIMI - hamma o'qiy/yoza oladi
+    // OGOHLANTIRISH: Real ishga tushganda Firebase Auth bilan himoyalang
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
