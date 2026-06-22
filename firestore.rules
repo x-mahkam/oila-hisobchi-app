@@ -1,10 +1,16 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // SINOV REJIMI - hamma o'qiy/yoza oladi
-    // OGOHLANTIRISH: Real ishga tushganda Firebase Auth bilan himoyalang
+
+    // Faqat tizimga kirgan (authenticated) foydalanuvchilar o'qiy/yoza oladi.
+    // Bu 'if true' dan ancha xavfsiz: anonim/tashqi kira olmaydi.
+    match /appdata/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Boshqa hamma narsa - taqiqlangan
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
