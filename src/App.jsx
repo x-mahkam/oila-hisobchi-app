@@ -732,11 +732,11 @@ export default function App(){
       // Summani so'z bilan (qavs ichida) - faqat o'zbekcha
       const summaSoz=lg==="uz"?sonSoz(summaSom):"";
       const summaText=summaRaqam+(summaSoz?" ("+summaSoz+" so'm)":"");
+      const hujjatRaqami="OH-"+String(q.id).slice(-8);
       // QR -> ilovaning tekshiruv havolasi (skanerlaganda hujjat ma'lumoti chiroyli ko'rinadi)
       const verifyParams="tilxat="+encodeURIComponent(JSON.stringify({id:q.id,q:qarzdor,k:kreditor,s:summaSom,d:sanaStr,r:qaytStr,n:hujjatRaqami}));
       const verifyUrl=window.location.origin+"/?"+verifyParams;
       const verifyQR="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data="+encodeURIComponent(verifyUrl);
-      const hujjatRaqami="OH-"+String(q.id).slice(-8);
 
       const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>
         @page{size:A4;margin:2cm}
