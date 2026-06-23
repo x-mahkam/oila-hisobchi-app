@@ -300,6 +300,8 @@ export default function App(){
   const [notifTime,setNotifTime]=useState(()=>{try{return localStorage.getItem("oilaV7NotifT")||"20:00";}catch{return "20:00";}});
   const [showScanner,setShowScanner]=useState(false);
   const [scanMsg,setScanMsg]=useState("");
+  const [showQrPick,setShowQrPick]=useState(false);
+  const [qrRawText,setQrRawText]=useState("");
   const [showImport,setShowImport]=useState(false);
   const [importRows,setImportRows]=useState([]);
   const [importStep,setImportStep]=useState("upload");
@@ -1428,7 +1430,7 @@ export default function App(){
             if(codes&&codes.length>0){
               const parsed=parseCheckQR(codes[0].rawValue);
               if(parsed.summa>0){setFS(String(parsed.summa));if(parsed.sana)setFSn(parsed.sana);if(parsed.raqam)setFIz((lg==="uz"?"Chek #":"Receipt #")+parsed.raqam);stopScanner();ok$(lg==="uz"?"✓ "+f(parsed.summa,true)+" — tekshiring va saqlang":"✓ "+f(parsed.summa,true)+" — verify & save");return;}
-              else{setFIz(codes[0].rawValue.slice(0,60));stopScanner();ok$(lg==="uz"?"QR o'qildi, summa topilmadi.":"QR read, no amount.","warn");return;}
+              else{setQrRawText(codes[0].rawValue);stopScanner();setShowQrPick(true);return;}
             }
           }catch(e){}
           scanRafRef.current=requestAnimationFrame(scan);
@@ -3289,6 +3291,61 @@ export default function App(){
         <div style={{color:"#fff",fontSize:14,marginBottom:6}}>{scanMsg}</div>
         <div style={{color:"rgba(255,255,255,.6)",fontSize:12,marginBottom:16}}>{lg==="uz"?"Chekdagi QR kodni ramka ichiga joylang":"Point the receipt QR into the frame"}</div>
         <button onClick={stopScanner} style={{background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.4)",borderRadius:12,padding:"12px 24px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>{lg==="uz"?"Qo'lda kiritish":"Enter manually"}</button>
+      </div>
+    </div>}
+    {showQrPick&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:1001,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowQrPick(false)}>
+      <div onClick={e=>e.stopPropagation()} style={{background:th.card,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"80vh",display:"flex",flexDirection:"column",padding:"0 0 32px"}}>
+        <div style={{padding:"16px 20px 12px",borderBottom:"1.5px solid "+th.border,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{fontSize:15,fontWeight:700,color:th.text}}>{lg==="uz"?"QR matnidan summani tanlang":"Select amount from QR text"}</div>
+          <button onClick={()=>setShowQrPick(false)} style={{background:"none",border:"none",fontSize:22,color:th.sub,cursor:"pointer"}}>×</button>
+        </div>
+        <div style={{padding:"10px 16px 4px"}}>
+          <div style={{fontSize:12,color:th.sub,marginBottom:6}}>{lg==="uz"?"Summa qatoriga bosing:":"Tap the amount line:"}</div>
+        </div>
+        <div style={{overflowY:"auto",flex:1,padding:"0 16px 8px"}}>
+          {qrRawText.split(/\n|\|/).map((line,i)=>{
+            const trimmed=line.trim();
+            if(!trimmed)return null;
+            // Raqam bormi? (3+ raqam ketma-ket)
+            const hasNum=/[0-9]{3,}/.test(trimmed);
+            // Raqamni tozalab olish: vergul/nuqta/bo'sh joy bilan ajratilgan son
+            const numMatch=trimmed.match(/([0-9][0-9 ,.']*[0-9])/);
+            let parsedNum=0;
+            if(numMatch){
+              const clean=numMatch[1].replace(/[ ,']/g,"").replace(/\.(?=[0-9]{3})/g,"");
+              parsedNum=parseInt(clean,10)||0;
+            }
+            return(
+              <div key={i}
+                onClick={()=>{
+                  if(parsedNum>0){
+                    setFS(String(parsedNum));
+                    setShowQrPick(false);
+                    ok$(lg==="uz"?"✓ "+f(parsedNum,true)+" — tekshiring":"✓ "+f(parsedNum,true)+" — verify");
+                  }
+                }}
+                style={{
+                  padding:"10px 14px",
+                  marginBottom:4,
+                  borderRadius:10,
+                  background:hasNum?(th.ac+"18"):th.bg,
+                  border:hasNum?("1.5px solid "+th.ac+"44"):"1.5px solid transparent",
+                  cursor:parsedNum>0?"pointer":"default",
+                  display:"flex",
+                  justifyContent:"space-between",
+                  alignItems:"center",
+                  gap:8
+                }}>
+                <span style={{fontSize:13,color:parsedNum>0?th.text:th.sub,wordBreak:"break-all"}}>{trimmed}</span>
+                {parsedNum>0&&<span style={{fontSize:13,fontWeight:700,color:th.ac,whiteSpace:"nowrap"}}>→ {f(parsedNum,true)}</span>}
+              </div>
+            );
+          })}
+        </div>
+        <div style={{padding:"12px 16px 0"}}>
+          <div style={{fontSize:11,color:th.sub,textAlign:"center"}}>{lg==="uz"?"Xom QR matn:":"Raw QR text:"}</div>
+          <div style={{fontSize:10,color:th.sub,background:th.bg,borderRadius:8,padding:"8px 10px",marginTop:4,wordBreak:"break-all",maxHeight:60,overflow:"hidden"}}>{qrRawText.slice(0,200)}</div>
+        </div>
       </div>
     </div>}
     {showPremModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowPremModal(false)}>
