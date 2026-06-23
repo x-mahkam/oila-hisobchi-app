@@ -434,10 +434,8 @@ export default function App(){
     // Bir nechta CORS proxy orqali urinish (artifact tashqi APIni bloklashi mumkin)
     const cbuUrl="https://cbu.uz/uz/arkhiv-kursov-valyut/json/";
     const sources=[
-      "https://api.allorigins.win/raw?url="+encodeURIComponent(cbuUrl),
-      "https://corsproxy.io/?url="+encodeURIComponent(cbuUrl),
-      cbuUrl,
-      "https://api.codetabs.com/v1/proxy/?quest="+cbuUrl
+      "https://api.codetabs.com/v1/proxy/?quest="+cbuUrl,
+      "https://corsproxy.io/?url="+encodeURIComponent(cbuUrl)
     ];
     for(const url of sources){
       try{
@@ -522,7 +520,7 @@ export default function App(){
       if(!ku||ku.rol!=="kid")return ok$(lg==="uz"?"Login topilmadi":"Not found","err");
       if(await hp(fPw)!==ku.ph)return ok$(lg==="uz"?"Parol noto'g'ri":"Wrong password","err");
       buzz(15);
-      try{await auth.loginAnon();}catch(e){}
+      try{await auth.loginAnon();}catch(e){console.error("Anon login:",e);ok$(lg==="uz"?"Firebase Anonymous yoqilmagan! Ota-onaga ayting.":"Anonymous auth not enabled","err");}
       localStorage.setItem("oilaV7",JSON.stringify({uid:ku.id,kid:true}));
       setUser(ku);await loadFam(ku);setScr("bosh");
       ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+ku.ism+" 👋");
