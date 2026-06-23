@@ -249,11 +249,17 @@ export default function App(){
   const [vazifalar,setVazifalar]=useState([]);
   const [kidBalances,setKidBalances]=useState({});
   const [showAddVazifa,setShowAddVazifa]=useState(false);
+  const [showGift,setShowGift]=useState(false);
+  const [giftSum,setGiftSum]=useState("");
+  const [giftFrom,setGiftFrom]=useState("");
   const [vTitle,setVTitle]=useState("");
   const [vReward,setVReward]=useState("");
   const [vAssignee,setVAssignee]=useState("");
   const [vEmoji,setVEmoji]=useState("📚");
   const [showAddKid,setShowAddKid]=useState(false);
+  const [showGift,setShowGift]=useState(false);
+  const [giftSum,setGiftSum]=useState("");
+  const [giftFrom,setGiftFrom]=useState("");
   const [kidName,setKidName]=useState("");
   const [kidLogin,setKidLogin]=useState("");
   const [kidPw,setKidPw]=useState("");
@@ -749,8 +755,16 @@ export default function App(){
   };
   const tupMq=async()=>{
     if(!tupS||Number(tupS)<=0)return;
-    const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+Number(tupS))>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+Number(tupS))}:m);if(wasComplete){fireConfetti();addNotif("yangilik",lg==="uz"?"Maqsadga yetdingiz! 🎉":"Goal reached! 🎉",(tgtGoal?tgtGoal.ism:"")+" "+(lg==="uz"?"maqsadi bajarildi":"completed"));}
-    await db.s("maq_"+user.oilaId,u);setMaq(u);setTupId(null);setTupS("");ok$(t.ua);
+    const summa=Number(tupS);
+    if(isKid){
+      const bal=kidBalances[user.id]||0;
+      if(summa>bal)return ok$(lg==="uz"?"Cho'ntak pulingiz yetarli emas! Ko'proq vazifa bajaring 💪":"Not enough pocket money!","err");
+      const kb={...kidBalances};kb[user.id]=bal-summa;
+      await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
+    }
+    const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+summa)>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+summa)}:m);if(wasComplete){fireConfetti();buzz(20);addNotif("yangilik",lg==="uz"?"Maqsadga yetdingiz! 🎉":"Goal reached! 🎉",(tgtGoal?tgtGoal.ism:"")+" "+(lg==="uz"?"maqsadi bajarildi":"completed"));}
+    await db.s("maq_"+user.oilaId,u);setMaq(u);setTupId(null);setTupS("");
+    ok$(isKid?(lg==="uz"?"Orzungizga "+f(summa,true)+" jamg'arildi! 🌟":"Saved!"):t.ua);
   };
   const delMq=async id=>{const u=maq.filter(m=>m.id!==id);await db.s("maq_"+user.oilaId,u);setMaq(u);};
   const saveEditMq=async()=>{
@@ -769,6 +783,22 @@ export default function App(){
     const u={...oila,budjet:v,katLimits:fKL};await db.s("oila_"+oila.id,u);setOila(u);ok$(t.sa);
   };
   const logout=()=>{try{auth.logout();}catch(e){}localStorage.removeItem("oilaV7");setUser(null);setOila(null);setAzolar([]);setXar([]);setDar([]);setMaq([]);setScr("login");};
+  // ===== BOLAGA SOVG'A/BERILGAN PUL =====
+  const addGiftMoney=async()=>{
+    if(!giftSum||Number(giftSum)<=0)return ok$(lg==="uz"?"Summani kiriting":"Enter amount","err");
+    buzz(15);
+    const summa=Number(giftSum);
+    const kb={...kidBalances};kb[user.id]=(kb[user.id]||0)+summa;
+    await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
+    // Tarix uchun yozib qo'yamiz
+    try{
+      const hist=(await db.g("kidgift_"+user.id))||[];
+      await db.s("kidgift_"+user.id,[{id:Date.now(),summa,from:giftFrom.trim()||(lg==="uz"?"Sovg'a":"Gift"),sana:td()},...hist].slice(0,100));
+    }catch(e){}
+    setShowGift(false);setGiftSum("");setGiftFrom("");
+    ok$(lg==="uz"?"🎁 "+f(summa,true)+" cho'ntagingizga qo'shildi!":"Added to your pocket!");
+    fireConfetti();
+  };
   // ===== VAZIFALAR TIZIMI =====
   // Vazifa qo'shish (faqat ota-ona/oila boshi)
   const addVazifa=async()=>{
@@ -815,6 +845,31 @@ export default function App(){
     ok$(lg==="uz"?"O'chirildi":"Deleted");
   };
   // Bola akkaunti yaratish (ota-ona profil orqali)
+  // ===== SOVG'A/BERILGAN PUL kiritish (bola cho'ntagiga) =====
+  const addGift=async()=>{
+    const sum=Number(giftSum);
+    if(!sum||sum<=0)return ok$(lg==="uz"?"Summani kiriting":"Enter amount","err");
+    buzz(15);
+    // Cho'ntak puliga qo'shamiz
+    const kb={...kidBalances};
+    kb[user.id]=(kb[user.id]||0)+sum;
+    await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
+    // Tarix uchun saqlaymiz (kim berdi)
+    try{
+      const gifts=(await db.g("gifts_"+user.id))||[];
+      await db.s("gifts_"+user.id,[{id:Date.now(),sum,from:giftFrom.trim()||(lg==="uz"?"Sovg'a":"Gift"),sana:td()},...gifts].slice(0,100));
+    }catch(e){}
+    // Ota-onaga bildirishnoma (nazorat uchun)
+    try{
+      if(user.parentId){
+        const pn=(await db.g("notif_"+user.parentId))||[];
+        await db.s("notif_"+user.parentId,[{id:Date.now(),text:(lg==="uz"?"🎁 "+user.ism+" sovg'a puli kiritdi: +":"Gift added: +")+f(sum,true)+(giftFrom.trim()?" ("+giftFrom.trim()+")":""),sana:new Date().toISOString(),read:false},...pn]);
+      }
+    }catch(e){}
+    setShowGift(false);setGiftSum("");setGiftFrom("");
+    fireConfetti();
+    ok$(lg==="uz"?"🎁 "+f(sum,true)+" cho'ntagingizga qo'shildi!":"Added to your pocket!");
+  };
   const addKidAccount=async()=>{
     if(!kidName.trim()||!kidLogin.trim()||kidPw.length<4)return ok$(lg==="uz"?"Ism, login va parol (4+) kiriting":"Fill all fields","err");
     buzz(12);
@@ -1764,6 +1819,44 @@ export default function App(){
       </div>
     </div>}
     {/* BOLA AKKAUNTI QO'SHISH MODAL */}
+    {/* SOVG'A KIRITISH MODAL */}
+    {showGift&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowGift(false)}>
+      <div className="anim-fadeUp" style={{background:th.bg,borderRadius:"24px 24px 0 0",maxWidth:480,width:"100%",padding:"24px 20px 32px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:40,height:4,borderRadius:2,background:th.bor,margin:"0 auto 18px"}}/>
+        <div style={{fontSize:42,textAlign:"center",marginBottom:8}}>🎁</div>
+        <div style={{fontSize:18,fontWeight:800,color:th.t1,marginBottom:6,textAlign:"center"}}>{lg==="uz"?"Sovg'a puli":lg==="ru"?"Подарок":"Gift money"}</div>
+        <div style={{fontSize:12,color:th.t2,textAlign:"center",marginBottom:18,lineHeight:1.5}}>{lg==="uz"?"Senga kimdir pul berdimi? Cho'ntagingga qo'sh!":"Did someone give you money? Add it!"}</div>
+        <label style={S.lb}>{lg==="uz"?"Qancha?":"How much?"}</label>
+        <MoneyInput value={giftSum} onChange={setGiftSum} placeholder="50 000" th={th} style={S.ip}/>
+        <label style={S.lb}>{lg==="uz"?"Kim berdi? (ixtiyoriy)":"From whom? (optional)"}</label>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+          {[{e:"👵",uz:"Buvi",ru:"Бабушка",en:"Grandma"},{e:"👴",uz:"Bobo",ru:"Дедушка",en:"Grandpa"},{e:"🧔",uz:"Amaki",ru:"Дядя",en:"Uncle"},{e:"👩",uz:"Xola",ru:"Тётя",en:"Aunt"},{e:"🎂",uz:"Tug'ilgan kun",ru:"День рождения",en:"Birthday"},{e:"🎉",uz:"Hayit",ru:"Праздник",en:"Holiday"}].map((g,i)=>(
+            <button key={i} onClick={()=>{buzz(6);setGiftFrom(g[lg]||g.uz);}} style={{display:"flex",alignItems:"center",gap:5,background:giftFrom===(g[lg]||g.uz)?th.gr+"18":th.sur,border:"1.5px solid "+(giftFrom===(g[lg]||g.uz)?th.gr:th.bor),borderRadius:11,padding:"8px 12px",cursor:"pointer",fontSize:13,fontWeight:600,color:th.t1}}>{g.e} {g[lg]||g.uz}</button>
+          ))}
+        </div>
+        <input style={S.ip} value={giftFrom} onChange={e=>setGiftFrom(e.target.value)} placeholder={lg==="uz"?"Yoki o'zingiz yozing...":"Or write..."}/>
+        <button onClick={addGift} style={{...S.bt("#10b981","#059669"),marginTop:6,marginBottom:0}}>{lg==="uz"?"Cho'ntagimga qo'shish":"Add to my pocket"}</button>
+      </div>
+    </div>}
+    {/* SOVG'A PUL MODAL (bola) */}
+    {showGift&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowGift(false)}>
+      <div className="anim-fadeUp" style={{background:th.bg,borderRadius:"24px 24px 0 0",maxWidth:480,width:"100%",padding:"24px 20px 32px"}} onClick={e=>e.stopPropagation()}>
+        <div style={{width:40,height:4,borderRadius:2,background:th.bor,margin:"0 auto 18px"}}/>
+        <div style={{fontSize:42,textAlign:"center",marginBottom:8}}>🎁</div>
+        <div style={{fontSize:18,fontWeight:800,color:th.t1,marginBottom:6,textAlign:"center"}}>{lg==="uz"?"Sovg'a pul qo'shish":lg==="ru"?"Подарочные деньги":"Add gift money"}</div>
+        <div style={{fontSize:12,color:th.t2,textAlign:"center",marginBottom:18,lineHeight:1.5}}>{lg==="uz"?"Buving, boboing yoki qarindoshing bergan pulni cho'ntagingga qo'sh":lg==="ru"?"Добавь деньги от бабушки или дедушки":"Add money from grandparents or relatives"}</div>
+        <label style={S.lb}>{lg==="uz"?"Qancha pul?":"How much?"}</label>
+        <MoneyInput value={giftSum} onChange={setGiftSum} placeholder="50 000" th={th} style={S.ip} autoFocus/>
+        <label style={S.lb}>{lg==="uz"?"Kim berdi? (ixtiyoriy)":"From whom? (optional)"}</label>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:14}}>
+          {[{e:"👵",uz:"Buvim",ru:"Бабушка",en:"Grandma"},{e:"👴",uz:"Bobom",ru:"Дедушка",en:"Grandpa"},{e:"🎂",uz:"Tug'ilgan kun",ru:"День рождения",en:"Birthday"},{e:"🎉",uz:"Hayit",ru:"Праздник",en:"Holiday"}].map((g,i)=>(
+            <button key={i} onClick={()=>{buzz(6);setGiftFrom(g[lg]||g.uz);}} style={{display:"flex",alignItems:"center",gap:5,background:giftFrom===(g[lg]||g.uz)?th.ac+"18":th.sur,border:"1.5px solid "+(giftFrom===(g[lg]||g.uz)?th.ac:th.bor),borderRadius:11,padding:"8px 12px",cursor:"pointer",fontSize:13,fontWeight:600,color:th.t1}}><span style={{fontSize:16}}>{g.e}</span>{g[lg]||g.uz}</button>
+          ))}
+        </div>
+        <input style={S.ip} value={giftFrom} onChange={e=>setGiftFrom(e.target.value)} placeholder={lg==="uz"?"Yoki o'zingiz yozing":"Or type"}/>
+        <button onClick={addGiftMoney} style={{...S.bt(),marginTop:6,marginBottom:0}}>🎁 {lg==="uz"?"Cho'ntakka qo'shish":"Add to pocket"}</button>
+      </div>
+    </div>}
     {showAddKid&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowAddKid(false)}>
       <div className="anim-fadeUp" style={{background:th.bg,borderRadius:"24px 24px 0 0",maxWidth:480,width:"100%",padding:"24px 20px 32px"}} onClick={e=>e.stopPropagation()}>
         <div style={{width:40,height:4,borderRadius:2,background:th.bor,margin:"0 auto 18px"}}/>
@@ -1951,6 +2044,12 @@ export default function App(){
             <div style={{fontSize:34,fontWeight:800,color:"#fff"}}>{f(kidBalances[user.id]||0,true)}</div>
           </div>
         </div>
+        {/* SOVG'A KIRITISH tugmasi */}
+        <button onClick={()=>{buzz(10);setShowGift(true);}} style={{width:"100%",background:"linear-gradient(135deg,#10b98115,#05966908)",border:"1.5px solid #10b98144",borderRadius:16,padding:"13px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:18}}>
+          <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#10b981,#059669)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎁</div>
+          <div style={{flex:1,textAlign:"left"}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Sovg'a puli kiritish":lg==="ru"?"Добавить подарок":"Add gift money"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Buvi, bobo yoki qarindosh bergan pul":"Money from grandparents or relatives"}</div></div>
+          <span style={{fontSize:18,color:th.gr}}>+</span>
+        </button>
         {/* Bola statistikasi */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:18}}>
           {(()=>{const myV=vazifalar.filter(v=>v.assignedTo===user.id);const done=myV.filter(v=>v.status==="approved").length;const pend=myV.filter(v=>v.status==="pending"||v.status==="done").length;const ball=done*10;return[{ic:"🏆",l:lg==="uz"?"Bajarildi":"Done",v:done,c:"#10b981"},{ic:"⏳",l:lg==="uz"?"Vazifa":"To do",v:pend,c:"#f59e0b"},{ic:"⭐",l:lg==="uz"?"Ball":"Points",v:ball,c:"#8b5cf6"}].map((s,i)=>(
