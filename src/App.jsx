@@ -257,9 +257,6 @@ export default function App(){
   const [vAssignee,setVAssignee]=useState("");
   const [vEmoji,setVEmoji]=useState("📚");
   const [showAddKid,setShowAddKid]=useState(false);
-  const [showGift,setShowGift]=useState(false);
-  const [giftSum,setGiftSum]=useState("");
-  const [giftFrom,setGiftFrom]=useState("");
   const [kidName,setKidName]=useState("");
   const [kidLogin,setKidLogin]=useState("");
   const [kidPw,setKidPw]=useState("");
