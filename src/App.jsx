@@ -1770,10 +1770,13 @@ export default function App(){
   </div>;
 
   const isKid=user?.rol==="kid";
+  const hasKids=azolar.some(a=>a.rol==="kid");
   const vazLb=lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks";
   const navItems=isKid
     ?[{id:"bosh",lb:t.home},{id:"vazifa",lb:vazLb},{id:"maqsad",lb:t.goal}]
-    :[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"vazifa",lb:vazLb},{id:"hisobot",lb:t.rep}];
+    :hasKids
+    ?[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"vazifa",lb:vazLb},{id:"hisobot",lb:t.rep}]
+    :[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"maqsad",lb:t.goal},{id:"hisobot",lb:t.rep}];
 
   return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
@@ -2840,7 +2843,7 @@ export default function App(){
           <div style={S.cd}><div style={{fontSize:10,color:th.t2,marginBottom:2,textTransform:"uppercase",letterSpacing:1}}>Email</div><div style={{fontSize:15,fontWeight:600,color:th.t1}}>{user?.email}</div></div>
           <div style={S.cd}><div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:10}}>{lg==="uz"?"Bu oy statistikasi":"Stats"}</div>{[{l:lg==="uz"?"Xarajat":"Expense",v:f(bX.filter(x=>x.uid===user.id).reduce((s,x)=>s+Number(x.summa||0),0),true),c:th.rd},{l:lg==="uz"?"Daromad":"Income",v:f(bD.filter(d=>d.uid===user.id).reduce((s,d)=>s+Number(d.summa||0),0),true),c:th.gr},{l:lg==="uz"?"Jami yozuvlar":"Total records",v:xar.filter(x=>x.uid===user.id).length+" ta",c:th.ac}].map(item=><div key={item.l} style={{...S.row,padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{item.l}</span><span style={{fontSize:13,fontWeight:700,color:item.c}}>{item.v}</span></div>)}</div>
           {user?.rol==="bosh"&&<div style={{...S.cd,background:th.ac+"0d",border:"1px solid "+th.ac+"33"}}><div style={{fontSize:11,color:th.t2,marginBottom:5,fontWeight:600}}>{Ico.key(th.ac)}{t.fc2}</div><div style={{fontFamily:"monospace",fontSize:12,color:th.ac,wordBreak:"break-all",fontWeight:700}}>{oila?.id}</div><div style={{fontSize:10,color:th.t2,marginTop:5}}>{t.fcd}</div></div>}
-          {user?.rol==="bosh"&&<button onClick={()=>{buzz(10);setShowAddKid(true);}} style={{...S.cd,width:"100%",background:"linear-gradient(135deg,#f59e0b0d,#ec48990d)",border:"1px solid #f59e0b33",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
+          {!isKid&&<button onClick={()=>{buzz(10);setShowAddKid(true);}} style={{...S.cd,width:"100%",background:"linear-gradient(135deg,#f59e0b0d,#ec48990d)",border:"1px solid #f59e0b33",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
             <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#f59e0b,#ec4899)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>\ud83d\udc76</div>
             <div style={{flex:1}}>
               <div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Bola akkaunti qo'shish":lg==="ru"?"Добавить ребёнка":"Add kid account"}</div>
