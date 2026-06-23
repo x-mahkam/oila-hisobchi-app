@@ -516,11 +516,12 @@ export default function App(){
       if(!loginKey||!fPw.trim())return ok$(lg==="uz"?"Login va parolni yozing":"Enter login and password","err");
       const kidUid=await db.gFresh("kidlogin_"+loginKey);
       if(!kidUid)return ok$(lg==="uz"?"Login topilmadi. Ota-onangdan so'ra.":"Login not found","err");
+      buzz(15);
+      // AVVAL anonim auth (request.auth bo'lishi uchun), KEYIN ma'lumot o'qiymiz
+      try{await auth.loginAnon();}catch(e){console.error("Anon login:",e);return ok$(lg==="uz"?"Firebase Anonymous yoqilmagan! Ota-onaga ayting.":"Anonymous auth not enabled","err");}
       const ku=await db.g("user_"+kidUid);
       if(!ku||ku.rol!=="kid")return ok$(lg==="uz"?"Login topilmadi":"Not found","err");
-      if(await hp(fPw)!==ku.ph)return ok$(lg==="uz"?"Parol noto'g'ri":"Wrong password","err");
-      buzz(15);
-      try{await auth.loginAnon();}catch(e){console.error("Anon login:",e);ok$(lg==="uz"?"Firebase Anonymous yoqilmagan! Ota-onaga ayting.":"Anonymous auth not enabled","err");}
+      if(await hp(fPw)!==ku.ph){try{await auth.logout();}catch(e){}return ok$(lg==="uz"?"Parol noto'g'ri":"Wrong password","err");}
       localStorage.setItem("oilaV7",JSON.stringify({uid:ku.id,kid:true}));
       setUser(ku);await loadFam(ku);setScr("bosh");
       ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+ku.ism+" 👋");
