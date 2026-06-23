@@ -1267,18 +1267,44 @@ export default function App(){
   const parseCheckQR=(text)=>{
     const res={summa:0,sana:"",raqam:"",raw:text};
     try{
-      // O'zbekiston soliq cheki: ofd.soliq.uz/.../?...&s=SUMMA (s odatda TIYIN = so'm*100)
-      let m=text.match(/[?&]s=([0-9]+(?:\.[0-9]+)?)/i);
+      // O'zbekiston SOLIQ E-POS cheki QR format:
+      // https://ofd.soliq.uz/check?t=YYYYMMDDHHMMSS&r=CHEKNOMER&s=INVOYSNOMER&i=SUMMA_TIYIN
+      // i= jami summa (tiyinda, ya'ni so'm*100)
+      // s= invoys/chek raqami (bu summa EMAS!)
+      // t= vaqt (YYYYMMDDHHmmss)
+      // r= kassa raqami
+      let m;
+
+      // 1) Jami summa: i= parametri (tiyinda)
+      m=text.match(/[?&]i=([0-9]+)/i);
       if(m){
-        let v=parseFloat(m[1]);
-        // s= butun son va katta bo'lsa - tiyinda (so'mga aylantirish uchun /100)
-        if(!m[1].includes(".")&&v>=10000){v=v/100;}
-        res.summa=Math.round(v);
+        const v=parseInt(m[1],10);
+        // i= tiyinda (so'm*100), so'mga aylantirish
+        res.summa=Math.round(v/100);
       }
-      // Sana: c=YYYYMMDD yoki t=YYYYMMDDHHmmss
-      m=text.match(/[?&]c=([0-9]{8})/i)||text.match(/[?&]t=([0-9]{8})/i);
+
+      // 2) Agar i= topilmasa, s= ni sinab ko'r (eski format)
+      if(!res.summa){
+        m=text.match(/[?&]s=([0-9]+(?:\.[0-9]+)?)/i);
+        if(m){
+          let v=parseFloat(m[1]);
+          // s= katta son bo'lsa tiyinda deb hisoblash
+          if(!m[1].includes(".")&&v>=10000){v=v/100;}
+          // s= invoys raqami bo'lishi mumkin - juda katta bo'lsa ishonma (>100 mln so'm)
+          if(v<=100000000){res.summa=Math.round(v);}
+        }
+      }
+
+      // 3) Sana: t=YYYYMMDDHHmmss (birinchi 8 raqam - sana)
+      m=text.match(/[?&]t=([0-9]{8,14})/i);
       if(m){const d=m[1];res.sana=d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6,8);}
-      // Chek raqami
+      else{
+        // c=YYYYMMDD eski format
+        m=text.match(/[?&]c=([0-9]{8})/i);
+        if(m){const d=m[1];res.sana=d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6,8);}
+      }
+
+      // 4) Chek raqami: r= parametri
       m=text.match(/[?&]r=([0-9]+)/i);
       if(m)res.raqam=m[1];
     }catch(e){}
