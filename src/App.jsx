@@ -1436,9 +1436,59 @@ export default function App(){
           try{
             const codes=await detector.detect(videoRef.current);
             if(codes&&codes.length>0){
-              const parsed=parseCheckQR(codes[0].rawValue);
-              if(parsed.summa>0){setFS(String(parsed.summa));if(parsed.sana)setFSn(parsed.sana);if(parsed.raqam)setFIz((lg==="uz"?"Chek #":"Receipt #")+parsed.raqam);stopScanner();ok$(lg==="uz"?"✓ "+f(parsed.summa,true)+" — tekshiring va saqlang":"✓ "+f(parsed.summa,true)+" — verify & save");return;}
-              else{setQrRawText(codes[0].rawValue);stopScanner();setShowQrPick(true);return;}
+              const raw=codes[0].rawValue;
+              stopScanner();
+              setScanMsg(lg==="uz"?"Chek ma'lumotlari yuklanmoqda...":"Loading receipt...");
+              // URL bo'lsa - sahifani fetch qilib, Jami summani olish
+              const isUrl=/^https?:\/\//i.test(raw);
+              if(isUrl){
+                try{
+                  // CORS muammosi bo'lgani uchun allorigins proxy orqali
+                  const proxyUrl="https://api.allorigins.win/get?url="+encodeURIComponent(raw);
+                  const resp=await fetch(proxyUrl,{signal:AbortSignal.timeout(8000)});
+                  const data=await resp.json();
+                  const html=data.contents||"";
+                  // HTML ichidan "Jami to'lov" yoki "Jami" yonidagi summani qidirish
+                  // Ko'p formatlar: "58 000,00" yoki "58000.00" yoki "58,000"
+                  let summa=0;
+                  // "Jami" so'zidan keyin kelgan birinchi pul summasi
+                  const jamiRgx=/[Jj]ami[^<]{0,60}?([\d][\d\s.,]*[\d])/;
+                  const jm=html.replace(/<[^>]+>/g," ").match(jamiRgx);
+                  if(jm){
+                    // Raqamni tozalash: bo'sh joy va ming ajratgichlarni olib tashlash
+                    const numStr=jm[1].replace(/\s/g,"").replace(/,(\d{2})$/,"").replace(/\.(\d{2})$/,"").replace(/[,.\s]/g,"");
+                    const v=parseInt(numStr,10);
+                    if(v>=100&&v<=999999999){summa=v;}
+                  }
+                  if(summa>0){
+                    setFS(String(summa));
+                    // Sana: URL dan t= parametri
+                    const tm=raw.match(/[?&]t=(\d{8})/i);
+                    if(tm){const d=tm[1];setFSn(d.slice(0,4)+"-"+d.slice(4,6)+"-"+d.slice(6,8));}
+                    const rm=raw.match(/[?&]r=(\d+)/i);
+                    if(rm)setFIz((lg==="uz"?"Chek #":"Receipt #")+rm[1]);
+                    ok$(lg==="uz"?"✓ "+f(summa,true)+" — tekshiring va saqlang":"✓ "+f(summa,true)+" — verify & save");
+                  } else {
+                    ok$(lg==="uz"?"Summa topilmadi, qo'lda kiriting":"Amount not found, enter manually","warn");
+                  }
+                }catch(err){
+                  ok$(lg==="uz"?"Chek yuklanmadi, qo'lda kiriting":"Receipt load failed, enter manually","warn");
+                }
+              } else {
+                // URL emas - matn ichidan Jami summani qidirish
+                const jm=raw.replace(/<[^>]+>/g," ").match(/[Jj]ami[^\n]{0,60}?([\d][\d\s.,]*[\d])/);
+                if(jm){
+                  const numStr=jm[1].replace(/\s/g,"").replace(/,(\d{2})$/,"").replace(/\.(\d{2})$/,"").replace(/[,.\s]/g,"");
+                  const v=parseInt(numStr,10);
+                  if(v>=100&&v<=999999999){
+                    setFS(String(v));
+                    ok$(lg==="uz"?"✓ "+f(v,true)+" — tekshiring va saqlang":"✓ "+f(v,true)+" — verify & save");
+                    return;
+                  }
+                }
+                ok$(lg==="uz"?"Summa topilmadi, qo'lda kiriting":"Amount not found, enter manually","warn");
+              }
+              return;
             }
           }catch(e){}
           scanRafRef.current=requestAnimationFrame(scan);
