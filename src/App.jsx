@@ -281,6 +281,8 @@ export default function App(){
   const [edN,setEdN]=useState(false);
   const [newN,setNewN]=useState("");
   const [pTab,setPTab]=useState("main");
+  const [stars,setStars]=useState(0);
+  const [gardenData,setGardenData]=useState({level:0,watered:null,totalStars:0});
   const [pinStep,setPinStep]=useState("idle");
   const [pinVal,setPinVal]=useState("");
   const [pinCfm,setPinCfm]=useState("");
@@ -403,6 +405,13 @@ export default function App(){
     const pd=await db.g("paydone_"+u.id);
     if(pd){setQarzDonePrompt({tur:pd.tur,summa:pd.summa,kim:pd.kim,id:pd.id,paid:true});await db.s("paydone_"+u.id,null);}
     if((refsR||[]).length>=3&&!localStorage.getItem("oilaV7Prem")){localStorage.setItem("oilaV7Prem","1");setIsPremium(true);}
+    // Garden va yulduzchalar
+    try{
+      const g=await db.g("garden_"+u.oilaId);
+      const s=await db.g("stars_"+u.oilaId);
+      if(g)setGardenData(g);
+      if(s!=null)setStars(s);
+    }catch(e){}
   },[]);
   useEffect(()=>{(async()=>{
     try{
@@ -656,6 +665,52 @@ export default function App(){
      ok$((lg==="uz"?"Xatolik: ":"Error: ")+(err.code||err.message||"Firebase ulanmadi. Internetni tekshiring."),"err");
    }
   };
+  // ===== GARDEN / YULDUZCHA TIZIMI =====
+  const loadGarden=async(oilaId)=>{
+    try{
+      const g=await db.g("garden_"+oilaId);
+      const s=await db.g("stars_"+oilaId);
+      if(g)setGardenData(g);
+      if(s!=null)setStars(s);
+    }catch(e){}
+  };
+  const addStar=async(count=1,reason="")=>{
+    if(!user?.oilaId)return;
+    try{
+      const cur=(await db.g("stars_"+user.oilaId))||0;
+      const next=cur+count;
+      await db.s("stars_"+user.oilaId,next);
+      setStars(next);
+      // Star log
+      const log=(await db.g("starlog_"+user.oilaId))||[];
+      log.unshift({uid:user.id,ism:user.ism,count,reason,sana:new Date().toISOString()});
+      await db.s("starlog_"+user.oilaId,log.slice(0,50));
+    }catch(e){}
+  };
+  const waterGarden=async()=>{
+    if(!user?.oilaId)return;
+    const cost=5;
+    if(stars<cost){ok$(lg==="uz"?"Kamida 5⭐ kerak":"Need 5⭐ to water","warn");return;}
+    try{
+      const cur=(await db.g("stars_"+user.oilaId))||0;
+      if(cur<cost){ok$(lg==="uz"?"Yetarli yulduzcha yo'q":"Not enough stars","warn");return;}
+      const newStars=cur-cost;
+      const today=new Date().toISOString().slice(0,10);
+      const g=(await db.g("garden_"+user.oilaId))||{level:0,watered:null,totalStars:0,wateredBy:[]};
+      // Bugun allaqachon sug'orilganmi?
+      if(g.watered===today){ok$(lg==="uz"?"Bog' bugun allaqachon sug'orildi 🌿":"Garden already watered today 🌿","warn");return;}
+      // Level oshirish: har 3 marta sug'OriShda 1 level
+      const wCount=(g.wateredBy||[]).filter(w=>w.sana&&w.sana>=new Date(Date.now()-30*86400000).toISOString()).length+1;
+      const newLevel=Math.min(Math.floor(wCount/3),6);
+      const newG={...g,level:newLevel,watered:today,totalStars:(g.totalStars||0)+cost,wateredBy:[{uid:user.id,ism:user.ism,sana:new Date().toISOString()},...(g.wateredBy||[]).slice(0,29)]};
+      await db.s("garden_"+user.oilaId,newG);
+      await db.s("stars_"+user.oilaId,newStars);
+      setStars(newStars);setGardenData(newG);
+      buzz(20);
+      ok$(lg==="uz"?"Bog' sug'orildi! 🌿 -5⭐":"Garden watered! 🌿 -5⭐");
+    }catch(e){ok$(lg==="uz"?"Xato yuz berdi":"Error","err");}
+  };
+  // ===== END GARDEN =====
   // Google user ni Firestore ga saqlash va kirish
   const handleGoogleUser=async(gUser)=>{
     let u=await db.g("user_"+gUser.uid);
@@ -727,7 +782,7 @@ export default function App(){
     const na=[{...item,uid:user.id},...xar];setXar(na);
     const bt=na.filter(x=>x.sana?.startsWith(tm())).reduce((s,x)=>s+Number(x.summa||0),0),bdj=oila?.budjet||2000000;
     if(bt>bdj){ok$(t.be,"err");addNotif("budjet",lg==="uz"?"Budjet oshib ketdi!":"Budget exceeded!",lg==="uz"?"Bu oy xarajatlar budjetdan oshdi":"Expenses exceeded budget");}else if(bt>bdj*.9){ok$(t.bw,"warn");addNotif("budjet",lg==="uz"?"Budjet 90% sarflandi":"90% used",lg==="uz"?"Budjet tugashga yaqin":"Budget almost reached");}
-    else{const lim=oila?.katLimits?.[fK];const kt=na.filter(x=>x.sana?.startsWith(tm())&&x.kategoriya===fK).reduce((s,x)=>s+Number(x.summa||0),0);if(lim&&kt>lim)ok$(KN[lg][KATS.findIndex(k=>k.id===fK)]+" "+t.le,"warn");else ok$(t.xa);}
+    else{const lim=oila?.katLimits?.[fK];const kt=na.filter(x=>x.sana?.startsWith(tm())&&x.kategoriya===fK).reduce((s,x)=>s+Number(x.summa||0),0);if(lim&&kt>lim)ok$(KN[lg][KATS.findIndex(k=>k.id===fK)]+" "+t.le,"warn");else{ok$(t.xa);addStar(1,lg==="uz"?"Xarajat kiritildi":"Expense added");}}
     setFS("");setFIz("");setFK("oziq");setFSn(td());setFRp(false);setXForMember("");setScr("bosh");
   };
   const parseVoice=(text)=>{
@@ -811,7 +866,7 @@ export default function App(){
     const item={id:Date.now(),tur:fDT,summa:Number(fDS),izoh:fDI||DN[lg][DARS.findIndex(d=>d.id===fDT)],sana:td(),vaqt:nt()};
     const key="d_"+user.oilaId+"_"+user.id;
     await db.s(key,[item,...((await db.g(key))||[])]);
-    setDar([{...item,uid:user.id},...dar]);setFDS("");setFDI("");setFDT("oylik");setScr("bosh");ok$(t.da);
+    setDar([{...item,uid:user.id},...dar]);setFDS("");setFDI("");setFDT("oylik");setScr("bosh");ok$(t.da);addStar(1,lg==="uz"?"Daromad kiritildi":"Income added");
   };
   const addMq=async()=>{
     if(!mN.trim()||!mS||Number(mS)<=0)return ok$(t.fa,"err");
@@ -2954,6 +3009,7 @@ export default function App(){
           </div>
           <div style={{fontSize:11,color:th.t2,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:10,paddingLeft:4}}>{t.qoshimcha}</div>
           {[
+            {id:"garden",label:lg==="uz"?"🌱 Oila bog'i":lg==="ru"?"🌱 Семейный сад":"🌱 Family Garden",ico:<span style={{fontSize:20}}>🌱</span>},
             {id:"shaxsiy",label:t.shaxsiy,ico:Ico.user(th.ac)},
             ...(user?.rol==="bosh"?[{id:"budjet",label:lg==="uz"?"Budjet va limitlar":lg==="ru"?"Бюджет и лимиты":"Budget & limits",ico:Ico.wallet(th.ac)}]:[]),
             {id:"ilovaS", label:t.ilovaS, ico:Ico.settings(th.ac)},
@@ -3233,6 +3289,86 @@ export default function App(){
               {Ico.right(th.t2)}
             </div>
           </a>
+        </div>}
+        {pTab==="garden"&&<div>
+          <BH label={lg==="uz"?"🌱 Oila bog'i":lg==="ru"?"🌱 Семейный сад":"🌱 Family Garden"} th={th} onBack={()=>setPTab("main")}/>
+          {(()=>{
+            const lvl=gardenData.level||0;
+            const plants=["🌱","🌿","🍀","🌲","🌳","🌴","🏡"];
+            const lvlNames=lg==="uz"
+              ?["Urug'","Ko'chat","Barg","Daracha","Daraxt","Ulkan daraxt","Oila uyi"]
+              :["Seed","Sprout","Leaf","Sapling","Tree","Giant tree","Family Home"];
+            const nextCost=5;
+            const today=new Date().toISOString().slice(0,10);
+            const wateredToday=gardenData.watered===today;
+            const lastWaterers=(gardenData.wateredBy||[]).slice(0,5);
+            return <>
+              {/* Yulduzcha hisobi */}
+              <div style={{background:"linear-gradient(135deg,#f59e0b,#d97706)",borderRadius:20,padding:"20px",marginBottom:16,textAlign:"center"}}>
+                <div style={{fontSize:44}}>{plants[Math.min(lvl,6)]}</div>
+                <div style={{fontSize:22,fontWeight:800,color:"#fff",margin:"8px 0 2px"}}>{lvlNames[Math.min(lvl,6)]}</div>
+                <div style={{fontSize:13,color:"rgba(255,255,255,0.85)"}}>
+                  {lg==="uz"?"Bosqich":"Level"} {lvl+1}/7
+                </div>
+                <div style={{background:"rgba(255,255,255,0.2)",borderRadius:30,height:8,margin:"12px 0 8px",overflow:"hidden"}}>
+                  <div style={{width:((lvl/6)*100)+"%",height:"100%",background:"#fff",borderRadius:30,transition:"width .5s"}}/>
+                </div>
+              </div>
+              {/* Yulduzcha va sug'orish */}
+              <div style={{background:th.sur,border:"1px solid "+th.bor,borderRadius:18,padding:"18px",marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:14}}>
+                  <div>
+                    <div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Oila yulduzchasi":"Family stars"}</div>
+                    <div style={{fontSize:28,fontWeight:800,color:"#f59e0b"}}>⭐ {stars}</div>
+                  </div>
+                  <button
+                    onClick={waterGarden}
+                    disabled={wateredToday||stars<nextCost}
+                    style={{background:wateredToday?"#e5e7eb":stars>=nextCost?"linear-gradient(135deg,#22c55e,#16a34a)":"#e5e7eb",border:"none",borderRadius:14,padding:"12px 20px",color:wateredToday||stars<nextCost?"#9ca3af":"#fff",fontWeight:700,fontSize:14,cursor:wateredToday||stars<nextCost?"not-allowed":"pointer",transition:"all .2s"}}>
+                    {wateredToday
+                      ?(lg==="uz"?"✅ Sug'orildi":"✅ Watered")
+                      :(lg==="uz"?"💧 Sug'orish (-5⭐)":"💧 Water (-5⭐)")}
+                  </button>
+                </div>
+                {wateredToday&&<div style={{fontSize:12,color:"#22c55e",fontWeight:600,textAlign:"center"}}>
+                  {lg==="uz"?"Bugun sug'orildi 🌿 Ertaga yana sug'oring!":"Watered today 🌿 Come back tomorrow!"}
+                </div>}
+              </div>
+              {/* Qanday yulduzcha olish mumkin */}
+              <div style={{background:th.sur,border:"1px solid "+th.bor,borderRadius:18,padding:"16px",marginBottom:14}}>
+                <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12}}>{lg==="uz"?"⭐ Yulduzcha qanday olinadi?":"⭐ How to earn stars?"}</div>
+                {[
+                  {ico:"💸",txt:lg==="uz"?"Xarajat kiritish":"Add expense",val:"1⭐"},
+                  {ico:"💰",txt:lg==="uz"?"Daromad kiritish":"Add income",val:"1⭐"},
+                  {ico:"📷",txt:lg==="uz"?"QR kod skanerlash":"QR scan",val:"2⭐"},
+                  {ico:"🎯",txt:lg==="uz"?"Maqsadga yetish":"Reach a goal",val:"10⭐"},
+                  {ico:"📅",txt:lg==="uz"?"Har kuni kirish (streak)":"Daily streak",val:"3⭐"},
+                ].map((item,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<4?"1px solid "+th.bor:"none"}}>
+                    <span style={{fontSize:20,width:28,textAlign:"center"}}>{item.ico}</span>
+                    <span style={{flex:1,fontSize:13,color:th.t2}}>{item.txt}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:"#f59e0b"}}>{item.val}</span>
+                  </div>
+                ))}
+              </div>
+              {/* Oxirgi sug'organlar */}
+              {lastWaterers.length>0&&<div style={{background:th.sur,border:"1px solid "+th.bor,borderRadius:18,padding:"16px"}}>
+                <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:10}}>{lg==="uz"?"💧 Oxirgi sug'organlar":"💧 Recent waterers"}</div>
+                {lastWaterers.map((w,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:i<lastWaterers.length-1?"1px solid "+th.bor:"none"}}>
+                    <div style={{width:30,height:30,borderRadius:"50%",background:th.ac+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14}}>
+                      {(w.ism||"?")[0].toUpperCase()}
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:600,color:th.t1}}>{w.ism}</div>
+                      <div style={{fontSize:11,color:th.t2}}>{w.sana?new Date(w.sana).toLocaleDateString():""}</div>
+                    </div>
+                    <span style={{fontSize:16}}>💧</span>
+                  </div>
+                ))}
+              </div>}
+            </>;
+          })()}
         </div>}
       </div>}
     </div>
