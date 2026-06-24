@@ -407,43 +407,43 @@ export default function App(){
   useEffect(()=>{(async()=>{
     try{
       // Firebase Auth holatini kuzatamiz - faqat kirgan bo'lsa ma'lumot o'qiymiz
-      // Google redirect natijasini dastlab tekshirish
-      if(localStorage.getItem("oilaV7GooglePending")){
-        try{
-          const {getRedirectResult}=await import("firebase/auth");
-          const {fbAuth}=await import("./firebase.js");
-          const result=await getRedirectResult(fbAuth);
-          if(result?.user){
-            const gUser=result.user;
-            localStorage.removeItem("oilaV7GooglePending");
-            let u=await db.g("user_"+gUser.uid);
-            if(!u){
-              const uid=gUser.uid;
-              const displayName=gUser.displayName||gUser.email?.split("@")[0]||"Foydalanuvchi";
-              const email=(gUser.email||"").toLowerCase();
-              const famId="fam_"+uid+"_"+Date.now();
-              u={id:uid,oilaId:famId,ism:displayName,email,tel:"",photo:gUser.photoURL||null,rol:"bosh",val:"uzs",lg:"uz",dark:false,registeredAt:new Date().toISOString(),loginMethod:"google"};
-              await db.s("user_"+uid,u);
-              await db.s("fam_"+famId,{id:famId,nomi:displayName+" oilasi",boshId:uid,azolar:[uid],yaratilgan:new Date().toISOString()});
-              if(email)await db.s("em_"+email,uid);
-            }
-            localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
-            setUser(u);await loadFam(u);setScr("bosh");
-            setBoot(false);return;
-          } else {
-            localStorage.removeItem("oilaV7GooglePending");
+      // Google redirect natijasini HAR DOIM tekshirish (pending key shart emas)
+      try{
+        const {getRedirectResult}=await import("firebase/auth");
+        const {fbAuth:_fbAuth}=await import("./firebase.js");
+        const result=await getRedirectResult(_fbAuth);
+        if(result?.user){
+          const gUser=result.user;
+          localStorage.removeItem("oilaV7GooglePending");
+          let u=await db.g("user_"+gUser.uid);
+          if(!u){
+            const uid=gUser.uid;
+            const displayName=gUser.displayName||gUser.email?.split("@")[0]||"Foydalanuvchi";
+            const email=(gUser.email||"").toLowerCase();
+            const famId="fam_"+uid+"_"+Date.now();
+            u={id:uid,oilaId:famId,ism:displayName,email,tel:"",photo:gUser.photoURL||null,rol:"bosh",val:"uzs",lg:"uz",dark:false,registeredAt:new Date().toISOString(),loginMethod:"google"};
+            await db.s("user_"+uid,u);
+            await db.s("fam_"+famId,{id:famId,nomi:displayName+" oilasi",boshId:uid,azolar:[uid],yaratilgan:new Date().toISOString()});
+            if(email)await db.s("em_"+email,uid);
           }
-        }catch(e){localStorage.removeItem("oilaV7GooglePending");console.error("Google redirect:",e);}
-      }
+          localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
+          setUser(u);await loadFam(u);setScr("bosh");
+          setBoot(false);return;
+        }
+        localStorage.removeItem("oilaV7GooglePending");
+      }catch(e){localStorage.removeItem("oilaV7GooglePending");console.error("Google redirect:",e);}
       auth.onChange(async(fbUser)=>{
         if(fbUser){
           // Kirgan: localStorage'dagi uid yoki Auth uid bilan user topamiz
           let uid=null;
           try{const s=localStorage.getItem("oilaV7");if(s)uid=JSON.parse(s).uid;}catch(e){}
           if(!uid)uid=fbUser.uid;
-          const u=await db.g("user_"+uid);
-          if(u){setUser(u);setScr("bosh");loadFam(u);}
-          else{const u2=await db.g("user_"+fbUser.uid);if(u2){setUser(u2);setScr("bosh");loadFam(u2);}}
+          let u=await db.g("user_"+uid);
+          if(!u&&uid!==fbUser.uid)u=await db.g("user_"+fbUser.uid);
+          if(u){
+            localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
+            setUser(u);setScr("bosh");loadFam(u);
+          }
         }
         // Kirmagan: login ekranida qoladi (ma'lumot o'qimaymiz)
       });
