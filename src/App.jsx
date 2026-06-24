@@ -604,7 +604,7 @@ export default function App(){
         await db.s("x_"+fKd.trim()+"_"+uid,[]);await db.s("d_"+fKd.trim()+"_"+uid,[]);
         o.azolarIds=[...(o.azolarIds||[]),uid];await db.s("oila_"+o.id,o);
         const cV=COUNTRIES.find(c=>c.code===fCountry);if(cV){const vv=VALS.find(x=>x.id===cV.val);if(vv){setVal(vv);localStorage.setItem("oilaV7V",vv.id);}}
-        localStorage.setItem("oilaV7",JSON.stringify({uid}));setUser(nu);await loadFam(nu);setScr("bosh");ok$(t.jf2);
+        localStorage.setItem("oilaV7",JSON.stringify({uid}));setUser(nu);await loadFam(nu);setScr("bosh");ok$(t.jf2);addStar(15,lg==="uz"?"Oila azosi qoshildi":"Family member added");
       }else{
         if(!fON.trim())return ok$(t.fa,"err");
         const oid="o"+Date.now();
@@ -684,9 +684,11 @@ export default function App(){
       const next=cur+count;
       await db.s("stars_"+user.oilaId,next);
       setStars(next);
-      // Tanga (garden uchun) — yulduzcha bilan birga tanga ham beriladi
-      const curC=(await db.g("coins_"+user.oilaId))||0;
-      await db.s("coins_"+user.oilaId,curC+count);
+      // Baraka Coin (garden uchun) — harakat turiga qarab miqdor
+      const coinMap={"Xarajat kiritildi":5,"Expense added":5,"Daromad kiritildi":10,"Income added":10,"QR kod skanerlandi":10,"QR scanned":10,"Vazifa bajarildi":15,"Task completed":15,"Maqsadga yetildi":50,"Goal reached":50};
+      const coinAmt=coinMap[reason]||count;
+      const curC=(await db.g("baraka_coins_"+user.oilaId))||0;
+      await db.s("baraka_coins_"+user.oilaId,curC+coinAmt);
       // Log
       const log=(await db.g("starlog_"+user.oilaId))||[];
       log.unshift({uid:user.id,ism:user.ism,count,reason,sana:new Date().toISOString()});
@@ -878,7 +880,7 @@ export default function App(){
     if(!mN.trim()||!mS||Number(mS)<=0)return ok$(t.fa,"err");
     if(!isPremium&&maq.length>=3){setShowPremModal(true);return;}
     const u=[...maq,{id:Date.now(),ism:mN.trim(),maqsad:Number(mS),jamg:0,rang:mR}];
-    await db.s("maq_"+user.oilaId,u);setMaq(u);setMN("");setMS("");setAddM(false);ok$(t.ma);
+    await db.s("maq_"+user.oilaId,u);setMaq(u);setMN("");setMS("");setAddM(false);ok$(t.ma);addStar(20,lg==="uz"?"Maqsad yaratildi":"Goal created");
   };
   const tupMq=async()=>{
     if(!tupS||Number(tupS)<=0)return;
