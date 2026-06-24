@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -39,12 +39,17 @@ export const auth = {
     const cred = await signInAnonymously(fbAuth);
     return cred.user;
   },
-  // Google bilan kirish
+  // Google bilan kirish (redirect usuli - COOP xatosini oldini oladi)
   async googleLogin() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    const cred = await signInWithPopup(fbAuth, provider);
-    return cred.user;
+    await signInWithRedirect(fbAuth, provider);
+    // Bu funksiya redirect qiladi - natija getGoogleResult() da
+  },
+  // Redirect qaytgandan keyin natijani olish
+  async getGoogleResult() {
+    const result = await getRedirectResult(fbAuth);
+    return result ? result.user : null;
   },
   // Chiqish
   async logout() {

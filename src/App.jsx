@@ -407,6 +407,34 @@ export default function App(){
   useEffect(()=>{(async()=>{
     try{
       // Firebase Auth holatini kuzatamiz - faqat kirgan bo'lsa ma'lumot o'qiymiz
+      // Google redirect natijasini dastlab tekshirish
+      if(localStorage.getItem("oilaV7GooglePending")){
+        try{
+          const {getRedirectResult}=await import("firebase/auth");
+          const {fbAuth}=await import("./firebase.js");
+          const result=await getRedirectResult(fbAuth);
+          if(result?.user){
+            const gUser=result.user;
+            localStorage.removeItem("oilaV7GooglePending");
+            let u=await db.g("user_"+gUser.uid);
+            if(!u){
+              const uid=gUser.uid;
+              const displayName=gUser.displayName||gUser.email?.split("@")[0]||"Foydalanuvchi";
+              const email=(gUser.email||"").toLowerCase();
+              const famId="fam_"+uid+"_"+Date.now();
+              u={id:uid,oilaId:famId,ism:displayName,email,tel:"",photo:gUser.photoURL||null,rol:"bosh",val:"uzs",lg:"uz",dark:false,registeredAt:new Date().toISOString(),loginMethod:"google"};
+              await db.s("user_"+uid,u);
+              await db.s("fam_"+famId,{id:famId,nomi:displayName+" oilasi",boshId:uid,azolar:[uid],yaratilgan:new Date().toISOString()});
+              if(email)await db.s("em_"+email,uid);
+            }
+            localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
+            setUser(u);await loadFam(u);setScr("bosh");
+            setBoot(false);return;
+          } else {
+            localStorage.removeItem("oilaV7GooglePending");
+          }
+        }catch(e){localStorage.removeItem("oilaV7GooglePending");console.error("Google redirect:",e);}
+      }
       auth.onChange(async(fbUser)=>{
         if(fbUser){
           // Kirgan: localStorage'dagi uid yoki Auth uid bilan user topamiz
@@ -431,20 +459,26 @@ export default function App(){
     setRateL(true);
     let ok2=false;
     // Bir nechta CORS proxy orqali urinish (artifact tashqi APIni bloklashi mumkin)
-    const cbuUrl="https://cbu.uz/uz/arkhiv-kursov-valyut/json/";
+    // exchangerate-api.com - bepul, CORS yo'q, ishonchli
     const sources=[
-      "https://api.allorigins.win/get?url="+encodeURIComponent(cbuUrl),
-      "https://corsproxy.io/?url="+encodeURIComponent(cbuUrl),
-      "https://api.codetabs.com/v1/proxy/?quest="+cbuUrl,
+      {url:"https://open.er-api.com/v6/latest/UZS",type:"er"},
+      {url:"https://api.exchangerate-api.com/v4/latest/UZS",type:"er4"},
     ];
-    for(const url of sources){
+    for(const src of sources){
       try{
-        const res=await fetch(url,{signal:AbortSignal.timeout(6000)});
+        const res=await fetch(src.url,{signal:AbortSignal.timeout(6000)});
         const raw=await res.json();
-        // allorigins wraps response in {contents: "..."}
-        const data=typeof raw.contents==="string"?JSON.parse(raw.contents):Array.isArray(raw)?raw:[];
+        // rates = {USD: 0.0000770, EUR: ...} (1 UZS = X valyuta)
+        // bizga kerak: 1 valyuta = X UZS
+        const ratesObj=raw.rates||{};
         const want=["USD","EUR","RUB","GBP","CNY","KZT"];
-        const filt=data.filter(r=>want.includes(r.Ccy));
+        const nameMap={USD:"AQSH dollari",EUR:"Yevropa evro",RUB:"Rossiya rubli",GBP:"Britaniya funti",CNY:"Xitoy yuani",KZT:"Qozog'iston tengesi"};
+        const filt=want.filter(c=>ratesObj[c]).map(c=>({
+          Ccy:c,
+          Rate:ratesObj[c]>0?(1/ratesObj[c]).toFixed(2):"0",
+          CcyNm_UZ:nameMap[c]||c,
+          Diff:"0"
+        }));
         if(filt.length>0){
           setRates(filt.map(r=>({code:r.Ccy,rate:r.Rate,name:r.CcyNm_UZ,diff:r.Diff})));
           ok2=true;
@@ -622,10 +656,22 @@ export default function App(){
      ok$((lg==="uz"?"Xatolik: ":"Error: ")+(err.code||err.message||"Firebase ulanmadi. Internetni tekshiring."),"err");
    }
   };
-  // Google bilan kirish handler
+  // Google bilan kirish handler (redirect usuli)
   const doGoogleLogin=async()=>{
     try{
-      const gUser=await auth.googleLogin();
+      localStorage.setItem("oilaV7GooglePending","1");
+      await auth.googleLogin(); // bu redirect qiladi, sahifa qayta yuklanadi
+    }catch(e){
+      ok$((lg==="uz"?"Google bilan kirishda xato: ":"Google sign-in error: ")+(e.message||e.code),"err");
+    }
+  };
+  // Google redirect natijasini qayta ishlash
+  const handleGoogleRedirect=async()=>{
+    if(!localStorage.getItem("oilaV7GooglePending"))return;
+    localStorage.removeItem("oilaV7GooglePending");
+    try{
+      const gUser=await auth.getGoogleResult();
+      if(!gUser)return;
       let u=await db.g("user_"+gUser.uid);
       if(u){
         localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
@@ -645,9 +691,7 @@ export default function App(){
         ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+displayName+" 👋");
       }
     }catch(e){
-      if(e.code!=="auth/popup-closed-by-user"){
-        ok$((lg==="uz"?"Google bilan kirishda xato: ":"Google sign-in error: ")+(e.message||e.code),"err");
-      }
+      console.error("Google redirect result error:",e);
     }
   };
   const doPhoto=e=>{const file=e.target.files?.[0];if(!file)return;const r=new FileReader();r.onload=async ev=>{const p=ev.target.result;const u2={...user,photo:p};await db.s("user_"+user.id,u2);setUser(u2);setAzolar(azolar.map(a=>a.id===user.id?{...a,photo:p}:a));ok$(t.ua);};r.readAsDataURL(file);};
