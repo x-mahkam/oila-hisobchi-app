@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -39,12 +39,21 @@ export const auth = {
     const cred = await signInAnonymously(fbAuth);
     return cred.user;
   },
-  // Google bilan kirish (redirect usuli - COOP xatosini oldini oladi)
+  // Google bilan kirish - popup usuli (vercel.json da COOP header bor)
   async googleLogin() {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    await signInWithRedirect(fbAuth, provider);
-    // Bu funksiya redirect qiladi - natija getGoogleResult() da
+    try {
+      const cred = await signInWithPopup(fbAuth, provider);
+      return { user: cred.user, method: "popup" };
+    } catch(e) {
+      // Popup ishlamasa redirect ga o'tish
+      if(e.code === "auth/popup-blocked" || e.code === "auth/popup-closed-by-user") {
+        throw e;
+      }
+      await signInWithRedirect(fbAuth, provider);
+      return { user: null, method: "redirect" };
+    }
   },
   // Redirect qaytgandan keyin natijani olish
   async getGoogleResult() {

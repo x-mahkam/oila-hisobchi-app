@@ -656,42 +656,35 @@ export default function App(){
      ok$((lg==="uz"?"Xatolik: ":"Error: ")+(err.code||err.message||"Firebase ulanmadi. Internetni tekshiring."),"err");
    }
   };
-  // Google bilan kirish handler (redirect usuli)
+  // Google user ni Firestore ga saqlash va kirish
+  const handleGoogleUser=async(gUser)=>{
+    let u=await db.g("user_"+gUser.uid);
+    if(!u){
+      const uid=gUser.uid;
+      const displayName=gUser.displayName||gUser.email?.split("@")[0]||"Foydalanuvchi";
+      const email=(gUser.email||"").toLowerCase();
+      const famId="fam_"+uid+"_"+Date.now();
+      u={id:uid,oilaId:famId,ism:displayName,email,tel:"",photo:gUser.photoURL||null,rol:"bosh",val:"uzs",lg,dark,registeredAt:new Date().toISOString(),loginMethod:"google"};
+      await db.s("user_"+uid,u);
+      await db.s("fam_"+famId,{id:famId,nomi:displayName+(lg==="uz"?" oilasi":" family"),boshId:uid,azolar:[uid],yaratilgan:new Date().toISOString()});
+      if(email)await db.s("em_"+email,uid);
+    }
+    localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
+    setUser(u);await loadFam(u);setScr("bosh");
+    ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+u.ism+" 👋");
+  };
+  // Google bilan kirish handler
   const doGoogleLogin=async()=>{
     try{
-      localStorage.setItem("oilaV7GooglePending","1");
-      await auth.googleLogin(); // bu redirect qiladi, sahifa qayta yuklanadi
-    }catch(e){
-      ok$((lg==="uz"?"Google bilan kirishda xato: ":"Google sign-in error: ")+(e.message||e.code),"err");
-    }
-  };
-  // Google redirect natijasini qayta ishlash
-  const handleGoogleRedirect=async()=>{
-    if(!localStorage.getItem("oilaV7GooglePending"))return;
-    localStorage.removeItem("oilaV7GooglePending");
-    try{
-      const gUser=await auth.getGoogleResult();
-      if(!gUser)return;
-      let u=await db.g("user_"+gUser.uid);
-      if(u){
-        localStorage.setItem("oilaV7",JSON.stringify({uid:u.id}));
-        setUser(u);await loadFam(u);setScr("bosh");
-        ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+u.ism+" 👋");
-      }else{
-        const uid=gUser.uid;
-        const displayName=gUser.displayName||gUser.email?.split("@")[0]||"Foydalanuvchi";
-        const email=(gUser.email||"").toLowerCase();
-        const famId="fam_"+uid+"_"+Date.now();
-        const nu={id:uid,oilaId:famId,ism:displayName,email,tel:"",photo:gUser.photoURL||null,rol:"bosh",val:"uzs",lg,dark,registeredAt:new Date().toISOString(),loginMethod:"google"};
-        await db.s("user_"+uid,nu);
-        await db.s("fam_"+famId,{id:famId,nomi:displayName+(lg==="uz"?" oilasi":" family"),boshId:uid,azolar:[uid],yaratilgan:new Date().toISOString()});
-        if(email)await db.s("em_"+email,uid);
-        localStorage.setItem("oilaV7",JSON.stringify({uid}));
-        setUser(nu);await loadFam(nu);setScr("bosh");
-        ok$((lg==="uz"?"Xush kelibsiz, ":"Welcome, ")+displayName+" 👋");
+      const res=await auth.googleLogin();
+      if(res?.user){
+        await handleGoogleUser(res.user);
       }
+      // redirect bo'lsa - sahifa qayta yuklanadi, onChange ushlab oladi
     }catch(e){
-      console.error("Google redirect result error:",e);
+      if(e.code!=="auth/popup-closed-by-user"){
+        ok$((lg==="uz"?"Google bilan kirishda xato: ":"Google sign-in error: ")+(e.message||e.code),"err");
+      }
     }
   };
   const doPhoto=e=>{const file=e.target.files?.[0];if(!file)return;const r=new FileReader();r.onload=async ev=>{const p=ev.target.result;const u2={...user,photo:p};await db.s("user_"+user.id,u2);setUser(u2);setAzolar(azolar.map(a=>a.id===user.id?{...a,photo:p}:a));ok$(t.ua);};r.readAsDataURL(file);};
