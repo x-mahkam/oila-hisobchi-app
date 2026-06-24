@@ -3297,7 +3297,8 @@ export default function App(){
             </div>
           </a>
         </div>}
-        {pTab==="garden"&&<Garden user={user} lg={lg} dark={dark} onBack={()=>setPTab("main")}/>}        </div>}
+        {pTab==="garden"&&<Garden user={user} lg={lg} dark={dark} onBack={()=>setPTab("main")}/>
+        }
       </div>}
     </div>
     {quickItem&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setQuickItem(null)}>
