@@ -433,13 +433,16 @@ export default function App(){
     // Bir nechta CORS proxy orqali urinish (artifact tashqi APIni bloklashi mumkin)
     const cbuUrl="https://cbu.uz/uz/arkhiv-kursov-valyut/json/";
     const sources=[
+      "https://api.allorigins.win/get?url="+encodeURIComponent(cbuUrl),
+      "https://corsproxy.io/?url="+encodeURIComponent(cbuUrl),
       "https://api.codetabs.com/v1/proxy/?quest="+cbuUrl,
-      "https://corsproxy.io/?url="+encodeURIComponent(cbuUrl)
     ];
     for(const url of sources){
       try{
-        const res=await fetch(url);
-        const data=await res.json();
+        const res=await fetch(url,{signal:AbortSignal.timeout(6000)});
+        const raw=await res.json();
+        // allorigins wraps response in {contents: "..."}
+        const data=typeof raw.contents==="string"?JSON.parse(raw.contents):Array.isArray(raw)?raw:[];
         const want=["USD","EUR","RUB","GBP","CNY","KZT"];
         const filt=data.filter(r=>want.includes(r.Ccy));
         if(filt.length>0){
