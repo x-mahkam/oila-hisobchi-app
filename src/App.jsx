@@ -1277,23 +1277,31 @@ export default function App(){
       // r= kassa raqami
       let m;
 
-      // 1) Jami summa: i= parametri (tiyinda)
-      m=text.match(/[?&]i=([0-9]+)/i);
-      if(m){
-        const v=parseInt(m[1],10);
-        // i= tiyinda (so'm*100), so'mga aylantirish
-        res.summa=Math.round(v/100);
+      // 1) "Jami to'lov" yoki "Jami:" qatoridan summa — URL yoki matn ichida
+      // Matn formati: "Jami to'lov:\n58 000,00" yoki "Jami: 58000.00"
+      const jamiMatch=text.match(/[Jj]ami[\s\S]{0,30}?([0-9][0-9 .,]*[0-9])/);
+      if(jamiMatch){
+        const clean=jamiMatch[1].replace(/[ ]/g,"").replace(/,([0-9]{2})$/,"").replace(/\.([0-9]{2})$/,"").replace(/[,.']/g,"");
+        const v=parseInt(clean,10);
+        if(v>0&&v<=999999999){res.summa=v;}
       }
 
-      // 2) Agar i= topilmasa, s= ni sinab ko'r (eski format)
+      // 2) URL parametrlaridan: i= (tiyinda so'm*100)
+      if(!res.summa){
+        m=text.match(/[?&]i=([0-9]+)/i);
+        if(m){
+          const v=parseInt(m[1],10);
+          res.summa=Math.round(v/100);
+        }
+      }
+
+      // 3) URL: s= (eski format, lekin invoys raqami emas)
       if(!res.summa){
         m=text.match(/[?&]s=([0-9]+(?:\.[0-9]+)?)/i);
         if(m){
           let v=parseFloat(m[1]);
-          // s= katta son bo'lsa tiyinda deb hisoblash
           if(!m[1].includes(".")&&v>=10000){v=v/100;}
-          // s= invoys raqami bo'lishi mumkin - juda katta bo'lsa ishonma (>100 mln so'm)
-          if(v<=100000000){res.summa=Math.round(v);}
+          if(v>0&&v<=99999999){res.summa=Math.round(v);}
         }
       }
 
@@ -2824,8 +2832,9 @@ export default function App(){
             {id:"ilovaS", label:t.ilovaS, ico:Ico.settings(th.ac)},
             {id:"xav",    label:t.xav,    ico:Ico.shield(th.ac)},
             {id:"qol",    label:t.qol,    ico:Ico.help(th.ac)},
+            ...(!isKid?[{id:"__addkid__",label:lg==="uz"?"Bola akkaunti qo'shish":lg==="ru"?"Добавить ребёнка":"Add kid account",ico:<span style={{fontSize:20}}>👶</span>}]:[]),
           ].map(item=>(
-            <button key={item.id} onClick={()=>setPTab(item.id)} style={{width:"100%",background:th.sur,border:"1px solid "+th.bor,borderRadius:16,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:10,textAlign:"left"}}>
+            <button key={item.id} onClick={()=>{if(item.id==="__addkid__"){buzz(10);setShowAddKid(true);}else{setPTab(item.id);}}} style={{width:"100%",background:th.sur,border:"1px solid "+th.bor,borderRadius:16,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:10,textAlign:"left"}}>
               <div style={{width:40,height:40,borderRadius:12,background:th.ac+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{item.ico}</div>
               <span style={{flex:1,fontSize:15,fontWeight:600,color:th.t1}}>{item.label}</span>
               {Ico.right(th.t2)}
@@ -2869,12 +2878,12 @@ export default function App(){
           <div style={S.cd}><div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:10}}>{lg==="uz"?"Bu oy statistikasi":"Stats"}</div>{[{l:lg==="uz"?"Xarajat":"Expense",v:f(bX.filter(x=>x.uid===user.id).reduce((s,x)=>s+Number(x.summa||0),0),true),c:th.rd},{l:lg==="uz"?"Daromad":"Income",v:f(bD.filter(d=>d.uid===user.id).reduce((s,d)=>s+Number(d.summa||0),0),true),c:th.gr},{l:lg==="uz"?"Jami yozuvlar":"Total records",v:xar.filter(x=>x.uid===user.id).length+" ta",c:th.ac}].map(item=><div key={item.l} style={{...S.row,padding:"8px 0",borderBottom:"1px solid "+th.bor}}><span style={{fontSize:12,color:th.t2}}>{item.l}</span><span style={{fontSize:13,fontWeight:700,color:item.c}}>{item.v}</span></div>)}</div>
           {user?.rol==="bosh"&&<div style={{...S.cd,background:th.ac+"0d",border:"1px solid "+th.ac+"33"}}><div style={{fontSize:11,color:th.t2,marginBottom:5,fontWeight:600}}>{Ico.key(th.ac)}{t.fc2}</div><div style={{fontFamily:"monospace",fontSize:12,color:th.ac,wordBreak:"break-all",fontWeight:700}}>{oila?.id}</div><div style={{fontSize:10,color:th.t2,marginTop:5}}>{t.fcd}</div></div>}
           {!isKid&&<button onClick={()=>{buzz(10);setShowAddKid(true);}} style={{...S.cd,width:"100%",background:"linear-gradient(135deg,#f59e0b0d,#ec48990d)",border:"1px solid #f59e0b33",cursor:"pointer",display:"flex",alignItems:"center",gap:12,textAlign:"left"}}>
-            <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#f59e0b,#ec4899)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>\ud83d\udc76</div>
+            <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#f59e0b,#ec4899)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>👶</div>
             <div style={{flex:1}}>
               <div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Bola akkaunti qo'shish":lg==="ru"?"Добавить ребёнка":"Add kid account"}</div>
               <div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Farzandingizga login yarating":"Create a login for your child"}</div>
             </div>
-            <span style={{fontSize:18,color:th.t2}}>\u203a</span>
+            <span style={{fontSize:18,color:th.t2}}>›</span>
           </button>}
           {user?.rol==="bosh"&&azolar.length>1&&<div style={{...S.cd}}>
             <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:3,display:"flex",alignItems:"center",gap:6}}>👨‍👩‍👧‍👦 {lg==="uz"?"Oila a'zolari va ruxsatlar":lg==="ru"?"Участники и доступы":"Members & access"}</div>
