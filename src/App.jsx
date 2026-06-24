@@ -1,4 +1,5 @@
 import{useState,useEffect,useCallback,useMemo,useRef}from"react";
+import Garden from"./Garden.jsx";
 import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 import{db,auth,fbAuth}from"./firebase.js";
 
@@ -678,11 +679,15 @@ export default function App(){
   const addStar=async(count=1,reason="")=>{
     if(!user?.oilaId)return;
     try{
+      // Yulduzcha (eski tizim)
       const cur=(await db.g("stars_"+user.oilaId))||0;
       const next=cur+count;
       await db.s("stars_"+user.oilaId,next);
       setStars(next);
-      // Star log
+      // Tanga (garden uchun) — yulduzcha bilan birga tanga ham beriladi
+      const curC=(await db.g("coins_"+user.oilaId))||0;
+      await db.s("coins_"+user.oilaId,curC+count);
+      // Log
       const log=(await db.g("starlog_"+user.oilaId))||[];
       log.unshift({uid:user.id,ism:user.ism,count,reason,sana:new Date().toISOString()});
       await db.s("starlog_"+user.oilaId,log.slice(0,50));
@@ -3292,122 +3297,7 @@ export default function App(){
             </div>
           </a>
         </div>}
-        {pTab==="garden"&&<div style={{minHeight:"100vh",background:"linear-gradient(180deg,#1a6bb5 0%,#2d8fd4 35%,#4ade80 60%,#16a34a 100%)",margin:"-16px",padding:0,position:"relative",overflow:"hidden"}}>
-          {/* Osmon - header */}
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"16px 20px 8px",position:"relative",zIndex:10}}>
-            <button onClick={()=>setPTab("main")} style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.2)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-            </button>
-            <div style={{fontSize:18,fontWeight:800,color:"#fff"}}>{lg==="uz"?"Oila bog'i":lg==="ru"?"Семейный сад":"Family Garden"}</div>
-            <button onClick={()=>setShowGardenInfo(v=>!v)} style={{width:38,height:38,borderRadius:"50%",background:"rgba(255,255,255,0.2)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,color:"#fff",fontWeight:700}}>?</button>
-          </div>
-          {/* Yulduzcha counter */}
-          <div style={{display:"flex",justifyContent:"center",gap:10,padding:"4px 20px 0",zIndex:10,position:"relative"}}>
-            <div style={{background:"rgba(0,80,40,0.7)",borderRadius:30,padding:"6px 18px",display:"flex",alignItems:"center",gap:6}}>
-              <span style={{fontSize:16}}>⭐</span>
-              <span style={{fontSize:15,fontWeight:700,color:"#fff"}}>{stars}</span>
-            </div>
-          </div>
-          {/* Bulutlar */}
-          <div style={{position:"relative",height:120,overflow:"hidden",zIndex:5}}>
-            <div style={{position:"absolute",top:20,left:"10%",fontSize:32,opacity:0.8,animation:"cloudFloat 8s ease-in-out infinite"}}>☁️</div>
-            <div style={{position:"absolute",top:10,right:"15%",fontSize:24,opacity:0.7,animation:"cloudFloat 10s ease-in-out infinite reverse"}}>☁️</div>
-            <div style={{position:"absolute",top:40,left:"55%",fontSize:20,opacity:0.6,animation:"cloudFloat 12s ease-in-out infinite"}}>☁️</div>
-          </div>
-          {/* O'simlik sahasi */}
-          {(()=>{
-            const lvl=gardenData.level||0;
-            const today=new Date().toISOString().slice(0,10);
-            const wateredToday=gardenData.watered===today;
-            const lastWaterers=(gardenData.wateredBy||[]).slice(0,5);
-            const plantSvgs=[
-              /* 0: urug' */ <svg width="80" height="80" viewBox="0 0 80 80"><ellipse cx="40" cy="55" rx="18" ry="10" fill="#5c3a1e"/><ellipse cx="40" cy="52" rx="12" ry="7" fill="#7a4f2e"/><circle cx="40" cy="44" r="10" fill="#4a7c3f"/><line x1="40" y1="45" x2="40" y2="55" stroke="#4a7c3f" strokeWidth="3"/></svg>,
-              /* 1: ko'chat */ <svg width="80" height="100" viewBox="0 0 80 100"><ellipse cx="40" cy="75" rx="20" ry="10" fill="#5c3a1e"/><rect x="37" y="40" width="6" height="38" fill="#6b4c2a" rx="3"/><ellipse cx="40" cy="35" rx="16" ry="14" fill="#22c55e"/></svg>,
-              /* 2: barg */ <svg width="90" height="110" viewBox="0 0 90 110"><ellipse cx="45" cy="82" rx="24" ry="12" fill="#5c3a1e"/><rect x="42" y="45" width="6" height="40" fill="#6b4c2a" rx="3"/><ellipse cx="45" cy="35" rx="22" ry="20" fill="#16a34a"/><ellipse cx="30" cy="50" rx="12" ry="10" fill="#22c55e" transform="rotate(-30 30 50)"/><ellipse cx="60" cy="50" rx="12" ry="10" fill="#22c55e" transform="rotate(30 60 50)"/></svg>,
-              /* 3: daracha */ <svg width="100" height="130" viewBox="0 0 100 130"><ellipse cx="50" cy="105" rx="28" ry="14" fill="#5c3a1e"/><rect x="46" y="55" width="8" height="53" fill="#8B5E3C" rx="4"/><ellipse cx="50" cy="44" rx="30" ry="26" fill="#15803d"/><ellipse cx="50" cy="35" rx="22" ry="20" fill="#16a34a"/></svg>,
-              /* 4: daraxt */ <svg width="110" height="150" viewBox="0 0 110 150"><ellipse cx="55" cy="125" rx="32" ry="16" fill="#5c3a1e"/><rect x="50" y="65" width="10" height="63" fill="#8B5E3C" rx="5"/><ellipse cx="55" cy="50" rx="38" ry="32" fill="#166534"/><ellipse cx="55" cy="38" rx="28" ry="24" fill="#15803d"/><ellipse cx="55" cy="28" rx="18" ry="16" fill="#16a34a"/></svg>,
-              /* 5: ulkan */ <svg width="130" height="170" viewBox="0 0 130 170"><ellipse cx="65" cy="148" rx="40" ry="18" fill="#5c3a1e"/><rect x="59" y="75" width="12" height="76" fill="#92400e" rx="6"/><ellipse cx="65" cy="55" rx="48" ry="40" fill="#14532d"/><ellipse cx="65" cy="40" rx="36" ry="30" fill="#166534"/><ellipse cx="65" cy="28" rx="24" ry="20" fill="#16a34a"/><ellipse cx="65" cy="18" rx="14" ry="12" fill="#22c55e"/></svg>,
-              /* 6: oila uyi */ <svg width="140" height="160" viewBox="0 0 140 160"><ellipse cx="70" cy="148" rx="44" ry="16" fill="#5c3a1e"/><rect x="40" y="90" width="60" height="55" fill="#fde68a" rx="4"/><polygon points="30,90 70,50 110,90" fill="#ef4444"/><rect x="58" y="110" width="24" height="35" fill="#92400e" rx="3"/><rect x="46" y="100" width="18" height="16" fill="#93c5fd" rx="2"/><rect x="76" y="100" width="18" height="16" fill="#93c5fd" rx="2"/><circle cx="82" cy="128" r="2" fill="#f59e0b"/></svg>
-            ];
-            const lvlNames=lg==="uz"
-              ?["Urug'","Ko'chat","Barg","Daracha","Daraxt","Ulkan daraxt","Oila uyi"]
-              :lg==="ru"?["Семя","Росток","Листок","Деревце","Дерево","Великое дерево","Семейный дом"]
-              :["Seed","Sprout","Leaf","Sapling","Tree","Giant","Family Home"];
-            return <>
-              {/* O'simlik */}
-              <div style={{display:"flex",justifyContent:"center",alignItems:"flex-end",height:180,position:"relative",zIndex:8}}>
-                <div style={{animation:"plantSway 4s ease-in-out infinite",transformOrigin:"bottom center"}}>
-                  {plantSvgs[Math.min(lvl,6)]}
-                </div>
-              </div>
-              {/* Yashil zamin */}
-              <div style={{background:"#16a34a",padding:"24px 20px 20px",borderRadius:"40px 40px 0 0",marginTop:-20,position:"relative",zIndex:9}}>
-                {/* Level nomi */}
-                <div style={{textAlign:"center",marginBottom:16}}>
-                  <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>{lvlNames[Math.min(lvl,6)]}</div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,marginTop:6}}>
-                    {[0,1,2,3,4,5,6].map(i=>(
-                      <div key={i} style={{width:i===lvl?24:8,height:8,borderRadius:4,background:i<=lvl?"#fbbf24":"rgba(255,255,255,0.3)",transition:"all .3s"}}/>
-                    ))}
-                  </div>
-                </div>
-                {/* Sug'orish tugmasi */}
-                <button onClick={waterGarden} disabled={wateredToday||stars<5}
-                  style={{width:"100%",padding:"16px",borderRadius:18,border:"none",
-                    background:wateredToday?"rgba(255,255,255,0.2)":stars>=5?"linear-gradient(135deg,#0ea5e9,#0284c7)":"rgba(255,255,255,0.15)",
-                    color:"#fff",fontWeight:800,fontSize:16,cursor:wateredToday||stars<5?"not-allowed":"pointer",
-                    display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:12,
-                    boxShadow:wateredToday||stars<5?"none":"0 4px 15px rgba(14,165,233,0.4)"}}>
-                  {wateredToday
-                    ?<>✅ {lg==="uz"?"Bugun sug'orildi":lg==="ru"?"Полито сегодня":"Watered today"}</>
-                    :<>💧 {lg==="uz"?"Sug'orish":lg==="ru"?"Полить":"Water"} <span style={{background:"rgba(255,255,255,0.2)",borderRadius:10,padding:"2px 8px",fontSize:13}}>-5⭐</span></>}
-                </button>
-                {/* Oxirgi sug'organlar */}
-                {lastWaterers.length>0&&<div style={{background:"rgba(255,255,255,0.15)",borderRadius:16,padding:"12px 14px",marginBottom:12}}>
-                  <div style={{fontSize:12,color:"rgba(255,255,255,0.8)",marginBottom:8,fontWeight:600}}>💧 {lg==="uz"?"Oxirgi sug'organlar":"Recent waterers"}</div>
-                  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-                    {lastWaterers.map((w,i)=>(
-                      <div key={i} style={{display:"flex",alignItems:"center",gap:5,background:"rgba(255,255,255,0.2)",borderRadius:20,padding:"4px 10px"}}>
-                        <div style={{width:22,height:22,borderRadius:"50%",background:"#f59e0b",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:"#fff"}}>{(w.ism||"?")[0]}</div>
-                        <span style={{fontSize:12,color:"#fff",fontWeight:600}}>{w.ism}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>}
-              </div>
-              {/* CSS animatsiyalari */}
-              <style>{`
-                @keyframes cloudFloat{0%,100%{transform:translateX(0)}50%{transform:translateX(12px)}}
-                @keyframes plantSway{0%,100%{transform:rotate(-2deg)}50%{transform:rotate(2deg)}}
-              `}</style>
-              {/* Info modal */}
-              {showGardenInfo&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",zIndex:100,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowGardenInfo(false)}>
-                <div style={{background:"#fff",borderRadius:"28px 28px 0 0",padding:"28px 24px 40px",width:"100%"}} onClick={e=>e.stopPropagation()}>
-                  <div style={{fontSize:18,fontWeight:800,color:"#1a1a1a",marginBottom:16,textAlign:"center"}}>
-                    ⭐ {lg==="uz"?"Yulduzcha qanday olinadi?":lg==="ru"?"Как получить звёзды?":"How to earn stars?"}
-                  </div>
-                  {[
-                    {ico:"💸",txt:lg==="uz"?"Xarajat kiritish":lg==="ru"?"Добавить расход":"Add expense",val:"1⭐"},
-                    {ico:"💰",txt:lg==="uz"?"Daromad kiritish":lg==="ru"?"Добавить доход":"Add income",val:"1⭐"},
-                    {ico:"📷",txt:lg==="uz"?"QR kod skanerlash":lg==="ru"?"Сканировать QR":"QR scan",val:"2⭐"},
-                    {ico:"✅",txt:lg==="uz"?"Bola vazifasini bajarish":lg==="ru"?"Выполнить задание":"Complete kid task",val:"3⭐"},
-                    {ico:"🎯",txt:lg==="uz"?"Maqsadga yetish":lg==="ru"?"Достичь цели":"Reach a goal",val:"10⭐"},
-                  ].map((item,i)=>(
-                    <div key={i} style={{display:"flex",alignItems:"center",gap:12,padding:"12px 0",borderBottom:i<4?"1px solid #f0f0f0":"none"}}>
-                      <span style={{fontSize:22,width:32,textAlign:"center"}}>{item.ico}</span>
-                      <span style={{flex:1,fontSize:14,color:"#444"}}>{item.txt}</span>
-                      <span style={{fontSize:15,fontWeight:800,color:"#f59e0b",background:"#fef3c7",borderRadius:10,padding:"3px 10px"}}>{item.val}</span>
-                    </div>
-                  ))}
-                  <div style={{marginTop:8,padding:"12px 14px",background:"#f0fdf4",borderRadius:14,fontSize:13,color:"#166534",lineHeight:1.6}}>
-                    💧 {lg==="uz"?"Har kuni 5⭐ sarflab bog'ni sug'oring. Har 3 marta sug'Organda o'simlik o'sadi!":lg==="ru"?"Поливайте сад каждый день за 5⭐. Каждые 3 полива — растение растёт!":"Water garden daily for 5⭐. Every 3 waterings — plant grows!"}
-                  </div>
-                  <button onClick={()=>setShowGardenInfo(false)} style={{width:"100%",marginTop:16,padding:"15px",background:"#22c55e",border:"none",borderRadius:16,color:"#fff",fontWeight:800,fontSize:16,cursor:"pointer"}}>OK</button>
-                </div>
-              </div>}
-            </>;
-          })()}
-        </div>}
+        {pTab==="garden"&&<Garden user={user} lg={lg} dark={dark} onBack={()=>setPTab("main")}/>}        </div>}
       </div>}
     </div>
     {quickItem&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setQuickItem(null)}>
