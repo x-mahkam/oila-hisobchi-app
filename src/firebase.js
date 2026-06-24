@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -37,6 +37,13 @@ export const auth = {
   // Anonim kirish (bolalar uchun - emailsiz)
   async loginAnon() {
     const cred = await signInAnonymously(fbAuth);
+    return cred.user;
+  },
+  // Google bilan kirish
+  async googleLogin() {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const cred = await signInWithPopup(fbAuth, provider);
     return cred.user;
   },
   // Chiqish
