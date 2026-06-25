@@ -1,5 +1,6 @@
 import{useState,useEffect,useCallback,useMemo,useRef}from"react";
 import Garden from"./Garden.jsx";
+import BilimBozor from"./BilimBozor.jsx";
 import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 import{db,auth,fbAuth}from"./firebase.js";
 
@@ -284,6 +285,7 @@ export default function App(){
   const [pTab,setPTab]=useState("main");
   const [stars,setStars]=useState(0);
   const [showGardenInfo,setShowGardenInfo]=useState(false);
+  const [showBilim,setShowBilim]=useState(false);
   const [gardenData,setGardenData]=useState({level:0,watered:null,totalStars:0});
   const [pinStep,setPinStep]=useState("idle");
   const [pinVal,setPinVal]=useState("");
@@ -1022,6 +1024,20 @@ export default function App(){
   };
   const addQarz=async()=>{
     if(!qarzKim.trim()||!qarzSum||Number(qarzSum)<=0)return ok$(t.fa,"err");
+    // Qarz BERISH holatida balans tekshiruvi
+    if(qarzTur==="bergan"){
+      const myDar=dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
+      const myXar=xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);
+      const myBal=myDar-myXar;
+      if(myBal<Number(qarzSum)){
+        return ok$(lg==="uz"
+          ?`❌ Balansda yetarli mablag' yo'q! Balans: ${f(Math.max(0,myBal),true)}, Kerak: ${f(Number(qarzSum),true)}`
+          :lg==="ru"
+          ?`❌ Недостаточно средств! Баланс: ${f(Math.max(0,myBal),true)}, Нужно: ${f(Number(qarzSum),true)}`
+          :`❌ Insufficient balance! Balance: ${f(Math.max(0,myBal),true)}, Need: ${f(Number(qarzSum),true)}`
+        ,"err");
+      }
+    }
     const item={id:Date.now(),uid:user.id,tur:qarzTur,kim:qarzKim.trim(),summa:Number(qarzSum),izoh:qarzIzoh,sana:qarzSana,qaytSana:qarzQaytSana,paid:false,paidSana:""};
     const upd=[item,...qarzlar];
     await db.s("qarz_"+user.oilaId,upd);setQarzlar(upd);
@@ -3019,6 +3035,7 @@ export default function App(){
           <div style={{fontSize:11,color:th.t2,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:10,paddingLeft:4}}>{t.qoshimcha}</div>
           {[
             {id:"garden",label:lg==="uz"?"🌱 Oila bog'i":lg==="ru"?"🌱 Семейный сад":"🌱 Family Garden",ico:<span style={{fontSize:20}}>🌱</span>},
+            {id:"bilim",label:lg==="uz"?"📚 Bilim Bozori":lg==="ru"?"📚 Рынок знаний":"📚 Knowledge Market",ico:<span style={{fontSize:20}}>📚</span>},
             {id:"shaxsiy",label:t.shaxsiy,ico:Ico.user(th.ac)},
             ...(user?.rol==="bosh"?[{id:"budjet",label:lg==="uz"?"Budjet va limitlar":lg==="ru"?"Бюджет и лимиты":"Budget & limits",ico:Ico.wallet(th.ac)}]:[]),
             {id:"ilovaS", label:t.ilovaS, ico:Ico.settings(th.ac)},
@@ -3026,7 +3043,7 @@ export default function App(){
             {id:"qol",    label:t.qol,    ico:Ico.help(th.ac)},
             ...(!isKid?[{id:"__addkid__",label:lg==="uz"?"Bola akkaunti qo'shish":lg==="ru"?"Добавить ребёнка":"Add kid account",ico:<span style={{fontSize:20}}>👶</span>}]:[]),
           ].map(item=>(
-            <button key={item.id} onClick={()=>{if(item.id==="__addkid__"){buzz(10);setShowAddKid(true);}else{setPTab(item.id);}}} style={{width:"100%",background:th.sur,border:"1px solid "+th.bor,borderRadius:16,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:10,textAlign:"left"}}>
+            <button key={item.id} onClick={()=>{if(item.id==="__addkid__"){buzz(10);setShowAddKid(true);}else if(item.id==="bilim"){buzz(10);setShowBilim(true);}else{setPTab(item.id);}}} style={{width:"100%",background:th.sur,border:"1px solid "+th.bor,borderRadius:16,padding:"14px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:10,textAlign:"left"}}>
               <div style={{width:40,height:40,borderRadius:12,background:th.ac+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{item.ico}</div>
               <span style={{flex:1,fontSize:15,fontWeight:600,color:th.t1}}>{item.label}</span>
               {Ico.right(th.t2)}
@@ -3303,6 +3320,9 @@ export default function App(){
         }
       </div>}
     </div>
+    {showBilim&&<div style={{position:"fixed",inset:0,zIndex:200,background:dark?"#0f172a":"#f0f9ff"}}>
+      <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={()=>setShowBilim(false)}/>
+    </div>}
     {quickItem&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setQuickItem(null)}>
       <div style={{background:th.sur,borderRadius:24,padding:"28px 24px",width:"100%",maxWidth:340}} onClick={e=>e.stopPropagation()}>
         <div style={{textAlign:"center",marginBottom:20}}>
