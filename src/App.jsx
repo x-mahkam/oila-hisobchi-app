@@ -286,6 +286,10 @@ export default function App(){
   const [stars,setStars]=useState(0);
   const [showGardenInfo,setShowGardenInfo]=useState(false);
   const [showBilim,setShowBilim]=useState(false);
+  const [showAddModal,setShowAddModal]=useState(false);
+  const [addModalTab,setAddModalTab]=useState("xarajat");
+  const [addStep,setAddStep]=useState("kat");
+  const [addKat,setAddKat]=useState(null);
   const [maqsadConfirmNotif,setMaqsadConfirmNotif]=useState(null);
   const [maqTab,setMaqTab]=useState("mine"); // "mine" | "oila" 
   const [gardenData,setGardenData]=useState({level:0,watered:null,totalStars:0});
