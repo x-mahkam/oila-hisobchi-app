@@ -1,53 +1,13 @@
+// v35fix2 — kid nav: Bosh|Vazifa|Maqsad, adult: Bosh|Qarz|+|Maqsad|Hisobot
 import{useState,useEffect,useCallback,useMemo,useRef}from"react";
 import Garden from"./Garden.jsx";
+import{MK,KATS,KN,DARS,DN,VALS,COUNTRIES,QUICK_ADD,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,ONB_SLIDES}from"./utils/constants.js";
+import{td,nt,tm,f,hp}from"./utils/formatters.js";
 import BilimBozor from"./BilimBozor.jsx";
 import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 import{db,auth,fbAuth}from"./firebase.js";
 
-const MK=d=>d?{bg:"#090e1c",sur:"#111827",surH:"#192035",bor:"#1e293b",ac:"#6366f1",ac2:"#818cf8",gr:"#10b981",rd:"#ef4444",am:"#f59e0b",t1:"#f1f5f9",t2:"#94a3b8",dark:true}:{bg:"#eef2ff",sur:"#ffffff",surH:"#f5f7ff",bor:"#e2e8f0",ac:"#6366f1",ac2:"#4f46e5",gr:"#059669",rd:"#dc2626",am:"#d97706",t1:"#0f172a",t2:"#64748b",dark:false};
 
-const KATS=[{id:"oziq",c:"#10b981"},{id:"transport",c:"#3b82f6"},{id:"kiyim",c:"#8b5cf6"},{id:"sog",c:"#ef4444"},{id:"kommunal",c:"#f59e0b"},{id:"konil",c:"#ec4899"},{id:"talim",c:"#06b6d4"},{id:"hadya",c:"#f43f5e"},{id:"boshqa",c:"#64748b"}];
-const KN={uz:["Oziq-ovqat","Transport","Kiyim","Sog'liq","Kommunal","Ko'ngil ochar","Ta'lim","Hadya","Boshqa"],ru:["Продукты","Транспорт","Одежда","Здоровье","Коммунальные","Развлечения","Образование","Подарок","Другое"],en:["Food","Transport","Clothing","Health","Utilities","Entertainment","Education","Gift","Other"]};
-const DARS=[{id:"oylik",c:"#10b981"},{id:"qoshimcha",c:"#f59e0b"},{id:"biznes",c:"#3b82f6"},{id:"sovga",c:"#8b5cf6"},{id:"boshqa",c:"#64748b"}];
-const DN={uz:["Oylik maosh","Qo'shimcha","Biznes","Sovg'a","Boshqa"],ru:["Зарплата","Доп.доход","Бизнес","Подарок","Другое"],en:["Salary","Additional","Business","Gift","Other"]};
-const VALS=[{id:"uzs",b:"so'm",k:1},{id:"usd",b:"$",k:12800},{id:"rub",b:"₽",k:140},{id:"eur",b:"€",k:13900},{id:"kzt",b:"₸",k:26},{id:"kgs",b:"сом",k:145},{id:"tjs",b:"сомони",k:1180},{id:"try",b:"₺",k:380},{id:"gbp",b:"£",k:16200},{id:"aed",b:"د.إ",k:3485}];
-const ONB_SLIDES=[
-  {emoji:"\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66",titleUz:"Oilaviy byudjet",titleRu:"\u0421\u0435\u043c\u0435\u0439\u043d\u044b\u0439 \u0431\u044e\u0434\u0436\u0435\u0442",titleEn:"Family budget",descUz:"Butun oila daromad va xarajatlarini bir joyda kuzating. Har bir a'zo o'z xarajatini kiritadi.",descRu:"\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u0439\u0442\u0435 \u0434\u043e\u0445\u043e\u0434\u044b \u0438 \u0440\u0430\u0441\u0445\u043e\u0434\u044b \u0432\u0441\u0435\u0439 \u0441\u0435\u043c\u044c\u0438.",descEn:"Track your whole family's income and expenses in one place.",color:"#6366f1"},
-  {emoji:"\ud83c\udfaf",titleUz:"Maqsadlarga erishing",titleRu:"\u0414\u043e\u0441\u0442\u0438\u0433\u0430\u0439\u0442\u0435 \u0446\u0435\u043b\u0435\u0439",titleEn:"Reach your goals",descUz:"Uy, mashina, sayohat yoki umra uchun jamg'aring. Ilova har oy qancha ajratishni hisoblab beradi.",descRu:"\u041a\u043e\u043f\u0438\u0442\u0435 \u043d\u0430 \u0434\u043e\u043c, \u043c\u0430\u0448\u0438\u043d\u0443 \u0438\u043b\u0438 \u043f\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u0435.",descEn:"Save for a house, car, travel or Umrah with smart monthly targets.",color:"#10b981"},
-  {emoji:"\ud83e\udd1d",titleUz:"Qarzlarni boshqaring",titleRu:"\u0423\u043f\u0440\u0430\u0432\u043b\u044f\u0439\u0442\u0435 \u0434\u043e\u043b\u0433\u0430\u043c\u0438",titleEn:"Manage debts",descUz:"Kimga qancha qarzingiz borligini unutmang. Telefon orqali bog'lab, ikkala tomon tasdiqlaydi.",descRu:"\u041d\u0435 \u0437\u0430\u0431\u044b\u0432\u0430\u0439\u0442\u0435 \u043e \u0434\u043e\u043b\u0433\u0430\u0445. \u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043e\u0431\u0435\u0438\u0445 \u0441\u0442\u043e\u0440\u043e\u043d.",descEn:"Never forget who owes what. Link by phone with two-way confirmation.",color:"#f59e0b"},
-  {emoji:"\ud83c\udf81",titleUz:"Do'stlarni taklif qiling",titleRu:"\u041f\u0440\u0438\u0433\u043b\u0430\u0448\u0430\u0439\u0442\u0435 \u0434\u0440\u0443\u0437\u0435\u0439",titleEn:"Invite friends",descUz:"3 ta do'stingizni taklif qiling va 1 oy Premium bepul oling! Imtiyozlar sizni kutmoqda.",descRu:"\u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u0435 3 \u0434\u0440\u0443\u0437\u0435\u0439 \u0438 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u0435 1 \u043c\u0435\u0441\u044f\u0446 Premium.",descEn:"Invite 3 friends and get 1 month Premium free!",color:"#ec4899"}
-];
-const COUNTRIES=[{code:"uz",dial:"+998",flag:"🇺🇿",uz:"O'zbekiston",ru:"Узбекистан",en:"Uzbekistan",val:"uzs"},{code:"ru",dial:"+7",flag:"🇷🇺",uz:"Rossiya",ru:"Россия",en:"Russia",val:"rub"},{code:"kz",dial:"+7",flag:"🇰🇿",uz:"Qozog'iston",ru:"Казахстан",en:"Kazakhstan",val:"kzt"},{code:"kg",dial:"+996",flag:"🇰🇬",uz:"Qirg'iziston",ru:"Кыргызстан",en:"Kyrgyzstan",val:"kgs"},{code:"tj",dial:"+992",flag:"🇹🇯",uz:"Tojikiston",ru:"Таджикистан",en:"Tajikistan",val:"tjs"},{code:"tr",dial:"+90",flag:"🇹🇷",uz:"Turkiya",ru:"Турция",en:"Turkey",val:"try"},{code:"us",dial:"+1",flag:"🇺🇸",uz:"AQSH",ru:"США",en:"USA",val:"usd"},{code:"ae",dial:"+971",flag:"🇦🇪",uz:"BAA (Dubay)",ru:"ОАЭ",en:"UAE",val:"aed"},{code:"gb",dial:"+44",flag:"🇬🇧",uz:"Buyuk Britaniya",ru:"Великобритания",en:"UK",val:"gbp"},{code:"eu",dial:"+",flag:"🇪🇺",uz:"Yevropa",ru:"Европа",en:"Europe",val:"eur"}];
-const QUICK_ADD=[{emoji:"\ud83c\udf54",kat:"oziq",uz:"Ovqat",ru:"\u0415\u0434\u0430",en:"Food"},{emoji:"\ud83d\ude95",kat:"transport",uz:"Transport",ru:"\u0422\u0440\u0430\u043d\u0441\u043f\u043e\u0440\u0442",en:"Transport"},{emoji:"\u2615",kat:"oziq",uz:"Kofe",ru:"\u041a\u043e\u0444\u0435",en:"Coffee"},{emoji:"\ud83d\uded2",kat:"oziq",uz:"Bozor",ru:"\u041f\u0440\u043e\u0434\u0443\u043a\u0442\u044b",en:"Groceries"},{emoji:"\u26fd",kat:"transport",uz:"Benzin",ru:"\u0411\u0435\u043d\u0437\u0438\u043d",en:"Fuel"},{emoji:"\ud83d\udc8a",kat:"sog",uz:"Dorixona",ru:"\u0410\u043f\u0442\u0435\u043a\u0430",en:"Pharmacy"}];
-const VAZIFA_PRESETS=[
-  {emoji:"🧹",uz:"Xonani yig'ishtirish",ru:"Убрать комнату",en:"Clean room",reward:20000},
-  {emoji:"📚",uz:"Kitob o'qish",ru:"Читать книгу",en:"Read a book",reward:15000},
-  {emoji:"🛏️",uz:"To'shakni yig'ish",ru:"Заправить кровать",en:"Make the bed",reward:5000},
-  {emoji:"🍽️",uz:"Idishlarni yuvish",ru:"Помыть посуду",en:"Wash dishes",reward:10000},
-  {emoji:"🦷",uz:"Tish yuvish",ru:"Почистить зубы",en:"Brush teeth",reward:3000},
-  {emoji:"🕌",uz:"Namoz o'qish",ru:"Совершить намаз",en:"Pray",reward:10000},
-  {emoji:"🎓",uz:"Dars tayyorlash",ru:"Сделать уроки",en:"Do homework",reward:25000},
-  {emoji:"🏃",uz:"Mashq qilish",ru:"Зарядка",en:"Exercise",reward:8000},
-  {emoji:"🌱",uz:"Gullarni sug'orish",ru:"Полить цветы",en:"Water plants",reward:5000},
-  {emoji:"🐕",uz:"Hayvonga qarash",ru:"Покормить питомца",en:"Feed pet",reward:7000},
-  {emoji:"🗑️",uz:"Axlatni chiqarish",ru:"Вынести мусор",en:"Take out trash",reward:5000},
-  {emoji:"📖",uz:"Ingliz tili so'z yodlash",ru:"Учить англ. слова",en:"Learn English words",reward:20000}
-];
-const GOAL_PRESETS=[{emoji:"🏠",uz:"Uy xarid qilish",ru:"Покупка дома",en:"Buy a house",rang:"#10b981"},{emoji:"🚗",uz:"Mashina xarid qilish",ru:"Покупка машины",en:"Buy a car",rang:"#3b82f6"},{emoji:"✈️",uz:"Sayohat",ru:"Путешествие",en:"Travel",rang:"#f59e0b"},{emoji:"🕋",uz:"Umra ziyorati",ru:"Умра",en:"Umrah",rang:"#8b5cf6"},{emoji:"🕌",uz:"Haj amallari",ru:"Хадж",en:"Hajj",rang:"#06b6d4"},{emoji:"💍",uz:"To'y marosimi",ru:"Свадьба",en:"Wedding",rang:"#ec4899"},{emoji:"📱",uz:"Telefon / Texnika",ru:"Телефон",en:"Phone / Gadget",rang:"#6366f1"},{emoji:"🎓",uz:"Ta'lim / O'qish",ru:"Образование",en:"Education",rang:"#ef4444"},{emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",en:"Emergency",rang:"#14b8a6"},{emoji:"💼",uz:"Biznes boshlash",ru:"Бизнес",en:"Business",rang:"#f97316"}];
-const KID_GOAL_PRESETS=[
-  {emoji:"🚲",uz:"Velosiped",ru:"Велосипед",en:"Bicycle",rang:"#10b981"},
-  {emoji:"📱",uz:"Telefon",ru:"Телефон",en:"Phone",rang:"#6366f1"},
-  {emoji:"🎮",uz:"O'yin pristavka",ru:"Игровая приставка",en:"Game console",rang:"#8b5cf6"},
-  {emoji:"🧸",uz:"O'yinchoq",ru:"Игрушка",en:"Toy",rang:"#ec4899"},
-  {emoji:"⚽",uz:"Futbol to'pi",ru:"Мяч",en:"Football",rang:"#f59e0b"},
-  {emoji:"📚",uz:"Kitoblar",ru:"Книги",en:"Books",rang:"#ef4444"},
-  {emoji:"🎨",uz:"Rasm chizish to'plami",ru:"Набор для рисования",en:"Art set",rang:"#06b6d4"},
-  {emoji:"🛴",uz:"Samokat",ru:"Самокат",en:"Scooter",rang:"#14b8a6"},
-  {emoji:"🎧",uz:"Naushnik",ru:"Наушники",en:"Headphones",rang:"#a855f7"},
-  {emoji:"👟",uz:"Krossovka",ru:"Кроссовки",en:"Sneakers",rang:"#f97316"},
-  {emoji:"🎂",uz:"Tug'ilgan kun",ru:"День рождения",en:"Birthday",rang:"#ec4899"},
-  {emoji:"💰",uz:"Jamg'arma",ru:"Накопления",en:"Savings",rang:"#10b981"}
-];
 
 const RELATIONS=[{id:"ota",emoji:"\ud83d\udc68",uz:"Ota",ru:"\u041e\u0442\u0435\u0446",en:"Father"},{id:"ona",emoji:"\ud83d\udc69",uz:"Ona",ru:"\u041c\u0430\u0442\u044c",en:"Mother"},{id:"turmush",emoji:"\ud83d\udc91",uz:"Turmush o'rtoq",ru:"\u0421\u0443\u043f\u0440\u0443\u0433(\u0430)",en:"Spouse"},{id:"farzand",emoji:"\ud83d\udc66",uz:"Farzand",ru:"\u0420\u0435\u0431\u0451\u043d\u043e\u043a",en:"Child"},{id:"aka",emoji:"\ud83d\udc68",uz:"Aka",ru:"\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Older brother"},{id:"uka",emoji:"\ud83d\udc66",uz:"Uka",ru:"\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Younger brother"},{id:"opa",emoji:"\ud83d\udc69",uz:"Opa",ru:"\u0421\u0442\u0430\u0440\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Older sister"},{id:"singil",emoji:"\ud83d\udc67",uz:"Singil",ru:"\u041c\u043b\u0430\u0434\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Younger sister"},{id:"boshqa",emoji:"\ud83d\udc64",uz:"Boshqa",ru:"\u0414\u0440\u0443\u0433\u043e\u0435",en:"Other"}];
 const TL={
@@ -64,9 +24,6 @@ en:[{q:"What is the family code?",a:"A code to add family members. Find it in Pr
 
 const normTel=t=>{const d=(t||"").replace(/[^0-9]/g,"");return d.length>9?d.slice(-9):d;};
 const ADMIN_TEL="937414866";
-const td=()=>new Date().toISOString().slice(0,10);
-const tm=()=>new Date().toISOString().slice(0,7);
-const nt=()=>new Date().toLocaleTimeString("uz-UZ",{hour:"2-digit",minute:"2-digit"});
 // Haptic feedback (telefon tebranishi) - qo'llab-quvvatlasa
 const buzz=(ms=12)=>{try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}};
 // Summani so'z bilan yozish (o'zbekcha): 5000000 -> "besh million so'm"
@@ -91,7 +48,6 @@ const sonSoz=(n)=>{
   if(qoldiq>0)res+=uchXona(qoldiq)+" ";
   return res.trim();
 };
-const hp=async s=>{
   const str=s+"v7s";
   // HTTPS/localhost'da crypto.subtle ishlaydi
   if(typeof crypto!=="undefined"&&crypto.subtle){
