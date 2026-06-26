@@ -287,6 +287,7 @@ export default function App(){
   const [showGardenInfo,setShowGardenInfo]=useState(false);
   const [showBilim,setShowBilim]=useState(false);
   const [maqsadConfirmNotif,setMaqsadConfirmNotif]=useState(null);
+  const [maqTab,setMaqTab]=useState("mine"); // "mine" | "oila" 
   const [gardenData,setGardenData]=useState({level:0,watered:null,totalStars:0});
   const [pinStep,setPinStep]=useState("idle");
   const [pinVal,setPinVal]=useState("");
@@ -2207,11 +2208,14 @@ export default function App(){
   const isKid=user?.rol==="kid";
   const hasKids=azolar.some(a=>a.rol==="kid");
   const vazLb=lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks";
-  const navItems=isKid
-    ?[{id:"bosh",lb:t.home},{id:"vazifa",lb:vazLb},{id:"maqsad",lb:t.goal}]
-    :hasKids
-    ?[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"vazifa",lb:vazLb},{id:"hisobot",lb:t.rep}]
-    :[{id:"bosh",lb:t.home},{id:"qarz",lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},{id:"qoshish",pr:true},{id:"maqsad",lb:t.goal},{id:"hisobot",lb:t.rep}];
+  // Pastki nav — hammaga bir xil
+  const navItems=[
+    {id:"bosh",   lb:t.home},
+    {id:"qarz",   lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},
+    {id:"qoshish",pr:true},
+    {id:"maqsad", lb:t.goal},
+    {id:"hisobot",lb:t.rep},
+  ];
 
   return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
@@ -2429,6 +2433,7 @@ export default function App(){
         </div>
         <div style={{display:"flex",gap:8,alignItems:"center"}}>
           <button onClick={()=>{setShowS(v=>!v);setSrch("");}} style={{background:showS?th.ac+"18":"transparent",border:"1px solid "+(showS?th.ac:th.bor),borderRadius:10,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center"}}>{Ico.search(showS?th.ac:th.t2)}</button>
+
           <button onClick={()=>setShowNotifs(true)} style={{background:"transparent",border:"1px solid "+th.bor,borderRadius:10,padding:"6px 10px",cursor:"pointer",display:"flex",alignItems:"center",position:"relative"}}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a4.5 4.5 0 00-4.5 4.5v2.7L3 12h12l-1.5-2.8V6.5A4.5 4.5 0 009 2z" fill={th.t2} opacity=".15" stroke={th.t2} strokeWidth="1.3" strokeLinejoin="round"/><path d="M7.5 14.5a1.5 1.5 0 003 0" stroke={th.t2} strokeWidth="1.3" strokeLinecap="round"/></svg>
             {notifs.filter(n=>!n.read).length>0&&<div style={{position:"absolute",top:2,right:2,minWidth:16,height:16,borderRadius:8,background:th.rd,color:"#fff",fontSize:9,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 4px"}}>{notifs.filter(n=>!n.read).length>9?"9+":notifs.filter(n=>!n.read).length}</div>}
@@ -2639,6 +2644,40 @@ export default function App(){
           <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Maqsad qo'ying":lg==="ru"?"Поставьте цель":"Set a goal"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Uy, mashina, sayohat uchun jamg'aring":"Save for your dreams"}</div></div>
           <span style={{fontSize:18,color:th.ac}}>›</span>
         </button>}
+        {/* VAZIFA WIDGET — faqat farzand qo'shganlar uchun */}
+        {hasKids&&!isKid&&(()=>{
+          const pendingVaz=vazifalar.filter(v=>v.status==="done");
+          const activeVaz=vazifalar.filter(v=>v.status==="pending");
+          if(pendingVaz.length===0&&activeVaz.length===0)return(
+            <button onClick={()=>{buzz(8);setShowAddVazifa(true);}} style={{...S.cd,width:"100%",marginBottom:14,cursor:"pointer",textAlign:"left",border:"1px dashed #f59e0b55",background:"#f59e0b08",display:"flex",alignItems:"center",gap:12}}>
+              <div style={{width:42,height:42,borderRadius:12,background:"#f59e0b18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>📋</div>
+              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Farzandga vazifa bering":"Assign task to child"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Bolalar uchun topshiriqlar yarating":"Create tasks for kids"}</div></div>
+              <span style={{fontSize:18,color:"#f59e0b"}}>›</span>
+            </button>
+          );
+          return(
+            <div style={{...S.cd,marginBottom:14}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                <div style={{fontSize:13,fontWeight:700,color:th.t1,display:"flex",alignItems:"center",gap:6}}>
+                  📋 {lg==="uz"?"Farzand vazifalari":"Child tasks"}
+                  {pendingVaz.length>0&&<span style={{background:"#f59e0b",color:"#fff",borderRadius:20,fontSize:10,fontWeight:800,padding:"1px 7px"}}>{pendingVaz.length}</span>}
+                </div>
+                <button onClick={()=>{buzz(8);setShowAddVazifa(true);}} style={{background:th.ac+"18",border:"none",borderRadius:8,padding:"5px 10px",color:th.ac,fontSize:11,fontWeight:700,cursor:"pointer"}}>+ {lg==="uz"?"Yangi":"New"}</button>
+              </div>
+              {pendingVaz.length>0&&<div style={{background:"#f59e0b11",border:"1px solid #f59e0b33",borderRadius:10,padding:"8px 12px",marginBottom:8}}>
+                <div style={{fontSize:12,color:"#92400e",fontWeight:700,marginBottom:6}}>⏳ {lg==="uz"?"Tasdiqlash kutilmoqda":"Awaiting approval"} ({pendingVaz.length})</div>
+                {pendingVaz.slice(0,2).map(v=>(
+                  <div key={v.id} style={{display:"flex",alignItems:"center",gap:8,marginBottom:6}}>
+                    <span style={{fontSize:18}}>{v.emoji||"📋"}</span>
+                    <span style={{flex:1,fontSize:12,color:th.t1,fontWeight:600}}>{v.title}</span>
+                    <button onClick={()=>vazifaApprove(v.id)} style={{background:"#22c55e",border:"none",borderRadius:8,padding:"4px 10px",color:"#fff",fontSize:11,fontWeight:700,cursor:"pointer"}}>✓ OK</button>
+                  </div>
+                ))}
+              </div>}
+              {activeVaz.length>0&&<div style={{fontSize:12,color:th.t2}}>{activeVaz.length} {lg==="uz"?"ta faol vazifa":"active tasks"}</div>}
+            </div>
+          );
+        })()}
         <SL ch={lg==="uz"?"Oxirgi operatsiyalar":lg==="ru"?"\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438":"Recent transactions"}/>
         {xar.filter(x=>x.uid===user?.id).length===0&&dar.filter(d=>d.uid===user?.id).length===0?<div style={{textAlign:"center",padding:"40px 20px",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center"}}><div style={{width:80,height:80,borderRadius:"50%",background:th.ac+"11",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:14}}>\ud83d\udcb3</div><div style={{fontSize:16,fontWeight:700,color:th.t1,marginBottom:6}}>{lg==="uz"?"Hali xarajat kiritilmagan":lg==="ru"?"Пока нет операций":"No transactions yet"}</div><div style={{fontSize:13,color:th.t2,marginBottom:18,maxWidth:240}}>{lg==="uz"?"Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing":"Use quick add buttons above or tap + below"}</div><button onClick={()=>setScr("qoshish")} style={{...S.bt(),width:"auto",padding:"12px 28px",marginBottom:0,display:"flex",alignItems:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Xarajat qo'shish":lg==="ru"?"Добавить расход":"Add expense"}</button></div>
         :[...xar.filter(x=>x.uid===user?.id).slice(0,8).map(x=>({...x,tp:"x"})),...dar.filter(d=>d.uid===user?.id).slice(0,5).map(d=>({...d,tp:"d"}))].sort((a,b)=>b.id-a.id).slice(0,12).map(item=><TxRow key={item.tp+item.id} item={item}/>)}
@@ -2726,10 +2765,18 @@ export default function App(){
         <button onClick={addD} style={S.bt(th.gr,"#059669")}>{Ico.check("#fff")}{lg==="uz"?" Daromadni saqlash":" Save income"}</button>
       </div>}
       {scr==="maqsad"&&<div>
-        <div style={{...S.row,marginBottom:16}}>
+        <div style={{...S.row,marginBottom:12}}>
           <div style={{fontSize:16,fontWeight:700,color:th.t1}}>{isKid?(lg==="uz"?"🌟 Orzularim":lg==="ru"?"🌟 Мои мечты":"🌟 My dreams"):t.goal}</div>
-          <button onClick={()=>setAddM(v=>!v)} style={{background:th.ac,border:"none",borderRadius:10,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,boxShadow:"0 4px 12px "+th.ac+"44"}}>{Ico.add("#fff")}</button>
+          {maqTab==="mine"&&<button onClick={()=>setAddM(v=>!v)} style={{background:th.ac,border:"none",borderRadius:10,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,boxShadow:"0 4px 12px "+th.ac+"44"}}>{Ico.add("#fff")}</button>}
         </div>
+        {!isKid&&<div style={{display:"flex",background:th.bg,borderRadius:14,padding:3,marginBottom:14,gap:3}}>
+          <button onClick={()=>setMaqTab("mine")} style={{flex:1,padding:"10px",borderRadius:11,border:"none",background:maqTab==="mine"?th.sur:"transparent",color:maqTab==="mine"?th.t1:th.t2,fontWeight:maqTab==="mine"?800:500,fontSize:13,cursor:"pointer",boxShadow:maqTab==="mine"?"0 2px 8px rgba(0,0,0,0.1)":"none",transition:"all .2s"}}>
+            🎯 {lg==="uz"?"O'zimning":lg==="ru"?"Мои цели":"My goals"}
+          </button>
+          <button onClick={()=>setMaqTab("oila")} style={{flex:1,padding:"10px",borderRadius:11,border:"none",background:maqTab==="oila"?th.sur:"transparent",color:maqTab==="oila"?th.t1:th.t2,fontWeight:maqTab==="oila"?800:500,fontSize:13,cursor:"pointer",boxShadow:maqTab==="oila"?"0 2px 8px rgba(0,0,0,0.1)":"none",transition:"all .2s"}}>
+            👨‍👩‍👧 {lg==="uz"?"Oilamning":lg==="ru"?"Семейные":"Family goals"}
+          </button>
+        </div>}
         {addM&&<div style={{...S.cd,border:"1.5px solid "+th.ac+"55",marginBottom:14}}>
           <div style={{fontSize:13,fontWeight:700,color:th.ac,marginBottom:13}}>{lg==="uz"?"Yangi maqsad":"New goal"}</div>
           <label style={S.lb}>{lg==="uz"?"Tayyor maqsadlar":lg==="ru"?"Готовые цели":"Quick presets"}</label>
@@ -2771,8 +2818,15 @@ export default function App(){
           <MoneyInput style={S.ip} value={editMqS} onChange={setEditMqS} placeholder="..."/>
           <div style={{display:"flex",gap:8}}><button onClick={saveEditMq} style={{...S.bt(),marginBottom:0,flex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{Ico.check("#fff")}{t.sv}</button><button onClick={()=>setEditMq(null)} style={{flex:1,background:"transparent",border:"1.5px solid "+th.bor,borderRadius:14,padding:14,color:th.t2,cursor:"pointer",fontWeight:700,fontSize:14}}>{t.cn}</button></div>
         </div>}
-        {maq.length===0&&!addM?<div style={{textAlign:"center",padding:"44px 0",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}><div style={{fontSize:48}}>\ud83c\udfaf</div><span>{lg==="uz"?"Maqsad qo'shing":"Add a goal"}</span></div>
-        :maq.map(m=>{
+        {(()=>{
+          const filteredMaq = isKid ? maq :
+            maqTab==="mine" ? maq.filter(m=>m.uid===user.id||!m.uid) :
+            maq.filter(m=>m.uid&&m.uid!==user.id);
+          if(filteredMaq.length===0&&!addM)return <div style={{textAlign:"center",padding:"44px 0",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}>
+            <div style={{fontSize:48}}>🎯</div>
+            <span>{maqTab==="oila"?(lg==="uz"?"Oila a'zolari hali maqsad qo'shmagan":"No family goals yet"):(lg==="uz"?"Maqsad qo'shing":"Add a goal")}</span>
+          </div>;
+          return filteredMaq.map(m=>{
           const p=Math.round(m.jamg/m.maqsad*100);
           return <div key={m.id} style={{...S.cd,marginBottom:10}}>
             <div style={{...S.row,alignItems:"flex-start",marginBottom:10}}>
@@ -2783,14 +2837,17 @@ export default function App(){
             {m.createdAt&&<div style={{fontSize:11,color:th.t2,marginBottom:4}}>📅 {lg==="uz"?"Boshlangan":"Started"}: {m.createdAt}</div>}
             {p<100&&(()=>{const remain=m.maqsad-m.jamg;const perMonth=Math.ceil(m.maqsad/12);const monthsLeft=Math.ceil(remain/perMonth);return <div style={{background:m.rang+"0d",borderRadius:9,padding:"8px 11px",marginBottom:10,fontSize:11,color:th.t2,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13}}>💡</span><span>{lg==="uz"?"Har oy "+f(perMonth,true)+" ajratsangiz, ~"+monthsLeft+" oyda yig'asiz":lg==="ru"?"Откладывая "+f(perMonth,true)+"/мес, накопите за ~"+monthsLeft+" мес":"Save "+f(perMonth,true)+"/mo to reach in ~"+monthsLeft+" months"}</span></div>;})()}
             {p>=100?<div style={{textAlign:"center"}}>
-                      <div style={{color:m.rang,fontWeight:700,fontSize:13,marginBottom:4}}>{t.ach} 🎉</div>
-                      {m.createdAt&&<div style={{fontSize:11,color:th.t2}}>📅 {lg==="uz"?"Boshlangan":"Started"}: {m.createdAt}</div>}
-                      {m.completedAt&&<div style={{fontSize:11,color:m.rang,fontWeight:600,marginTop:2}}>🏆 {lg==="uz"?"Erishilgan":"Achieved"}: {m.completedAt?.slice(0,10)}</div>}
+                      <div style={{color:m.rang,fontWeight:700,fontSize:13,marginBottom:8}}>{t.ach} 🎉</div>
+                      {(m.createdAt||m.completedAt)&&<div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:6,flexWrap:"wrap",marginBottom:6}}>
+                        {m.createdAt&&<span style={{fontSize:11,color:th.t2,background:th.bg,borderRadius:8,padding:"3px 8px"}}>📅 {lg==="uz"?"Boshlangan":"Started"}: {m.createdAt}</span>}
+                        {m.createdAt&&m.completedAt&&<span style={{fontSize:11,color:th.t2}}>—</span>}
+                        {m.completedAt&&<span style={{fontSize:11,color:m.rang,fontWeight:700,background:m.rang+"15",borderRadius:8,padding:"3px 8px"}}>🏆 {lg==="uz"?"Erishilgan":"Achieved"}: {m.completedAt?.slice(0,10)}</span>}
+                      </div>}
                       {m.status==="waiting_parent"&&<div style={{fontSize:12,color:"#f59e0b",fontWeight:600,marginTop:4}}>⏳ {lg==="uz"?"Ota-ona tasdiqlashi kutilmoqda":"Waiting for parent"}</div>}
                       {m.status==="parent_confirmed"&&<div style={{fontSize:12,color:"#22c55e",fontWeight:600,marginTop:4}}>✅ {lg==="uz"?"Ota-ona tasdiqladi! Siz ham tasdiqlang":"Parent confirmed! Confirm yours too"}</div>}
                     </div>:<div style={{...S.row}}><span style={{fontSize:11,color:th.t2}}>{t.rem}: {f(m.maqsad-m.jamg,true)}</span><button onClick={()=>{setTupId(m.id);setTupS("");}} style={{background:m.rang+"18",border:"1px solid "+m.rang+"44",borderRadius:9,padding:"5px 12px",color:m.rang,cursor:"pointer",fontWeight:700,fontSize:12}}>{t.am}</button></div>}
           </div>;
-        })}
+        })})()}
       </div>}
       {scr==="vazifa"&&<div>
         {/* BOLA BALANSI (faqat bola yoki tanlangan) */}
