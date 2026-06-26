@@ -2213,13 +2213,20 @@ export default function App(){
   const hasKids=azolar.some(a=>a.rol==="kid");
   const vazLb=lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks";
   // Pastki nav — hammaga bir xil
-  const navItems=[
-    {id:"bosh",   lb:t.home},
-    {id:"qarz",   lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},
-    {id:"qoshish",pr:true},
-    {id:"maqsad", lb:t.goal},
-    {id:"hisobot",lb:t.rep},
-  ];
+  // Bola uchun alohida nav (3 tab, + yo'q), kattalar uchun alohida (5 tab)
+  const navItems=isKid
+    ?[
+      {id:"bosh",   lb:t.home},
+      {id:"vazifa", lb:lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks"},
+      {id:"maqsad", lb:t.goal},
+    ]
+    :[
+      {id:"bosh",   lb:t.home},
+      {id:"qarz",   lb:lg==="uz"?"Qarz":lg==="ru"?"Долг":"Debt"},
+      {id:"qoshish",pr:true},
+      {id:"maqsad", lb:t.goal},
+      {id:"hisobot",lb:t.rep},
+    ];
 
   return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
@@ -3613,7 +3620,7 @@ export default function App(){
         <div style={{width:50}}/>
       </div>
       {/* Tabs */}
-      {addStep==="kat"&&<div style={{background:th.sur,padding:"10px 16px 12px",flexShrink:0,borderBottom:"1px solid "+th.bor}}>
+      {addStep==="kat"&&!isKid&&<div style={{background:th.sur,padding:"10px 16px 12px",flexShrink:0,borderBottom:"1px solid "+th.bor}}>
         <div style={{display:"flex",background:th.bg,borderRadius:14,padding:3,gap:3}}>
           <button onClick={()=>{setAddModalTab("xarajat");setAddKat(null);}} style={{flex:1,padding:"11px",borderRadius:11,border:"none",background:addModalTab==="xarajat"?th.rd:"transparent",color:addModalTab==="xarajat"?"#fff":th.t2,fontWeight:800,fontSize:14,cursor:"pointer",transition:"all .2s"}}>
             {lg==="uz"?"💸 Xarajat":"💸 Expense"}
@@ -3623,10 +3630,13 @@ export default function App(){
           </button>
         </div>
       </div>}
+      {addStep==="kat"&&isKid&&<div style={{background:th.sur,padding:"10px 16px 12px",flexShrink:0,borderBottom:"1px solid "+th.bor}}>
+        <div style={{fontSize:14,fontWeight:800,color:th.gr,textAlign:"center"}}>💰 {lg==="uz"?"Daromad qo'shish":"Add income"}</div>
+      </div>}
       {/* Content */}
       <div style={{flex:1,overflowY:"auto",background:th.bg}}>
         {/* KATEGORIYA TANLASH */}
-        {addStep==="kat"&&addModalTab==="xarajat"&&<div style={{padding:"14px 16px"}}>
+        {addStep==="kat"&&addModalTab==="xarajat"&&!isKid&&<div style={{padding:"14px 16px"}}>
           {/* QR + Ovoz */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
             <button onClick={()=>{setShowAddModal(false);startScanner();}} style={{background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",borderRadius:16,padding:"14px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 14px "+th.ac+"44",position:"relative"}}>
@@ -4013,7 +4023,7 @@ export default function App(){
     </div>}
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:th.sur,borderTop:"1px solid "+th.bor,padding:"8px 12px 22px",display:"flex",justifyContent:"space-around",alignItems:"center",zIndex:20}}>
       {navItems.map(item=>item.pr
-        ?<button key="add" onClick={()=>{buzz(15);setShowAddModal(true);setAddModalTab("xarajat");setAddStep("kat");setAddKat(null);setFS("");setFIz("");setFSn(td());setFDS("");setFDI("");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
+        ?<button key="add" onClick={()=>{buzz(15);setShowAddModal(true);setAddModalTab(isKid?"daromad":"xarajat");setAddStep("kat");setAddKat(null);setFS("");setFIz("");setFSn(td());setFDS("");setFDI("");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
         :<button key={item.id} onClick={()=>{buzz(8);setScr(item.id);}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,opacity:scr===item.id?1:0.5,transition:"all .2s",padding:"4px 8px",transform:scr===item.id?"translateY(-2px)":"none"}}>
           {item.id==="bosh"&&Ico.navHome(scr===item.id?th.ac:th.t2)}
           {item.id==="grafik"&&Ico.navChart(scr===item.id?th.ac:th.t2)}
