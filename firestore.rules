@@ -2,13 +2,17 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Faqat tizimga kirgan (authenticated) foydalanuvchilar o'qiy/yoza oladi.
-    // Bu 'if true' dan ancha xavfsiz: anonim/tashqi kira olmaydi.
+    // Kirishdan oldin yoki bola (anonim) uchun kerak bo'lgan hujjatlar.
+    // tphone_, em_, kidlogin_ : login qidirish (maxfiy ma'lumot yo'q)
+    // vazifa_, kidbal_, notif_, user_ : vazifa tizimi (bola anonim ishlatadi)
     match /appdata/{docId} {
-      allow read, write: if request.auth != null;
+      allow read: if request.auth != null
+        || docId.matches('oilaV7_tphone_.*')
+        || docId.matches('oilaV7_em_.*')
+        || docId.matches('oilaV7_kidlogin_.*');
+      allow write: if request.auth != null;
     }
 
-    // Boshqa hamma narsa - taqiqlangan
     match /{document=**} {
       allow read, write: if false;
     }
