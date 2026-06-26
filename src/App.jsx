@@ -1041,8 +1041,34 @@ export default function App(){
     const item={id:Date.now(),uid:user.id,tur:qarzTur,kim:qarzKim.trim(),summa:Number(qarzSum),izoh:qarzIzoh,sana:qarzSana,qaytSana:qarzQaytSana,paid:false,paidSana:""};
     const upd=[item,...qarzlar];
     await db.s("qarz_"+user.oilaId,upd);setQarzlar(upd);
+
+    // Telefon raqamsiz qarz — avtomatik balansga bog'lash
+    const hasTel=qarzTel&&qarzTel.replace(/\D/g,"").length>=7;
+    if(!hasTel){
+      const sum=Number(qarzSum);
+      const izohTxt=qarzTur==="olgan"
+        ?(lg==="uz"?"Qarz olindi: ":lg==="ru"?"Получен долг: ":"Loan received: ")+qarzKim.trim()
+        :(lg==="uz"?"Qarz berildi: ":lg==="ru"?"Выдан долг: ":"Loan given: ")+qarzKim.trim();
+      if(qarzTur==="olgan"){
+        // Daromad sifatida qo'shish
+        const dItem={id:Date.now()+1,tur:"qarz",summa:sum,izoh:izohTxt,sana:qarzSana,vaqt:nt(),uid:user.id,fromQarz:item.id};
+        const dk="d_"+user.oilaId+"_"+user.id;
+        await db.s(dk,[dItem,...((await db.g(dk))||[])]);
+        setDar(d=>[dItem,...d]);
+        ok$(lg==="uz"?"Qarz olindi va balansga qo'shildi! +"+f(sum,true):lg==="ru"?"Долг получен и добавлен в баланс! +"+f(sum,true):"Loan added to balance! +"+f(sum,true));
+      } else {
+        // Xarajat sifatida qo'shish
+        const xItem={id:Date.now()+1,kategoriya:"qarz",summa:sum,izoh:izohTxt,sana:qarzSana,vaqt:nt(),uid:user.id,repeat:false,fromQarz:item.id};
+        const xk="x_"+user.oilaId+"_"+user.id;
+        await db.s(xk,[xItem,...((await db.g(xk))||[])]);
+        setXar(x=>[xItem,...x]);
+        ok$(lg==="uz"?"Qarz berildi va balansdan ayirildi! -"+f(sum,true):lg==="ru"?"Долг выдан и снят с баланса! -"+f(sum,true):"Loan deducted from balance! -"+f(sum,true));
+      }
+    } else {
+      ok$(t.xa);
+    }
+
     setShowAddQarz(false);setQarzKim("");setQarzSum("");setQarzIzoh("");setQarzSana(td());setQarzQaytSana("");setQarzTur("olgan");
-    ok$(t.xa);
   };
   const addQarzAsDaromad=async(q)=>{
     const item={id:Date.now(),tur:"boshqa",summa:q.summa,izoh:(lg==="uz"?"Qarz qaytishi: ":"Debt return: ")+q.kim,sana:td(),vaqt:nt()};
@@ -2291,6 +2317,15 @@ export default function App(){
           <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#10b981,#059669)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎁</div>
           <div style={{flex:1,textAlign:"left"}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Sovg'a puli kiritish":lg==="ru"?"Добавить подарок":"Add gift money"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Buvi, bobo yoki qarindosh bergan pul":"Money from grandparents or relatives"}</div></div>
           <span style={{fontSize:18,color:th.gr}}>+</span>
+        </button>
+        {/* Bilim Bozori tugmasi */}
+        <button onClick={()=>{buzz(10);setShowBilim(true);}} style={{width:"100%",background:"linear-gradient(135deg,#1e40af15,#3b82f608)",border:"1.5px solid #3b82f644",borderRadius:16,padding:"13px 16px",cursor:"pointer",display:"flex",alignItems:"center",gap:12,marginBottom:12}}>
+          <div style={{width:42,height:42,borderRadius:12,background:"linear-gradient(135deg,#1e40af,#3b82f6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>📚</div>
+          <div style={{flex:1,textAlign:"left"}}>
+            <div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Bilim Bozori":lg==="ru"?"Рынок знаний":"Knowledge Market"}</div>
+            <div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Ingliz so'z o'rgan, Bilim Coin yig'":"Learn English, earn Bilim Coins"}</div>
+          </div>
+          <span style={{fontSize:18,color:"#3b82f6"}}>›</span>
         </button>
         {/* Bola statistikasi */}
         <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8,marginBottom:18}}>
