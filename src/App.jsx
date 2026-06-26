@@ -2608,37 +2608,12 @@ export default function App(){
           <Heat xar={xar} ac={th.ac}/>
         </div>
         {/* MAQSAD KARTASI - bosh sahifada */}
-        {maq.length>0&&<div onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,cursor:"pointer",marginBottom:14,background:"linear-gradient(135deg,#8b5cf60d,#6366f10d)",border:"1px solid #8b5cf633"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
-            <span style={{fontSize:18}}>🎯</span>
-            <span style={{fontSize:14,fontWeight:700,color:th.t1,flex:1}}>{lg==="uz"?"Maqsadlarim":lg==="ru"?"Мои цели":"My goals"}</span>
-            <span style={{fontSize:18,color:th.t2}}>›</span>
-          </div>
-          {maq.slice(0,2).map(m=>{const pct=m.summa>0?Math.min(100,Math.round((m.yiqilgan||0)/m.summa*100)):0;return(
-            <div key={m.id} style={{marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,color:th.t1,fontWeight:600}}>{m.emoji||"🎯"} {m.nom}</span><span style={{fontSize:11,color:th.ac,fontWeight:700}}>{pct}%</span></div>
-              <div style={{height:6,background:th.bg,borderRadius:3,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,#8b5cf6,#6366f1)",borderRadius:3,transition:"width .5s"}}/></div>
-            </div>
-          );})}
-        </div>}
-        {maq.length===0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",cursor:"pointer",marginBottom:14,background:"linear-gradient(135deg,#8b5cf60d,#6366f10d)",border:"1px dashed #8b5cf644",display:"flex",alignItems:"center",gap:10,textAlign:"left"}}>
+    {maq.length===0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",cursor:"pointer",marginBottom:14,background:"linear-gradient(135deg,#8b5cf60d,#6366f10d)",border:"1px dashed #8b5cf644",display:"flex",alignItems:"center",gap:10,textAlign:"left"}}>
           <span style={{fontSize:20}}>🎯</span>
           <div style={{flex:1}}><div style={{fontSize:13,fontWeight:700,color:th.t1}}>{lg==="uz"?"Maqsad qo'shing":lg==="ru"?"Добавить цель":"Add a goal"}</div><div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Uy, mashina, sayohat uchun jamg'aring":"Save for your dreams"}</div></div>
           <span style={{fontSize:18,color:th.t2}}>›</span>
         </button>}
-        {/* MAQSADLAR KARTASI (navigatsiyadan ko'chirildi) */}
-        {maq.length>0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",marginBottom:14,cursor:"pointer",textAlign:"left",border:"1px solid "+th.bor,display:"block"}}>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-            <div style={{fontSize:13,fontWeight:700,color:th.t1,display:"flex",alignItems:"center",gap:6}}>🎯 {lg==="uz"?"Maqsadlarim":lg==="ru"?"Мои цели":"My goals"}</div>
-            <span style={{fontSize:12,color:th.ac,fontWeight:600}}>{lg==="uz"?"Barchasi":"All"} ›</span>
-          </div>
-          {maq.slice(0,2).map(m=>{const pct=m.summa>0?Math.min(100,Math.round((m.yiqilgan||0)/m.summa*100)):0;return(
-            <div key={m.id} style={{marginBottom:8}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}><span style={{fontSize:12,color:th.t1,fontWeight:600}}>{m.emoji||"🎯"} {m.nom}</span><span style={{fontSize:11,color:th.ac,fontWeight:700}}>{pct}%</span></div>
-              <div style={{height:7,background:th.bg,borderRadius:4,overflow:"hidden"}}><div style={{height:"100%",width:pct+"%",background:"linear-gradient(90deg,"+th.ac+","+th.ac2+")",borderRadius:4,transition:"width .5s"}}/></div>
-            </div>
-          );})}
-        </button>}
+
         {maq.length===0&&<button onClick={()=>{buzz(8);setScr("maqsad");}} style={{...S.cd,width:"100%",marginBottom:14,cursor:"pointer",textAlign:"left",border:"1px dashed "+th.ac+"55",background:th.ac+"08",display:"flex",alignItems:"center",gap:12}}>
           <div style={{width:42,height:42,borderRadius:12,background:th.ac+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎯</div>
           <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:th.t1}}>{lg==="uz"?"Maqsad qo'ying":lg==="ru"?"Поставьте цель":"Set a goal"}</div><div style={{fontSize:11,color:th.t2,marginTop:2}}>{lg==="uz"?"Uy, mashina, sayohat uchun jamg'aring":"Save for your dreams"}</div></div>
@@ -3620,6 +3595,133 @@ export default function App(){
         </div>
       </div>
     )}
+    {/* ═══════ YANGI QO'SHISH MODAL (pastdan to'liq ekran) ═══════ */}
+    {showAddModal&&<div style={{position:"fixed",inset:0,zIndex:500,display:"flex",flexDirection:"column",animation:"slideUpFull .3s cubic-bezier(.32,1.4,.64,1)"}}>
+      <style>{`@keyframes slideUpFull{0%{transform:translateY(100%)}100%{transform:translateY(0)}}`}</style>
+      {/* Header */}
+      <div style={{background:th.sur,borderBottom:"1px solid "+th.bor,padding:"14px 18px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
+        <button onClick={()=>{if(addStep==="form"){setAddStep("kat");}else{setShowAddModal(false);}}} style={{background:"none",border:"none",fontSize:15,color:th.t2,cursor:"pointer",fontWeight:600,padding:"4px 0"}}>
+          {addStep==="form"?"← "+lg==="uz"?"Orqaga":"Back":"Bekor"}
+        </button>
+        <div style={{fontSize:16,fontWeight:800,color:th.t1}}>
+          {addStep==="kat"?(lg==="uz"?"Nima qo'shamiz?":"What to add?"):addKat?(addModalTab==="xarajat"?(lg==="uz"?"Xarajat":"Expense"):(lg==="uz"?"Daromad":"Income")):""}
+        </div>
+        <div style={{width:50}}/>
+      </div>
+      {/* Tabs */}
+      {addStep==="kat"&&<div style={{background:th.sur,padding:"10px 16px 12px",flexShrink:0,borderBottom:"1px solid "+th.bor}}>
+        <div style={{display:"flex",background:th.bg,borderRadius:14,padding:3,gap:3}}>
+          <button onClick={()=>{setAddModalTab("xarajat");setAddKat(null);}} style={{flex:1,padding:"11px",borderRadius:11,border:"none",background:addModalTab==="xarajat"?th.rd:"transparent",color:addModalTab==="xarajat"?"#fff":th.t2,fontWeight:800,fontSize:14,cursor:"pointer",transition:"all .2s"}}>
+            {lg==="uz"?"💸 Xarajat":"💸 Expense"}
+          </button>
+          <button onClick={()=>{setAddModalTab("daromad");setAddKat(null);}} style={{flex:1,padding:"11px",borderRadius:11,border:"none",background:addModalTab==="daromad"?th.gr:"transparent",color:addModalTab==="daromad"?"#fff":th.t2,fontWeight:800,fontSize:14,cursor:"pointer",transition:"all .2s"}}>
+            {lg==="uz"?"💰 Daromad":"💰 Income"}
+          </button>
+        </div>
+      </div>}
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",background:th.bg}}>
+        {/* KATEGORIYA TANLASH */}
+        {addStep==="kat"&&addModalTab==="xarajat"&&<div style={{padding:"14px 16px"}}>
+          {/* QR + Ovoz */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+            <button onClick={()=>{setShowAddModal(false);startScanner();}} style={{background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",borderRadius:16,padding:"14px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 14px "+th.ac+"44",position:"relative"}}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1" stroke="#fff" strokeWidth="1.5"/><rect x="12" y="2" width="6" height="6" rx="1" stroke="#fff" strokeWidth="1.5"/><rect x="2" y="12" width="6" height="6" rx="1" stroke="#fff" strokeWidth="1.5"/><path d="M12 12h2v2M16 12v6M12 16h2M18 16v2" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              {lg==="uz"?"QR skaner":"QR scan"}
+              {!isPremium&&<span style={{position:"absolute",top:-5,right:-5,fontSize:8,background:"#f59e0b",color:"#fff",borderRadius:8,padding:"1px 5px",fontWeight:800}}>PRO</span>}
+            </button>
+            <button onClick={()=>{setShowAddModal(false);startVoice();}} style={{background:"linear-gradient(135deg,#8b5cf6,#6366f1)",border:"none",borderRadius:16,padding:"14px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 14px #8b5cf644",position:"relative"}}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="7" y="2" width="6" height="10" rx="3" stroke="#fff" strokeWidth="1.5"/><path d="M4 9a6 6 0 0012 0M10 15v3M7 18h6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
+              {lg==="uz"?"Ovoz bilan":"Voice"}
+              {!isPremium&&<span style={{position:"absolute",top:-5,right:-5,fontSize:8,background:"#f59e0b",color:"#fff",borderRadius:8,padding:"1px 5px",fontWeight:800}}>PRO</span>}
+            </button>
+          </div>
+          {/* Kategoriyalar 4 ustun */}
+          <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:10,letterSpacing:0.5}}>{lg==="uz"?"KATEGORIYA TANLANG":"SELECT CATEGORY"}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {KATS.map((k,i)=>(
+              <button key={k.id} onClick={()=>{setAddKat(k.id);setFK(k.id);setAddStep("form");}} style={{background:th.sur,border:"1.5px solid "+th.bor,borderRadius:16,padding:"12px 6px 10px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"all .15s"}}>
+                <div style={{width:44,height:44,borderRadius:13,background:k.c+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <KatIco id={k.id} c={k.c} s={22}/>
+                </div>
+                <span style={{fontSize:10,fontWeight:600,color:th.t1,textAlign:"center",lineHeight:1.2}}>{KN[lg][i]}</span>
+              </button>
+            ))}
+          </div>
+        </div>}
+        {/* DAROMAD KATEGORIYA */}
+        {addStep==="kat"&&addModalTab==="daromad"&&<div style={{padding:"14px 16px"}}>
+          <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:10,letterSpacing:0.5}}>{lg==="uz"?"DAROMAD TURINI TANLANG":"SELECT INCOME TYPE"}</div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+            {DARS.map((d,i)=>(
+              <button key={d.id} onClick={()=>{setAddKat(d.id);setFDT(d.id);setAddStep("form");}} style={{background:th.sur,border:"1.5px solid "+th.bor,borderRadius:16,padding:"12px 6px 10px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
+                <div style={{width:44,height:44,borderRadius:13,background:d.c+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <DarIco id={d.id} c={d.c} s={22}/>
+                </div>
+                <span style={{fontSize:10,fontWeight:600,color:th.t1,textAlign:"center",lineHeight:1.2}}>{DN[lg][i]}</span>
+              </button>
+            ))}
+          </div>
+        </div>}
+        {/* XARAJAT FORM */}
+        {addStep==="form"&&addModalTab==="xarajat"&&<div style={{padding:"16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,background:th.sur,borderRadius:16,padding:"12px 16px",marginBottom:16,border:"1.5px solid "+(KATS.find(k=>k.id===addKat)?.c||th.ac)+"44"}}>
+            <div style={{width:42,height:42,borderRadius:12,background:(KATS.find(k=>k.id===addKat)?.c||th.ac)+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <KatIco id={addKat} c={KATS.find(k=>k.id===addKat)?.c||th.ac} s={22}/>
+            </div>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:th.t1}}>{KN[lg][KATS.findIndex(k=>k.id===addKat)]}</div>
+              <div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Xarajat kategoriyasi":"Expense category"}</div>
+            </div>
+          </div>
+          <label style={S.lb}>{lg==="uz"?"Summa (so'm)":"Amount"}</label>
+          <MoneyInput style={{...S.ip,fontSize:28,fontWeight:800,textAlign:"center"}} value={fS} onChange={setFS} placeholder="0" autoFocus/>
+          <label style={S.lb}>{lg==="uz"?"Izoh (ixtiyoriy)":"Note (optional)"}</label>
+          <input style={S.ip} value={fIz} onChange={e=>setFIz(e.target.value)} placeholder={lg==="uz"?"Nima uchun?":"What for?"}/>
+          <label style={S.lb}>{lg==="uz"?"Sana":"Date"}</label>
+          <input type="date" style={S.ip} value={fSn} onChange={e=>setFSn(e.target.value)}/>
+          {azolar.length>1&&<>
+            <label style={S.lb}>{lg==="uz"?"Kim uchun?":"For whom?"}</label>
+            <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:6,marginBottom:12}}>
+              <button onClick={()=>setXForMember("")} style={{flexShrink:0,background:!xForMember?th.ac+"18":th.surH,border:"1.5px solid "+(!xForMember?th.ac:th.bor),borderRadius:11,padding:"9px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:!xForMember?th.ac:th.t2,fontSize:12,fontWeight:600}}>
+                <Av src={user?.photo} name={user?.ism} size={22} ac={th.ac}/>{lg==="uz"?"O'zim":"Me"}
+              </button>
+              {azolar.filter(a=>a.id!==user.id).map(a=>(
+                <button key={a.id} onClick={()=>setXForMember(a.id)} style={{flexShrink:0,background:xForMember===a.id?th.ac+"18":th.surH,border:"1.5px solid "+(xForMember===a.id?th.ac:th.bor),borderRadius:11,padding:"9px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:xForMember===a.id?th.ac:th.t2,fontSize:12,fontWeight:600}}>
+                  <Av src={a.photo} name={a.ism} size={22} ac={th.ac}/>{a.ism.split(" ")[0]}
+                </button>
+              ))}
+            </div>
+          </>}
+          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,background:th.sur,border:"1px solid "+th.bor,borderRadius:13,padding:"12px 14px"}}>
+            <input type="checkbox" id="rep2" checked={fRp} onChange={e=>setFRp(e.target.checked)} style={{width:18,height:18,cursor:"pointer",accentColor:th.ac}}/>
+            <label htmlFor="rep2" style={{fontSize:13,color:th.t1,cursor:"pointer"}}>{lg==="uz"?"Takroriy (oy sayin)":"Recurring (monthly)"}</label>
+          </div>
+          <button onClick={async()=>{await addX();setShowAddModal(false);}} style={{...S.bt(th.rd,"#dc2626"),marginBottom:8}}>
+            {Ico.check("#fff")}{lg==="uz"?" Xarajatni saqlash":" Save expense"}
+          </button>
+        </div>}
+        {/* DAROMAD FORM */}
+        {addStep==="form"&&addModalTab==="daromad"&&<div style={{padding:"16px"}}>
+          <div style={{display:"flex",alignItems:"center",gap:10,background:th.sur,borderRadius:16,padding:"12px 16px",marginBottom:16,border:"1.5px solid "+(DARS.find(d=>d.id===addKat)?.c||th.gr)+"44"}}>
+            <div style={{width:42,height:42,borderRadius:12,background:(DARS.find(d=>d.id===addKat)?.c||th.gr)+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <DarIco id={addKat} c={DARS.find(d=>d.id===addKat)?.c||th.gr} s={22}/>
+            </div>
+            <div>
+              <div style={{fontSize:13,fontWeight:700,color:th.t1}}>{DN[lg][DARS.findIndex(d=>d.id===addKat)]}</div>
+              <div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Daromad turi":"Income type"}</div>
+            </div>
+          </div>
+          <label style={S.lb}>{lg==="uz"?"Summa (so'm)":"Amount"}</label>
+          <MoneyInput style={{...S.ip,fontSize:28,fontWeight:800,textAlign:"center"}} value={fDS} onChange={setFDS} placeholder="0" autoFocus/>
+          <label style={S.lb}>{lg==="uz"?"Izoh (ixtiyoriy)":"Note (optional)"}</label>
+          <input style={S.ip} value={fDI} onChange={e=>setFDI(e.target.value)} placeholder={lg==="uz"?"Masalan: may oyligi":"e.g. May salary"}/>
+          <button onClick={async()=>{await addD();setShowAddModal(false);}} style={{...S.bt(),marginBottom:8}}>
+            {Ico.check("#fff")}{lg==="uz"?" Daromadni saqlash":" Save income"}
+          </button>
+        </div>}
+      </div>
+    </div>}
     {showBilim&&<div style={{position:"fixed",inset:0,zIndex:200,background:dark?"#0f172a":"#f0f9ff"}}>
       <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={()=>setShowBilim(false)}/>
     </div>}
@@ -3907,7 +4009,7 @@ export default function App(){
     </div>}
     <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:th.sur,borderTop:"1px solid "+th.bor,padding:"8px 12px 22px",display:"flex",justifyContent:"space-around",alignItems:"center",zIndex:20}}>
       {navItems.map(item=>item.pr
-        ?<button key="add" onClick={()=>{buzz(15);setScr("qoshish");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
+        ?<button key="add" onClick={()=>{buzz(15);setShowAddModal(true);setAddModalTab("xarajat");setAddStep("kat");setAddKat(null);setFS("");setFIz("");setFSn(td());setFDS("");setFDI("");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
         :<button key={item.id} onClick={()=>{buzz(8);setScr(item.id);}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,opacity:scr===item.id?1:0.5,transition:"all .2s",padding:"4px 8px",transform:scr===item.id?"translateY(-2px)":"none"}}>
           {item.id==="bosh"&&Ico.navHome(scr===item.id?th.ac:th.t2)}
           {item.id==="grafik"&&Ico.navChart(scr===item.id?th.ac:th.t2)}
