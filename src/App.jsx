@@ -1,4 +1,4 @@
-// v35fix2 — kid nav: Bosh|Vazifa|Maqsad, adult: Bosh|Qarz|+|Maqsad|Hisobot
+// v37 — refactor: constants.js, formatters.js, AppContext, hooks extracted
 import{useState,useEffect,useCallback,useMemo,useRef}from"react";
 import Garden from"./Garden.jsx";
 import{MK,KATS,KN,DARS,DN,VALS,COUNTRIES,QUICK_ADD,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,ONB_SLIDES}from"./utils/constants.js";
@@ -6,6 +6,8 @@ import{td,nt,tm,f,hp}from"./utils/formatters.js";
 import BilimBozor from"./BilimBozor.jsx";
 import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 import{db,auth,fbAuth}from"./firebase.js";
+// Context (keyingi bosqichda to'liq o'tkaziladi)
+import{useApp}from"./context/AppContext.jsx";
 
 
 
