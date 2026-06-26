@@ -893,6 +893,20 @@ export default function App(){
       if(summa>bal)return ok$(lg==="uz"?"Cho'ntak pulingiz yetarli emas! Ko'proq vazifa bajaring 💪":"Not enough pocket money!","err");
       const kb={...kidBalances};kb[user.id]=bal-summa;
       await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
+    } else {
+      // Kattalar: asosiy balansdan ayirish (xarajat sifatida emas, maqsad to'plami sifatida)
+      const myDar=dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
+      const myXar=xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);
+      const myBal=myDar-myXar;
+      if(myBal<summa)return ok$(lg==="uz"
+        ?"❌ Balansda yetarli mablag' yo'q! Balans: "+f(Math.max(0,myBal),true)+", Kerak: "+f(summa,true)
+        :"❌ Insufficient balance! Balance: "+f(Math.max(0,myBal),true)+", Need: "+f(summa,true)
+      ,"err");
+      // Xarajat sifatida yozib qo'yamiz (maqsad to'plami)
+      const xItem={id:Date.now(),kategoriya:"maqsad",summa,izoh:(lg==="uz"?"Maqsad to'plami: ":"Goal savings: ")+(maq.find(m=>m.id===tupId)?.ism||""),sana:td(),vaqt:nt(),uid:user.id,repeat:false,forGoal:tupId};
+      const xk="x_"+user.oilaId+"_"+user.id;
+      await db.s(xk,[xItem,...((await db.g(xk))||[])]);
+      setXar(x=>[xItem,...x]);
     }
     const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+summa)>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const completedNow=wasComplete?new Date().toISOString().slice(0,10):undefined;
     const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+summa),...(wasComplete?{completedAt:completedNow}:{})}:m);if(wasComplete){
@@ -927,7 +941,13 @@ export default function App(){
     }catch(e){}
     addNotif("yangilik",lg==="uz"?"🎉 Orzungizga yetdingiz!":"🎉 Goal reached!",(tgtGoal?.ism||"")+" "+(lg==="uz"?"uchun pul to'plandi! Ota-onangiz tasdiqlashi kutilmoqda.":"funded! Waiting for parent confirmation."));
   } else {
-    addNotif("yangilik",lg==="uz"?"Maqsadga yetdingiz! 🎉":"Goal reached! 🎉",(tgtGoal?tgtGoal.ism:"")+" "+(lg==="uz"?"maqsadi bajarildi":"completed"));
+    // Kattalar: "Xarid qildingizmi?" so'rash
+    setMaqsadConfirmNotif({
+      type:"self_confirm",
+      maqsadId:tgtGoal?.id,
+      maqsadIsm:tgtGoal?.ism||"",
+      summa:tgtGoal?.maqsad||0,
+    });
   }
 }
     await db.s("maq_"+user.oilaId,u);setMaq(u);setTupId(null);setTupS("");
@@ -972,7 +992,42 @@ export default function App(){
       ok$(lg==="uz"?"🎉 Barakalla! Orzuingiz amalga oshdi!":"🎉 Congratulations! Your dream came true!");
     }catch(e){}
   };
-  const delMq=async id=>{const u=maq.filter(m=>m.id!==id);await db.s("maq_"+user.oilaId,u);setMaq(u);};
+  // Katta: "Ha, xarid qildim" — maqsad yopiladi
+  const confirmMaqBought=async(info)=>{
+    const u=maq.map(m=>m.id===info.maqsadId?{...m,status:"completed",paid:true,completedAt:new Date().toISOString().slice(0,10)}:m);
+    await db.s("maq_"+user.oilaId,u);setMaq(u);
+    setMaqsadConfirmNotif(null);
+    fireConfetti();buzz(30);
+    ok$(lg==="uz"?"🎉 Tabriklaymiz! Maqsadingiz amalga oshdi!":"🎉 Congratulations! Goal achieved!");
+  };
+  // Katta: "Yo'q, voz kechdim" — pul qaytadi asosiy balansga
+  const cancelMaqReturn=async(info)=>{
+    // Maqsadga kiritilgan pullarni qaytarish (daromad sifatida)
+    const goal=maq.find(m=>m.id===info.maqsadId);
+    if(goal&&goal.jamg>0){
+      const dItem={id:Date.now(),tur:"boshqa",summa:goal.jamg,izoh:(lg==="uz"?"Maqsaddan qaytarildi: ":"Goal cancelled: ")+(goal.ism||""),sana:td(),vaqt:nt(),uid:user.id};
+      const dk="d_"+user.oilaId+"_"+user.id;
+      await db.s(dk,[dItem,...((await db.g(dk))||[])]);
+      setDar(d=>[dItem,...d]);
+    }
+    // Maqsadni o'chirish
+    const u=maq.filter(m=>m.id!==info.maqsadId);
+    await db.s("maq_"+user.oilaId,u);setMaq(u);
+    setMaqsadConfirmNotif(null);
+    ok$(lg==="uz"?"Maqsad bekor qilindi. Pul balansingizga qaytdi ↩️":"Goal cancelled. Funds returned to balance ↩️","warn");
+  };
+  const delMq=async id=>{
+    // O'chirishdan oldin pul qaytarish
+    const goal=maq.find(m=>m.id===id);
+    if(goal&&goal.jamg>0&&!goal.paid&&!isKid){
+      const dItem={id:Date.now(),tur:"boshqa",summa:goal.jamg,izoh:(lg==="uz"?"Maqsad o'chirildi, pul qaytarildi: ":"Goal deleted, funds returned: ")+(goal.ism||""),sana:td(),vaqt:nt(),uid:user.id};
+      const dk="d_"+user.oilaId+"_"+user.id;
+      await db.s(dk,[dItem,...((await db.g(dk))||[])]);
+      setDar(d=>[dItem,...d]);
+    }
+    const u=maq.filter(m=>m.id!==id);
+    await db.s("maq_"+user.oilaId,u);setMaq(u);
+  };
   const saveEditMq=async()=>{
     if(!editMqN.trim()||!editMqS||Number(editMqS)<=0)return ok$(t.fa,"err");
     const u=maq.map(m=>m.id===editMq?{...m,ism:editMqN.trim(),maqsad:Number(editMqS)}:m);
@@ -3476,6 +3531,38 @@ export default function App(){
         }
       </div>}
     </div>
+    {maqsadConfirmNotif&&!isKid&&(
+      <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.75)",zIndex:300,display:"flex",alignItems:"center",justifyContent:"center",padding:20}}>
+        <div style={{background:th.sur,borderRadius:28,padding:"28px 24px",width:"100%",maxWidth:380,textAlign:"center"}}>
+          <div style={{fontSize:56,marginBottom:12}}>🎯</div>
+          <div style={{fontSize:20,fontWeight:900,color:th.t1,marginBottom:8}}>
+            {lg==="uz"?"Maqsadga yetdingiz!":"Goal reached!"}
+          </div>
+          <div style={{fontSize:15,color:th.t2,marginBottom:6,fontWeight:600}}>
+            {maqsadConfirmNotif.maqsadIsm}
+          </div>
+          <div style={{fontSize:14,color:th.t2,marginBottom:20,lineHeight:1.6}}>
+            {lg==="uz"
+              ?"Haqiqatan ham "+f(maqsadConfirmNotif.summa,true)+" ga shu narsani xarid qildingizmi?"
+              :"Did you actually purchase this for "+f(maqsadConfirmNotif.summa,true)+"?"}
+          </div>
+          <div style={{display:"flex",flexDirection:"column",gap:10}}>
+            <button onClick={()=>confirmMaqBought(maqsadConfirmNotif)}
+              style={{width:"100%",padding:"15px",borderRadius:16,border:"none",background:"linear-gradient(135deg,#22c55e,#15803d)",color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}}>
+              🛍️ {lg==="uz"?"Ha, xarid qildim!":"Yes, I bought it!"}
+            </button>
+            <button onClick={()=>cancelMaqReturn(maqsadConfirmNotif)}
+              style={{width:"100%",padding:"15px",borderRadius:16,border:"none",background:th.bg,color:th.t2,fontWeight:700,fontSize:14,cursor:"pointer",border:"1.5px solid "+th.bor}}>
+              ↩️ {lg==="uz"?"Yo'q, voz kechdim — pulni qaytaring":"No, cancel — return funds"}
+            </button>
+            <button onClick={()=>setMaqsadConfirmNotif(null)}
+              style={{width:"100%",padding:"10px",borderRadius:12,border:"none",background:"none",color:th.t2,fontWeight:600,fontSize:13,cursor:"pointer"}}>
+              {lg==="uz"?"Keyinroq":"Later"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     {showBilim&&<div style={{position:"fixed",inset:0,zIndex:200,background:dark?"#0f172a":"#f0f9ff"}}>
       <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={()=>setShowBilim(false)}/>
     </div>}
