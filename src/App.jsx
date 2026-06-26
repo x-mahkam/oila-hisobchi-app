@@ -882,7 +882,7 @@ export default function App(){
   const addMq=async()=>{
     if(!mN.trim()||!mS||Number(mS)<=0)return ok$(t.fa,"err");
     if(!isPremium&&maq.length>=3){setShowPremModal(true);return;}
-    const u=[...maq,{id:Date.now(),ism:mN.trim(),maqsad:Number(mS),jamg:0,rang:mR}];
+    const u=[...maq,{id:Date.now(),ism:mN.trim(),maqsad:Number(mS),jamg:0,rang:mR,createdAt:new Date().toISOString().slice(0,10),uid:user.id,status:"active"}];
     await db.s("maq_"+user.oilaId,u);setMaq(u);setMN("");setMS("");setAddM(false);ok$(t.ma);addStar(20,lg==="uz"?"Maqsad yaratildi":"Goal created");
   };
   const tupMq=async()=>{
@@ -894,7 +894,8 @@ export default function App(){
       const kb={...kidBalances};kb[user.id]=bal-summa;
       await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
     }
-    const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+summa)>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+summa)}:m);if(wasComplete){
+    const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+summa)>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const completedNow=wasComplete?new Date().toISOString().slice(0,10):undefined;
+    const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+summa),...(wasComplete?{completedAt:completedNow}:{})}:m);if(wasComplete){
   fireConfetti();buzz(20);
   addStar(10,lg==="uz"?"Maqsadga yetildi: "+(tgtGoal?.ism||""):"Goal reached: "+(tgtGoal?.ism||""));
   if(isKid){
@@ -2724,8 +2725,15 @@ export default function App(){
               <div style={{display:"flex",gap:7,alignItems:"center"}}><span style={{fontSize:18,fontWeight:800,color:m.rang}}>{p}%</span><button onClick={()=>{setEditMq(m.id);setEditMqN(m.ism);setEditMqS(String(m.maqsad));}} style={{background:"none",border:"none",cursor:"pointer",display:"flex"}}>{Ico.edit(th.t2)}</button><button onClick={()=>delMq(m.id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex"}}>{Ico.trash(th.t2)}</button></div>
             </div>
             <div style={{background:th.bg,borderRadius:10,height:14,overflow:"hidden",marginBottom:10}}><div style={{width:p+"%",height:"100%",background:"linear-gradient(90deg,"+m.rang+"88,"+m.rang+")",borderRadius:10,transition:"width .7s"}}/></div>
+            {m.createdAt&&<div style={{fontSize:11,color:th.t2,marginBottom:4}}>📅 {lg==="uz"?"Boshlangan":"Started"}: {m.createdAt}</div>}
             {p<100&&(()=>{const remain=m.maqsad-m.jamg;const perMonth=Math.ceil(m.maqsad/12);const monthsLeft=Math.ceil(remain/perMonth);return <div style={{background:m.rang+"0d",borderRadius:9,padding:"8px 11px",marginBottom:10,fontSize:11,color:th.t2,display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13}}>💡</span><span>{lg==="uz"?"Har oy "+f(perMonth,true)+" ajratsangiz, ~"+monthsLeft+" oyda yig'asiz":lg==="ru"?"Откладывая "+f(perMonth,true)+"/мес, накопите за ~"+monthsLeft+" мес":"Save "+f(perMonth,true)+"/mo to reach in ~"+monthsLeft+" months"}</span></div>;})()}
-            {p>=100?<div style={{textAlign:"center",color:m.rang,fontWeight:700,fontSize:13}}>{t.ach}</div>:<div style={{...S.row}}><span style={{fontSize:11,color:th.t2}}>{t.rem}: {f(m.maqsad-m.jamg,true)}</span><button onClick={()=>{setTupId(m.id);setTupS("");}} style={{background:m.rang+"18",border:"1px solid "+m.rang+"44",borderRadius:9,padding:"5px 12px",color:m.rang,cursor:"pointer",fontWeight:700,fontSize:12}}>{t.am}</button></div>}
+            {p>=100?<div style={{textAlign:"center"}}>
+                      <div style={{color:m.rang,fontWeight:700,fontSize:13,marginBottom:4}}>{t.ach} 🎉</div>
+                      {m.createdAt&&<div style={{fontSize:11,color:th.t2}}>📅 {lg==="uz"?"Boshlangan":"Started"}: {m.createdAt}</div>}
+                      {m.completedAt&&<div style={{fontSize:11,color:m.rang,fontWeight:600,marginTop:2}}>🏆 {lg==="uz"?"Erishilgan":"Achieved"}: {m.completedAt?.slice(0,10)}</div>}
+                      {m.status==="waiting_parent"&&<div style={{fontSize:12,color:"#f59e0b",fontWeight:600,marginTop:4}}>⏳ {lg==="uz"?"Ota-ona tasdiqlashi kutilmoqda":"Waiting for parent"}</div>}
+                      {m.status==="parent_confirmed"&&<div style={{fontSize:12,color:"#22c55e",fontWeight:600,marginTop:4}}>✅ {lg==="uz"?"Ota-ona tasdiqladi! Siz ham tasdiqlang":"Parent confirmed! Confirm yours too"}</div>}
+                    </div>:<div style={{...S.row}}><span style={{fontSize:11,color:th.t2}}>{t.rem}: {f(m.maqsad-m.jamg,true)}</span><button onClick={()=>{setTupId(m.id);setTupS("");}} style={{background:m.rang+"18",border:"1px solid "+m.rang+"44",borderRadius:9,padding:"5px 12px",color:m.rang,cursor:"pointer",fontWeight:700,fontSize:12}}>{t.am}</button></div>}
           </div>;
         })}
       </div>}
