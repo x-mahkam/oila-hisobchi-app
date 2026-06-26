@@ -286,6 +286,7 @@ export default function App(){
   const [stars,setStars]=useState(0);
   const [showGardenInfo,setShowGardenInfo]=useState(false);
   const [showBilim,setShowBilim]=useState(false);
+  const [maqsadConfirmNotif,setMaqsadConfirmNotif]=useState(null);
   const [gardenData,setGardenData]=useState({level:0,watered:null,totalStars:0});
   const [pinStep,setPinStep]=useState("idle");
   const [pinVal,setPinVal]=useState("");
@@ -893,9 +894,82 @@ export default function App(){
       const kb={...kidBalances};kb[user.id]=bal-summa;
       await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
     }
-    const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+summa)>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+summa)}:m);if(wasComplete){fireConfetti();buzz(20);addNotif("yangilik",lg==="uz"?"Maqsadga yetdingiz! 🎉":"Goal reached! 🎉",(tgtGoal?tgtGoal.ism:"")+" "+(lg==="uz"?"maqsadi bajarildi":"completed"));addStar(10,lg==="uz"?"Maqsadga yetildi: "+(tgtGoal?.ism||""):"Goal reached: "+(tgtGoal?.ism||""));}
+    const tgtGoal=maq.find(m=>m.id===tupId);const wasComplete=tgtGoal&&(tgtGoal.jamg+summa)>=tgtGoal.maqsad&&tgtGoal.jamg<tgtGoal.maqsad;const u=maq.map(m=>m.id===tupId?{...m,jamg:Math.min(m.maqsad,m.jamg+summa)}:m);if(wasComplete){
+  fireConfetti();buzz(20);
+  addStar(10,lg==="uz"?"Maqsadga yetildi: "+(tgtGoal?.ism||""):"Goal reached: "+(tgtGoal?.ism||""));
+  if(isKid){
+    // Bola maqsadiga yetdi — ota/onaga tasdiqlash xabari yuborish
+    try{
+      // Oila boshlig'ini topish
+      const boshId=oila?.boshId;
+      if(boshId&&boshId!==user.id){
+        const bn=(await db.g("notif_"+boshId))||[];
+        await db.s("notif_"+boshId,[{
+          id:Date.now(),
+          type:"maqsad_confirm",
+          title:lg==="uz"?"🎯 Farzandingiz orzusiga yetdi!":"🎯 Your child reached their goal!",
+          text:(lg==="uz"?user.ism+" '"+(tgtGoal?.ism||"")+"' uchun pul yig'di! Sotib oldingizmi?":user.ism+" saved for '"+(tgtGoal?.ism||"")+"'! Did you buy it?"),
+          maqsadId:tgtGoal?.id,
+          kidId:user.id,
+          kidIsm:user.ism,
+          maqsadIsm:tgtGoal?.ism||"",
+          summa:tgtGoal?.maqsad||0,
+          sana:new Date().toISOString(),
+          read:false,
+          status:"pending"
+        },...bn]);
+        // Maqsadni "yetdi, kutmoqda" statusiga o'tkazish
+        const maqUpd=(await db.g("maq_"+user.oilaId))||[];
+        const finalMaq=maqUpd.map(m=>m.id===tgtGoal?.id?{...m,status:"waiting_parent"}:m);
+        await db.s("maq_"+user.oilaId,finalMaq);
+      }
+    }catch(e){}
+    addNotif("yangilik",lg==="uz"?"🎉 Orzungizga yetdingiz!":"🎉 Goal reached!",(tgtGoal?.ism||"")+" "+(lg==="uz"?"uchun pul to'plandi! Ota-onangiz tasdiqlashi kutilmoqda.":"funded! Waiting for parent confirmation."));
+  } else {
+    addNotif("yangilik",lg==="uz"?"Maqsadga yetdingiz! 🎉":"Goal reached! 🎉",(tgtGoal?tgtGoal.ism:"")+" "+(lg==="uz"?"maqsadi bajarildi":"completed"));
+  }
+}
     await db.s("maq_"+user.oilaId,u);setMaq(u);setTupId(null);setTupS("");
     ok$(isKid?(lg==="uz"?"Orzungizga "+f(summa,true)+" jamg'arildi! 🌟":"Saved!"):t.ua);
+  };
+  // OTA/ONA: "Sotib berdim" — maqsad tasdiqlash
+  const confirmMaqParent=async(notif)=>{
+    try{
+      // Maqsadni "parent_confirmed" ga o'tkazish
+      const maqUpd=(await db.g("maq_"+user.oilaId))||[];
+      const finalMaq=maqUpd.map(m=>m.id===notif.maqsadId?{...m,status:"parent_confirmed",parentConfirmedAt:new Date().toISOString()}:m);
+      await db.s("maq_"+user.oilaId,finalMaq);setMaq(finalMaq);
+      // Bolaga xabar yuborish
+      const kn=(await db.g("notif_"+notif.kidId))||[];
+      await db.s("notif_"+notif.kidId,[{
+        id:Date.now(),
+        type:"maqsad_kid_confirm",
+        title:lg==="uz"?"🎁 Ota/onang orzuingni amalga oshirdi!":"🎁 Your parent fulfilled your dream!",
+        text:(lg==="uz"?"'"+(notif.maqsadIsm||"")+"' sotib olindi! Siz ham tasdiqlang 👇":"'"+( notif.maqsadIsm||"")+"' was bought! Confirm below 👇"),
+        maqsadId:notif.maqsadId,
+        maqsadIsm:notif.maqsadIsm,
+        sana:new Date().toISOString(),
+        read:false,
+        status:"pending"
+      },...kn]);
+      // Notifni o'qilgan qilish
+      const myN=notifs.map(n=>n.id===notif.id?{...n,read:true,status:"confirmed"}:n);
+      setNotifs(myN);await db.s("notif_"+user.id,myN);
+      fireConfetti();buzz(20);
+      ok$(lg==="uz"?"✅ Tasdiqlandi! Farzandingizga xabar yuborildi 🎉":"✅ Confirmed! Your child was notified 🎉");
+    }catch(e){ok$(lg==="uz"?"Xato yuz berdi":"Error","err");}
+  };
+  // BOLA: "Oldim!" — yakuniy tasdiqlash
+  const confirmMaqKid=async(notif)=>{
+    try{
+      const maqUpd=(await db.g("maq_"+user.oilaId))||[];
+      const finalMaq=maqUpd.map(m=>m.id===notif.maqsadId?{...m,status:"completed",completedAt:new Date().toISOString(),paid:true}:m);
+      await db.s("maq_"+user.oilaId,finalMaq);setMaq(finalMaq);
+      const myN=notifs.map(n=>n.id===notif.id?{...n,read:true,status:"confirmed"}:n);
+      setNotifs(myN);await db.s("notif_"+user.id,myN);
+      fireConfetti();buzz(30);
+      ok$(lg==="uz"?"🎉 Barakalla! Orzuingiz amalga oshdi!":"🎉 Congratulations! Your dream came true!");
+    }catch(e){}
   };
   const delMq=async id=>{const u=maq.filter(m=>m.id!==id);await db.s("maq_"+user.oilaId,u);setMaq(u);};
   const saveEditMq=async()=>{
@@ -948,20 +1022,35 @@ export default function App(){
     await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
     ok$(lg==="uz"?"Bajarildi deb belgilandi! Ota-ona tasdiqlaydi.":"Marked done!");
   };
-  // Ota-ona tasdiqlaydi -> mukofot bolaning balansiga qo'shiladi
+  // Ota-ona tasdiqlaydi -> bolaga pul, ota/onadan kamayadi
   const vazifaApprove=async(id)=>{
     buzz(20);
     const v=vazifalar.find(x=>x.id===id);if(!v)return;
+    // Ota/ona balansini tekshirish
+    const myDar=dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
+    const myXar=xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);
+    const myBal=myDar-myXar;
+    if(myBal<v.reward){
+      return ok$(lg==="uz"
+        ?"❌ Balansingizda yetarli mablag' yo'q! Kerak: "+f(v.reward,true)+", Balans: "+f(Math.max(0,myBal),true)
+        :"❌ Insufficient balance! Need: "+f(v.reward,true)+", Balance: "+f(Math.max(0,myBal),true)
+      ,"err");
+    }
     const upd=vazifalar.map(x=>x.id===id?{...x,status:"approved",paidSana:td()}:x);
     await db.s("vazifa_"+user.oilaId,upd);setVazifalar(upd);
     // Bola balansiga qo'shamiz
     const kb={...kidBalances};
     kb[v.assignedTo]=(kb[v.assignedTo]||0)+v.reward;
     await db.s("kidbal_"+user.oilaId,kb);setKidBalances(kb);
+    // Ota/ona balansidan kamaytiramiz (xarajat sifatida)
+    const xItem={id:Date.now(),kategoriya:"boshqa",summa:v.reward,izoh:(lg==="uz"?"Vazifa mukofoti: ":"Task reward: ")+(v.title||v.matn||""),sana:td(),vaqt:nt(),uid:user.id,repeat:false};
+    const xk="x_"+user.oilaId+"_"+user.id;
+    await db.s(xk,[xItem,...((await db.g(xk))||[])]);
+    setXar(x=>[xItem,...x]);
     // Bolaga bildirishnoma
-    try{const kn=(await db.g("notif_"+v.assignedTo))||[];await db.s("notif_"+v.assignedTo,[{id:Date.now(),text:(lg==="uz"?"🏆 Vazifa tasdiqlandi! +":"Task approved! +")+f(v.reward,true),sana:new Date().toISOString(),read:false},...kn]);}catch(e){}
-    addStar(3,lg==="uz"?"Vazifa bajarildi: "+(v.name||v.matn||""):"Task completed: "+(v.name||v.matn||""));
-    ok$(lg==="uz"?"Tasdiqlandi! Bola "+f(v.reward,true)+" oldi 🎉 +3⭐":"Approved! +3⭐");
+    try{const kn=(await db.g("notif_"+v.assignedTo))||[];await db.s("notif_"+v.assignedTo,[{id:Date.now(),type:"vazifa",text:(lg==="uz"?"🏆 Vazifa tasdiqlandi! +":"Task approved! +")+f(v.reward,true),sana:new Date().toISOString(),read:false},...kn]);}catch(e){}
+    addStar(3,lg==="uz"?"Vazifa bajarildi: "+(v.title||v.matn||""):"Task completed: "+(v.title||v.matn||""));
+    ok$(lg==="uz"?"Tasdiqlandi! Bola "+f(v.reward,true)+" oldi, balansingizdan ayirildi 🎉":"Approved! Kid received "+f(v.reward,true));
   };
   // Vazifani rad etish (qayta bajarsin)
   const vazifaReject=async(id)=>{
@@ -1410,9 +1499,33 @@ export default function App(){
     await db.s("qarz_"+user.oilaId,upd);setQarzlar(upd);
     const newReqs=qarzReqs.filter(r=>r.id!==req.id);
     setQarzReqs(newReqs);await db.s("qreq_"+user.tel,newReqs);
+    // Sender statusini yangilash
     const senderUser=await db.g("user_"+req.fromUid);
-    if(senderUser){const sq=(await db.g("qarz_"+senderUser.oilaId))||[];await db.s("qarz_"+senderUser.oilaId,sq.map(q=>q.id===req.id?{...q,linkStatus:"accepted"}:q));}
-    ok$(lg==="uz"?"Qarz tasdiqlandi!":"Debt confirmed!");
+    if(senderUser){
+      const sq=(await db.g("qarz_"+senderUser.oilaId))||[];
+      await db.s("qarz_"+senderUser.oilaId,sq.map(q=>q.id===req.id?{...q,linkStatus:"accepted"}:q));
+      // SENDER qarz BERDI → uning balansidan kamaysin (xarajat sifatida)
+      if(req.tur==="bergan"){
+        const xItem={id:Date.now()+2,kategoriya:"qarz",summa:req.summa,izoh:(lg==="uz"?"Qarz berildi (tasdiqlangan): ":"Loan given (confirmed): ")+user.ism,sana:req.sana,vaqt:nt(),uid:senderUser.id,repeat:false,fromQarz:req.id};
+        const xk="x_"+senderUser.oilaId+"_"+senderUser.id;
+        await db.s(xk,[xItem,...((await db.g(xk))||[])]);
+      }
+    }
+    // MEN qarz OLDIM → balansimga qo'shilsin (daromad sifatida)
+    if(myTur==="olgan"){
+      const dItem={id:Date.now()+1,tur:"qarz",summa:req.summa,izoh:(lg==="uz"?"Qarz olindi (tasdiqlangan): ":"Loan received (confirmed): ")+req.fromIsm,sana:req.sana,vaqt:nt(),uid:user.id,fromQarz:req.id};
+      const dk="d_"+user.oilaId+"_"+user.id;
+      await db.s(dk,[dItem,...((await db.g(dk))||[])]);
+      setDar(d=>[dItem,...d]);
+    }
+    // MEN qarz BERDIM → balansimdan kamaysin (xarajat sifatida)
+    if(myTur==="bergan"){
+      const xItem={id:Date.now()+1,kategoriya:"qarz",summa:req.summa,izoh:(lg==="uz"?"Qarz berildi (tasdiqlangan): ":"Loan given (confirmed): ")+req.fromIsm,sana:req.sana,vaqt:nt(),uid:user.id,repeat:false,fromQarz:req.id};
+      const xk="x_"+user.oilaId+"_"+user.id;
+      await db.s(xk,[xItem,...((await db.g(xk))||[])]);
+      setXar(x=>[xItem,...x]);
+    }
+    ok$(lg==="uz"?"Qarz tasdiqlandi va balansga bog'landi! ✅":"Debt confirmed and linked to balance! ✅");
   };
   const rejectQarzReq=async(req)=>{
     const newReqs=qarzReqs.filter(r=>r.id!==req.id);
@@ -3443,16 +3556,26 @@ export default function App(){
         <div style={{padding:"12px 18px 40px"}}>
           {notifs.length===0&&<div style={{textAlign:"center",padding:"60px 0",color:th.t2}}><div style={{fontSize:46,marginBottom:10,opacity:.5}}>🔔</div><div style={{fontSize:15}}>{lg==="uz"?"Bildirishnomalar yo'q":"No notifications"}</div></div>}
           {notifs.map(n=>{
-            const icons={qarz:"💸",budjet:"⚠️",xarajat:"💰",yangilik:"🎉"};
-            const colors={qarz:th.ac,budjet:th.am,xarajat:th.rd,yangilik:th.gr};
+            const icons={qarz:"💸",budjet:"⚠️",xarajat:"💰",yangilik:"🎉",maqsad_confirm:"🎯",maqsad_kid_confirm:"🎁",vazifa:"🏆"};
+            const colors={qarz:th.ac,budjet:th.am,xarajat:th.rd,yangilik:th.gr,maqsad_confirm:"#f59e0b",maqsad_kid_confirm:"#22c55e",vazifa:"#8b5cf6"};
             const c=colors[n.type]||th.ac;
-            return <div key={n.id} onClick={()=>markNotifRead(n.id)} style={{background:n.read?th.sur:c+"0d",border:"1px solid "+(n.read?th.bor:c+"33"),borderRadius:14,padding:"13px 15px",marginBottom:10,cursor:"pointer",display:"flex",gap:12}}>
-              <div style={{width:40,height:40,borderRadius:11,background:c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{icons[n.type]||"🔔"}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,fontWeight:700,color:th.t1}}>{n.title}</span>{!n.read&&<span style={{width:8,height:8,borderRadius:"50%",background:c,flexShrink:0}}/>}</div>
-                <div style={{fontSize:12,color:th.t2,marginTop:3,lineHeight:1.5}}>{n.body}</div>
-                <div style={{fontSize:10,color:th.t2,marginTop:5,opacity:.7}}>{new Date(n.sana).toLocaleString("uz-UZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
+            const needParentAction=n.type==="maqsad_confirm"&&n.status==="pending"&&!isKid;
+            const needKidAction=n.type==="maqsad_kid_confirm"&&n.status==="pending"&&isKid;
+            return <div key={n.id} onClick={()=>markNotifRead(n.id)} style={{background:n.read?th.sur:c+"0d",border:"1px solid "+(n.read?th.bor:c+"33"),borderRadius:14,padding:"13px 15px",marginBottom:10,cursor:"pointer",display:"flex",gap:12,flexDirection:"column"}}>
+              <div style={{display:"flex",gap:12}}>
+                <div style={{width:40,height:40,borderRadius:11,background:c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{icons[n.type]||"🔔"}</div>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,fontWeight:700,color:th.t1}}>{n.title}</span>{!n.read&&<span style={{width:8,height:8,borderRadius:"50%",background:c,flexShrink:0}}/>}</div>
+                  <div style={{fontSize:12,color:th.t2,marginTop:3,lineHeight:1.5}}>{n.text||n.body}</div>
+                  <div style={{fontSize:10,color:th.t2,marginTop:5,opacity:.7}}>{new Date(n.sana).toLocaleString("uz-UZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
+                </div>
               </div>
+              {needParentAction&&<button onClick={e=>{e.stopPropagation();confirmMaqParent(n);}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#15803d)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                🛍️ {lg==="uz"?"Ha, sotib berdim! Tasdiqlash":lg==="ru"?"Да, я купил(а)! Подтвердить":"Yes, I bought it! Confirm"}
+              </button>}
+              {needKidAction&&<button onClick={e=>{e.stopPropagation();confirmMaqKid(n);}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                🎉 {lg==="uz"?"Ha, oldim! Mening orzuim amalga oshdi!":lg==="ru"?"Да, мне купили! Мечта сбылась!":"Yes! My dream came true!"}
+              </button>}
             </div>;
           })}
         </div>
