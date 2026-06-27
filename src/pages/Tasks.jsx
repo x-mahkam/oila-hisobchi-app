@@ -1,10 +1,10 @@
-import {{ useState, useRef, useCallback, useMemo }} from "react";
-import {{ KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH }} from "../components/common/index.jsx";
-import {{ Ico }} from "../utils/icons.jsx";
-import {{ makeS }} from "../utils/styles.js";
-import {{ KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD }} from "../utils/constants.js";
-import {{ f, td, nt, tm }} from "../utils/formatters.js";
-import {{ LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid }} from "recharts";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH } from "../components/common/index.jsx";
+import { Ico } from "../utils/icons.jsx";
+import { makeS } from "../utils/styles.js";
+import { KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD } from "../utils/constants.js";
+import { f, td, nt, tm } from "../utils/formatters.js";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 export default function TasksPage({
   // Data
