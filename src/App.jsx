@@ -2102,6 +2102,7 @@ export default function App(){
       {scr==="qarz"&&    <DebtsPage     {...pageProps} showAddQarz={showAddQarz} setShowAddQarz={setShowAddQarz} qarzTur={qarzTur} setQarzTur={setQarzTur} qarzKim={qarzKim} setQarzKim={setQarzKim} qarzSum={qarzSum} setQarzSum={setQarzSum} qarzIzoh={qarzIzoh} setQarzIzoh={setQarzIzoh} qarzSana={qarzSana} setQarzSana={setQarzSana} qarzQaytSana={qarzQaytSana} setQarzQaytSana={setQarzQaytSana} qarzTel={qarzTel} setQarzTel={setQarzTel} qarzLinked={qarzLinked} setQarzLinked={setQarzLinked} addQarz={addQarz} payQarz={payQarz} partialQarz={partialQarz} setPartialQarz={setPartialQarz} partialSum={partialSum} setPartialSum={setPartialSum} qarzDonePrompt={qarzDonePrompt} setQarzDonePrompt={setQarzDonePrompt} inviteQarz={inviteQarz} setInviteQarz={setInviteQarz} acceptQarzReq={acceptQarzReq} rejectQarzReq={rejectQarzReq} refreshQarzReqs={refreshQarzReqs} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat}/>}
       {scr==="hisobot"&& <ReportsPage   {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportPDF={exportPDF} exportExcel={exportExcel} adv={adv} setAdv={setAdv} advL={advL} getAIAdvice={getAIAdvice} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} handleImport={handleImport} confirmImport={confirmImport}/>}
       {scr==="profil"&&  <ProfilePage   {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addStar={addStar} activatePremium={activatePremium} logout={logout} saveProfile={saveProfile} fRef={fRef} doPhoto={doPhoto} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} setNotifEnabled={setNotifEnabled} notifTime={notifTime} setNotifTime={setNotifTime} APP_VER={APP_VER}/>}
+    </div>
     {showNotifs&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:998,display:"flex",justifyContent:"flex-end"}} onClick={()=>setShowNotifs(false)}>
       <div style={{background:th.bg,width:"100%",maxWidth:430,height:"100%",overflowY:"auto",boxShadow:"-4px 0 24px rgba(0,0,0,.3)"}} onClick={e=>e.stopPropagation()}>
         <div style={{position:"sticky",top:0,background:th.sur,borderBottom:"1px solid "+th.bor,padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:2}}>
@@ -2313,6 +2314,17 @@ export default function App(){
       </div>
     </div>}
     <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} setFS={setFS} setFIz={setFIz} setFSn={setFSn} setFDS={setFDS} setFDI={setFDI}/>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
+    </div>
   </div>
   );
 }
