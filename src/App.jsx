@@ -1,32 +1,245 @@
-// v39 — refactored: pages/, components/, utils/ extracted — refactor: constants.js, formatters.js, AppContext, hooks extracted
+// v35fix2 — kid nav: Bosh|Vazifa|Maqsad, adult: Bosh|Qarz|+|Maqsad|Hisobot
 import{useState,useEffect,useCallback,useMemo,useRef}from"react";
-import Garden from"./Garden.jsx";
-import{MK,KATS,KN,DARS,DN,VALS,COUNTRIES,QUICK_ADD,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,ONB_SLIDES,RELATIONS,ADMIN_TEL,FAQS,TL}from"./utils/constants.js";
-import{KatIco,DarIco,MoneyInput,Av,Spark,Heat,Tst,BH}from"./components/common/index.jsx";
-import AddTransactionModal from"./components/transaction/AddTransactionModal.jsx";
-import{Ico}from"./utils/icons.jsx";
-import{makeS}from"./utils/styles.js";
 import DashboardPage from"./pages/Dashboard.jsx";
-import ReportsPage   from"./pages/Reports.jsx";
-import GoalsPage     from"./pages/Goals.jsx";
-import DebtsPage     from"./pages/Debts.jsx";
-import ProfilePage   from"./pages/Profile.jsx";
-import TasksPage     from"./pages/Tasks.jsx";
 import ChartsPage    from"./pages/Charts.jsx";
-import LoginPage     from"./pages/Login.jsx";
-import OnboardingPage from"./pages/Onboarding.jsx";
-import BottomNav from"./components/ui/BottomNav.jsx";
-import{td,nt,tm,f,hp,normTel,sonSoz,fmtN}from"./utils/formatters.js";
+import GoalsPage     from"./pages/Goals.jsx";
+import TasksPage     from"./pages/Tasks.jsx";
+import DebtsPage     from"./pages/Debts.jsx";
+import ReportsPage   from"./pages/Reports.jsx";
+import ProfilePage   from"./pages/Profile.jsx";
+import Garden from"./Garden.jsx";
 import BilimBozor from"./BilimBozor.jsx";
 import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 import{db,auth,fbAuth}from"./firebase.js";
-// Context (keyingi bosqichda to'liq o'tkaziladi)
-import{useApp}from"./context/AppContext.jsx";
 
+const MK=d=>d?{bg:"#090e1c",sur:"#111827",surH:"#192035",bor:"#1e293b",ac:"#6366f1",ac2:"#818cf8",gr:"#10b981",rd:"#ef4444",am:"#f59e0b",t1:"#f1f5f9",t2:"#94a3b8",dark:true}:{bg:"#eef2ff",sur:"#ffffff",surH:"#f5f7ff",bor:"#e2e8f0",ac:"#6366f1",ac2:"#4f46e5",gr:"#059669",rd:"#dc2626",am:"#d97706",t1:"#0f172a",t2:"#64748b",dark:false};
 
+const KATS=[{id:"oziq",c:"#10b981"},{id:"transport",c:"#3b82f6"},{id:"kiyim",c:"#8b5cf6"},{id:"sog",c:"#ef4444"},{id:"kommunal",c:"#f59e0b"},{id:"konil",c:"#ec4899"},{id:"talim",c:"#06b6d4"},{id:"hadya",c:"#f43f5e"},{id:"boshqa",c:"#64748b"}];
+const KN={uz:["Oziq-ovqat","Transport","Kiyim","Sog'liq","Kommunal","Ko'ngil ochar","Ta'lim","Hadya","Boshqa"],ru:["Продукты","Транспорт","Одежда","Здоровье","Коммунальные","Развлечения","Образование","Подарок","Другое"],en:["Food","Transport","Clothing","Health","Utilities","Entertainment","Education","Gift","Other"]};
+const DARS=[{id:"oylik",c:"#10b981"},{id:"qoshimcha",c:"#f59e0b"},{id:"biznes",c:"#3b82f6"},{id:"sovga",c:"#8b5cf6"},{id:"boshqa",c:"#64748b"}];
+const DN={uz:["Oylik maosh","Qo'shimcha","Biznes","Sovg'a","Boshqa"],ru:["Зарплата","Доп.доход","Бизнес","Подарок","Другое"],en:["Salary","Additional","Business","Gift","Other"]};
+const VALS=[{id:"uzs",b:"so'm",k:1},{id:"usd",b:"$",k:12800},{id:"rub",b:"₽",k:140},{id:"eur",b:"€",k:13900},{id:"kzt",b:"₸",k:26},{id:"kgs",b:"сом",k:145},{id:"tjs",b:"сомони",k:1180},{id:"try",b:"₺",k:380},{id:"gbp",b:"£",k:16200},{id:"aed",b:"د.إ",k:3485}];
+const ONB_SLIDES=[
+  {emoji:"\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67\u200d\ud83d\udc66",titleUz:"Oilaviy byudjet",titleRu:"\u0421\u0435\u043c\u0435\u0439\u043d\u044b\u0439 \u0431\u044e\u0434\u0436\u0435\u0442",titleEn:"Family budget",descUz:"Butun oila daromad va xarajatlarini bir joyda kuzating. Har bir a'zo o'z xarajatini kiritadi.",descRu:"\u041e\u0442\u0441\u043b\u0435\u0436\u0438\u0432\u0430\u0439\u0442\u0435 \u0434\u043e\u0445\u043e\u0434\u044b \u0438 \u0440\u0430\u0441\u0445\u043e\u0434\u044b \u0432\u0441\u0435\u0439 \u0441\u0435\u043c\u044c\u0438.",descEn:"Track your whole family's income and expenses in one place.",color:"#6366f1"},
+  {emoji:"\ud83c\udfaf",titleUz:"Maqsadlarga erishing",titleRu:"\u0414\u043e\u0441\u0442\u0438\u0433\u0430\u0439\u0442\u0435 \u0446\u0435\u043b\u0435\u0439",titleEn:"Reach your goals",descUz:"Uy, mashina, sayohat yoki umra uchun jamg'aring. Ilova har oy qancha ajratishni hisoblab beradi.",descRu:"\u041a\u043e\u043f\u0438\u0442\u0435 \u043d\u0430 \u0434\u043e\u043c, \u043c\u0430\u0448\u0438\u043d\u0443 \u0438\u043b\u0438 \u043f\u0443\u0442\u0435\u0448\u0435\u0441\u0442\u0432\u0438\u0435.",descEn:"Save for a house, car, travel or Umrah with smart monthly targets.",color:"#10b981"},
+  {emoji:"\ud83e\udd1d",titleUz:"Qarzlarni boshqaring",titleRu:"\u0423\u043f\u0440\u0430\u0432\u043b\u044f\u0439\u0442\u0435 \u0434\u043e\u043b\u0433\u0430\u043c\u0438",titleEn:"Manage debts",descUz:"Kimga qancha qarzingiz borligini unutmang. Telefon orqali bog'lab, ikkala tomon tasdiqlaydi.",descRu:"\u041d\u0435 \u0437\u0430\u0431\u044b\u0432\u0430\u0439\u0442\u0435 \u043e \u0434\u043e\u043b\u0433\u0430\u0445. \u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435 \u043e\u0431\u0435\u0438\u0445 \u0441\u0442\u043e\u0440\u043e\u043d.",descEn:"Never forget who owes what. Link by phone with two-way confirmation.",color:"#f59e0b"},
+  {emoji:"\ud83c\udf81",titleUz:"Do'stlarni taklif qiling",titleRu:"\u041f\u0440\u0438\u0433\u043b\u0430\u0448\u0430\u0439\u0442\u0435 \u0434\u0440\u0443\u0437\u0435\u0439",titleEn:"Invite friends",descUz:"3 ta do'stingizni taklif qiling va 1 oy Premium bepul oling! Imtiyozlar sizni kutmoqda.",descRu:"\u041f\u0440\u0438\u0433\u043b\u0430\u0441\u0438\u0442\u0435 3 \u0434\u0440\u0443\u0437\u0435\u0439 \u0438 \u043f\u043e\u043b\u0443\u0447\u0438\u0442\u0435 1 \u043c\u0435\u0441\u044f\u0446 Premium.",descEn:"Invite 3 friends and get 1 month Premium free!",color:"#ec4899"}
+];
+const COUNTRIES=[{code:"uz",dial:"+998",flag:"🇺🇿",uz:"O'zbekiston",ru:"Узбекистан",en:"Uzbekistan",val:"uzs"},{code:"ru",dial:"+7",flag:"🇷🇺",uz:"Rossiya",ru:"Россия",en:"Russia",val:"rub"},{code:"kz",dial:"+7",flag:"🇰🇿",uz:"Qozog'iston",ru:"Казахстан",en:"Kazakhstan",val:"kzt"},{code:"kg",dial:"+996",flag:"🇰🇬",uz:"Qirg'iziston",ru:"Кыргызстан",en:"Kyrgyzstan",val:"kgs"},{code:"tj",dial:"+992",flag:"🇹🇯",uz:"Tojikiston",ru:"Таджикистан",en:"Tajikistan",val:"tjs"},{code:"tr",dial:"+90",flag:"🇹🇷",uz:"Turkiya",ru:"Турция",en:"Turkey",val:"try"},{code:"us",dial:"+1",flag:"🇺🇸",uz:"AQSH",ru:"США",en:"USA",val:"usd"},{code:"ae",dial:"+971",flag:"🇦🇪",uz:"BAA (Dubay)",ru:"ОАЭ",en:"UAE",val:"aed"},{code:"gb",dial:"+44",flag:"🇬🇧",uz:"Buyuk Britaniya",ru:"Великобритания",en:"UK",val:"gbp"},{code:"eu",dial:"+",flag:"🇪🇺",uz:"Yevropa",ru:"Европа",en:"Europe",val:"eur"}];
+const QUICK_ADD=[{emoji:"\ud83c\udf54",kat:"oziq",uz:"Ovqat",ru:"\u0415\u0434\u0430",en:"Food"},{emoji:"\ud83d\ude95",kat:"transport",uz:"Transport",ru:"\u0422\u0440\u0430\u043d\u0441\u043f\u043e\u0440\u0442",en:"Transport"},{emoji:"\u2615",kat:"oziq",uz:"Kofe",ru:"\u041a\u043e\u0444\u0435",en:"Coffee"},{emoji:"\ud83d\uded2",kat:"oziq",uz:"Bozor",ru:"\u041f\u0440\u043e\u0434\u0443\u043a\u0442\u044b",en:"Groceries"},{emoji:"\u26fd",kat:"transport",uz:"Benzin",ru:"\u0411\u0435\u043d\u0437\u0438\u043d",en:"Fuel"},{emoji:"\ud83d\udc8a",kat:"sog",uz:"Dorixona",ru:"\u0410\u043f\u0442\u0435\u043a\u0430",en:"Pharmacy"}];
+const VAZIFA_PRESETS=[
+  {emoji:"🧹",uz:"Xonani yig'ishtirish",ru:"Убрать комнату",en:"Clean room",reward:20000},
+  {emoji:"📚",uz:"Kitob o'qish",ru:"Читать книгу",en:"Read a book",reward:15000},
+  {emoji:"🛏️",uz:"To'shakni yig'ish",ru:"Заправить кровать",en:"Make the bed",reward:5000},
+  {emoji:"🍽️",uz:"Idishlarni yuvish",ru:"Помыть посуду",en:"Wash dishes",reward:10000},
+  {emoji:"🦷",uz:"Tish yuvish",ru:"Почистить зубы",en:"Brush teeth",reward:3000},
+  {emoji:"🕌",uz:"Namoz o'qish",ru:"Совершить намаз",en:"Pray",reward:10000},
+  {emoji:"🎓",uz:"Dars tayyorlash",ru:"Сделать уроки",en:"Do homework",reward:25000},
+  {emoji:"🏃",uz:"Mashq qilish",ru:"Зарядка",en:"Exercise",reward:8000},
+  {emoji:"🌱",uz:"Gullarni sug'orish",ru:"Полить цветы",en:"Water plants",reward:5000},
+  {emoji:"🐕",uz:"Hayvonga qarash",ru:"Покормить питомца",en:"Feed pet",reward:7000},
+  {emoji:"🗑️",uz:"Axlatni chiqarish",ru:"Вынести мусор",en:"Take out trash",reward:5000},
+  {emoji:"📖",uz:"Ingliz tili so'z yodlash",ru:"Учить англ. слова",en:"Learn English words",reward:20000}
+];
+const GOAL_PRESETS=[{emoji:"🏠",uz:"Uy xarid qilish",ru:"Покупка дома",en:"Buy a house",rang:"#10b981"},{emoji:"🚗",uz:"Mashina xarid qilish",ru:"Покупка машины",en:"Buy a car",rang:"#3b82f6"},{emoji:"✈️",uz:"Sayohat",ru:"Путешествие",en:"Travel",rang:"#f59e0b"},{emoji:"🕋",uz:"Umra ziyorati",ru:"Умра",en:"Umrah",rang:"#8b5cf6"},{emoji:"🕌",uz:"Haj amallari",ru:"Хадж",en:"Hajj",rang:"#06b6d4"},{emoji:"💍",uz:"To'y marosimi",ru:"Свадьба",en:"Wedding",rang:"#ec4899"},{emoji:"📱",uz:"Telefon / Texnika",ru:"Телефон",en:"Phone / Gadget",rang:"#6366f1"},{emoji:"🎓",uz:"Ta'lim / O'qish",ru:"Образование",en:"Education",rang:"#ef4444"},{emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",en:"Emergency",rang:"#14b8a6"},{emoji:"💼",uz:"Biznes boshlash",ru:"Бизнес",en:"Business",rang:"#f97316"}];
+const KID_GOAL_PRESETS=[
+  {emoji:"🚲",uz:"Velosiped",ru:"Велосипед",en:"Bicycle",rang:"#10b981"},
+  {emoji:"📱",uz:"Telefon",ru:"Телефон",en:"Phone",rang:"#6366f1"},
+  {emoji:"🎮",uz:"O'yin pristavka",ru:"Игровая приставка",en:"Game console",rang:"#8b5cf6"},
+  {emoji:"🧸",uz:"O'yinchoq",ru:"Игрушка",en:"Toy",rang:"#ec4899"},
+  {emoji:"⚽",uz:"Futbol to'pi",ru:"Мяч",en:"Football",rang:"#f59e0b"},
+  {emoji:"📚",uz:"Kitoblar",ru:"Книги",en:"Books",rang:"#ef4444"},
+  {emoji:"🎨",uz:"Rasm chizish to'plami",ru:"Набор для рисования",en:"Art set",rang:"#06b6d4"},
+  {emoji:"🛴",uz:"Samokat",ru:"Самокат",en:"Scooter",rang:"#14b8a6"},
+  {emoji:"🎧",uz:"Naushnik",ru:"Наушники",en:"Headphones",rang:"#a855f7"},
+  {emoji:"👟",uz:"Krossovka",ru:"Кроссовки",en:"Sneakers",rang:"#f97316"},
+  {emoji:"🎂",uz:"Tug'ilgan kun",ru:"День рождения",en:"Birthday",rang:"#ec4899"},
+  {emoji:"💰",uz:"Jamg'arma",ru:"Накопления",en:"Savings",rang:"#10b981"}
+];
 
+const RELATIONS=[{id:"ota",emoji:"\ud83d\udc68",uz:"Ota",ru:"\u041e\u0442\u0435\u0446",en:"Father"},{id:"ona",emoji:"\ud83d\udc69",uz:"Ona",ru:"\u041c\u0430\u0442\u044c",en:"Mother"},{id:"turmush",emoji:"\ud83d\udc91",uz:"Turmush o'rtoq",ru:"\u0421\u0443\u043f\u0440\u0443\u0433(\u0430)",en:"Spouse"},{id:"farzand",emoji:"\ud83d\udc66",uz:"Farzand",ru:"\u0420\u0435\u0431\u0451\u043d\u043e\u043a",en:"Child"},{id:"aka",emoji:"\ud83d\udc68",uz:"Aka",ru:"\u0421\u0442\u0430\u0440\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Older brother"},{id:"uka",emoji:"\ud83d\udc66",uz:"Uka",ru:"\u041c\u043b\u0430\u0434\u0448\u0438\u0439 \u0431\u0440\u0430\u0442",en:"Younger brother"},{id:"opa",emoji:"\ud83d\udc69",uz:"Opa",ru:"\u0421\u0442\u0430\u0440\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Older sister"},{id:"singil",emoji:"\ud83d\udc67",uz:"Singil",ru:"\u041c\u043b\u0430\u0434\u0448\u0430\u044f \u0441\u0435\u0441\u0442\u0440\u0430",en:"Younger sister"},{id:"boshqa",emoji:"\ud83d\udc64",uz:"Boshqa",ru:"\u0414\u0440\u0443\u0433\u043e\u0435",en:"Other"}];
+const TL={
+uz:{app:"Oila Hisobchi",hi:"Salom",home:"Bosh",chart:"Grafik",goal:"Maqsad",rep:"Hisobot",inc:"Daromad",exp:"Xarajat",bal:"Balans",bud:"Budjet",me:"Men",hd:"Bosh",mb2:"A'zo",prf:"Profil",up:"Rasm yuklash",rp:"Rasmni o'chirish",ep:"Tahrirlash",un:"Ismni yangilash",fc2:"Oila kodi",fcd:"Oila a'zolaringizga yuboring",bll:"Budjet",mb:"Oylik budjet (so'm)",cl:"Kategoriya limitleri",fam:"Oila",sa:"Saqlandi",ua:"Yangilandi",lo:"Chiqish",sp:"sarflandi",lf:"qoldi",ex:"oshdi!",le:"limiti oshdi!",bw:"Budjetning 90% sarflandi!",be:"Budjet oshib ketdi!",xa:"Xarajat qo'shildi",da:"Daromad qo'shildi",ma:"Maqsad qo'shildi",od:"Faqat o'z yozuvingizni o'chira olasiz",fa:"Barcha maydonlarni to'ldiring",ea:"Summa kiriting",ec:"To'g'ri raqam kiriting",ee:"Bu email allaqachon ro'yxatda",ue:"Foydalanuvchi topilmadi",we:"Parol noto'g'ri",ffe:"Bunday oila kodi topilmadi",fc3:"Oila yaratildi!",jf2:"Oilaga qo'shildingiz!",wc:"Xush kelibsiz",sch:"Qidirish...",res:"Natijalar",nf2:"Topilmadi",nr:"Hali yozuv yo'q",l7:"So'nggi 7 kun (ming so'm)",l6:"Oylik xarajatlar",bc:"Bu oy kategoriyalar",hm:"Kunlik faollik (30 kun)",st:"Oylik ko'rsatkichlar",ad:"O'rtacha kunlik",ir:"Daromad/Xarajat",bs:"Budjet tejalgan",rc:"Yozuvlar soni",rates:"Valyuta kurslari",rSub:"Markaziy bank kursi",ldd:"Yuklanmoqda...",all:"Hammasi",ed:"Xarajat taqsimoti",isr:"Daromad manbalari",bm:"A'zolar bo'yicha",aa:"AI Moliyaviy maslahat",an:"Tahlil...",na:"Yangi maslahat",sv:"Saqlash",am:"Qo'shish",ach:"Maqsadga erishdingiz!",rem:"Qolgan",tp:"Pul qo'shish",mr:"oylik hisoboti",cn:"Bekor",shaxsiy:"Shaxsiy ma'lumotlar",ilovaS:"Ilova sozlamalari",xav:"Xavfsizlik",qol:"Qo'llab-quvvatlash",ver:"Ilova versiyasi",til:"Interfeys tili",mavzu:"Ilova mavzusi",kunduzi:"Kunduzgi",tungi:"Tungi",pin:"PIN kodni o'zgartirish",barmoq:"Barmoq izi bilan kirish",tgBot:"Rasmiy Telegram bot",faq:"Ko'p so'raladigan savollar",qoshimcha:"QO'SHIMCHA"},
+ru:{app:"Семейный Бюджет",hi:"Привет",home:"Главная",chart:"Графики",goal:"Цели",rep:"Отчёт",inc:"Доход",exp:"Расход",bal:"Баланс",bud:"Бюджет",me:"Я",hd:"Глава",mb2:"Участник",prf:"Профиль",up:"Загрузить фото",rp:"Удалить фото",ep:"Редактировать",un:"Обновить имя",fc2:"Код семьи",fcd:"Отправьте код членам семьи",bll:"Бюджет",mb:"Месячный бюджет (сум)",cl:"Лимиты категорий",fam:"Семья",sa:"Сохранено",ua:"Обновлено",lo:"Выйти",sp:"потрачено",lf:"осталось",ex:"превышен!",le:"лимит превышен!",bw:"Использовано 90% бюджета!",be:"Бюджет превышен!",xa:"Расход добавлен",da:"Доход добавлен",ma:"Цель добавлена",od:"Можно удалять только свои записи",fa:"Заполните все поля",ea:"Введите сумму",ec:"Введите корректное число",ee:"Email уже зарегистрирован",ue:"Пользователь не найден",we:"Неверный пароль",ffe:"Код семьи не найден",fc3:"Семья создана!",jf2:"Вы присоединились!",wc:"Добро пожаловать",sch:"Поиск...",res:"Результаты",nf2:"Не найдено",nr:"Записей пока нет",l7:"Последние 7 дней",l6:"Месячные расходы",bc:"Категории за месяц",hm:"Активность за 30 дней",st:"Показатели месяца",ad:"Средний дневной",ir:"Доход/Расход",bs:"Экономия бюджета",rc:"Записей за месяц",rates:"Курсы валют",rSub:"Курс Центрального банка",ldd:"Загрузка...",all:"Все",ed:"Распределение расходов",isr:"Источники дохода",bm:"По участникам",aa:"AI Финансовый совет",an:"Анализируется...",na:"Новый совет",sv:"Сохранить",am:"Добавить",ach:"Цель достигнута!",rem:"Осталось",tp:"Пополнение",mr:"отчёт за",cn:"Отмена",shaxsiy:"Личные данные",ilovaS:"Настройки приложения",xav:"Безопасность",qol:"Поддержка",ver:"Версия приложения",til:"Язык интерфейса",mavzu:"Тема приложения",kunduzi:"Светлый",tungi:"Тёмный",pin:"Изменить PIN-код",barmoq:"Отпечаток пальца",tgBot:"Официальный Telegram бот",faq:"Частые вопросы",qoshimcha:"ДОПОЛНИТЕЛЬНО"},
+en:{app:"Family Budget",hi:"Hello",home:"Home",chart:"Charts",goal:"Goals",rep:"Report",inc:"Income",exp:"Expense",bal:"Balance",bud:"Budget",me:"Me",hd:"Head",mb2:"Member",prf:"Profile",up:"Upload photo",rp:"Remove photo",ep:"Edit",un:"Update name",fc2:"Family code",fcd:"Share with family members",bll:"Budget",mb:"Monthly budget (UZS)",cl:"Category limits",fam:"Family",sa:"Saved",ua:"Updated",lo:"Sign out",sp:"spent",lf:"left",ex:"exceeded!",le:"limit exceeded!",bw:"90% of budget used!",be:"Budget exceeded!",xa:"Expense added",da:"Income added",ma:"Goal added",od:"You can only delete your own records",fa:"Please fill all fields",ea:"Enter amount",ec:"Enter valid number",ee:"Email already registered",ue:"User not found",we:"Wrong password",ffe:"Family code not found",fc3:"Family created!",jf2:"You joined the family!",wc:"Welcome",sch:"Search...",res:"Results",nf2:"Nothing found",nr:"No records yet",l7:"Last 7 days (K UZS)",l6:"Monthly expenses",bc:"This month",hm:"Activity last 30 days",st:"Monthly stats",ad:"Avg daily expense",ir:"Income/Expense ratio",bs:"Budget saved",rc:"Records this month",rates:"Exchange rates",rSub:"Central Bank rate",ldd:"Loading...",all:"All",ed:"Expense breakdown",isr:"Income sources",bm:"By members",aa:"AI Financial advice",an:"Analyzing...",na:"New advice",sv:"Save",am:"Add",ach:"Goal achieved!",rem:"Remaining",tp:"Add funds",mr:"monthly report",cn:"Cancel",shaxsiy:"Personal info",ilovaS:"App settings",xav:"Security",qol:"Support",ver:"App version",til:"Interface language",mavzu:"App theme",kunduzi:"Light",tungi:"Dark",pin:"Change PIN code",barmoq:"Fingerprint login",tgBot:"Official Telegram Bot",faq:"FAQ",qoshimcha:"ADDITIONAL"},
+};
 
-"937414866";
+const FAQS={
+uz:[{q:"Oila kodi nima?",a:"Oilangizga boshqa a'zolarni qo'shish uchun ishlatiladigan maxsus kod. Profil > Shaxsiy ma'lumotlar bo'limida topasiz."},{q:"Valyuta kurslari qayerdan?",a:"O'zbekiston Markaziy Banki rasmiy saytidan olinadi."},{q:"AI maslahat qanday ishlaydi?",a:"AI oylik daromad va xarajatlaringizni tahlil qilib, moliyaviy maslahat beradi."},{q:"PIN kod nima uchun?",a:"Ilovaga kirish xavfsizligini ta'minlash uchun 4 raqamli PIN kod o'rnatishingiz mumkin."}],
+ru:[{q:"Что такое код семьи?",a:"Уникальный код для добавления членов семьи. Найдите в Профиль > Личные данные."},{q:"Откуда берутся курсы?",a:"Данные Центрального банка Узбекистана."},{q:"Как работает AI совет?",a:"AI анализирует доходы и расходы и даёт финансовые рекомендации."},{q:"Зачем PIN код?",a:"Для безопасного входа в приложение."}],
+en:[{q:"What is the family code?",a:"A code to add family members. Find it in Profile > Personal info."},{q:"Where do exchange rates come from?",a:"From the Central Bank of Uzbekistan."},{q:"How does AI advice work?",a:"AI analyzes your income and expenses and gives financial tips."},{q:"What is the PIN code for?",a:"To secure access to the app."}],
+};
+
+const normTel=t=>{const d=(t||"").replace(/[^0-9]/g,"");return d.length>9?d.slice(-9):d;};
+const ADMIN_TEL="937414866";
+const td=()=>new Date().toISOString().slice(0,10);
+const tm=()=>new Date().toISOString().slice(0,7);
+const nt=()=>new Date().toLocaleTimeString("uz-UZ",{hour:"2-digit",minute:"2-digit"});
+// Haptic feedback (telefon tebranishi) - qo'llab-quvvatlasa
+const buzz=(ms=12)=>{try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}};
+// Summani so'z bilan yozish (o'zbekcha): 5000000 -> "besh million so'm"
+const sonSoz=(n)=>{
+  n=Math.round(Math.abs(Number(n)||0));
+  if(n===0)return "nol";
+  const bir=["","bir","ikki","uch","to'rt","besh","olti","yetti","sakkiz","to'qqiz"];
+  const on=["","o'n","yigirma","o'ttiz","qirq","ellik","oltmish","yetmish","sakson","to'qson"];
+  const uchXona=(x)=>{ // 0-999
+    let s="";
+    const yuz=Math.floor(x/100),qol=x%100,o=Math.floor(qol/10),b=qol%10;
+    if(yuz>0)s+=(yuz>1?bir[yuz]+" ":"")+"yuz ";
+    if(o>0)s+=on[o]+" ";
+    if(b>0)s+=bir[b]+" ";
+    return s.trim();
+  };
+  let res="";
+  const mlrd=Math.floor(n/1e9),mln=Math.floor((n%1e9)/1e6),ming=Math.floor((n%1e6)/1000),qoldiq=n%1000;
+  if(mlrd>0)res+=uchXona(mlrd)+" milliard ";
+  if(mln>0)res+=uchXona(mln)+" million ";
+  if(ming>0)res+=uchXona(ming)+" ming ";
+  if(qoldiq>0)res+=uchXona(qoldiq)+" ";
+  return res.trim();
+};
+const hp=async s=>{
+  const str=s+"v7s";
+  // HTTPS/localhost'da crypto.subtle ishlaydi
+  if(typeof crypto!=="undefined"&&crypto.subtle){
+    try{const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(str));return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");}catch(e){}
+  }
+  // Fallback (oddiy hash) - faqat HTTP test uchun
+  let h=0;for(let i=0;i<str.length;i++){h=((h<<5)-h+str.charCodeAt(i))|0;}
+  return "fb"+Math.abs(h).toString(16);
+};
+function spc(n){
+  // Har 3 raqamdan keyin probel: 1250000 -> "1 250 000"
+  const neg=n<0;const s=Math.round(Math.abs(n)).toString();
+  let r="";for(let i=0;i<s.length;i++){if(i>0&&(s.length-i)%3===0)r+=" ";r+=s[i];}
+  return (neg?"-":"")+r;
+}
+function fmtN(n,val,sh){
+  const v=Math.abs(Number(n)||0);
+  const c=val.id==="uzs"?v:v/val.k;
+  // sh=true: qisqartirilgan format (1.25 mln / 25 mln)
+  if(sh){
+    if(val.id==="uzs"){
+      if(v>=1e9)return(v/1e9).toFixed(v%1e9===0?0:1).replace(/(\.\d*?)0+$/,"$1").replace(/\.$/,"")+" mlrd so'm";
+      if(v>=1e6)return(v/1e6).toFixed(v%1e6===0?0:2).replace(/(\.\d*?)0+$/,"$1").replace(/\.$/,"")+" mln so'm";
+      if(v>=1e3)return spc(v)+" so'm";
+      return spc(v)+" so'm";
+    }
+    if(c>=1e6)return(c/1e6).toFixed(1)+"M "+val.b;
+    if(c>=1e3)return Math.round(c/1e3)+"K "+val.b;
+    return Math.round(c)+" "+val.b;
+  }
+  // To'liq format: probel bilan ajratilgan (1 250 000 so'm)
+  if(val.id==="uzs")return spc(v)+" so'm";
+  return spc(Math.round(c))+" "+val.b;
+}
+
+// ── SVG ICONS (all self-contained) ──────────────────────────────────────────
+const Ico={
+  search:c=><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="7.5" cy="7.5" r="5" stroke={c} strokeWidth="1.6"/><line x1="11.5" y1="11.5" x2="15.5" y2="15.5" stroke={c} strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  user:c=><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="6" r="3.5" stroke={c} strokeWidth="1.4"/><path d="M2 16c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  settings:c=><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke={c} strokeWidth="1.4"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.6 3.6l1.4 1.4M13 13l1.4 1.4M3.6 14.4l1.4-1.4M13 5l1.4-1.4" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  shield:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2L3 5v5c0 4 3.5 7 7 8 3.5-1 7-4 7-8V5L10 2z" fill={c} opacity=".15" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M7 10l2 2 4-4" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  help:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke={c} strokeWidth="1.4"/><path d="M8 8c0-1.1.9-2 2-2s2 .9 2 2c0 1-1 1.5-2 2.5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><circle cx="10" cy="14.5" r=".9" fill={c}/></svg>,
+  globe:c=><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.5" stroke={c} strokeWidth="1.3"/><path d="M9 1.5c-2 2-3 4-3 7.5s1 5.5 3 7.5M9 1.5c2 2 3 4 3 7.5s-1 5.5-3 7.5M1.5 9h15" stroke={c} strokeWidth="1.1"/></svg>,
+  moon:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M12 10A6 6 0 016 4c0-.7.1-1.4.3-2A6 6 0 1014 11.7 6.2 6.2 0 0112 10z" fill={c} opacity=".2" stroke={c} strokeWidth="1.3"/></svg>,
+  sun:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="3" fill={c}/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.1 3.1l1.4 1.4M11.5 11.5l1.4 1.4M3.1 12.9l1.4-1.4M11.5 4.5l1.4-1.4" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  door:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="3" y="1.5" width="10" height="13" rx="1.5" stroke={c} strokeWidth="1.3"/><circle cx="10.5" cy="8" r="1" fill={c}/></svg>,
+  camera:c=><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="3.5" width="12" height="8.5" rx="1.5" stroke={c} strokeWidth="1.3"/><circle cx="7" cy="7.5" r="2" stroke={c} strokeWidth="1.3"/><path d="M5 3.5l.8-2h2.4l.8 2" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  edit:c=><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 10L9.5 2.5a2 2 0 012.8 2.8L4.8 13 1 13.2 2 10z" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  check:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  trash:c=><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><line x1="2" y1="4" x2="12" y2="4" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><path d="M5 4V2.5h4V4M3 4l.7 8h6.6l.7-8" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  key:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="7" r="3.5" stroke={c} strokeWidth="1.3"/><path d="M9 9l5 5M12 12l1.5-1.5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  crown:c=><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 11h10M2 11L3.5 4l3.5 4 3.5-6L12 11" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  users:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="6" cy="5" r="2.5" stroke={c} strokeWidth="1.2"/><path d="M1 13c0-2.5 2.2-4 5-4s5 1.5 5 4" stroke={c} strokeWidth="1.2" strokeLinecap="round"/><circle cx="12" cy="5" r="2" stroke={c} strokeWidth="1.1" opacity=".6"/><path d="M15 13c0-2-1.5-3.5-3-3.5" stroke={c} strokeWidth="1.1" strokeLinecap="round" opacity=".6"/></svg>,
+  chevron:(c,up)=><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{transform:up?"rotate(180deg)":"none",transition:"transform .2s"}}><path d="M4 6l4 4 4-4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  back:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  right:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  repeat:c=><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0111 3.5" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M9 2l2 1.5L9 5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 7a5 5 0 01-9 3.5" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M5 12l-2-1.5L5 9" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  wallet:c=><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="5" width="18" height="13" rx="2.5" fill={c} opacity=".15" stroke={c} strokeWidth="1.4"/><path d="M2 9h18" stroke={c} strokeWidth="1.3"/><circle cx="15" cy="13" r="1.5" fill={c} opacity=".8"/></svg>,
+  money:c=><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="2" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><circle cx="9" cy="9" r="2.5" stroke={c} strokeWidth="1.3"/></svg>,
+  bank:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 8L10 3l8 5H2z" fill={c} opacity=".2" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><rect x="4" y="9" width="2.5" height="6" rx=".8" fill={c} opacity=".6"/><rect x="8.75" y="9" width="2.5" height="6" rx=".8" fill={c} opacity=".6"/><rect x="13.5" y="9" width="2.5" height="6" rx=".8" fill={c} opacity=".6"/><line x1="2" y1="15" x2="18" y2="15" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  brain:c=><svg width="38" height="38" viewBox="0 0 38 38" fill="none"><path d="M19 6c-3 0-5 1.5-6.5 4-2 0-4 1.5-4 4 0 1 .3 2 .8 2.8C8 18 7 20 7 22.5c0 3 2 5 4.5 6V30c0 1.7 1.3 3 3 3h9c1.7 0 3-1.3 3-3v-1.5c2.5-1 4.5-3 4.5-6 0-2.5-1-4.5-3-5.7.5-.8.8-1.8.8-2.8 0-2.5-2-4-4-4C23 7.5 22 6 19 6z" fill={c} opacity=".15" stroke={c} strokeWidth="1.5"/><path d="M19 10v18M13 14c1.5.8 3.5 1.2 6 1.2M25 17c-1.5.8-3.5 1.2-6 1.2" stroke={c} strokeWidth="1.2" strokeLinecap="round" opacity=".6"/></svg>,
+  lock:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="9" width="12" height="9" rx="2" fill={c} opacity=".2" stroke={c} strokeWidth="1.4"/><path d="M7 9V7a3 3 0 016 0v2" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><circle cx="10" cy="13.5" r="1.5" fill={c}/></svg>,
+  finger:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 2C6.7 2 4 4.7 4 8c0 1 .3 2 .7 2.8" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M10 2c3.3 0 6 2.7 6 6 0 4-2 7-6 9C6 15 4 12 4 8" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><circle cx="10" cy="8" r="2" fill={c} opacity=".3"/><circle cx="10" cy="8" r="1" fill={c}/></svg>,
+  tg:()=><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M2 12L22 4l-6.5 18-4.5-7.5L22 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity=".9"/></svg>,
+  version:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 4h7l4 4v8H4V4z" fill={c} opacity=".15" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M11 4v4h4" stroke={c} strokeWidth="1.3"/><path d="M7 10l1.5 2 3-3" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  fire:c=><svg width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 2c0 2-3 3.5-3 6.5a3 3 0 006 0c0-2-1-3-1-4.5 0 1.5-1 3-1 3.5" stroke={c} strokeWidth="1.3" strokeLinecap="round" fill={c} fillOpacity=".1"/></svg>,
+  add:c=><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><line x1="13" y1="4" x2="13" y2="22" stroke={c} strokeWidth="2.5" strokeLinecap="round"/><line x1="4" y1="13" x2="22" y2="13" stroke={c} strokeWidth="2.5" strokeLinecap="round"/></svg>,
+  navHome:c=><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path d="M13 3L2 11h3v11h5v-6h6v6h5V11h3L13 3z" fill={c} opacity=".18" stroke={c} strokeWidth="1.5" strokeLinejoin="round"/><circle cx="13" cy="9.5" r="1.5" fill={c} opacity=".7"/></svg>,
+  navChart:c=><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="3" y="15" width="4" height="8" rx="1.5" fill={c} opacity=".45"/><rect x="9" y="9" width="4" height="14" rx="1.5" fill={c} opacity=".65"/><rect x="15" y="12" width="4" height="11" rx="1.5" fill={c} opacity=".55"/><rect x="21" y="5" width="4" height="18" rx="1.5" fill={c} opacity=".85"/><path d="M4 13L10 7.5l6 3 6-7" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" opacity=".7"/></svg>,
+  navGoal:c=><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><circle cx="13" cy="13" r="10.5" stroke={c} strokeWidth="1.4" opacity=".25"/><circle cx="13" cy="13" r="7" stroke={c} strokeWidth="1.4" opacity=".5"/><circle cx="13" cy="13" r="3.5" stroke={c} strokeWidth="1.4" opacity=".8"/><circle cx="13" cy="13" r="1.5" fill={c}/><line x1="13" y1="2.5" x2="13" y2="5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="13" y1="21" x2="13" y2="23.5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="2.5" y1="13" x2="5" y2="13" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><line x1="21" y1="13" x2="23.5" y2="13" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  navRep:c=><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="5" y="3" width="16" height="20" rx="2.5" fill={c} opacity=".12" stroke={c} strokeWidth="1.4"/><line x1="9" y1="9" x2="17" y2="9" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><line x1="9" y1="13" x2="17" y2="13" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><line x1="9" y1="17" x2="14" y2="17" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><circle cx="19" cy="19" r="4" fill={c}/><path d="M17 19l1.5 1.5L21 17.5" stroke="white" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+};
+
+function KatIco({id,c,s=20}){
+  const p={oziq:"M10 2C7 2 4 5 4 8c0 3.5 2.5 6 6 7 3.5-1 6-3.5 6-7 0-3-3-6-6-6z",transport:null,kiyim:null,sog:null,kommunal:null,konil:null,talim:null,boshqa:null};
+  if(id==="oziq")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><path d="M10 2C7 2 4 5 4 8c0 3.5 2.5 6 6 7 3.5-1 6-3.5 6-7 0-3-3-6-6-6z" fill={c} opacity=".2"/><path d="M7 9c0 2.5 1.3 4.5 3 5.5C12.7 13.5 14 11.5 14 9H7z" fill={c}/><line x1="10" y1="2" x2="10" y2="5" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>;
+  if(id==="transport")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="2" y="6" width="16" height="9" rx="2.5" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><rect x="4" y="8" width="5" height="3" rx="1" fill={c} opacity=".6"/><rect x="11" y="8" width="5" height="3" rx="1" fill={c} opacity=".6"/><path d="M5 15v2m10-2v2" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>;
+  if(id==="kiyim")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><path d="M7 2L4 5l2 1.5V16h8V6.5L16 5l-3-3c0 0-1 2-3 2S7 2 7 2z" fill={c} opacity=".2" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>;
+  if(id==="sog")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="8.5" y="3" width="3" height="14" rx="1.5" fill={c}/><rect x="3" y="8.5" width="14" height="3" rx="1.5" fill={c}/></svg>;
+  if(id==="kommunal")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><path d="M10 2L7 8h2.5l-2 9 7-9H12L14 2H10z" fill={c} opacity=".25" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>;
+  if(id==="konil")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="12" rx="2" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><circle cx="8" cy="11" r="2" fill={c}/><path d="M13 9l1.5 2L13 13" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  if(id==="talim")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="9" height="12" rx="1.5" fill={c} opacity=".2" stroke={c} strokeWidth="1.3"/><path d="M7 17h9V8" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="3" y="3" width="6" height="6" rx="1.5" fill={c} opacity=".5"/><rect x="11" y="3" width="6" height="6" rx="1.5" fill={c} opacity=".3"/><rect x="3" y="11" width="6" height="6" rx="1.5" fill={c} opacity=".3"/><rect x="11" y="11" width="6" height="6" rx="1.5" fill={c} opacity=".5"/></svg>;
+}
+function DarIco({id,c,s=20}){
+  if(id==="oylik")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="3" y="4" width="14" height="13" rx="2" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><line x1="3" y1="8" x2="17" y2="8" stroke={c} strokeWidth="1.3"/><circle cx="7" cy="12" r="1.5" fill={c}/><path d="M10 11h4" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>;
+  if(id==="qoshimcha")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" fill={c} opacity=".12" stroke={c} strokeWidth="1.3"/><path d="M10 6v8M6 10h8" stroke={c} strokeWidth="1.8" strokeLinecap="round"/></svg>;
+  if(id==="biznes")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><path d="M3 9h14v8a1 1 0 01-1 1H4a1 1 0 01-1-1V9z" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><path d="M1 9h18M7 9V7a3 3 0 016 0v2" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>;
+  if(id==="sovga")return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><rect x="2" y="8" width="16" height="2.5" rx="1.25" fill={c} opacity=".5"/><rect x="3" y="10.5" width="14" height="7" rx="1.5" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><path d="M10 8.5v9" stroke={c} strokeWidth="1.3"/><path d="M10 8C10 8 7 7 7 5s2-2 3 0c1-2 3-2 3 0s-3 3-3 3z" fill={c} opacity=".7"/></svg>;
+  return <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="2" fill={c}/><circle cx="3.5" cy="10" r="2" fill={c} opacity=".5"/><circle cx="16.5" cy="10" r="2" fill={c} opacity=".5"/></svg>;
+}
+
+function MoneyInput({value,onChange,style,placeholder,autoFocus}){
+  // type=text bilan probel ko'rsatadi, lekin toza raqam saqlaydi
+  const fmt=(s)=>{const digits=String(s).replace(/[^0-9]/g,"");if(!digits)return "";return digits.replace(/\B(?=(\d{3})+(?!\d))/g," ");};
+  const display=value?fmt(value):"";
+  return <input type="text" inputMode="numeric" style={style} placeholder={placeholder} autoFocus={autoFocus} value={display} onChange={e=>{const raw=e.target.value.replace(/[^0-9]/g,"");onChange(raw);}}/>;
+}
+function Av({src,name,size=44,ac}){
+  const ini=(name||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+  if(src)return <img src={src} alt={name} style={{width:size,height:size,borderRadius:"50%",objectFit:"cover",border:"2px solid "+ac+"44",flexShrink:0}}/>;
+  return <div style={{width:size,height:size,borderRadius:"50%",background:"linear-gradient(135deg,"+ac+","+ac+"88)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:size*.36,fontWeight:800,color:"#fff",flexShrink:0}}>{ini}</div>;
+}
+function Spark({data,color}){
+  if(!data||data.length<2)return null;
+  const max=Math.max(...data,1);
+  const W=72,H=26;
+  const pts=data.map((v,i)=>((i/(data.length-1))*W)+","+(H-(v/max)*H)).join(" ");
+  return <svg width={W} height={H} style={{display:"block"}}><polyline points={pts} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/></svg>;
+}
+function Heat({xar,ac}){
+  const days=[];
+  const now=new Date();
+  for(let i=29;i>=0;i--){
+    const d=new Date(now);
+    d.setDate(d.getDate()-i);
+    const k=d.toISOString().slice(0,10);
+    const tot=xar.filter(x=>x.sana===k).reduce((s,x)=>s+Number(x.summa||0),0);
+    days.push({k,tot});
+  }
+  const max=Math.max(...days.map(d=>d.tot),1);
+  return <div style={{display:"grid",gridTemplateColumns:"repeat(10,1fr)",gap:4}}>
+    {days.map(d=>{
+      const a=d.tot>0?Math.round((d.tot/max)*200+30):0;
+      const bg=d.tot>0?ac+a.toString(16).padStart(2,"0"):"#1e293b22";
+      return <div key={d.k} title={d.k+": "+d.tot.toLocaleString()} style={{aspectRatio:"1",borderRadius:4,background:bg,cursor:"default",transition:"transform .15s"}} onMouseEnter={e=>e.currentTarget.style.transform="scale(1.4)"} onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}/>;
+    })}
+  </div>;
+}
+function Tst({msg,type,th}){
+  if(!msg)return null;
+  const bg=type==="err"?th.rd:type==="warn"?th.am:th.gr;
+  return <div style={{position:"fixed",top:18,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:bg,color:"#fff",borderRadius:14,padding:"11px 22px",fontSize:14,fontWeight:700,maxWidth:340,textAlign:"center",boxShadow:"0 8px 28px rgba(0,0,0,.3)",pointerEvents:"none"}}>{msg}</div>;
+}
+function BH({label,th,onBack}){
+  return <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+    <button onClick={onBack} style={{background:th.sur,border:"1px solid "+th.bor,borderRadius:10,width:36,height:36,display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}>{Ico.back(th.t1)}</button>
+    <div style={{fontSize:17,fontWeight:700,color:th.t1}}>{label}</div>
+  </div>;
+}
 
 export default function App(){
   const [boot,setBoot]=useState(true);
@@ -144,7 +357,17 @@ export default function App(){
   const f=useCallback((n,sh)=>fmtN(n,val,sh),[val]);
   const ok$=useCallback((msg,type="ok")=>{try{if(navigator.vibrate)navigator.vibrate(type==="err"?[8,40,8]:12);}catch(e){}setTst({msg,type});setTimeout(()=>setTst({msg:"",type:"ok"}),3000);},[]);
   const fireConfetti=useCallback(()=>{setConfetti(true);setTimeout(()=>setConfetti(false),2500);},[]);
-  const S=makeS(th);;
+  const S={
+    pg:{minHeight:"100vh",background:th.bg,fontFamily:"'Inter',system-ui,sans-serif",color:th.t1,maxWidth:430,margin:"0 auto"},
+    cd:{background:th.sur,borderRadius:18,padding:16,border:"1px solid "+th.bor,marginBottom:10},
+    ip:{width:"100%",background:th.surH,border:"1.5px solid "+th.bor,borderRadius:13,padding:"13px 16px",color:th.t1,fontSize:15,outline:"none",boxSizing:"border-box",marginBottom:12},
+    lb:{fontSize:10,color:th.t2,display:"block",marginBottom:5,textTransform:"uppercase",letterSpacing:1.4,fontWeight:600},
+    bt:(a,b)=>({width:"100%",background:"linear-gradient(135deg,"+(a||th.ac)+","+(b||th.ac2)+")",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontSize:15,fontWeight:700,cursor:"pointer",marginBottom:9,boxShadow:"0 4px 14px "+(a||th.ac)+"44"}),
+    tb:on=>({flex:1,background:on?th.ac+"18":"transparent",border:"1.5px solid "+(on?th.ac:th.bor),borderRadius:11,padding:"9px 0",color:on?th.ac:th.t2,cursor:"pointer",fontWeight:700,fontSize:13}),
+    ch:(on,c)=>({whiteSpace:"nowrap",background:on?(c||th.ac)+"18":"transparent",border:"1px solid "+(on?(c||th.ac):th.bor),borderRadius:20,padding:"6px 14px",color:on?(c||th.ac):th.t2,cursor:"pointer",fontSize:12,fontWeight:600}),
+    row:{display:"flex",justifyContent:"space-between",alignItems:"center"},
+    sec:{fontSize:10,color:th.t2,textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:8},
+  };
   const loadFam=useCallback(async u=>{
     if(!u?.oilaId)return;
     // TEZKOR: avval keshdan ko'rsatamiz (Firebase kutmasdan)
@@ -1852,10 +2075,157 @@ export default function App(){
       </div>
     </div>;
   }
-  // Onboarding
-  if(onbStep>=0&&onbStep<ONB_SLIDES.length)return <OnboardingPage th={th} lg={lg} setLg={setLg} dark={dark} onbStep={onbStep} setOnbStep={setOnbStep}/>;
-  // Login
-  if(scr==="login")return <LoginPage th={th} S={S} lg={lg} setLg={setLg} dark={dark} reg={reg} setReg={setReg} kidLoginMode={kidLoginMode} setKidLoginMode={setKidLoginMode} join={join} setJoin={setJoin} fIsm={fIsm} setFIsm={setFIsm} fEm={fEm} setFEm={setFEm} fPw={fPw} setFPw={setFPw} fON={fON} setFON={setFON} fKd={fKd} setFKd={setFKd} fTel={fTel} setFTel={setFTel} fDial={fDial} setFDial={setFDial} fCountry={fCountry} setFCountry={setFCountry} showValDD={showValDD} setShowValDD={setShowValDD} fRel={fRel} setFRel={setFRel} showCountryDD={showCountryDD} setShowCountryDD={setShowCountryDD} showRelDD={showRelDD} setShowRelDD={setShowRelDD} showPw={showPw} setShowPw={setShowPw} showResetScreen={showResetScreen} setShowResetScreen={setShowResetScreen} showResetConfirm={showResetConfirm} setShowResetConfirm={setShowResetConfirm} resetEmail={resetEmail} setResetEmail={setResetEmail} resetInput={resetInput} setResetInput={setResetInput} resetSent={resetSent} setResetSent={setResetSent} fRefCode={fRefCode} setFRefCode={setFRefCode} val={val} setVal={setVal} tst={tst} ok$={ok$} doGoogleLogin={doGoogleLogin} handleAuth={handleAuth} handleResetPw={handleResetPw} t={t} isPremium={isPremium}/>;
+  if(onbStep>=0&&onbStep<ONB_SLIDES.length){
+    const s=ONB_SLIDES[onbStep];
+    const finish=()=>{try{localStorage.setItem("oilaV7Onb","1");}catch(e){}setOnbStep(-1);};
+    return <div style={{...S.pg,minHeight:"100vh",display:"flex",flexDirection:"column",background:dark?"#0f172a":"#f8fafc"}}>
+      <div style={{position:"fixed",top:-100,left:"50%",transform:"translateX(-50%)",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,"+s.color+"22,transparent 70%)",pointerEvents:"none",transition:"background .5s"}}/>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",position:"relative",zIndex:2}}>
+        <div style={{display:"flex",gap:6}}>
+          {["uz","ru","en"].map(l=><button key={l} onClick={()=>{setLg(l);localStorage.setItem("oilaV7L",l);}} style={{background:lg===l?th.ac+"18":"transparent",border:"1px solid "+(lg===l?th.ac:th.bor),borderRadius:8,padding:"4px 10px",color:lg===l?th.ac:th.t2,cursor:"pointer",fontSize:12,fontWeight:600}}>{l.toUpperCase()}</button>)}
+        </div>
+        <button onClick={finish} style={{background:"none",border:"none",color:th.t2,cursor:"pointer",fontSize:14,fontWeight:600}}>{lg==="uz"?"O'tkazib yuborish":lg==="ru"?"\u041f\u0440\u043e\u043f\u0443\u0441\u0442\u0438\u0442\u044c":"Skip"}</button>
+      </div>
+      <div style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px 32px",position:"relative",zIndex:2,textAlign:"center"}}>
+        <div className="anim-float" style={{width:160,height:160,borderRadius:"50%",background:"linear-gradient(135deg,"+s.color+"33,"+s.color+"0d)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:84,marginBottom:40,boxShadow:"0 24px 70px "+s.color+"44",transition:"all .4s",border:"1px solid "+s.color+"22"}} key={"emoji"+onbStep}>{s.emoji}</div>
+        <div className="anim-fadeUp" key={"t"+onbStep} style={{fontSize:29,fontWeight:800,color:th.t1,marginBottom:14,letterSpacing:"-0.5px"}}>{lg==="uz"?s.titleUz:lg==="ru"?s.titleRu:s.titleEn}</div>
+        <div className="anim-fadeUp" key={"d"+onbStep} style={{fontSize:15,color:th.t2,lineHeight:1.65,maxWidth:320,animationDelay:".1s"}}>{lg==="uz"?s.descUz:lg==="ru"?s.descRu:s.descEn}</div>
+      </div>
+      <div style={{padding:"24px 32px 44px",position:"relative",zIndex:2}}>
+        <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:28}}>
+          {ONB_SLIDES.map((_,i)=>(<div key={i} style={{width:i===onbStep?28:8,height:8,borderRadius:4,background:i===onbStep?s.color:th.bor,transition:"all .3s"}}/>))}
+        </div>
+        <button onClick={()=>{if(onbStep<ONB_SLIDES.length-1)setOnbStep(onbStep+1);else finish();}} style={{width:"100%",background:"linear-gradient(135deg,"+s.color+","+s.color+"dd)",border:"none",borderRadius:16,padding:"16px",color:"#fff",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 8px 24px "+s.color+"44",transition:"all .3s"}}>{onbStep<ONB_SLIDES.length-1?(lg==="uz"?"Keyingi":lg==="ru"?"\u0414\u0430\u043b\u0435\u0435":"Next"):(lg==="uz"?"Boshlash":lg==="ru"?"\u041d\u0430\u0447\u0430\u0442\u044c":"Get started")}</button>
+        {onbStep>0&&<button onClick={()=>setOnbStep(onbStep-1)} style={{width:"100%",background:"none",border:"none",color:th.t2,cursor:"pointer",fontSize:14,fontWeight:600,marginTop:12}}>{lg==="uz"?"Orqaga":lg==="ru"?"\u041d\u0430\u0437\u0430\u0434":"Back"}</button>}
+      </div>
+    </div>;
+  }
+
+  if(scr==="login")return <div style={S.pg}>
+    <Tst msg={tst.msg} type={tst.type} th={th}/>
+    <div style={{position:"fixed",top:-120,left:"50%",transform:"translateX(-50%)",width:450,height:450,borderRadius:"50%",background:"radial-gradient(circle,"+th.ac+"1a,transparent 70%)",pointerEvents:"none"}}/>
+    <div style={{padding:"50px 24px 40px",position:"relative"}}>
+      <div style={{textAlign:"center",marginBottom:36}}>
+        <div style={{width:82,height:82,borderRadius:24,background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",boxShadow:"0 14px 36px "+th.ac+"44"}}>{Ico.wallet("#fff")}</div>
+        <div style={{fontSize:28,fontWeight:800,letterSpacing:-0.5}}>{lg==="uz"?<><span style={{color:th.ac}}>Oila</span><span style={{color:th.gr}}>Hisobchi</span></>:lg==="ru"?<><span style={{color:th.ac}}>Семейный</span><span style={{color:th.gr}}>Бюджет</span></>:<><span style={{color:th.ac}}>Family</span><span style={{color:th.gr}}>Budget</span></>}</div>
+        <div style={{color:th.t2,fontSize:13,marginTop:5}}>{lg==="uz"?"Daromad \u00b7 Xarajat \u00b7 Maqsad \u00b7 Oila":lg==="ru"?"\u0414\u043e\u0445\u043e\u0434 \u00b7 \u0420\u0430\u0441\u0445\u043e\u0434 \u00b7 \u0426\u0435\u043b\u0438 \u00b7 \u0421\u0435\u043c\u044c\u044f":"Income \u00b7 Expense \u00b7 Goals \u00b7 Family"}</div>
+      </div>
+      <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:20}}>
+        {["uz","ru","en"].map(l=><button key={l} onClick={()=>{setLg(l);localStorage.setItem("oilaV7L",l);}} style={{...S.ch(lg===l),padding:"5px 12px"}}>{l.toUpperCase()}</button>)}
+        <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...S.ch(true,th.t2),padding:"5px 12px",display:"flex",alignItems:"center",gap:4}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?(lg==="uz"?"Kunduz":"Light"):(lg==="uz"?"Tungi":"Dark")}</button>
+      </div>
+      <div style={{display:"flex",gap:6,marginBottom:18}}>
+        <button onClick={()=>switchAuthMode(false,false)} style={{...S.tb(!reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
+        <button onClick={()=>switchAuthMode(true,false)} style={{...S.tb(reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
+        <button onClick={()=>switchAuthMode(false,true)} style={{...S.tb(kidLoginMode),fontSize:13,padding:"11px 6px"}}>👶 {lg==="uz"?"Bola":lg==="ru"?"\u0420\u0435\u0431\u0451\u043d\u043e\u043a":"Kid"}</button>
+      </div>
+      <div style={S.cd}>
+        {reg&&<><label style={S.lb}>{lg==="uz"?"Ism familiya":lg==="ru"?"Имя и фамилия":"Full name"}</label><input style={S.ip} value={fIsm} onChange={e=>setFIsm(e.target.value)} placeholder={lg==="uz"?"Ism familiyangiz":lg==="ru"?"Имя Фамилия":"First and last name"}/>
+        <label style={S.lb}>{lg==="uz"?"Davlat":lg==="ru"?"Страна":"Country"}</label>
+        <div style={{position:"relative",marginBottom:12}}>
+          <button onClick={()=>setShowCountryDD(v=>!v)} style={{width:"100%",background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,color:th.t1,fontSize:14}}>
+            {(()=>{const sc=COUNTRIES.find(c=>c.code===fCountry)||COUNTRIES[0];return <><span style={{fontSize:20}}>{sc.flag}</span><span style={{flex:1,textAlign:"left",fontWeight:600}}>{sc[lg]||sc.uz}</span><span style={{fontSize:11,color:th.t2}}>{(VALS.find(v=>v.id===sc.val)||{}).b}</span><span style={{transform:showCountryDD?"rotate(180deg)":"none",transition:"transform .2s"}}>{Ico.chevron(th.t2,false)}</span></>;})()}
+          </button>
+          {showCountryDD&&<div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:th.sur,border:"1.5px solid "+th.bor,borderRadius:12,maxHeight:240,overflowY:"auto",zIndex:30,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
+            {COUNTRIES.map(c=>(<button key={c.code} onClick={()=>{setFCountry(c.code);setShowCountryDD(false);}} style={{width:"100%",background:fCountry===c.code?th.ac+"11":"none",border:"none",borderBottom:"1px solid "+th.bor,padding:"11px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,color:th.t1}}>
+              <span style={{fontSize:18}}>{c.flag}</span><span style={{flex:1,textAlign:"left",fontSize:13,fontWeight:fCountry===c.code?700:500,color:fCountry===c.code?th.ac:th.t1}}>{c[lg]||c.uz}</span><span style={{fontSize:11,color:th.t2}}>{(VALS.find(v=>v.id===c.val)||{}).b}</span>{fCountry===c.code&&Ico.check(th.ac)}
+            </button>))}
+          </div>}
+        </div>
+        <label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
+        <div style={{display:"flex",gap:8,marginBottom:11}}>
+          <div style={{display:"flex",alignItems:"center",gap:5,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 12px",flexShrink:0}}>
+            <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.code===fCountry)||COUNTRIES[0]).flag}</span>
+            <span style={{fontSize:14,fontWeight:700,color:th.t1}}>{(COUNTRIES.find(c=>c.code===fCountry)||COUNTRIES[0]).dial}</span>
+          </div>
+          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
+        </div>
+        {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
+        {/* BOLA KIRISHI: faqat login + parol */}
+        {kidLoginMode&&<><div style={{textAlign:"center",marginBottom:14}}><div style={{fontSize:36,marginBottom:6}}>👶</div><div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ota-onang bergan login va parolni yoz":lg==="ru"?"Введи логин от родителей":"Enter the login your parent gave you"}</div></div>
+        <label style={S.lb}>{lg==="uz"?"Logining":"Your login"}</label>
+        <input style={S.ip} type="text" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase())} placeholder="mohichehra25" autoFocus/></>}
+        {/* ODDIY KIRISH: telefon */}
+        {!reg&&!kidLoginMode&&<><label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
+        <div style={{display:"flex",gap:8,marginBottom:11}}>
+          <div style={{display:"flex",alignItems:"center",gap:4,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 10px",flexShrink:0,width:96}}>
+            <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.dial===fDial)||{flag:"🌐"}).flag}</span>
+            <input style={{background:"none",border:"none",outline:"none",color:th.t1,fontSize:14,fontWeight:700,width:52}} type="tel" value={fDial} onChange={e=>{let v=e.target.value.replace(/[^0-9+]/g,"");if(!v.startsWith("+"))v="+"+v;setFDial(v);const c=COUNTRIES.find(x=>x.dial===v);if(c)setFCountry(c.code);}} placeholder="+998"/>
+          </div>
+          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
+        </div></>}
+        {reg&&<><label style={S.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
+        <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
+        <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
+        <div style={{position:"relative",marginBottom:reg?14:4}}>
+          <input style={{...S.ip,marginBottom:0,paddingRight:reg?108:44}} type={showPw?"text":"password"} value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 6 belgi":"Min 6 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
+          <button onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:reg?64:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:4}} title={showPw?"Yashirish":"Ko'rsatish"}>{showPw?"🙈":"👁"}</button>
+          {reg&&<button onClick={genPassword} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:th.ac+"18",border:"1px solid "+th.ac+"44",borderRadius:8,cursor:"pointer",fontSize:11,padding:"5px 9px",color:th.ac,fontWeight:700}} title={lg==="uz"?"Parol yaratish":"Generate"}>🎲</button>}
+        </div>
+        {reg&&<>
+          <div style={{display:"flex",gap:8,marginBottom:13}}>
+            <button onClick={()=>setJoin(false)} style={S.tb(!join)}>{lg==="uz"?"Yangi oila":"New family"}</button>
+            <button onClick={()=>setJoin(true)} style={S.tb(join)}>{lg==="uz"?"Qo'shilish":"Join"}</button>
+          </div>
+          {!join?<><label style={S.lb}>{lg==="uz"?"Oila nomi":"Family name"}</label><input style={S.ip} value={fON} onChange={e=>setFON(e.target.value)} placeholder={lg==="uz"?"Karimov oilasi":"Family name"}/></>
+          :<><label style={S.lb}>{lg==="uz"?"Oila kodi":"Family code"}</label><input style={S.ip} value={fKd} onChange={e=>setFKd(e.target.value)} placeholder={lg==="uz"?"Bosh a'zodan oling":"Get from head member"}/><div style={{background:th.ac+"11",borderRadius:11,padding:11,marginBottom:11,fontSize:12,color:th.t2}}>{lg==="uz"?"Kodni Profil > Shaxsiy ma'lumotlar bo'limida toping":"Find code in Profile > Personal info"}</div>
+          <label style={S.lb}>{lg==="uz"?"Oila boshiga kim bo'lasiz?":lg==="ru"?"Кем вы приходитесь главе?":"Your relation to head"}</label>
+          <div style={{position:"relative",marginBottom:11}}>
+            <button onClick={()=>setShowRelDD(v=>!v)} style={{width:"100%",background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,color:th.t1,fontSize:14}}>
+              {(()=>{const sr=RELATIONS.find(r=>r.id===fRel);return sr?<><span style={{fontSize:20}}>{sr.emoji}</span><span style={{flex:1,textAlign:"left",fontWeight:600}}>{sr[lg]||sr.uz}</span></>:<span style={{flex:1,textAlign:"left",color:th.t2}}>{lg==="uz"?"Tanlang...":lg==="ru"?"Выберите...":"Select..."}</span>;})()}
+              <span style={{transform:showRelDD?"rotate(180deg)":"none",transition:"transform .2s"}}>{Ico.chevron(th.t2,false)}</span>
+            </button>
+            {showRelDD&&<div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:th.sur,border:"1.5px solid "+th.bor,borderRadius:12,maxHeight:240,overflowY:"auto",zIndex:30,boxShadow:"0 8px 24px rgba(0,0,0,.2)"}}>
+              {RELATIONS.map(r=>(<button key={r.id} onClick={()=>{setFRel(r.id);setShowRelDD(false);}} style={{width:"100%",background:fRel===r.id?th.ac+"11":"none",border:"none",borderBottom:"1px solid "+th.bor,padding:"11px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,color:th.t1}}>
+                <span style={{fontSize:18}}>{r.emoji}</span><span style={{flex:1,textAlign:"left",fontSize:13,fontWeight:fRel===r.id?700:500,color:fRel===r.id?th.ac:th.t1}}>{r[lg]||r.uz}</span>{fRel===r.id&&Ico.check(th.ac)}
+              </button>))}
+            </div>}
+          </div></>}
+        </>}
+        <button onClick={doAuth} style={S.bt()}>{kidLoginMode?(lg==="uz"?"👶 Kirish":"👶 Login"):reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
+        {!kidLoginMode&&<div style={{display:"flex",alignItems:"center",gap:10,margin:"18px 0 4px"}}>
+          <div style={{flex:1,height:1,background:th.bor}}/>
+          <span style={{fontSize:12,color:th.t2,whiteSpace:"nowrap"}}>{lg==="uz"?"yoki":"или / or"}</span>
+          <div style={{flex:1,height:1,background:th.bor}}/>
+        </div>}
+        {!kidLoginMode&&<button onClick={doGoogleLogin} style={{width:"100%",padding:"13px 16px",borderRadius:14,border:"1.5px solid "+th.bor,background:th.surH,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginBottom:12}}>
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+          <span style={{fontSize:15,fontWeight:600,color:th.t1}}>{lg==="uz"?"Google bilan kirish":lg==="ru"?"Войти через Google":"Continue with Google"}</span>
+        </button>}
+        {!reg&&!kidLoginMode&&<button onClick={handleResetPw} style={{background:"none",border:"none",color:th.ac,cursor:"pointer",fontSize:13,fontWeight:600,marginTop:14,width:"100%",textAlign:"center",padding:"6px"}}>{lg==="uz"?"Parolni unutdingizmi?":lg==="ru"?"Забыли пароль?":"Forgot password?"}</button>}
+      </div>
+    </div>
+    {showResetScreen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetScreen(false)}>
+      <div style={{background:th.bg,borderRadius:20,maxWidth:400,width:"100%",padding:"26px 22px"}} onClick={e=>e.stopPropagation()}>
+        {!resetSent?<>
+          <div style={{fontSize:44,textAlign:"center",marginBottom:14}}>🔑</div>
+          <div style={{fontSize:18,fontWeight:800,color:th.t1,textAlign:"center",marginBottom:8}}>{lg==="uz"?"Parolni tiklash":lg==="ru"?"Сброс пароля":"Reset password"}</div>
+          <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18}}>{lg==="uz"?"Ro'yxatdan o'tgan emailingizni kiriting. Tiklash havolasini yuboramiz.":"Enter your registered email."}</div>
+          <label style={S.lb}>Email</label>
+          <input style={S.ip} type="email" value={resetInput} onChange={e=>setResetInput(e.target.value)} placeholder="email@example.com" autoFocus/>
+          <button onClick={sendResetEmail} style={{...S.bt(),marginTop:6,marginBottom:10}}>{lg==="uz"?"Tiklash xatini yuborish":lg==="ru"?"Отправить":"Send reset link"}</button>
+          <button onClick={()=>setShowResetScreen(false)} style={{width:"100%",background:"transparent",border:"none",color:th.t2,cursor:"pointer",fontSize:13,fontWeight:600,padding:"8px"}}>{lg==="uz"?"Bekor qilish":"Cancel"}</button>
+        </>:<>
+          <div style={{fontSize:44,textAlign:"center",marginBottom:14}}>📧</div>
+          <div style={{fontSize:18,fontWeight:800,color:th.gr,textAlign:"center",marginBottom:8}}>{lg==="uz"?"Xat yuborildi!":"Email sent!"}</div>
+          <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.7,marginBottom:8}}>{lg==="uz"?"Parolni tiklash havolasi yuborildi:":"Reset link sent to:"}</div>
+          <div style={{fontSize:14,fontWeight:700,color:th.ac,textAlign:"center",background:th.ac+"11",borderRadius:10,padding:"10px",marginBottom:14,wordBreak:"break-all"}}>{resetInput}</div>
+          <div style={{fontSize:12,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18}}>{lg==="uz"?"📌 Pochtangizni oching va havolani bosing. Ko'rinmasa, Spam papkasini tekshiring.":"Check inbox and Spam."}</div>
+          <button onClick={()=>setShowResetScreen(false)} style={{...S.bt(),marginBottom:0}}>{lg==="uz"?"Tushunarli":"Got it"}</button>
+        </>}
+      </div>
+    </div>}
+  </div>;
+
+  const isKid=user?.rol==="kid";
+  const hasKids=azolar.some(a=>a.rol==="kid");
+  const vazLb=lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks";
+  // Pastki nav — hammaga bir xil
+  // Bola uchun alohida nav (3 tab, + yo'q), kattalar uchun alohida (5 tab)
+  // Barcha sahifalarga uzatiladigan props
+  const allProps={
+    user,oila,azolar,xar,dar,maq,qarzlar,vazifalar,kidBalances,notifs,qarzReqs,xReqs,rates,stars,gardenData,setXar,setDar,setMaq,setQarzlar,setVazifalar,setKidBalances,setNotifs,setStars,dark,lg,val,setScr,scr,isPremium,isKid,isBosh:user?.rol==="bosh",hasKids,isAdmin,th,S,Ico,t,f,ok$,buzz,td,nt,addStar,addNotif,fireConfetti,showS,setSrch,srch,showPremModal,setShowPremModal,activatePremium,addM,setAddM,maqTab,setMaqTab,tupId,setTupId,tupS,setTupS,addMq,tupMq,delMq,editMq,setEditMq,editMqN,setEditMqN,editMqS,setEditMqS,saveEditMq,maqsadConfirmNotif,setMaqsadConfirmNotif,confirmMaqBought,cancelMaqReturn,showAddVazifa,setShowAddVazifa,showGift,setShowGift,giftSum,setGiftSum,giftFrom,setGiftFrom,vTitle,setVTitle,vReward,setVReward,vAssignee,setVAssignee,vEmoji,setVEmoji,addVazifa,vazifaDone,vazifaApprove,vazifaReject,delVazifa,showAddQarz,setShowAddQarz,qarzTur,setQarzTur,qarzKim,setQarzKim,qarzSum,setQarzSum,qarzIzoh,setQarzIzoh,qarzSana,setQarzSana,qarzQaytSana,setQarzQaytSana,qarzTel,setQarzTel,qarzLinked,setQarzLinked,addQarz,payQarz,delQarz,partialQarz,setPartialQarz,partialSum,setPartialSum,applyPartial,qarzDonePrompt,setQarzDonePrompt,addQarzAsDaromad,addQarzAsXarajat,inviteQarz,setInviteQarz,acceptQarzReq,rejectQarzReq,verifyTilxat,setVerifyTilxat,generateTilxat,xForMember,setXForMember,xMode,setXMode,xReqAccept,xReqReject,quickItem,setQuickItem,quickSum,setQuickSum,hisFil,setHisFil,ctab,setCtab,adv,setAdv,advL,setAdvL,exportLoading,exportPDF,exportExcel,getAIAdvice,showImport,setShowImport,importRows,setImportRows,importStep,setImportStep,importFileRef,handleImport,confirmImport,pTab,setPTab,edN,setEdN,newN,setNewN,fBj,setFBj,fKL,setFKL,faqO,setFaqO,pinStep,setPinStep,pinVal,setPinVal,pinCfm,setPinCfm,finger,setFinger,showBilim,setShowBilim,showAddKid,setShowAddKid,kidName,setKidName,kidLogin,setKidLogin,kidPw,setKidPw,addKidAccount,showReferral,setShowReferral,refCount,fbRating,setFbRating,fbText,setFbText,fbType,setFbType,fbSending,sendFeedback,adminStats,adminLoad,loadAdminStats,waterGarden,gardenData2:gardenData,addStar2:addStar,activatePremium2:activatePremium,logout,saveProfile,fRef,doPhoto,rateL,fetchRates,notifEnabled,setNotifEnabled,notifTime,setNotifTime,APP_VER,showGardenInfo,setShowGardenInfo,setGardenData,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,KATS,KN,DARS,DN,VALS,COUNTRIES,RELATIONS,TL,Av,MoneyInput,KatIco,DarIco,Spark,Heat,BH,SL,TxRow,Tst,fmtN,normTel,sonSoz,spc,QUICK_ADD,ADMIN_TEL,fS,setFS,fK,setFK,fIz,setFIz,fSn,setFSn,fRp,setFRp,fDS,setFDS,fDT,setFDT,fDI,setFDI,addX,addD,mN,setMN,mS,setMS,mR,setMR,voiceOn,voiceText,voiceParsed,showVoice,setShowVoice,startVoice,stopVoice,applyVoice,showScanner,setShowScanner,scanMsg,startScanner,stopScanner,showQrPick,setShowQrPick,qrRawText,setQrRawText,showResetScreen,setShowResetScreen,resetInput,setResetInput,resetSent,setResetSent,sendResetEmail,resetEmail,setResetEmail,showResetConfirm,setShowResetConfirm
+  };
   const navItems=isKid
     ?[
       {id:"bosh",   lb:t.home},
@@ -1870,8 +2240,7 @@ export default function App(){
       {id:"hisobot",lb:t.rep},
     ];
 
-  return (
-    <div style={S.pg}>
+  return <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
     <input ref={fRef} type="file" accept="image/*" style={{display:"none"}} onChange={doPhoto}/>
     {/* VAZIFA QO'SHISH MODAL */}
@@ -2095,236 +2464,27 @@ export default function App(){
         </div>
       </div>
       {showS&&<input autoFocus style={{...S.ip,marginBottom:0,marginTop:8}} value={srch} onChange={e=>setSrch(e.target.value)} placeholder={t.sch}/>}
-      {scr==="bosh"&&    <DashboardPage {...pageProps} showS={showS}/>}
-      {scr==="grafik"&&  <ChartsPage    {...pageProps}/>}
-      {scr==="maqsad"&&  <GoalsPage     {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn}/>}
-      {scr==="vazifa"&&  <TasksPage     {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} VAZIFA_PRESETS={VAZIFA_PRESETS}/>}
-      {scr==="qarz"&&    <DebtsPage     {...pageProps} showAddQarz={showAddQarz} setShowAddQarz={setShowAddQarz} qarzTur={qarzTur} setQarzTur={setQarzTur} qarzKim={qarzKim} setQarzKim={setQarzKim} qarzSum={qarzSum} setQarzSum={setQarzSum} qarzIzoh={qarzIzoh} setQarzIzoh={setQarzIzoh} qarzSana={qarzSana} setQarzSana={setQarzSana} qarzQaytSana={qarzQaytSana} setQarzQaytSana={setQarzQaytSana} qarzTel={qarzTel} setQarzTel={setQarzTel} qarzLinked={qarzLinked} setQarzLinked={setQarzLinked} addQarz={addQarz} payQarz={payQarz} partialQarz={partialQarz} setPartialQarz={setPartialQarz} partialSum={partialSum} setPartialSum={setPartialSum} qarzDonePrompt={qarzDonePrompt} setQarzDonePrompt={setQarzDonePrompt} inviteQarz={inviteQarz} setInviteQarz={setInviteQarz} acceptQarzReq={acceptQarzReq} rejectQarzReq={rejectQarzReq} refreshQarzReqs={refreshQarzReqs} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat}/>}
-      {scr==="hisobot"&& <ReportsPage   {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportPDF={exportPDF} exportExcel={exportExcel} adv={adv} setAdv={setAdv} advL={advL} getAIAdvice={getAIAdvice} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} handleImport={handleImport} confirmImport={confirmImport}/>}
-      {scr==="profil"&&  <ProfilePage   {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addStar={addStar} activatePremium={activatePremium} logout={logout} saveProfile={saveProfile} fRef={fRef} doPhoto={doPhoto} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} setNotifEnabled={setNotifEnabled} notifTime={notifTime} setNotifTime={setNotifTime} APP_VER={APP_VER}/>}
+      <DashboardPage {...allProps}/>
+      <ChartsPage {...allProps}/>
+      <GoalsPage {...allProps}/>
+      <TasksPage {...allProps}/>
+      <DebtsPage {...allProps}/>
+      <ReportsPage {...allProps}/>
+      <ProfilePage {...allProps}/>
+
+    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:th.sur,borderTop:"1px solid "+th.bor,padding:"8px 12px 22px",display:"flex",justifyContent:"space-around",alignItems:"center",zIndex:20}}>
+      {navItems.map(item=>item.pr
+        ?<button key="add" onClick={()=>{buzz(15);setShowAddModal(true);setAddModalTab(isKid?"daromad":"xarajat");setAddStep("kat");setAddKat(null);setFS("");setFIz("");setFSn(td());setFDS("");setFDI("");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
+        :<button key={item.id} onClick={()=>{buzz(8);setScr(item.id);}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,opacity:scr===item.id?1:0.5,transition:"all .2s",padding:"4px 8px",transform:scr===item.id?"translateY(-2px)":"none"}}>
+          {item.id==="bosh"&&Ico.navHome(scr===item.id?th.ac:th.t2)}
+          {item.id==="grafik"&&Ico.navChart(scr===item.id?th.ac:th.t2)}
+          {item.id==="qarz"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="3" y="6" width="20" height="14" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M3 10h20" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.3"/><path d="M7 14h5M16 14h3" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
+          {item.id==="maqsad"&&Ico.navGoal(scr===item.id?th.ac:th.t2)}
+          {item.id==="vazifa"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="4" y="3" width="18" height="20" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M8 9l2 2 4-4" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 16h9" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
+          {item.id==="hisobot"&&Ico.navRep(scr===item.id?th.ac:th.t2)}
+          <span style={{fontSize:9,fontWeight:700,letterSpacing:.5,color:scr===item.id?th.ac:th.t2}}>{item.lb}</span>
+        </button>
+      )}
     </div>
-    {showNotifs&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:998,display:"flex",justifyContent:"flex-end"}} onClick={()=>setShowNotifs(false)}>
-      <div style={{background:th.bg,width:"100%",maxWidth:430,height:"100%",overflowY:"auto",boxShadow:"-4px 0 24px rgba(0,0,0,.3)"}} onClick={e=>e.stopPropagation()}>
-        <div style={{position:"sticky",top:0,background:th.sur,borderBottom:"1px solid "+th.bor,padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:2}}>
-          <div style={{fontSize:17,fontWeight:800,color:th.t1}}>{lg==="uz"?"Bildirishnomalar":lg==="ru"?"Уведомления":"Notifications"}</div>
-          <button onClick={()=>setShowNotifs(false)} style={{background:th.surH,border:"none",borderRadius:"50%",width:34,height:34,color:th.t1,fontSize:20,cursor:"pointer"}}>×</button>
-        </div>
-        {notifs.length>0&&<div style={{display:"flex",gap:8,padding:"12px 18px",borderBottom:"1px solid "+th.bor}}>
-          <button onClick={markAllRead} style={{flex:1,background:th.surH,border:"1px solid "+th.bor,borderRadius:10,padding:"8px 0",color:th.t2,cursor:"pointer",fontSize:12,fontWeight:600}}>{lg==="uz"?"Hammasini o'qilgan":"Mark all read"}</button>
-          <button onClick={clearNotifs} style={{flex:1,background:th.rd+"11",border:"1px solid "+th.rd+"33",borderRadius:10,padding:"8px 0",color:th.rd,cursor:"pointer",fontSize:12,fontWeight:600}}>{lg==="uz"?"Tozalash":"Clear"}</button>
-        </div>}
-        <div style={{padding:"12px 18px 40px"}}>
-          {notifs.length===0&&<div style={{textAlign:"center",padding:"60px 0",color:th.t2}}><div style={{fontSize:46,marginBottom:10,opacity:.5}}>🔔</div><div style={{fontSize:15}}>{lg==="uz"?"Bildirishnomalar yo'q":"No notifications"}</div></div>}
-          {notifs.map(n=>{
-            const icons={qarz:"💸",budjet:"⚠️",xarajat:"💰",yangilik:"🎉",maqsad_confirm:"🎯",maqsad_kid_confirm:"🎁",vazifa:"🏆"};
-            const colors={qarz:th.ac,budjet:th.am,xarajat:th.rd,yangilik:th.gr,maqsad_confirm:"#f59e0b",maqsad_kid_confirm:"#22c55e",vazifa:"#8b5cf6"};
-            const c=colors[n.type]||th.ac;
-            const needParentAction=n.type==="maqsad_confirm"&&n.status==="pending"&&!isKid;
-            const needKidAction=n.type==="maqsad_kid_confirm"&&n.status==="pending"&&isKid;
-            return <div key={n.id} onClick={()=>markNotifRead(n.id)} style={{background:n.read?th.sur:c+"0d",border:"1px solid "+(n.read?th.bor:c+"33"),borderRadius:14,padding:"13px 15px",marginBottom:10,cursor:"pointer",display:"flex",gap:12,flexDirection:"column"}}>
-              <div style={{display:"flex",gap:12}}>
-                <div style={{width:40,height:40,borderRadius:11,background:c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{icons[n.type]||"🔔"}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,fontWeight:700,color:th.t1}}>{n.title}</span>{!n.read&&<span style={{width:8,height:8,borderRadius:"50%",background:c,flexShrink:0}}/>}</div>
-                  <div style={{fontSize:12,color:th.t2,marginTop:3,lineHeight:1.5}}>{n.text||n.body}</div>
-                  <div style={{fontSize:10,color:th.t2,marginTop:5,opacity:.7}}>{new Date(n.sana).toLocaleString("uz-UZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
-                </div>
-              </div>
-              {needParentAction&&<button onClick={e=>{e.stopPropagation();confirmMaqParent(n);}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#15803d)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                🛍️ {lg==="uz"?"Ha, sotib berdim! Tasdiqlash":lg==="ru"?"Да, я купил(а)! Подтвердить":"Yes, I bought it! Confirm"}
-              </button>}
-              {needKidAction&&<button onClick={e=>{e.stopPropagation();confirmMaqKid(n);}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                🎉 {lg==="uz"?"Ha, oldim! Mening orzuim amalga oshdi!":lg==="ru"?"Да, мне купили! Мечта сбылась!":"Yes! My dream came true!"}
-              </button>}
-            </div>;
-          })}
-        </div>
-      </div>
-    </div>}
-    {showVoice&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:1000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <button onClick={()=>{stopVoice();setShowVoice(false);}} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,.15)",border:"none",borderRadius:"50%",width:40,height:40,color:"#fff",fontSize:22,cursor:"pointer"}}>×</button>
-      <div style={{fontSize:18,fontWeight:700,color:"#fff",marginBottom:8}}>{lg==="uz"?"Ovoz bilan kiritish":lg==="ru"?"Голосовой ввод":"Voice input"}</div>
-      <div style={{fontSize:13,color:"rgba(255,255,255,.6)",marginBottom:36,textAlign:"center",maxWidth:300}}>{lg==="uz"?"Masalan: \"Transportga 20 ming ishlatdim\"":lg==="ru"?"Например: \"На транспорт 20 тысяч\"":"E.g. \"Spent 20000 on transport\""}</div>
-      <button onClick={voiceOn?stopVoice:startVoice} style={{width:110,height:110,borderRadius:"50%",background:voiceOn?"linear-gradient(135deg,#ef4444,#dc2626)":"linear-gradient(135deg,#8b5cf6,#6366f1)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:30,boxShadow:voiceOn?"0 0 0 12px rgba(239,68,68,.2),0 0 0 24px rgba(239,68,68,.1)":"0 8px 30px rgba(139,92,246,.5)",transition:"all .3s"}}>
-        <svg width="44" height="44" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5 11a7 7 0 0014 0M12 18v3M8 21h8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-      </button>
-      <div style={{fontSize:14,color:voiceOn?"#ef4444":"rgba(255,255,255,.7)",fontWeight:600,marginBottom:24}}>{voiceOn?(lg==="uz"?"Tinglayapman...":lg==="ru"?"Слушаю...":"Listening..."):(lg==="uz"?"Bosing va gapiring":lg==="ru"?"Нажмите и говорите":"Tap and speak")}</div>
-      {voiceText&&<div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"16px 20px",marginBottom:20,maxWidth:340,width:"100%"}}>
-        <div style={{fontSize:11,color:"rgba(255,255,255,.5)",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{lg==="uz"?"Eshitildi":lg==="ru"?"Распознано":"Heard"}</div>
-        <div style={{fontSize:15,color:"#fff",lineHeight:1.5}}>{voiceText}</div>
-      </div>}
-      {voiceParsed&&<div style={{background:"linear-gradient(135deg,#10b98122,#05966911)",border:"1.5px solid #10b98155",borderRadius:16,padding:"16px 20px",marginBottom:24,maxWidth:340,width:"100%"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{lg==="uz"?"Summa":lg==="ru"?"Сумма":"Amount"}</span>
-          <span style={{fontSize:20,fontWeight:800,color:"#10b981"}}>{f(voiceParsed.summa,true)}</span>
-        </div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{lg==="uz"?"Kategoriya":lg==="ru"?"Категория":"Category"}</span>
-          <span style={{fontSize:14,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",gap:6}}>{KN[lg][KATS.findIndex(k=>k.id===voiceParsed.kat)]}</span>
-        </div>
-      </div>}
-      {(voiceText&&!voiceOn)&&<div style={{display:"flex",gap:10,maxWidth:340,width:"100%"}}>
-        <button onClick={()=>{setVoiceText("");setVoiceParsed(null);startVoice();}} style={{flex:1,background:"rgba(255,255,255,.15)",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>{lg==="uz"?"Qayta":lg==="ru"?"Заново":"Retry"}</button>
-        <button onClick={applyVoice} disabled={!voiceParsed} style={{flex:2,background:voiceParsed?"linear-gradient(135deg,#10b981,#059669)":"rgba(255,255,255,.1)",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontSize:14,fontWeight:700,cursor:voiceParsed?"pointer":"not-allowed",opacity:voiceParsed?1:.5}}>{lg==="uz"?"Qo'shish":lg==="ru"?"Добавить":"Add"}</button>
-      </div>}
-    </div>}
-    {showImport&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>{setShowImport(false);setImportRows([]);setImportStep("upload");}}>
-      <div style={{background:th.bg,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"88vh",overflowY:"auto",padding:"22px 18px"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <div style={{fontSize:17,fontWeight:800,color:th.t1,display:"flex",alignItems:"center",gap:8}}>📄 {lg==="uz"?"Hisobot import":lg==="ru"?"Импорт":"Import"}</div>
-          <button onClick={()=>{setShowImport(false);setImportRows([]);setImportStep("upload");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:th.t2}}>×</button>
-        </div>
-        {importStep==="upload"&&<div>
-          <div style={{background:th.ac+"0d",border:"1.5px dashed "+th.ac+"55",borderRadius:16,padding:"32px 18px",textAlign:"center",marginBottom:14,cursor:"pointer"}} onClick={()=>importFileRef.current?.click()}>
-            <div style={{fontSize:44,marginBottom:10}}>📁</div>
-            <div style={{fontSize:14,fontWeight:700,color:th.t1,marginBottom:5}}>{lg==="uz"?"CSV faylni tanlang":lg==="ru"?"Выберите CSV":"Choose CSV file"}</div>
-            <div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Bank hisobotini CSV formatda yuklang":"Upload bank statement as CSV"}</div>
-          </div>
-          <input ref={importFileRef} type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={e=>handleImportFile(e.target.files?.[0])}/>
-          <div style={{background:th.sur,borderRadius:12,padding:"13px 15px",fontSize:11,color:th.t2,lineHeight:1.7}}>
-            <div style={{fontWeight:700,color:th.t1,marginBottom:6}}>{lg==="uz"?"💡 Qanday ishlaydi:":"💡 How it works:"}</div>
-            {lg==="uz"?"1. Bank ilovangizdan hisobotni CSV qilib yuklab oling\n2. Shu yerga tanlang\n3. Ilova sana, summa, izohni avtomatik aniqlaydi\n4. Ko'rib chiqib, tasdiqlang":"1. Export statement as CSV from your bank\n2. Select it here\n3. App auto-detects date, amount, note\n4. Review and confirm"}
-          </div>
-        </div>}
-        {importStep==="review"&&<div>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <div style={{fontSize:12,color:th.t2}}>{importRows.filter(r=>r.sel).length}/{importRows.length} {lg==="uz"?"tanlandi":"selected"}</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setImportRows(rows=>rows.map(r=>({...r,sel:true})))} style={{fontSize:11,background:th.ac+"15",border:"none",borderRadius:8,padding:"5px 10px",color:th.ac,cursor:"pointer",fontWeight:600}}>{lg==="uz"?"Hammasi":"All"}</button>
-              <button onClick={()=>setImportRows(rows=>rows.map(r=>({...r,sel:false})))} style={{fontSize:11,background:th.bor,border:"none",borderRadius:8,padding:"5px 10px",color:th.t2,cursor:"pointer",fontWeight:600}}>{lg==="uz"?"Hech biri":"None"}</button>
-            </div>
-          </div>
-          <div style={{maxHeight:"42vh",overflowY:"auto",marginBottom:14}}>
-            {importRows.map((r,i)=>(
-              <div key={i} onClick={()=>setImportRows(rows=>rows.map((x,j)=>j===i?{...x,sel:!x.sel}:x))} style={{display:"flex",alignItems:"center",gap:10,background:r.sel?th.sur:th.bg,border:"1px solid "+(r.sel?(r.kind==="income"?th.gr+"44":th.rd+"33"):th.bor),borderRadius:11,padding:"10px 12px",marginBottom:7,cursor:"pointer",opacity:r.sel?1:.5}}>
-                <div style={{width:20,height:20,borderRadius:6,border:"2px solid "+(r.sel?th.ac:th.bor),background:r.sel?th.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{r.sel&&<span style={{color:"#fff",fontSize:12}}>✓</span>}</div>
-                <div style={{width:30,height:30,borderRadius:8,background:(r.kind==="income"?th.gr:th.rd)+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>{r.kind==="income"?"💰":"💸"}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:th.t1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.izoh||(lg==="uz"?"(izohsiz)":"(no note)")}</div>
-                  <div style={{fontSize:10,color:th.t2}}>{r.sana} · {r.kind==="income"?(lg==="uz"?"Daromad":"Income"):(KN[lg][KATS.findIndex(k=>k.id===r.kategoriya)]||"")}</div>
-                </div>
-                <div style={{fontSize:13,fontWeight:800,color:r.kind==="income"?th.gr:th.rd,flexShrink:0}}>{r.kind==="income"?"+":"-"}{f(r.summa,true)}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>{setImportStep("upload");setImportRows([]);}} style={{flex:1,background:"transparent",border:"1.5px solid "+th.bor,borderRadius:13,padding:"13px",color:th.t2,cursor:"pointer",fontWeight:700,fontSize:14}}>{lg==="uz"?"Orqaga":"Back"}</button>
-            <button onClick={confirmImport} style={{flex:2,...S.bt(),marginBottom:0}}>{lg==="uz"?"Import qilish":"Import"} ({importRows.filter(r=>r.sel).length})</button>
-          </div>
-        </div>}
-      </div>
-    </div>}
-    {showScanner&&<div style={{position:"fixed",inset:0,background:"#000",zIndex:1000,display:"flex",flexDirection:"column"}}>
-      <div style={{padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(0,0,0,.6)",position:"relative",zIndex:2}}>
-        <div style={{color:"#fff",fontSize:16,fontWeight:700}}>{lg==="uz"?"Chek skaneri":"Receipt scanner"}</div>
-        <button onClick={stopScanner} style={{background:"rgba(255,255,255,.2)",border:"none",borderRadius:"50%",width:36,height:36,color:"#fff",fontSize:20,cursor:"pointer"}}>×</button>
-      </div>
-      <div style={{flex:1,position:"relative",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <video ref={videoRef} playsInline muted style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>
-        <div style={{position:"relative",zIndex:2,width:240,height:240,border:"3px solid "+th.ac,borderRadius:24,boxShadow:"0 0 0 9999px rgba(0,0,0,.5)"}}>
-          <div style={{position:"absolute",top:-3,left:-3,width:40,height:40,borderTop:"5px solid #fff",borderLeft:"5px solid #fff",borderRadius:"24px 0 0 0"}}/>
-          <div style={{position:"absolute",top:-3,right:-3,width:40,height:40,borderTop:"5px solid #fff",borderRight:"5px solid #fff",borderRadius:"0 24px 0 0"}}/>
-          <div style={{position:"absolute",bottom:-3,left:-3,width:40,height:40,borderBottom:"5px solid #fff",borderLeft:"5px solid #fff",borderRadius:"0 0 0 24px"}}/>
-          <div style={{position:"absolute",bottom:-3,right:-3,width:40,height:40,borderBottom:"5px solid #fff",borderRight:"5px solid #fff",borderRadius:"0 0 24px 0"}}/>
-        </div>
-      </div>
-      <div style={{padding:"20px 24px 40px",background:"rgba(0,0,0,.6)",textAlign:"center"}}>
-        <div style={{color:"#fff",fontSize:14,marginBottom:6}}>{scanMsg}</div>
-        <div style={{color:"rgba(255,255,255,.6)",fontSize:12,marginBottom:16}}>{lg==="uz"?"Chekdagi QR kodni ramka ichiga joylang":"Point the receipt QR into the frame"}</div>
-        <button onClick={stopScanner} style={{background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.4)",borderRadius:12,padding:"12px 24px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>{lg==="uz"?"Qo'lda kiritish":"Enter manually"}</button>
-      </div>
-    </div>}
-    {showQrPick&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:1001,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowQrPick(false)}>
-      <div onClick={e=>e.stopPropagation()} style={{background:th.card,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"80vh",display:"flex",flexDirection:"column",padding:"0 0 32px"}}>
-        <div style={{padding:"16px 20px 12px",borderBottom:"1.5px solid "+th.border,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{fontSize:15,fontWeight:700,color:th.text}}>{lg==="uz"?"QR matnidan summani tanlang":"Select amount from QR text"}</div>
-          <button onClick={()=>setShowQrPick(false)} style={{background:"none",border:"none",fontSize:22,color:th.sub,cursor:"pointer"}}>×</button>
-        </div>
-        <div style={{padding:"10px 16px 4px"}}>
-          <div style={{fontSize:12,color:th.sub,marginBottom:6}}>{lg==="uz"?"Summa qatoriga bosing:":"Tap the amount line:"}</div>
-        </div>
-        <div style={{overflowY:"auto",flex:1,padding:"0 16px 8px"}}>
-          {qrRawText.split(/\n|\|/).map((line,i)=>{
-            const trimmed=line.trim();
-            if(!trimmed)return null;
-            // Raqam bormi? (3+ raqam ketma-ket)
-            const hasNum=/[0-9]{3,}/.test(trimmed);
-            // Raqamni tozalab olish: vergul/nuqta/bo'sh joy bilan ajratilgan son
-            const numMatch=trimmed.match(/([0-9][0-9 ,.']*[0-9])/);
-            let parsedNum=0;
-            if(numMatch){
-              const clean=numMatch[1].replace(/[ ,']/g,"").replace(/\.(?=[0-9]{3})/g,"");
-              parsedNum=parseInt(clean,10)||0;
-            }
-            return(
-              <div key={i}
-                onClick={()=>{
-                  if(parsedNum>0){
-                    setFS(String(parsedNum));
-                    setShowQrPick(false);
-                    ok$(lg==="uz"?"✓ "+f(parsedNum,true)+" — tekshiring":"✓ "+f(parsedNum,true)+" — verify");
-                  }
-                }}
-                style={{
-                  padding:"10px 14px",
-                  marginBottom:4,
-                  borderRadius:10,
-                  background:hasNum?(th.ac+"18"):th.bg,
-                  border:hasNum?("1.5px solid "+th.ac+"44"):"1.5px solid transparent",
-                  cursor:parsedNum>0?"pointer":"default",
-                  display:"flex",
-                  justifyContent:"space-between",
-                  alignItems:"center",
-                  gap:8
-                }}>
-                <span style={{fontSize:13,color:parsedNum>0?th.text:th.sub,wordBreak:"break-all"}}>{trimmed}</span>
-                {parsedNum>0&&<span style={{fontSize:13,fontWeight:700,color:th.ac,whiteSpace:"nowrap"}}>→ {f(parsedNum,true)}</span>}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{padding:"12px 16px 0"}}>
-          <div style={{fontSize:11,color:th.sub,textAlign:"center"}}>{lg==="uz"?"Xom QR matn:":"Raw QR text:"}</div>
-          <div style={{fontSize:10,color:th.sub,background:th.bg,borderRadius:8,padding:"8px 10px",marginTop:4,wordBreak:"break-all",maxHeight:60,overflow:"hidden"}}>{qrRawText.slice(0,200)}</div>
-        </div>
-      </div>
-    </div>}
-    {showPremModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowPremModal(false)}>
-      <div style={{background:th.sur,borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:430}} onClick={e=>e.stopPropagation()}>
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{fontSize:48,marginBottom:8}}>💎</div>
-          <div style={{fontSize:22,fontWeight:800,color:th.t1,marginBottom:4}}>{lg==="uz"?"Premium versiya":"Premium Version"}</div>
-          <div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Barcha funksiyalarni oching!":"Unlock all features!"}</div>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-          {[{label:lg==="uz"?"Bepul":"Free",items:lg==="uz"?["3 ta maqsad","2 oila a'zo","Asosiy hisobot","Qarzlar"]:["3 goals","2 members","Basic report","Debts"]},{label:"Premium",items:lg==="uz"?["♾️ Cheksiz maqsad","👨‍👩‍👧 Cheksiz a'zo","📄 PDF/Excel","🎤 Ovoz kiritish","📷 QR skaner","🤖 AI maslahat"]:["♾️ Unlimited goals","👨‍👩‍👧 Unlimited members","📄 PDF/Excel","🎤 Voice input","📷 QR scanner","🤖 AI advice"]}].map((plan,pi)=>(
-            <div key={pi} style={{background:pi===1?"linear-gradient(135deg,"+th.ac+"22,"+th.ac2+"11)":th.surH,border:"1.5px solid "+(pi===1?th.ac:th.bor),borderRadius:16,padding:"14px 12px"}}>
-              <div style={{fontSize:13,fontWeight:700,color:pi===1?th.ac:th.t2,marginBottom:10,textAlign:"center"}}>{plan.label}</div>
-              {plan.items.map((item,ii)=>(<div key={ii} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,fontSize:12,color:th.t1}}><span style={{color:pi===1?th.ac:th.gr,fontSize:14}}>✓</span>{item}</div>))}
-            </div>
-          ))}
-        </div>
-        <div style={{background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",borderRadius:16,padding:"14px 20px",marginBottom:10,textAlign:"center"}}>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.8)",marginBottom:4}}>{lg==="uz"?"Premium narxi":"Price"}</div>
-          <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>15 000 – 25 000 {lg==="uz"?"so'm / oy":"UZS / month"}</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.7)",marginTop:2}}>99 000 {lg==="uz"?"so'm / yil":"UZS / year"}</div>
-        </div>
-        <button onClick={activatePremium} style={{...S.bt(),marginBottom:8,fontSize:16}}>💎 {lg==="uz"?"Premium faollashtirish (Demo)":"Activate Premium (Demo)"}</button>
-        <button onClick={()=>setShowPremModal(false)} style={{width:"100%",background:"transparent",border:"1px solid "+th.bor,borderRadius:14,padding:"12px",color:th.t2,cursor:"pointer",fontWeight:600,fontSize:14}}>{lg==="uz"?"Keyinroq":"Later"}</button>
-      </div>
-    </div>}
-    <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} setFS={setFS} setFIz={setFIz} setFSn={setFSn} setFDS={setFDS} setFDI={setFDI}/>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-    </div>
-  </div>
-  );
+  </div>;
 }
