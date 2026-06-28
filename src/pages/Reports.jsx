@@ -220,6 +220,7 @@ export default function ReportsPage({
       {scr==="maslahat"&&<div>
         <div style={{fontSize:16,fontWeight:700,marginBottom:18,color:th.t1}}>{t.aa}</div>
         {advL?<div style={{textAlign:"center",padding:"64px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>{Ico.brain(th.ac)}<div style={{color:th.t2}}>{t.an}</div></div>:adv&&<div style={{...S.cd,lineHeight:1.85,fontSize:14,color:th.t1,whiteSpace:"pre-wrap"}}>{adv}</div>}
-        {!advL&&<button onClick={aiAdv} style={{...S.bt(),marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.repeat(th.ac)}{t.na}</button>
+        {!advL&&<button onClick={aiAdv} style={{...S.bt(),marginTop:10,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.repeat(th.ac)}{t.na}</button>}
+      </div>}
   );
 }

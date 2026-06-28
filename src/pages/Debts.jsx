@@ -171,7 +171,7 @@ export default function DebtsPage({
               {done.slice(0,8).map(q=>{const isLent=q.tur==="bergan";const dc=isLent?th.gr:th.rd;return <div key={q.id} style={{...S.cd,padding:"11px 14px",marginBottom:8,borderLeft:"3px solid "+dc+"66"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:9,background:dc+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{isLent?"💰":"💸"}</div><div><div style={{fontWeight:600,fontSize:13,color:th.t1}}>{q.kim}</div><div style={{fontSize:10,color:dc,fontWeight:600}}>{isLent?(lg==="uz"?"Qaytarib oldim":lg==="ru"?"Получено":"Got back"):(lg==="uz"?"Qaytardim":lg==="ru"?"Возвращено":"Paid back")} · {q.paidSana}</div></div></div><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:800,color:dc}}>{isLent?"+":"−"}{f(q.summa,true)}</span><button onClick={()=>delQarz(q.id)} style={{background:"none",border:"none",cursor:"pointer"}}>{Ico.trash(th.t2)}</button></div></div></div>;})}
             </div>}
             {qarzlar.length===0&&!showAddQarz&&qarzReqs.length===0&&<div style={{textAlign:"center",padding:"44px 0",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}><div style={{fontSize:48}}>💸</div><div style={{fontSize:15}}>{lg==="uz"?"Hali qarz yo'q":"No debts yet"}</div></div>}
-          </div>;
-        })()
+          </div>
+        )}
   );
 }

@@ -105,6 +105,6 @@ export default function GoalsPage({
                       {m.status==="parent_confirmed"&&<div style={{fontSize:12,color:"#22c55e",fontWeight:600,marginTop:4}}>✅ {lg==="uz"?"Ota-ona tasdiqladi! Siz ham tasdiqlang":"Parent confirmed! Confirm yours too"}</div>}
                     </div>:<div style={{...S.row}}><span style={{fontSize:11,color:th.t2}}>{t.rem}: {f(m.maqsad-m.jamg,true)}</span><button onClick={()=>{setTupId(m.id);setTupS("");}} style={{background:m.rang+"18",border:"1px solid "+m.rang+"44",borderRadius:9,padding:"5px 12px",color:m.rang,cursor:"pointer",fontWeight:700,fontSize:12}}>{t.am}</button></div>}
           </div>;
-        })})()
+        })})
   );
 }
