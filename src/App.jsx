@@ -1870,7 +1870,8 @@ export default function App(){
       {id:"hisobot",lb:t.rep},
     ];
 
-  return <div style={S.pg}>
+  return (
+    <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
     <input ref={fRef} type="file" accept="image/*" style={{display:"none"}} onChange={doPhoto}/>
     {/* VAZIFA QO'SHISH MODAL */}
@@ -2312,5 +2313,6 @@ export default function App(){
       </div>
     </div>}
     <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} setFS={setFS} setFIz={setFIz} setFSn={setFSn} setFDS={setFDS} setFDI={setFDI}/>
-  </div>;
+  </div>
+  );
 }
