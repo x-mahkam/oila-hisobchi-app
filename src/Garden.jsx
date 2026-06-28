@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase.js";
+import { td, nt, f } from "./utils/formatters.js";
 
 // ═══════════════════════════════════════════════════════════
 //  BARAKA BOG'I — To'liq Gamification Moduli
