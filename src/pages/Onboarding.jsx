@@ -8,7 +8,8 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
 
 
 
-    return <div style={{...S.pg,minHeight:"100vh",display:"flex",flexDirection:"column",background:dark?"#0f172a":"#f8fafc"}}>
+    return (
+    <div style={{...S.pg,minHeight:"100vh",display:"flex",flexDirection:"column",background:dark?"#0f172a":"#f8fafc"}}>
       <div style={{position:"fixed",top:-100,left:"50%",transform:"translateX(-50%)",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,"+s.color+"22,transparent 70%)",pointerEvents:"none",transition:"background .5s"}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",position:"relative",zIndex:2}}>
         <div style={{display:"flex",gap:6}}>
@@ -28,6 +29,6 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
         <button onClick={()=>{if(onbStep<ONB_SLIDES.length-1)setOnbStep(onbStep+1);else finish();}} style={{width:"100%",background:"linear-gradient(135deg,"+s.color+","+s.color+"dd)",border:"none",borderRadius:16,padding:"16px",color:"#fff",fontSize:16,fontWeight:700,cursor:"pointer",boxShadow:"0 8px 24px "+s.color+"44",transition:"all .3s"}}>{onbStep<ONB_SLIDES.length-1?(lg==="uz"?"Keyingi":lg==="ru"?"\u0414\u0430\u043b\u0435\u0435":"Next"):(lg==="uz"?"Boshlash":lg==="ru"?"\u041d\u0430\u0447\u0430\u0442\u044c":"Get started")}</button>
         {onbStep>0&&<button onClick={()=>setOnbStep(onbStep-1)} style={{width:"100%",background:"none",border:"none",color:th.t2,cursor:"pointer",fontSize:14,fontWeight:600,marginTop:12}}>{lg==="uz"?"Orqaga":lg==="ru"?"\u041d\u0430\u0437\u0430\u0434":"Back"}</button>}
       </div>
-    </div>;
-
+    </div>
+  );
 }

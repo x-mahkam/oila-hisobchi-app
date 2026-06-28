@@ -19,7 +19,8 @@ export default function LoginPage({
   tst, ok$, doGoogleLogin, handleAuth, handleResetPw,
   COUNTRIES, VALS, t, isPremium
 }) {
-  return <div style={S.pg}>
+  return (
+    <div style={S.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
     <div style={{position:"fixed",top:-120,left:"50%",transform:"translateX(-50%)",width:450,height:450,borderRadius:"50%",background:"radial-gradient(circle,"+th.ac+"1a,transparent 70%)",pointerEvents:"none"}}/>
     <div style={{padding:"50px 24px 40px",position:"relative"}}>
@@ -152,5 +153,6 @@ export default function LoginPage({
     th, S, Ico, t, f, ok$, buzz, addStar, addNotif, fireConfetti,
     showPremModal, setShowPremModal, activatePremium,
     confetti, setConfetti,
-  };
+  }
+  );
 }
