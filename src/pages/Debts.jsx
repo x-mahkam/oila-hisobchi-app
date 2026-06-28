@@ -1,28 +1,13 @@
-import { useState, useRef, useCallback, useMemo } from "react";
-import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH } from "../components/common/index.jsx";
-import { Ico } from "../utils/icons.jsx";
-import { makeS } from "../utils/styles.js";
-import { KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD } from "../utils/constants.js";
-import { f, td, nt, tm } from "../utils/formatters.js";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import{useState,useEffect,useRef,useCallback,useMemo}from"react";
+import{db}from"../firebase.js";
+import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 
-export default function DebtsPage({
-  // Data
-  user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
-  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
-  setXar, setDar, setMaq, setQarzlar, setVazifalar,
-  setKidBalances, setNotifs,
-  // State
-  dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
-  // Form states - barcha keraklilar
-  ...props
-}) {
-  const th = useMemo(() => makeS.th || props.th, [dark]);
-  const S = useMemo(() => makeS(th), [th]);
-  const t = props.t;
+export default function DebtsPage(p){
+  const {user,oila,azolar,xar,dar,maq,qarzlar,vazifalar,kidBalances,notifs,qarzReqs,xReqs,rates,stars,gardenData,setXar,setDar,setMaq,setQarzlar,setVazifalar,setKidBalances,setNotifs,setStars,dark,lg,val,setScr,scr,isPremium,isKid,isBosh,hasKids,isAdmin,th,S,Ico,t,f,ok$,buzz,td,nt,addStar,addNotif,fireConfetti,showS,setSrch,srch,showPremModal,setShowPremModal,activatePremium,addM,setAddM,maqTab,setMaqTab,tupId,setTupId,tupS,setTupS,addMq,tupMq,delMq,editMq,setEditMq,editMqN,setEditMqN,editMqS,setEditMqS,saveEditMq,maqsadConfirmNotif,setMaqsadConfirmNotif,confirmMaqBought,cancelMaqReturn,showAddVazifa,setShowAddVazifa,showGift,setShowGift,giftSum,setGiftSum,giftFrom,setGiftFrom,vTitle,setVTitle,vReward,setVReward,vAssignee,setVAssignee,vEmoji,setVEmoji,addVazifa,vazifaDone,vazifaApprove,vazifaReject,delVazifa,showAddQarz,setShowAddQarz,qarzTur,setQarzTur,qarzKim,setQarzKim,qarzSum,setQarzSum,qarzIzoh,setQarzIzoh,qarzSana,setQarzSana,qarzQaytSana,setQarzQaytSana,qarzTel,setQarzTel,qarzLinked,setQarzLinked,addQarz,payQarz,delQarz,partialQarz,setPartialQarz,partialSum,setPartialSum,applyPartial,qarzDonePrompt,setQarzDonePrompt,addQarzAsDaromad,addQarzAsXarajat,inviteQarz,setInviteQarz,acceptQarzReq,rejectQarzReq,verifyTilxat,setVerifyTilxat,generateTilxat,xForMember,setXForMember,xMode,setXMode,xReqAccept,xReqReject,quickItem,setQuickItem,quickSum,setQuickSum,hisFil,setHisFil,ctab,setCtab,adv,setAdv,advL,setAdvL,exportLoading,exportPDF,exportExcel,getAIAdvice,showImport,setShowImport,importRows,setImportRows,importStep,setImportStep,importFileRef,handleImport,confirmImport,pTab,setPTab,edN,setEdN,newN,setNewN,fBj,setFBj,fKL,setFKL,faqO,setFaqO,pinStep,setPinStep,pinVal,setPinVal,pinCfm,setPinCfm,finger,setFinger,showBilim,setShowBilim,showAddKid,setShowAddKid,kidName,setKidName,kidLogin,setKidLogin,kidPw,setKidPw,addKidAccount,showReferral,setShowReferral,refCount,fbRating,setFbRating,fbText,setFbText,fbType,setFbType,fbSending,sendFeedback,adminStats,adminLoad,loadAdminStats,waterGarden,gardenData:_gd,gardenData2,addStar:_as,activatePremium:_ap,logout,saveProfile,fRef,doPhoto,rates:_r,rateL,fetchRates,notifEnabled,setNotifEnabled,notifTime,setNotifTime,APP_VER,showGardenInfo,setShowGardenInfo,setGardenData,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,KATS,KN,DARS,DN,VALS,COUNTRIES,RELATIONS,TL,Av,MoneyInput,KatIco,DarIco,Spark,Heat,BH,SL,TxRow,Tst,fmtN,normTel,sonSoz,spc,QUICK_ADD,ADMIN_TEL,fS,setFS,fK,setFK,fIz,setFIz,fSn,setFSn,fRp,setFRp,fDS,setFDS,fDT,setFDT,fDI,setFDI,addX,addD,mN,setMN,mS,setMS,mR,setMR,voiceOn,voiceText,voiceParsed,showVoice,setShowVoice,startVoice,stopVoice,applyVoice,showScanner,setShowScanner,scanMsg,startScanner,stopScanner,showQrPick,setShowQrPick,qrRawText,setQrRawText,showResetScreen,setShowResetScreen,resetInput,setResetInput,resetSent,setResetSent,sendResetEmail,resetEmail,setResetEmail,showResetConfirm,setShowResetConfirm}=p;
 
-  return (
-    <div>
+  return(
+    <>
+      {scr==="qarz"&&<div>
         <div style={{...S.row,marginBottom:16}}>
           <div style={{fontSize:16,fontWeight:700,color:th.t1}}>{lg==="uz"?"Qarzlar":lg==="ru"?"Долги":"Debts"}</div>
           <div style={{display:"flex",gap:8}}>
@@ -171,7 +156,10 @@ export default function DebtsPage({
               {done.slice(0,8).map(q=>{const isLent=q.tur==="bergan";const dc=isLent?th.gr:th.rd;return <div key={q.id} style={{...S.cd,padding:"11px 14px",marginBottom:8,borderLeft:"3px solid "+dc+"66"}}><div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:34,height:34,borderRadius:9,background:dc+"15",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>{isLent?"💰":"💸"}</div><div><div style={{fontWeight:600,fontSize:13,color:th.t1}}>{q.kim}</div><div style={{fontSize:10,color:dc,fontWeight:600}}>{isLent?(lg==="uz"?"Qaytarib oldim":lg==="ru"?"Получено":"Got back"):(lg==="uz"?"Qaytardim":lg==="ru"?"Возвращено":"Paid back")} · {q.paidSana}</div></div></div><div style={{display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:13,fontWeight:800,color:dc}}>{isLent?"+":"−"}{f(q.summa,true)}</span><button onClick={()=>delQarz(q.id)} style={{background:"none",border:"none",cursor:"pointer"}}>{Ico.trash(th.t2)}</button></div></div></div>;})}
             </div>}
             {qarzlar.length===0&&!showAddQarz&&qarzReqs.length===0&&<div style={{textAlign:"center",padding:"44px 0",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center",gap:10}}><div style={{fontSize:48}}>💸</div><div style={{fontSize:15}}>{lg==="uz"?"Hali qarz yo'q":"No debts yet"}</div></div>}
-          </div>
-        )}
+          </div>;
+        })()}
+      </div>}
+      </div>
+    </>
   );
 }

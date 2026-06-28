@@ -1,28 +1,13 @@
-import { useState, useRef, useCallback, useMemo } from "react";
-import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH } from "../components/common/index.jsx";
-import { Ico } from "../utils/icons.jsx";
-import { makeS } from "../utils/styles.js";
-import { KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD } from "../utils/constants.js";
-import { f, td, nt, tm } from "../utils/formatters.js";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import{useState,useEffect,useRef,useCallback,useMemo}from"react";
+import{db}from"../firebase.js";
+import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
 
-export default function DashboardPage({
-  // Data
-  user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
-  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
-  setXar, setDar, setMaq, setQarzlar, setVazifalar,
-  setKidBalances, setNotifs,
-  // State
-  dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
-  // Form states - barcha keraklilar
-  ...props
-}) {
-  const th = useMemo(() => makeS.th || props.th, [dark]);
-  const S = useMemo(() => makeS(th), [th]);
-  const t = props.t;
+export default function DashboardPage(p){
+  const {user,oila,azolar,xar,dar,maq,qarzlar,vazifalar,kidBalances,notifs,qarzReqs,xReqs,rates,stars,gardenData,setXar,setDar,setMaq,setQarzlar,setVazifalar,setKidBalances,setNotifs,setStars,dark,lg,val,setScr,scr,isPremium,isKid,isBosh,hasKids,isAdmin,th,S,Ico,t,f,ok$,buzz,td,nt,addStar,addNotif,fireConfetti,showS,setSrch,srch,showPremModal,setShowPremModal,activatePremium,addM,setAddM,maqTab,setMaqTab,tupId,setTupId,tupS,setTupS,addMq,tupMq,delMq,editMq,setEditMq,editMqN,setEditMqN,editMqS,setEditMqS,saveEditMq,maqsadConfirmNotif,setMaqsadConfirmNotif,confirmMaqBought,cancelMaqReturn,showAddVazifa,setShowAddVazifa,showGift,setShowGift,giftSum,setGiftSum,giftFrom,setGiftFrom,vTitle,setVTitle,vReward,setVReward,vAssignee,setVAssignee,vEmoji,setVEmoji,addVazifa,vazifaDone,vazifaApprove,vazifaReject,delVazifa,showAddQarz,setShowAddQarz,qarzTur,setQarzTur,qarzKim,setQarzKim,qarzSum,setQarzSum,qarzIzoh,setQarzIzoh,qarzSana,setQarzSana,qarzQaytSana,setQarzQaytSana,qarzTel,setQarzTel,qarzLinked,setQarzLinked,addQarz,payQarz,delQarz,partialQarz,setPartialQarz,partialSum,setPartialSum,applyPartial,qarzDonePrompt,setQarzDonePrompt,addQarzAsDaromad,addQarzAsXarajat,inviteQarz,setInviteQarz,acceptQarzReq,rejectQarzReq,verifyTilxat,setVerifyTilxat,generateTilxat,xForMember,setXForMember,xMode,setXMode,xReqAccept,xReqReject,quickItem,setQuickItem,quickSum,setQuickSum,hisFil,setHisFil,ctab,setCtab,adv,setAdv,advL,setAdvL,exportLoading,exportPDF,exportExcel,getAIAdvice,showImport,setShowImport,importRows,setImportRows,importStep,setImportStep,importFileRef,handleImport,confirmImport,pTab,setPTab,edN,setEdN,newN,setNewN,fBj,setFBj,fKL,setFKL,faqO,setFaqO,pinStep,setPinStep,pinVal,setPinVal,pinCfm,setPinCfm,finger,setFinger,showBilim,setShowBilim,showAddKid,setShowAddKid,kidName,setKidName,kidLogin,setKidLogin,kidPw,setKidPw,addKidAccount,showReferral,setShowReferral,refCount,fbRating,setFbRating,fbText,setFbText,fbType,setFbType,fbSending,sendFeedback,adminStats,adminLoad,loadAdminStats,waterGarden,gardenData:_gd,gardenData2,addStar:_as,activatePremium:_ap,logout,saveProfile,fRef,doPhoto,rates:_r,rateL,fetchRates,notifEnabled,setNotifEnabled,notifTime,setNotifTime,APP_VER,showGardenInfo,setShowGardenInfo,setGardenData,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,KATS,KN,DARS,DN,VALS,COUNTRIES,RELATIONS,TL,Av,MoneyInput,KatIco,DarIco,Spark,Heat,BH,SL,TxRow,Tst,fmtN,normTel,sonSoz,spc,QUICK_ADD,ADMIN_TEL,fS,setFS,fK,setFK,fIz,setFIz,fSn,setFSn,fRp,setFRp,fDS,setFDS,fDT,setFDT,fDI,setFDI,addX,addD,mN,setMN,mS,setMS,mR,setMR,voiceOn,voiceText,voiceParsed,showVoice,setShowVoice,startVoice,stopVoice,applyVoice,showScanner,setShowScanner,scanMsg,startScanner,stopScanner,showQrPick,setShowQrPick,qrRawText,setQrRawText,showResetScreen,setShowResetScreen,resetInput,setResetInput,resetSent,setResetSent,sendResetEmail,resetEmail,setResetEmail,showResetConfirm,setShowResetConfirm}=p;
 
-  return (
-    !showS&&!isKid&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7}}>
+  return(
+    <>
+      {scr==="bosh"&&!showS&&!isKid&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:7}}>
         {[{l:t.inc,v:myD,c:th.gr,ic:"📈"},{l:t.exp,v:myX,c:bRng,ic:"📉"},{l:t.bal,v:myBal,c:myBal>=0?th.gr:th.rd,ic:"💰"}].map((item,ix)=>(
           <div key={item.l} className="anim-fadeUp" style={{background:"linear-gradient(135deg,"+item.c+"0d,"+th.bg+")",borderRadius:13,padding:"10px 10px",textAlign:"center",border:"1px solid "+item.c+"22",animationDelay:(ix*0.08)+"s",position:"relative",overflow:"hidden"}}>
             <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:item.c,opacity:.6}}/>
@@ -237,5 +222,15 @@ export default function DashboardPage({
         <SL ch={lg==="uz"?"Oxirgi operatsiyalar":lg==="ru"?"\u041f\u043e\u0441\u043b\u0435\u0434\u043d\u0438\u0435 \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438":"Recent transactions"}/>
         {xar.filter(x=>x.uid===user?.id).length===0&&dar.filter(d=>d.uid===user?.id).length===0?<div style={{textAlign:"center",padding:"40px 20px",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center"}}><div style={{width:80,height:80,borderRadius:"50%",background:th.ac+"11",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:14}}>\ud83d\udcb3</div><div style={{fontSize:16,fontWeight:700,color:th.t1,marginBottom:6}}>{lg==="uz"?"Hali xarajat kiritilmagan":lg==="ru"?"Пока нет операций":"No transactions yet"}</div><div style={{fontSize:13,color:th.t2,marginBottom:18,maxWidth:240}}>{lg==="uz"?"Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing":"Use quick add buttons above or tap + below"}</div><button onClick={()=>setScr("qoshish")} style={{...S.bt(),width:"auto",padding:"12px 28px",marginBottom:0,display:"flex",alignItems:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Xarajat qo'shish":lg==="ru"?"Добавить расход":"Add expense"}</button></div>
         :[...xar.filter(x=>x.uid===user?.id).slice(0,8).map(x=>({...x,tp:"x"})),...dar.filter(d=>d.uid===user?.id).slice(0,5).map(d=>({...d,tp:"d"}))].sort((a,b)=>b.id-a.id).slice(0,12).map(item=><TxRow key={item.tp+item.id} item={item}/>)}
+      </div>}
+      </div>
+      </div>
+      </div>
+      </div>
+      </div>
+      </div>
+      </div>
+      </div>
+    </>
   );
 }
