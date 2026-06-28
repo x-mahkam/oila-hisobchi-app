@@ -1,13 +1,28 @@
-import{useState,useEffect,useRef,useCallback,useMemo}from"react";
-import{db}from"../firebase.js";
-import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH } from "../components/common/index.jsx";
+import { Ico } from "../utils/icons.jsx";
+import { makeS } from "../utils/styles.js";
+import { KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD } from "../utils/constants.js";
+import { f, td, nt, tm } from "../utils/formatters.js";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-export default function ProfilePage(p){
-  const {user,oila,azolar,xar,dar,maq,qarzlar,vazifalar,kidBalances,notifs,qarzReqs,xReqs,rates,stars,gardenData,setXar,setDar,setMaq,setQarzlar,setVazifalar,setKidBalances,setNotifs,setStars,dark,lg,val,setScr,scr,isPremium,isKid,isBosh,hasKids,isAdmin,th,S,Ico,t,f,ok$,buzz,td,nt,addStar,addNotif,fireConfetti,showS,setSrch,srch,showPremModal,setShowPremModal,activatePremium,addM,setAddM,maqTab,setMaqTab,tupId,setTupId,tupS,setTupS,addMq,tupMq,delMq,editMq,setEditMq,editMqN,setEditMqN,editMqS,setEditMqS,saveEditMq,maqsadConfirmNotif,setMaqsadConfirmNotif,confirmMaqBought,cancelMaqReturn,showAddVazifa,setShowAddVazifa,showGift,setShowGift,giftSum,setGiftSum,giftFrom,setGiftFrom,vTitle,setVTitle,vReward,setVReward,vAssignee,setVAssignee,vEmoji,setVEmoji,addVazifa,vazifaDone,vazifaApprove,vazifaReject,delVazifa,showAddQarz,setShowAddQarz,qarzTur,setQarzTur,qarzKim,setQarzKim,qarzSum,setQarzSum,qarzIzoh,setQarzIzoh,qarzSana,setQarzSana,qarzQaytSana,setQarzQaytSana,qarzTel,setQarzTel,qarzLinked,setQarzLinked,addQarz,payQarz,delQarz,partialQarz,setPartialQarz,partialSum,setPartialSum,applyPartial,qarzDonePrompt,setQarzDonePrompt,addQarzAsDaromad,addQarzAsXarajat,inviteQarz,setInviteQarz,acceptQarzReq,rejectQarzReq,verifyTilxat,setVerifyTilxat,generateTilxat,xForMember,setXForMember,xMode,setXMode,xReqAccept,xReqReject,quickItem,setQuickItem,quickSum,setQuickSum,hisFil,setHisFil,ctab,setCtab,adv,setAdv,advL,setAdvL,exportLoading,exportPDF,exportExcel,getAIAdvice,showImport,setShowImport,importRows,setImportRows,importStep,setImportStep,importFileRef,handleImport,confirmImport,pTab,setPTab,edN,setEdN,newN,setNewN,fBj,setFBj,fKL,setFKL,faqO,setFaqO,pinStep,setPinStep,pinVal,setPinVal,pinCfm,setPinCfm,finger,setFinger,showBilim,setShowBilim,showAddKid,setShowAddKid,kidName,setKidName,kidLogin,setKidLogin,kidPw,setKidPw,addKidAccount,showReferral,setShowReferral,refCount,fbRating,setFbRating,fbText,setFbText,fbType,setFbType,fbSending,sendFeedback,adminStats,adminLoad,loadAdminStats,waterGarden,gardenData:_gd,gardenData2,addStar:_as,activatePremium:_ap,logout,saveProfile,fRef,doPhoto,rates:_r,rateL,fetchRates,notifEnabled,setNotifEnabled,notifTime,setNotifTime,APP_VER,showGardenInfo,setShowGardenInfo,setGardenData,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,KATS,KN,DARS,DN,VALS,COUNTRIES,RELATIONS,TL,Av,MoneyInput,KatIco,DarIco,Spark,Heat,BH,SL,TxRow,Tst,fmtN,normTel,sonSoz,spc,QUICK_ADD,ADMIN_TEL,fS,setFS,fK,setFK,fIz,setFIz,fSn,setFSn,fRp,setFRp,fDS,setFDS,fDT,setFDT,fDI,setFDI,addX,addD,mN,setMN,mS,setMS,mR,setMR,voiceOn,voiceText,voiceParsed,showVoice,setShowVoice,startVoice,stopVoice,applyVoice,showScanner,setShowScanner,scanMsg,startScanner,stopScanner,showQrPick,setShowQrPick,qrRawText,setQrRawText,showResetScreen,setShowResetScreen,resetInput,setResetInput,resetSent,setResetSent,sendResetEmail,resetEmail,setResetEmail,showResetConfirm,setShowResetConfirm}=p;
+export default function ProfilePage({
+  // Data
+  user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
+  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
+  setXar, setDar, setMaq, setQarzlar, setVazifalar,
+  setKidBalances, setNotifs,
+  // State
+  dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
+  // Form states - barcha keraklilar
+  ...props
+}) {
+  const th = useMemo(() => makeS.th || props.th, [dark]);
+  const S = useMemo(() => makeS(th), [th]);
+  const t = props.t;
 
-  return(
-    <>
-      {scr==="profil"&&<div>
+  return (
+    <div>
         {pTab==="main"&&<div>
           <div style={{...S.row,marginBottom:20}}>
             <div style={{fontSize:20,fontWeight:800,color:th.t1}}>{t.prf}</div>
@@ -357,136 +372,25 @@ export default function ProfilePage(p){
       </div>
     )}
     {/* ═══════ YANGI QO'SHISH MODAL (pastdan to'liq ekran) ═══════ */}
-    {showAddModal&&<div style={{position:"fixed",inset:0,zIndex:500,display:"flex",flexDirection:"column",animation:"slideUpFull .3s cubic-bezier(.32,1.4,.64,1)"}}>
-      <style>{`@keyframes slideUpFull{0%{transform:translateY(100%)}100%{transform:translateY(0)}}`}</style>
-      {/* Header */}
-      <div style={{background:th.sur,borderBottom:"1px solid "+th.bor,padding:"14px 18px 12px",display:"flex",alignItems:"center",justifyContent:"space-between",flexShrink:0}}>
-        <button onClick={()=>{if(addStep==="form"){setAddStep("kat");}else{setShowAddModal(false);}}} style={{background:"none",border:"none",fontSize:15,color:th.t2,cursor:"pointer",fontWeight:600,padding:"4px 0"}}>
-          {addStep==="form"?"← "+lg==="uz"?"Orqaga":"Back":"Bekor"}
-        </button>
-        <div style={{fontSize:16,fontWeight:800,color:th.t1}}>
-          {addStep==="kat"?(lg==="uz"?"Nima qo'shamiz?":"What to add?"):addKat?(addModalTab==="xarajat"?(lg==="uz"?"Xarajat":"Expense"):(lg==="uz"?"Daromad":"Income")):""}
-        </div>
-        <div style={{width:50}}/>
-      </div>
-      {/* Tabs */}
-      {addStep==="kat"&&!isKid&&<div style={{background:th.sur,padding:"10px 16px 12px",flexShrink:0,borderBottom:"1px solid "+th.bor}}>
-        <div style={{display:"flex",background:th.bg,borderRadius:14,padding:3,gap:3}}>
-          <button onClick={()=>{setAddModalTab("xarajat");setAddKat(null);}} style={{flex:1,padding:"11px",borderRadius:11,border:"none",background:addModalTab==="xarajat"?th.rd:"transparent",color:addModalTab==="xarajat"?"#fff":th.t2,fontWeight:800,fontSize:14,cursor:"pointer",transition:"all .2s"}}>
-            {lg==="uz"?"💸 Xarajat":"💸 Expense"}
-          </button>
-          <button onClick={()=>{setAddModalTab("daromad");setAddKat(null);}} style={{flex:1,padding:"11px",borderRadius:11,border:"none",background:addModalTab==="daromad"?th.gr:"transparent",color:addModalTab==="daromad"?"#fff":th.t2,fontWeight:800,fontSize:14,cursor:"pointer",transition:"all .2s"}}>
-            {lg==="uz"?"💰 Daromad":"💰 Income"}
-          </button>
-        </div>
-      </div>}
-      {addStep==="kat"&&isKid&&<div style={{background:th.sur,padding:"10px 16px 12px",flexShrink:0,borderBottom:"1px solid "+th.bor}}>
-        <div style={{fontSize:14,fontWeight:800,color:th.gr,textAlign:"center"}}>💰 {lg==="uz"?"Daromad qo'shish":"Add income"}</div>
-      </div>}
-      {/* Content */}
-      <div style={{flex:1,overflowY:"auto",background:th.bg}}>
-        {/* KATEGORIYA TANLASH */}
-        {addStep==="kat"&&addModalTab==="xarajat"&&!isKid&&<div style={{padding:"14px 16px"}}>
-          {/* QR + Ovoz */}
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-            <button onClick={()=>{setShowAddModal(false);startScanner();}} style={{background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",borderRadius:16,padding:"14px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 14px "+th.ac+"44",position:"relative"}}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" rx="1" stroke="#fff" strokeWidth="1.5"/><rect x="12" y="2" width="6" height="6" rx="1" stroke="#fff" strokeWidth="1.5"/><rect x="2" y="12" width="6" height="6" rx="1" stroke="#fff" strokeWidth="1.5"/><path d="M12 12h2v2M16 12v6M12 16h2M18 16v2" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              {lg==="uz"?"QR skaner":"QR scan"}
-              {!isPremium&&<span style={{position:"absolute",top:-5,right:-5,fontSize:8,background:"#f59e0b",color:"#fff",borderRadius:8,padding:"1px 5px",fontWeight:800}}>PRO</span>}
-            </button>
-            <button onClick={()=>{setShowAddModal(false);startVoice();}} style={{background:"linear-gradient(135deg,#8b5cf6,#6366f1)",border:"none",borderRadius:16,padding:"14px 10px",color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6,boxShadow:"0 4px 14px #8b5cf644",position:"relative"}}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="7" y="2" width="6" height="10" rx="3" stroke="#fff" strokeWidth="1.5"/><path d="M4 9a6 6 0 0012 0M10 15v3M7 18h6" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/></svg>
-              {lg==="uz"?"Ovoz bilan":"Voice"}
-              {!isPremium&&<span style={{position:"absolute",top:-5,right:-5,fontSize:8,background:"#f59e0b",color:"#fff",borderRadius:8,padding:"1px 5px",fontWeight:800}}>PRO</span>}
-            </button>
-          </div>
-          {/* Kategoriyalar 4 ustun */}
-          <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:10,letterSpacing:0.5}}>{lg==="uz"?"KATEGORIYA TANLANG":"SELECT CATEGORY"}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-            {KATS.map((k,i)=>(
-              <button key={k.id} onClick={()=>{setAddKat(k.id);setFK(k.id);setAddStep("form");}} style={{background:th.sur,border:"1.5px solid "+th.bor,borderRadius:16,padding:"12px 6px 10px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6,transition:"all .15s"}}>
-                <div style={{width:44,height:44,borderRadius:13,background:k.c+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <KatIco id={k.id} c={k.c} s={22}/>
-                </div>
-                <span style={{fontSize:10,fontWeight:600,color:th.t1,textAlign:"center",lineHeight:1.2}}>{KN[lg][i]}</span>
-              </button>
-            ))}
-          </div>
-        </div>}
-        {/* DAROMAD KATEGORIYA */}
-        {addStep==="kat"&&addModalTab==="daromad"&&<div style={{padding:"14px 16px"}}>
-          <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:10,letterSpacing:0.5}}>{lg==="uz"?"DAROMAD TURINI TANLANG":"SELECT INCOME TYPE"}</div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
-            {DARS.map((d,i)=>(
-              <button key={d.id} onClick={()=>{setAddKat(d.id);setFDT(d.id);setAddStep("form");}} style={{background:th.sur,border:"1.5px solid "+th.bor,borderRadius:16,padding:"12px 6px 10px",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:6}}>
-                <div style={{width:44,height:44,borderRadius:13,background:d.c+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <DarIco id={d.id} c={d.c} s={22}/>
-                </div>
-                <span style={{fontSize:10,fontWeight:600,color:th.t1,textAlign:"center",lineHeight:1.2}}>{DN[lg][i]}</span>
-              </button>
-            ))}
-          </div>
-        </div>}
-        {/* XARAJAT FORM */}
-        {addStep==="form"&&addModalTab==="xarajat"&&<div style={{padding:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,background:th.sur,borderRadius:16,padding:"12px 16px",marginBottom:16,border:"1.5px solid "+(KATS.find(k=>k.id===addKat)?.c||th.ac)+"44"}}>
-            <div style={{width:42,height:42,borderRadius:12,background:(KATS.find(k=>k.id===addKat)?.c||th.ac)+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <KatIco id={addKat} c={KATS.find(k=>k.id===addKat)?.c||th.ac} s={22}/>
-            </div>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:th.t1}}>{KN[lg][KATS.findIndex(k=>k.id===addKat)]}</div>
-              <div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Xarajat kategoriyasi":"Expense category"}</div>
-            </div>
-          </div>
-          <label style={S.lb}>{lg==="uz"?"Summa (so'm)":"Amount"}</label>
-          <MoneyInput style={{...S.ip,fontSize:28,fontWeight:800,textAlign:"center"}} value={fS} onChange={setFS} placeholder="0" autoFocus/>
-          <label style={S.lb}>{lg==="uz"?"Izoh (ixtiyoriy)":"Note (optional)"}</label>
-          <input style={S.ip} value={fIz} onChange={e=>setFIz(e.target.value)} placeholder={lg==="uz"?"Nima uchun?":"What for?"}/>
-          <label style={S.lb}>{lg==="uz"?"Sana":"Date"}</label>
-          <input type="date" style={S.ip} value={fSn} onChange={e=>setFSn(e.target.value)}/>
-          {azolar.length>1&&<>
-            <label style={S.lb}>{lg==="uz"?"Kim uchun?":"For whom?"}</label>
-            <div style={{display:"flex",gap:7,overflowX:"auto",paddingBottom:6,marginBottom:12}}>
-              <button onClick={()=>setXForMember("")} style={{flexShrink:0,background:!xForMember?th.ac+"18":th.surH,border:"1.5px solid "+(!xForMember?th.ac:th.bor),borderRadius:11,padding:"9px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:!xForMember?th.ac:th.t2,fontSize:12,fontWeight:600}}>
-                <Av src={user?.photo} name={user?.ism} size={22} ac={th.ac}/>{lg==="uz"?"O'zim":"Me"}
-              </button>
-              {azolar.filter(a=>a.id!==user.id).map(a=>(
-                <button key={a.id} onClick={()=>setXForMember(a.id)} style={{flexShrink:0,background:xForMember===a.id?th.ac+"18":th.surH,border:"1.5px solid "+(xForMember===a.id?th.ac:th.bor),borderRadius:11,padding:"9px 13px",cursor:"pointer",display:"flex",alignItems:"center",gap:6,color:xForMember===a.id?th.ac:th.t2,fontSize:12,fontWeight:600}}>
-                  <Av src={a.photo} name={a.ism} size={22} ac={th.ac}/>{a.ism.split(" ")[0]}
-                </button>
-              ))}
-            </div>
-          </>}
-          <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16,background:th.sur,border:"1px solid "+th.bor,borderRadius:13,padding:"12px 14px"}}>
-            <input type="checkbox" id="rep2" checked={fRp} onChange={e=>setFRp(e.target.checked)} style={{width:18,height:18,cursor:"pointer",accentColor:th.ac}}/>
-            <label htmlFor="rep2" style={{fontSize:13,color:th.t1,cursor:"pointer"}}>{lg==="uz"?"Takroriy (oy sayin)":"Recurring (monthly)"}</label>
-          </div>
-          <button onClick={async()=>{await addX();setShowAddModal(false);}} style={{...S.bt(th.rd,"#dc2626"),marginBottom:8}}>
-            {Ico.check("#fff")}{lg==="uz"?" Xarajatni saqlash":" Save expense"}
-          </button>
-        </div>}
-        {/* DAROMAD FORM */}
-        {addStep==="form"&&addModalTab==="daromad"&&<div style={{padding:"16px"}}>
-          <div style={{display:"flex",alignItems:"center",gap:10,background:th.sur,borderRadius:16,padding:"12px 16px",marginBottom:16,border:"1.5px solid "+(DARS.find(d=>d.id===addKat)?.c||th.gr)+"44"}}>
-            <div style={{width:42,height:42,borderRadius:12,background:(DARS.find(d=>d.id===addKat)?.c||th.gr)+"18",display:"flex",alignItems:"center",justifyContent:"center"}}>
-              <DarIco id={addKat} c={DARS.find(d=>d.id===addKat)?.c||th.gr} s={22}/>
-            </div>
-            <div>
-              <div style={{fontSize:13,fontWeight:700,color:th.t1}}>{DN[lg][DARS.findIndex(d=>d.id===addKat)]}</div>
-              <div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Daromad turi":"Income type"}</div>
-            </div>
-          </div>
-          <label style={S.lb}>{lg==="uz"?"Summa (so'm)":"Amount"}</label>
-          <MoneyInput style={{...S.ip,fontSize:28,fontWeight:800,textAlign:"center"}} value={fDS} onChange={setFDS} placeholder="0" autoFocus/>
-          <label style={S.lb}>{lg==="uz"?"Izoh (ixtiyoriy)":"Note (optional)"}</label>
-          <input style={S.ip} value={fDI} onChange={e=>setFDI(e.target.value)} placeholder={lg==="uz"?"Masalan: may oyligi":"e.g. May salary"}/>
-          <button onClick={async()=>{await addD();setShowAddModal(false);}} style={{...S.bt(),marginBottom:8}}>
-            {Ico.check("#fff")}{lg==="uz"?" Daromadni saqlash":" Save income"}
-          </button>
-        </div>}
-      </div>
-    </div>}
-    {showBilim&&<div style={{position:"fixed",inset:0,zIndex:200,background:dark?"#0f172a":"#f0f9ff"}}>
+    <AddTransactionModal
+      show={showAddModal} onClose={()=>setShowAddModal(false)}
+      tab={addModalTab} setTab={setAddModalTab}
+      step={addStep} setStep={setAddStep}
+      kat={addKat} setKat={setAddKat}
+      fS={fS} setFS={setFS} fIz={fIz} setFIz={setFIz}
+      fSn={fSn} setFSn={setFSn} fRp={fRp} setFRp={setFRp}
+      fK={fK} setFK={setFK}
+      xForMember={xForMember} setXForMember={setXForMember}
+      xMode={xMode} setXMode={setXMode}
+      fDS={fDS} setFDS={setFDS} fDT={fDT} setFDT={setFDT}
+      fDI={fDI} setFDI={setFDI}
+      addX={addX} addD={addD}
+      user={user} azolar={azolar} isKid={isKid}
+      th={th} lg={lg} isPremium={isPremium}
+      startScanner={startScanner} startVoice={startVoice}
+      S={S} Ico={Ico} f={f} td={td}
+    />
+        {showBilim&&<div style={{position:"fixed",inset:0,zIndex:200,background:dark?"#0f172a":"#f0f9ff"}}>
       <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={()=>setShowBilim(false)}/>
     </div>}
     {quickItem&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setQuickItem(null)}>
@@ -560,241 +464,5 @@ export default function ProfilePage(p){
         </div>}
         <button onClick={()=>setShowReferral(false)} style={{width:"100%",background:"transparent",border:"1px solid "+th.bor,borderRadius:14,padding:"12px",color:th.t2,cursor:"pointer",fontWeight:600,fontSize:14}}>{lg==="uz"?"Yopish":lg==="ru"?"Закрыть":"Close"}</button>
       </div>
-    </div>}
-    {showNotifs&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:998,display:"flex",justifyContent:"flex-end"}} onClick={()=>setShowNotifs(false)}>
-      <div style={{background:th.bg,width:"100%",maxWidth:430,height:"100%",overflowY:"auto",boxShadow:"-4px 0 24px rgba(0,0,0,.3)"}} onClick={e=>e.stopPropagation()}>
-        <div style={{position:"sticky",top:0,background:th.sur,borderBottom:"1px solid "+th.bor,padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",zIndex:2}}>
-          <div style={{fontSize:17,fontWeight:800,color:th.t1}}>{lg==="uz"?"Bildirishnomalar":lg==="ru"?"Уведомления":"Notifications"}</div>
-          <button onClick={()=>setShowNotifs(false)} style={{background:th.surH,border:"none",borderRadius:"50%",width:34,height:34,color:th.t1,fontSize:20,cursor:"pointer"}}>×</button>
-        </div>
-        {notifs.length>0&&<div style={{display:"flex",gap:8,padding:"12px 18px",borderBottom:"1px solid "+th.bor}}>
-          <button onClick={markAllRead} style={{flex:1,background:th.surH,border:"1px solid "+th.bor,borderRadius:10,padding:"8px 0",color:th.t2,cursor:"pointer",fontSize:12,fontWeight:600}}>{lg==="uz"?"Hammasini o'qilgan":"Mark all read"}</button>
-          <button onClick={clearNotifs} style={{flex:1,background:th.rd+"11",border:"1px solid "+th.rd+"33",borderRadius:10,padding:"8px 0",color:th.rd,cursor:"pointer",fontSize:12,fontWeight:600}}>{lg==="uz"?"Tozalash":"Clear"}</button>
-        </div>}
-        <div style={{padding:"12px 18px 40px"}}>
-          {notifs.length===0&&<div style={{textAlign:"center",padding:"60px 0",color:th.t2}}><div style={{fontSize:46,marginBottom:10,opacity:.5}}>🔔</div><div style={{fontSize:15}}>{lg==="uz"?"Bildirishnomalar yo'q":"No notifications"}</div></div>}
-          {notifs.map(n=>{
-            const icons={qarz:"💸",budjet:"⚠️",xarajat:"💰",yangilik:"🎉",maqsad_confirm:"🎯",maqsad_kid_confirm:"🎁",vazifa:"🏆"};
-            const colors={qarz:th.ac,budjet:th.am,xarajat:th.rd,yangilik:th.gr,maqsad_confirm:"#f59e0b",maqsad_kid_confirm:"#22c55e",vazifa:"#8b5cf6"};
-            const c=colors[n.type]||th.ac;
-            const needParentAction=n.type==="maqsad_confirm"&&n.status==="pending"&&!isKid;
-            const needKidAction=n.type==="maqsad_kid_confirm"&&n.status==="pending"&&isKid;
-            return <div key={n.id} onClick={()=>markNotifRead(n.id)} style={{background:n.read?th.sur:c+"0d",border:"1px solid "+(n.read?th.bor:c+"33"),borderRadius:14,padding:"13px 15px",marginBottom:10,cursor:"pointer",display:"flex",gap:12,flexDirection:"column"}}>
-              <div style={{display:"flex",gap:12}}>
-                <div style={{width:40,height:40,borderRadius:11,background:c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:20,flexShrink:0}}>{icons[n.type]||"🔔"}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:14,fontWeight:700,color:th.t1}}>{n.title}</span>{!n.read&&<span style={{width:8,height:8,borderRadius:"50%",background:c,flexShrink:0}}/>}</div>
-                  <div style={{fontSize:12,color:th.t2,marginTop:3,lineHeight:1.5}}>{n.text||n.body}</div>
-                  <div style={{fontSize:10,color:th.t2,marginTop:5,opacity:.7}}>{new Date(n.sana).toLocaleString("uz-UZ",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"})}</div>
-                </div>
-              </div>
-              {needParentAction&&<button onClick={e=>{e.stopPropagation();confirmMaqParent(n);}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#15803d)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                🛍️ {lg==="uz"?"Ha, sotib berdim! Tasdiqlash":lg==="ru"?"Да, я купил(а)! Подтвердить":"Yes, I bought it! Confirm"}
-              </button>}
-              {needKidAction&&<button onClick={e=>{e.stopPropagation();confirmMaqKid(n);}} style={{width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#f59e0b,#d97706)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                🎉 {lg==="uz"?"Ha, oldim! Mening orzuim amalga oshdi!":lg==="ru"?"Да, мне купили! Мечта сбылась!":"Yes! My dream came true!"}
-              </button>}
-            </div>;
-          })}
-        </div>
-      </div>
-    </div>}
-    {showVoice&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.85)",zIndex:1000,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"24px"}}>
-      <button onClick={()=>{stopVoice();setShowVoice(false);}} style={{position:"absolute",top:20,right:20,background:"rgba(255,255,255,.15)",border:"none",borderRadius:"50%",width:40,height:40,color:"#fff",fontSize:22,cursor:"pointer"}}>×</button>
-      <div style={{fontSize:18,fontWeight:700,color:"#fff",marginBottom:8}}>{lg==="uz"?"Ovoz bilan kiritish":lg==="ru"?"Голосовой ввод":"Voice input"}</div>
-      <div style={{fontSize:13,color:"rgba(255,255,255,.6)",marginBottom:36,textAlign:"center",maxWidth:300}}>{lg==="uz"?"Masalan: \"Transportga 20 ming ishlatdim\"":lg==="ru"?"Например: \"На транспорт 20 тысяч\"":"E.g. \"Spent 20000 on transport\""}</div>
-      <button onClick={voiceOn?stopVoice:startVoice} style={{width:110,height:110,borderRadius:"50%",background:voiceOn?"linear-gradient(135deg,#ef4444,#dc2626)":"linear-gradient(135deg,#8b5cf6,#6366f1)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",marginBottom:30,boxShadow:voiceOn?"0 0 0 12px rgba(239,68,68,.2),0 0 0 24px rgba(239,68,68,.1)":"0 8px 30px rgba(139,92,246,.5)",transition:"all .3s"}}>
-        <svg width="44" height="44" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5 11a7 7 0 0014 0M12 18v3M8 21h8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
-      </button>
-      <div style={{fontSize:14,color:voiceOn?"#ef4444":"rgba(255,255,255,.7)",fontWeight:600,marginBottom:24}}>{voiceOn?(lg==="uz"?"Tinglayapman...":lg==="ru"?"Слушаю...":"Listening..."):(lg==="uz"?"Bosing va gapiring":lg==="ru"?"Нажмите и говорите":"Tap and speak")}</div>
-      {voiceText&&<div style={{background:"rgba(255,255,255,.1)",borderRadius:16,padding:"16px 20px",marginBottom:20,maxWidth:340,width:"100%"}}>
-        <div style={{fontSize:11,color:"rgba(255,255,255,.5)",marginBottom:6,textTransform:"uppercase",letterSpacing:1}}>{lg==="uz"?"Eshitildi":lg==="ru"?"Распознано":"Heard"}</div>
-        <div style={{fontSize:15,color:"#fff",lineHeight:1.5}}>{voiceText}</div>
-      </div>}
-      {voiceParsed&&<div style={{background:"linear-gradient(135deg,#10b98122,#05966911)",border:"1.5px solid #10b98155",borderRadius:16,padding:"16px 20px",marginBottom:24,maxWidth:340,width:"100%"}}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{lg==="uz"?"Summa":lg==="ru"?"Сумма":"Amount"}</span>
-          <span style={{fontSize:20,fontWeight:800,color:"#10b981"}}>{f(voiceParsed.summa,true)}</span>
-        </div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <span style={{fontSize:12,color:"rgba(255,255,255,.6)"}}>{lg==="uz"?"Kategoriya":lg==="ru"?"Категория":"Category"}</span>
-          <span style={{fontSize:14,fontWeight:700,color:"#fff",display:"flex",alignItems:"center",gap:6}}>{KN[lg][KATS.findIndex(k=>k.id===voiceParsed.kat)]}</span>
-        </div>
-      </div>}
-      {(voiceText&&!voiceOn)&&<div style={{display:"flex",gap:10,maxWidth:340,width:"100%"}}>
-        <button onClick={()=>{setVoiceText("");setVoiceParsed(null);startVoice();}} style={{flex:1,background:"rgba(255,255,255,.15)",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>{lg==="uz"?"Qayta":lg==="ru"?"Заново":"Retry"}</button>
-        <button onClick={applyVoice} disabled={!voiceParsed} style={{flex:2,background:voiceParsed?"linear-gradient(135deg,#10b981,#059669)":"rgba(255,255,255,.1)",border:"none",borderRadius:14,padding:"14px",color:"#fff",fontSize:14,fontWeight:700,cursor:voiceParsed?"pointer":"not-allowed",opacity:voiceParsed?1:.5}}>{lg==="uz"?"Qo'shish":lg==="ru"?"Добавить":"Add"}</button>
-      </div>}
-    </div>}
-    {showImport&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.6)",zIndex:1000,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>{setShowImport(false);setImportRows([]);setImportStep("upload");}}>
-      <div style={{background:th.bg,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"88vh",overflowY:"auto",padding:"22px 18px"}} onClick={e=>e.stopPropagation()}>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:16}}>
-          <div style={{fontSize:17,fontWeight:800,color:th.t1,display:"flex",alignItems:"center",gap:8}}>📄 {lg==="uz"?"Hisobot import":lg==="ru"?"Импорт":"Import"}</div>
-          <button onClick={()=>{setShowImport(false);setImportRows([]);setImportStep("upload");}} style={{background:"none",border:"none",cursor:"pointer",fontSize:22,color:th.t2}}>×</button>
-        </div>
-        {importStep==="upload"&&<div>
-          <div style={{background:th.ac+"0d",border:"1.5px dashed "+th.ac+"55",borderRadius:16,padding:"32px 18px",textAlign:"center",marginBottom:14,cursor:"pointer"}} onClick={()=>importFileRef.current?.click()}>
-            <div style={{fontSize:44,marginBottom:10}}>📁</div>
-            <div style={{fontSize:14,fontWeight:700,color:th.t1,marginBottom:5}}>{lg==="uz"?"CSV faylni tanlang":lg==="ru"?"Выберите CSV":"Choose CSV file"}</div>
-            <div style={{fontSize:11,color:th.t2}}>{lg==="uz"?"Bank hisobotini CSV formatda yuklang":"Upload bank statement as CSV"}</div>
-          </div>
-          <input ref={importFileRef} type="file" accept=".csv,text/csv" style={{display:"none"}} onChange={e=>handleImportFile(e.target.files?.[0])}/>
-          <div style={{background:th.sur,borderRadius:12,padding:"13px 15px",fontSize:11,color:th.t2,lineHeight:1.7}}>
-            <div style={{fontWeight:700,color:th.t1,marginBottom:6}}>{lg==="uz"?"💡 Qanday ishlaydi:":"💡 How it works:"}</div>
-            {lg==="uz"?"1. Bank ilovangizdan hisobotni CSV qilib yuklab oling\n2. Shu yerga tanlang\n3. Ilova sana, summa, izohni avtomatik aniqlaydi\n4. Ko'rib chiqib, tasdiqlang":"1. Export statement as CSV from your bank\n2. Select it here\n3. App auto-detects date, amount, note\n4. Review and confirm"}
-          </div>
-        </div>}
-        {importStep==="review"&&<div>
-          <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
-            <div style={{fontSize:12,color:th.t2}}>{importRows.filter(r=>r.sel).length}/{importRows.length} {lg==="uz"?"tanlandi":"selected"}</div>
-            <div style={{display:"flex",gap:8}}>
-              <button onClick={()=>setImportRows(rows=>rows.map(r=>({...r,sel:true})))} style={{fontSize:11,background:th.ac+"15",border:"none",borderRadius:8,padding:"5px 10px",color:th.ac,cursor:"pointer",fontWeight:600}}>{lg==="uz"?"Hammasi":"All"}</button>
-              <button onClick={()=>setImportRows(rows=>rows.map(r=>({...r,sel:false})))} style={{fontSize:11,background:th.bor,border:"none",borderRadius:8,padding:"5px 10px",color:th.t2,cursor:"pointer",fontWeight:600}}>{lg==="uz"?"Hech biri":"None"}</button>
-            </div>
-          </div>
-          <div style={{maxHeight:"42vh",overflowY:"auto",marginBottom:14}}>
-            {importRows.map((r,i)=>(
-              <div key={i} onClick={()=>setImportRows(rows=>rows.map((x,j)=>j===i?{...x,sel:!x.sel}:x))} style={{display:"flex",alignItems:"center",gap:10,background:r.sel?th.sur:th.bg,border:"1px solid "+(r.sel?(r.kind==="income"?th.gr+"44":th.rd+"33"):th.bor),borderRadius:11,padding:"10px 12px",marginBottom:7,cursor:"pointer",opacity:r.sel?1:.5}}>
-                <div style={{width:20,height:20,borderRadius:6,border:"2px solid "+(r.sel?th.ac:th.bor),background:r.sel?th.ac:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{r.sel&&<span style={{color:"#fff",fontSize:12}}>✓</span>}</div>
-                <div style={{width:30,height:30,borderRadius:8,background:(r.kind==="income"?th.gr:th.rd)+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:15,flexShrink:0}}>{r.kind==="income"?"💰":"💸"}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:13,fontWeight:600,color:th.t1,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.izoh||(lg==="uz"?"(izohsiz)":"(no note)")}</div>
-                  <div style={{fontSize:10,color:th.t2}}>{r.sana} · {r.kind==="income"?(lg==="uz"?"Daromad":"Income"):(KN[lg][KATS.findIndex(k=>k.id===r.kategoriya)]||"")}</div>
-                </div>
-                <div style={{fontSize:13,fontWeight:800,color:r.kind==="income"?th.gr:th.rd,flexShrink:0}}>{r.kind==="income"?"+":"-"}{f(r.summa,true)}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"flex",gap:10}}>
-            <button onClick={()=>{setImportStep("upload");setImportRows([]);}} style={{flex:1,background:"transparent",border:"1.5px solid "+th.bor,borderRadius:13,padding:"13px",color:th.t2,cursor:"pointer",fontWeight:700,fontSize:14}}>{lg==="uz"?"Orqaga":"Back"}</button>
-            <button onClick={confirmImport} style={{flex:2,...S.bt(),marginBottom:0}}>{lg==="uz"?"Import qilish":"Import"} ({importRows.filter(r=>r.sel).length})</button>
-          </div>
-        </div>}
-      </div>
-    </div>}
-    {showScanner&&<div style={{position:"fixed",inset:0,background:"#000",zIndex:1000,display:"flex",flexDirection:"column"}}>
-      <div style={{padding:"16px 18px",display:"flex",alignItems:"center",justifyContent:"space-between",background:"rgba(0,0,0,.6)",position:"relative",zIndex:2}}>
-        <div style={{color:"#fff",fontSize:16,fontWeight:700}}>{lg==="uz"?"Chek skaneri":"Receipt scanner"}</div>
-        <button onClick={stopScanner} style={{background:"rgba(255,255,255,.2)",border:"none",borderRadius:"50%",width:36,height:36,color:"#fff",fontSize:20,cursor:"pointer"}}>×</button>
-      </div>
-      <div style={{flex:1,position:"relative",overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center"}}>
-        <video ref={videoRef} playsInline muted style={{width:"100%",height:"100%",objectFit:"cover",position:"absolute",inset:0}}/>
-        <div style={{position:"relative",zIndex:2,width:240,height:240,border:"3px solid "+th.ac,borderRadius:24,boxShadow:"0 0 0 9999px rgba(0,0,0,.5)"}}>
-          <div style={{position:"absolute",top:-3,left:-3,width:40,height:40,borderTop:"5px solid #fff",borderLeft:"5px solid #fff",borderRadius:"24px 0 0 0"}}/>
-          <div style={{position:"absolute",top:-3,right:-3,width:40,height:40,borderTop:"5px solid #fff",borderRight:"5px solid #fff",borderRadius:"0 24px 0 0"}}/>
-          <div style={{position:"absolute",bottom:-3,left:-3,width:40,height:40,borderBottom:"5px solid #fff",borderLeft:"5px solid #fff",borderRadius:"0 0 0 24px"}}/>
-          <div style={{position:"absolute",bottom:-3,right:-3,width:40,height:40,borderBottom:"5px solid #fff",borderRight:"5px solid #fff",borderRadius:"0 0 24px 0"}}/>
-        </div>
-      </div>
-      <div style={{padding:"20px 24px 40px",background:"rgba(0,0,0,.6)",textAlign:"center"}}>
-        <div style={{color:"#fff",fontSize:14,marginBottom:6}}>{scanMsg}</div>
-        <div style={{color:"rgba(255,255,255,.6)",fontSize:12,marginBottom:16}}>{lg==="uz"?"Chekdagi QR kodni ramka ichiga joylang":"Point the receipt QR into the frame"}</div>
-        <button onClick={stopScanner} style={{background:"rgba(255,255,255,.15)",border:"1.5px solid rgba(255,255,255,.4)",borderRadius:12,padding:"12px 24px",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>{lg==="uz"?"Qo'lda kiritish":"Enter manually"}</button>
-      </div>
-    </div>}
-    {showQrPick&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:1001,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowQrPick(false)}>
-      <div onClick={e=>e.stopPropagation()} style={{background:th.card,borderRadius:"24px 24px 0 0",width:"100%",maxWidth:480,maxHeight:"80vh",display:"flex",flexDirection:"column",padding:"0 0 32px"}}>
-        <div style={{padding:"16px 20px 12px",borderBottom:"1.5px solid "+th.border,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-          <div style={{fontSize:15,fontWeight:700,color:th.text}}>{lg==="uz"?"QR matnidan summani tanlang":"Select amount from QR text"}</div>
-          <button onClick={()=>setShowQrPick(false)} style={{background:"none",border:"none",fontSize:22,color:th.sub,cursor:"pointer"}}>×</button>
-        </div>
-        <div style={{padding:"10px 16px 4px"}}>
-          <div style={{fontSize:12,color:th.sub,marginBottom:6}}>{lg==="uz"?"Summa qatoriga bosing:":"Tap the amount line:"}</div>
-        </div>
-        <div style={{overflowY:"auto",flex:1,padding:"0 16px 8px"}}>
-          {qrRawText.split(/\n|\|/).map((line,i)=>{
-            const trimmed=line.trim();
-            if(!trimmed)return null;
-            // Raqam bormi? (3+ raqam ketma-ket)
-            const hasNum=/[0-9]{3,}/.test(trimmed);
-            // Raqamni tozalab olish: vergul/nuqta/bo'sh joy bilan ajratilgan son
-            const numMatch=trimmed.match(/([0-9][0-9 ,.']*[0-9])/);
-            let parsedNum=0;
-            if(numMatch){
-              const clean=numMatch[1].replace(/[ ,']/g,"").replace(/\.(?=[0-9]{3})/g,"");
-              parsedNum=parseInt(clean,10)||0;
-            }
-            return(
-              <div key={i}
-                onClick={()=>{
-                  if(parsedNum>0){
-                    setFS(String(parsedNum));
-                    setShowQrPick(false);
-                    ok$(lg==="uz"?"✓ "+f(parsedNum,true)+" — tekshiring":"✓ "+f(parsedNum,true)+" — verify");
-                  }
-                }}
-                style={{
-                  padding:"10px 14px",
-                  marginBottom:4,
-                  borderRadius:10,
-                  background:hasNum?(th.ac+"18"):th.bg,
-                  border:hasNum?("1.5px solid "+th.ac+"44"):"1.5px solid transparent",
-                  cursor:parsedNum>0?"pointer":"default",
-                  display:"flex",
-                  justifyContent:"space-between",
-                  alignItems:"center",
-                  gap:8
-                }}>
-                <span style={{fontSize:13,color:parsedNum>0?th.text:th.sub,wordBreak:"break-all"}}>{trimmed}</span>
-                {parsedNum>0&&<span style={{fontSize:13,fontWeight:700,color:th.ac,whiteSpace:"nowrap"}}>→ {f(parsedNum,true)}</span>}
-              </div>
-            );
-          })}
-        </div>
-        <div style={{padding:"12px 16px 0"}}>
-          <div style={{fontSize:11,color:th.sub,textAlign:"center"}}>{lg==="uz"?"Xom QR matn:":"Raw QR text:"}</div>
-          <div style={{fontSize:10,color:th.sub,background:th.bg,borderRadius:8,padding:"8px 10px",marginTop:4,wordBreak:"break-all",maxHeight:60,overflow:"hidden"}}>{qrRawText.slice(0,200)}</div>
-        </div>
-      </div>
-    </div>}
-    {showPremModal&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.7)",zIndex:999,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setShowPremModal(false)}>
-      <div style={{background:th.sur,borderRadius:"24px 24px 0 0",padding:"28px 24px 40px",width:"100%",maxWidth:430}} onClick={e=>e.stopPropagation()}>
-        <div style={{textAlign:"center",marginBottom:24}}>
-          <div style={{fontSize:48,marginBottom:8}}>💎</div>
-          <div style={{fontSize:22,fontWeight:800,color:th.t1,marginBottom:4}}>{lg==="uz"?"Premium versiya":"Premium Version"}</div>
-          <div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Barcha funksiyalarni oching!":"Unlock all features!"}</div>
-        </div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:20}}>
-          {[{label:lg==="uz"?"Bepul":"Free",items:lg==="uz"?["3 ta maqsad","2 oila a'zo","Asosiy hisobot","Qarzlar"]:["3 goals","2 members","Basic report","Debts"]},{label:"Premium",items:lg==="uz"?["♾️ Cheksiz maqsad","👨‍👩‍👧 Cheksiz a'zo","📄 PDF/Excel","🎤 Ovoz kiritish","📷 QR skaner","🤖 AI maslahat"]:["♾️ Unlimited goals","👨‍👩‍👧 Unlimited members","📄 PDF/Excel","🎤 Voice input","📷 QR scanner","🤖 AI advice"]}].map((plan,pi)=>(
-            <div key={pi} style={{background:pi===1?"linear-gradient(135deg,"+th.ac+"22,"+th.ac2+"11)":th.surH,border:"1.5px solid "+(pi===1?th.ac:th.bor),borderRadius:16,padding:"14px 12px"}}>
-              <div style={{fontSize:13,fontWeight:700,color:pi===1?th.ac:th.t2,marginBottom:10,textAlign:"center"}}>{plan.label}</div>
-              {plan.items.map((item,ii)=>(<div key={ii} style={{display:"flex",alignItems:"center",gap:6,marginBottom:6,fontSize:12,color:th.t1}}><span style={{color:pi===1?th.ac:th.gr,fontSize:14}}>✓</span>{item}</div>))}
-            </div>
-          ))}
-        </div>
-        <div style={{background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",borderRadius:16,padding:"14px 20px",marginBottom:10,textAlign:"center"}}>
-          <div style={{fontSize:12,color:"rgba(255,255,255,.8)",marginBottom:4}}>{lg==="uz"?"Premium narxi":"Price"}</div>
-          <div style={{fontSize:20,fontWeight:800,color:"#fff"}}>15 000 – 25 000 {lg==="uz"?"so'm / oy":"UZS / month"}</div>
-          <div style={{fontSize:11,color:"rgba(255,255,255,.7)",marginTop:2}}>99 000 {lg==="uz"?"so'm / yil":"UZS / year"}</div>
-        </div>
-        <button onClick={activatePremium} style={{...S.bt(),marginBottom:8,fontSize:16}}>💎 {lg==="uz"?"Premium faollashtirish (Demo)":"Activate Premium (Demo)"}</button>
-        <button onClick={()=>setShowPremModal(false)} style={{width:"100%",background:"transparent",border:"1px solid "+th.bor,borderRadius:14,padding:"12px",color:th.t2,cursor:"pointer",fontWeight:600,fontSize:14}}>{lg==="uz"?"Keyinroq":"Later"}</button>
-      </div>
-    </div>}
-    <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:th.sur,borderTop:"1px solid "+th.bor,padding:"8px 12px 22px",display:"flex",justifyContent:"space-around",alignItems:"center",zIndex:20}}>
-      {navItems.map(item=>item.pr
-        ?<button key="add" onClick={()=>{buzz(15);setShowAddModal(true);setAddModalTab(isKid?"daromad":"xarajat");setAddStep("kat");setAddKat(null);setFS("");setFIz("");setFSn(td());setFDS("");setFDI("");}} style={{width:56,height:56,borderRadius:"50%",background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 6px 22px "+th.ac+"55",flexShrink:0}} className="anim-pulse">{Ico.add("#fff")}</button>
-        :<button key={item.id} onClick={()=>{buzz(8);setScr(item.id);}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:4,opacity:scr===item.id?1:0.5,transition:"all .2s",padding:"4px 8px",transform:scr===item.id?"translateY(-2px)":"none"}}>
-          {item.id==="bosh"&&Ico.navHome(scr===item.id?th.ac:th.t2)}
-          {item.id==="grafik"&&Ico.navChart(scr===item.id?th.ac:th.t2)}
-          {item.id==="qarz"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="3" y="6" width="20" height="14" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M3 10h20" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.3"/><path d="M7 14h5M16 14h3" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
-          {item.id==="maqsad"&&Ico.navGoal(scr===item.id?th.ac:th.t2)}
-          {item.id==="vazifa"&&<svg width="26" height="26" viewBox="0 0 26 26" fill="none"><rect x="4" y="3" width="18" height="20" rx="3" fill={scr===item.id?th.ac:th.t2} opacity=".15" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4"/><path d="M8 9l2 2 4-4" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/><path d="M8 16h9" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/></svg>}
-          {item.id==="hisobot"&&Ico.navRep(scr===item.id?th.ac:th.t2)}
-          <span style={{fontSize:9,fontWeight:700,letterSpacing:.5,color:scr===item.id?th.ac:th.t2}}>{item.lb}</span>
-        </button>
-      )}
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-      </div>
-    </>
   );
 }

@@ -1,13 +1,28 @@
-import{useState,useEffect,useRef,useCallback,useMemo}from"react";
-import{db}from"../firebase.js";
-import{LineChart,Line,BarChart,Bar,PieChart,Pie,Cell,XAxis,YAxis,Tooltip,ResponsiveContainer,CartesianGrid}from"recharts";
+import { useState, useRef, useCallback, useMemo } from "react";
+import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH } from "../components/common/index.jsx";
+import { Ico } from "../utils/icons.jsx";
+import { makeS } from "../utils/styles.js";
+import { KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD } from "../utils/constants.js";
+import { f, td, nt, tm } from "../utils/formatters.js";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
-export default function GoalsPage(p){
-  const {user,oila,azolar,xar,dar,maq,qarzlar,vazifalar,kidBalances,notifs,qarzReqs,xReqs,rates,stars,gardenData,setXar,setDar,setMaq,setQarzlar,setVazifalar,setKidBalances,setNotifs,setStars,dark,lg,val,setScr,scr,isPremium,isKid,isBosh,hasKids,isAdmin,th,S,Ico,t,f,ok$,buzz,td,nt,addStar,addNotif,fireConfetti,showS,setSrch,srch,showPremModal,setShowPremModal,activatePremium,addM,setAddM,maqTab,setMaqTab,tupId,setTupId,tupS,setTupS,addMq,tupMq,delMq,editMq,setEditMq,editMqN,setEditMqN,editMqS,setEditMqS,saveEditMq,maqsadConfirmNotif,setMaqsadConfirmNotif,confirmMaqBought,cancelMaqReturn,showAddVazifa,setShowAddVazifa,showGift,setShowGift,giftSum,setGiftSum,giftFrom,setGiftFrom,vTitle,setVTitle,vReward,setVReward,vAssignee,setVAssignee,vEmoji,setVEmoji,addVazifa,vazifaDone,vazifaApprove,vazifaReject,delVazifa,showAddQarz,setShowAddQarz,qarzTur,setQarzTur,qarzKim,setQarzKim,qarzSum,setQarzSum,qarzIzoh,setQarzIzoh,qarzSana,setQarzSana,qarzQaytSana,setQarzQaytSana,qarzTel,setQarzTel,qarzLinked,setQarzLinked,addQarz,payQarz,delQarz,partialQarz,setPartialQarz,partialSum,setPartialSum,applyPartial,qarzDonePrompt,setQarzDonePrompt,addQarzAsDaromad,addQarzAsXarajat,inviteQarz,setInviteQarz,acceptQarzReq,rejectQarzReq,verifyTilxat,setVerifyTilxat,generateTilxat,xForMember,setXForMember,xMode,setXMode,xReqAccept,xReqReject,quickItem,setQuickItem,quickSum,setQuickSum,hisFil,setHisFil,ctab,setCtab,adv,setAdv,advL,setAdvL,exportLoading,exportPDF,exportExcel,getAIAdvice,showImport,setShowImport,importRows,setImportRows,importStep,setImportStep,importFileRef,handleImport,confirmImport,pTab,setPTab,edN,setEdN,newN,setNewN,fBj,setFBj,fKL,setFKL,faqO,setFaqO,pinStep,setPinStep,pinVal,setPinVal,pinCfm,setPinCfm,finger,setFinger,showBilim,setShowBilim,showAddKid,setShowAddKid,kidName,setKidName,kidLogin,setKidLogin,kidPw,setKidPw,addKidAccount,showReferral,setShowReferral,refCount,fbRating,setFbRating,fbText,setFbText,fbType,setFbType,fbSending,sendFeedback,adminStats,adminLoad,loadAdminStats,waterGarden,gardenData:_gd,gardenData2,addStar:_as,activatePremium:_ap,logout,saveProfile,fRef,doPhoto,rates:_r,rateL,fetchRates,notifEnabled,setNotifEnabled,notifTime,setNotifTime,APP_VER,showGardenInfo,setShowGardenInfo,setGardenData,VAZIFA_PRESETS,GOAL_PRESETS,KID_GOAL_PRESETS,KATS,KN,DARS,DN,VALS,COUNTRIES,RELATIONS,TL,Av,MoneyInput,KatIco,DarIco,Spark,Heat,BH,SL,TxRow,Tst,fmtN,normTel,sonSoz,spc,QUICK_ADD,ADMIN_TEL,fS,setFS,fK,setFK,fIz,setFIz,fSn,setFSn,fRp,setFRp,fDS,setFDS,fDT,setFDT,fDI,setFDI,addX,addD,mN,setMN,mS,setMS,mR,setMR,voiceOn,voiceText,voiceParsed,showVoice,setShowVoice,startVoice,stopVoice,applyVoice,showScanner,setShowScanner,scanMsg,startScanner,stopScanner,showQrPick,setShowQrPick,qrRawText,setQrRawText,showResetScreen,setShowResetScreen,resetInput,setResetInput,resetSent,setResetSent,sendResetEmail,resetEmail,setResetEmail,showResetConfirm,setShowResetConfirm}=p;
+export default function GoalsPage({
+  // Data
+  user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
+  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
+  setXar, setDar, setMaq, setQarzlar, setVazifalar,
+  setKidBalances, setNotifs,
+  // State
+  dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
+  // Form states - barcha keraklilar
+  ...props
+}) {
+  const th = useMemo(() => makeS.th || props.th, [dark]);
+  const S = useMemo(() => makeS(th), [th]);
+  const t = props.t;
 
-  return(
-    <>
-      {scr==="maqsad"&&<div>
+  return (
+    <div>
         <div style={{...S.row,marginBottom:12}}>
           <div style={{fontSize:16,fontWeight:700,color:th.t1}}>{isKid?(lg==="uz"?"🌟 Orzularim":lg==="ru"?"🌟 Мои мечты":"🌟 My dreams"):t.goal}</div>
           {maqTab==="mine"&&<button onClick={()=>setAddM(v=>!v)} style={{background:th.ac,border:"none",borderRadius:10,padding:"7px 14px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",gap:5,boxShadow:"0 4px 12px "+th.ac+"44"}}>{Ico.add("#fff")}</button>}
@@ -90,9 +105,6 @@ export default function GoalsPage(p){
                       {m.status==="parent_confirmed"&&<div style={{fontSize:12,color:"#22c55e",fontWeight:600,marginTop:4}}>✅ {lg==="uz"?"Ota-ona tasdiqladi! Siz ham tasdiqlang":"Parent confirmed! Confirm yours too"}</div>}
                     </div>:<div style={{...S.row}}><span style={{fontSize:11,color:th.t2}}>{t.rem}: {f(m.maqsad-m.jamg,true)}</span><button onClick={()=>{setTupId(m.id);setTupS("");}} style={{background:m.rang+"18",border:"1px solid "+m.rang+"44",borderRadius:9,padding:"5px 12px",color:m.rang,cursor:"pointer",fontWeight:700,fontSize:12}}>{t.am}</button></div>}
           </div>;
-        })})()}
-      </div>}
-      </div>
-    </>
+        })})
   );
 }
