@@ -312,6 +312,12 @@ export default function App() {
     };
     r.readAsDataURL(file);
   };
+  const rmPhoto = async () => {
+    const u2 = { ...user, photo: null };
+    await db.s("user_" + user.id, u2); setUser(u2);
+    setAzolar(azolar.map(a => a.id === user.id ? { ...a, photo: null } : a));
+    ok$(t.ua);
+  };
   const updName = async () => {
     if (!newN.trim()) return;
     const u2 = { ...user, ism: newN.trim() };
@@ -525,7 +531,132 @@ export default function App() {
     ok$(lg === "uz" ? "Rad etildi" : "Rejected", "warn");
   };
 
-  // ── Boot screen ───────────────────────────────────────────
+  // ── Export ────────────────────────────────────────────────
+  const downloadFile = (content, filename, mime) => {
+    try {
+      const blob = new Blob([content], { type: mime });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
+    } catch { return false; }
+  };
+
+  const exportExcel = () => {
+    if (!isPremium) { setShowPremModal(true); return; }
+    setExportLoading(true);
+    try {
+      const month = tm();
+      const esc = s => { const v = String(s == null ? "" : s); if (v.indexOf('"') >= 0 || v.indexOf(";") >= 0) { return '"' + v.split('"').join('""') + '"'; } return v; };
+      const exFil = canSeeReport ? hisFil : user?.id;
+      const exX = exFil === "all" ? bX : bX.filter(x => x.uid === exFil);
+      const exD = exFil === "all" ? bD : bD.filter(d => d.uid === exFil);
+      const exjX = exX.reduce((s, x) => s + Number(x.summa || 0), 0);
+      const exjD = exD.reduce((s, d) => s + Number(d.summa || 0), 0);
+      const rows = [];
+      rows.push([lg === "uz" ? "OILA HISOBOTI" : "FAMILY REPORT", month].join(";"));
+      rows.push("");
+      rows.push([lg === "uz" ? "Jami daromad" : "Total income", exjD].join(";"));
+      rows.push([lg === "uz" ? "Jami xarajat" : "Total expense", exjX].join(";"));
+      rows.push([lg === "uz" ? "Balans" : "Balance", exjD - exjX].join(";"));
+      rows.push([lg === "uz" ? "Budjet" : "Budget", bdj].join(";"));
+      rows.push("");
+      if (exX.length > 0) {
+        rows.push([lg === "uz" ? "XARAJATLAR" : "EXPENSES"].join(";"));
+        rows.push(["#", lg === "uz" ? "Sana" : "Date", lg === "uz" ? "Kategoriya" : "Category", lg === "uz" ? "Izoh" : "Note", lg === "uz" ? "Kim" : "Who", lg === "uz" ? "Summa" : "Amount"].map(esc).join(";"));
+        exX.forEach((x, i) => rows.push([i + 1, x.sana, KN[lg][KATS.findIndex(k => k.id === x.kategoriya)] || "", x.izoh || "", gN(x.uid), x.summa].map(esc).join(";")));
+        rows.push("");
+      }
+      if (exD.length > 0) {
+        rows.push([lg === "uz" ? "DAROMADLAR" : "INCOME"].join(";"));
+        rows.push(["#", lg === "uz" ? "Sana" : "Date", lg === "uz" ? "Tur" : "Type", lg === "uz" ? "Izoh" : "Note", lg === "uz" ? "Kim" : "Who", lg === "uz" ? "Summa" : "Amount"].map(esc).join(";"));
+        exD.forEach((d, i) => rows.push([i + 1, d.sana, DN[lg][DARS.findIndex(dr => dr.id === d.tur)] || "", d.izoh || "", gN(d.uid), d.summa].map(esc).join(";")));
+        rows.push("");
+      }
+      if (qarzlar.length > 0) {
+        rows.push([lg === "uz" ? "QARZLAR" : "DEBTS"].join(";"));
+        rows.push(["#", lg === "uz" ? "Kim" : "Person", lg === "uz" ? "Tur" : "Type", lg === "uz" ? "Summa" : "Amount", lg === "uz" ? "Sana" : "Date", lg === "uz" ? "Holat" : "Status"].map(esc).join(";"));
+        qarzlar.forEach((q, i) => rows.push([i + 1, q.kim, q.tur === "bergan" ? (lg === "uz" ? "Berdim" : "Lent") : (lg === "uz" ? "Oldim" : "Borrowed"), q.summa, q.sana, q.paid ? (lg === "uz" ? "Qaytarilgan" : "Returned") : (lg === "uz" ? "Faol" : "Active")].map(esc).join(";")));
+      }
+      const csv = "\uFEFF" + rows.join("\n");
+      const okk = downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
+      ok$(okk ? (lg === "uz" ? "Yuklab olindi!" : "Downloaded!") : (lg === "uz" ? "Xatolik" : "Error"), okk ? "ok" : "err");
+    } catch (e) { ok$((lg === "uz" ? "Xatolik: " : "Error: ") + e.message, "err"); }
+    setExportLoading(false);
+  };
+
+  const exportPDF = () => {
+    if (!isPremium) { setShowPremModal(true); return; }
+    try {
+      const month = tm();
+      const pdfFil = canSeeReport ? hisFil : user?.id;
+      const pX = pdfFil === "all" ? bX : bX.filter(x => x.uid === pdfFil);
+      const pD = pdfFil === "all" ? bD : bD.filter(d => d.uid === pdfFil);
+      const pdfWho = pdfFil === "all" ? (lg === "uz" ? "Butun oila" : "Whole family") : (azolar.find(a => a.id === pdfFil)?.ism || "");
+      const jX2 = pX.reduce((s, x) => s + Number(x.summa || 0), 0);
+      const jD2 = pD.reduce((s, d) => s + Number(d.summa || 0), 0);
+      const katRows = KATS.map((k, i) => { const tot = pX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0); if (!tot) return ""; const pct2 = jX2 > 0 ? Math.round(tot / jX2 * 100) : 0; return "<tr><td>" + KN[lg][i] + "</td><td style='text-align:right'>" + tot.toLocaleString() + " so'm</td><td style='text-align:center'>" + pct2 + "%</td></tr>"; }).join("");
+      const xRows = pX.slice(0, 40).map(x => "<tr><td>" + x.sana + "</td><td>" + KN[lg][KATS.findIndex(k => k.id === x.kategoriya)] + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right'>" + x.summa.toLocaleString() + "</td><td>" + gN(x.uid) + "</td></tr>").join("");
+      const qActive = qarzlar.filter(q => !q.paid && (pdfFil === "all" ? canSeeReport : (q.uid === pdfFil || (!q.uid && pdfFil === user?.id))));
+      const qRows = qActive.map(q => "<tr><td>" + q.kim + "</td><td>" + (q.tur === "bergan" ? (lg === "uz" ? "Berdim" : "Lent") : (lg === "uz" ? "Oldim" : "Borrowed")) + "</td><td style='text-align:right'>" + q.summa.toLocaleString() + "</td><td>" + (q.qaytSana || "-") + "</td></tr>").join("");
+      const refLink = window.location.origin + "/?ref=" + (user?.id || "");
+      const H = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Hisobot " + month + "</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;padding:24px;color:#1f2937;max-width:760px;margin:0 auto;font-size:13px}h1{color:#6366f1;border-bottom:3px solid #6366f1;padding-bottom:10px;font-size:22px}h2{color:#374151;margin-top:26px;font-size:16px}table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#6366f1;color:#fff;padding:9px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px}.sum{display:flex;gap:12px;margin:18px 0}.box{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center}.box .lbl{font-size:11px;color:#6b7280}.box .val{font-size:18px;font-weight:800;margin-top:5px}.g{color:#10b981}.r{color:#ef4444}.btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#6366f1;color:#fff;border:none;padding:14px 32px;border-radius:30px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.4);z-index:99}.foot{margin-top:34px;padding-top:18px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}@media print{.btn{display:none}}</style></head><body><h1>Oila Hisobchi · " + pdfWho + " · " + month + "</h1><div class='sum'><div class='box'><div class='lbl'>" + (lg === "uz" ? "Daromad" : "Income") + "</div><div class='val g'>" + jD2.toLocaleString() + "</div></div><div class='box'><div class='lbl'>" + (lg === "uz" ? "Xarajat" : "Expense") + "</div><div class='val r'>" + jX2.toLocaleString() + "</div></div><div class='box'><div class='lbl'>" + (lg === "uz" ? "Balans" : "Balance") + "</div><div class='val " + (jD2 - jX2 >= 0 ? "g" : "r") + "'>" + (jD2 - jX2).toLocaleString() + "</div></div></div><h2>" + (lg === "uz" ? "Kategoriyalar" : "Categories") + "</h2><table><thead><tr><th>" + (lg === "uz" ? "Kategoriya" : "Category") + "</th><th style='text-align:right'>" + (lg === "uz" ? "Summa" : "Amount") + "</th><th style='text-align:center'>%</th></tr></thead><tbody>" + (katRows || "<tr><td colspan=3 style='text-align:center;color:#9ca3af'>-</td></tr>") + "</tbody></table><h2>" + (lg === "uz" ? "Xarajatlar" : "Expenses") + "</h2><table><thead><tr><th>" + (lg === "uz" ? "Sana" : "Date") + "</th><th>" + (lg === "uz" ? "Kategoriya" : "Category") + "</th><th>" + (lg === "uz" ? "Izoh" : "Note") + "</th><th style='text-align:right'>" + (lg === "uz" ? "Summa" : "Amount") + "</th><th>" + (lg === "uz" ? "Kim" : "Who") + "</th></tr></thead><tbody>" + (xRows || "<tr><td colspan=5 style='text-align:center;color:#9ca3af'>-</td></tr>") + "</tbody></table>" + (qActive.length > 0 ? "<h2>" + (lg === "uz" ? "Faol qarzlar" : "Active debts") + "</h2><table><thead><tr><th>" + (lg === "uz" ? "Kim" : "Person") + "</th><th>" + (lg === "uz" ? "Tur" : "Type") + "</th><th style='text-align:right'>" + (lg === "uz" ? "Summa" : "Amount") + "</th><th>" + (lg === "uz" ? "Qaytarish" : "Return") + "</th></tr></thead><tbody>" + qRows + "</tbody></table>" : "") + "<div class='foot'>" + (lg === "uz" ? "Oila Hisobchi ilovasi tomonidan yaratilgan" : "Generated by Oila Hisobchi") + " · " + new Date().toLocaleDateString("uz-UZ") + "</div><button class='btn' onclick='window.print()'>" + (lg === "uz" ? "PDF saqlash / Chop etish" : "Save PDF / Print") + "</button></body></html>";
+      const w = window.open("", "_blank");
+      if (w && w.document) { w.document.write(H); w.document.close(); ok$(lg === "uz" ? "PDF tayyor!" : "PDF ready!"); }
+      else { const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;"); ok$(okk ? (lg === "uz" ? "HTML yuklandi!" : "HTML downloaded!") : (lg === "uz" ? "Xatolik" : "Error"), okk ? "ok" : "err"); }
+    } catch (e) { ok$((lg === "uz" ? "Xatolik: " : "Error: ") + e.message, "err"); }
+  };
+
+  // ── AI maslahat ───────────────────────────────────────────
+  const aiAdv = async () => {
+    if (!isPremium) { setShowPremModal(true); return; }
+    setAdvL(true); setAdv(""); setScr("maslahat");
+    const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
+    const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
+    const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
+    const totD = mD.reduce((s, d) => s + Number(d.summa || 0), 0);
+    const budget = oila && oila.budjet ? oila.budjet : 2000000;
+    const bal2 = totD - totX;
+    const dayN = new Date().getDate();
+    const tips = [];
+    const L = (uz, en) => lg === "uz" ? uz : en;
+    if (totD > 0 || totX > 0) {
+      if (bal2 >= 0) tips.push("✅ " + L("Bu oy balansingiz ijobiy: +" + f(bal2, true) + ". Barakali boring!", "Positive balance: +" + f(bal2, true)));
+      else tips.push("⚠️ " + L("Bu oy xarajat daromaddan " + f(-bal2, true) + " ko'p.", "Expenses exceed income by " + f(-bal2, true)));
+    }
+    const bpct = budget > 0 ? Math.round(totX / budget * 100) : 0;
+    if (bpct >= 100) tips.push("🔴 " + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
+    else if (bpct >= 80) tips.push("🟡 " + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
+    else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push("👍 " + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
+    const katTotals = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
+    if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push("📊 " + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
+    if (totD > 0) {
+      const savePct = bal2 > 0 ? Math.round(bal2 / totD * 100) : 0;
+      if (savePct >= 20) tips.push("💰 " + L("Daromadning " + savePct + "% jamg'ardingiz. A'lo natija!", "Saved " + savePct + "%!"));
+      else if (savePct > 0) tips.push("💡 " + L("Daromadning faqat " + savePct + "% qoldi.", "Only " + savePct + "% saved."));
+      else if (bal2 < 0) tips.push("💡 " + L("Bu oy jamg'arma bo'lmadi.", "No savings."));
+    }
+    if (maq.length > 0) {
+      const ng = maq.filter(m => !m.paid).map(m => ({ ...m, pct: Math.round(m.jamg / m.maqsad * 100) })).sort((a, b) => b.pct - a.pct)[0];
+      if (ng) { if (ng.pct >= 80 && ng.pct < 100) tips.push("🎯 " + L("'" + ng.ism + "' maqsadi " + ng.pct + "% bajarildi!", "Goal '" + ng.ism + "' at " + ng.pct + "%!")); else if (ng.pct < 30) tips.push("🎯 " + L("'" + ng.ism + "' uchun har oy summa ajrating.", "Save for '" + ng.ism + "'.")); }
+    } else tips.push("🎯 " + L("Maqsad qo'ying — jamg'arish uchun motivatsiya beradi.", "Set a goal."));
+    const aQ = qarzlar.filter(q => !q.paid);
+    const meOwe = aQ.filter(q => q.tur === "olgan").reduce((s, q) => s + q.summa, 0);
+    if (meOwe > 0) tips.push("💸 " + L("Sizda " + f(meOwe, true) + " qarz bor.", "You owe " + f(meOwe, true)));
+    const genTips = [
+      L("50/30/20 qoidasini qo'llang: daromadning 50% zarur xarajatlarga, 30% xohish-istaklarga, 20% jamg'armaga.", "Use 50/30/20 rule: 50% needs, 30% wants, 20% savings."),
+      L("Kichik tejamkorlik — katta baraka. Har kuni ozgina tejasangiz, yiliga katta summa bo'ladi.", "Small savings add up over a year."),
+      L("Xarid ro'yxati — eng yaxshi qalqon. Ro'yxat tuzib, faqat shu mahsulotlarni oling.", "A shopping list is your best shield."),
+      L("Oylik daromad kelishi bilan birinchi navbatda majburiy to'lovlarni chetga oling.", "Pay mandatory bills first when income arrives."),
+      L("Moliyaviy xavfsizlik yostig'i: kamida 3 oylik xarajatga teng zaxira fondi yarating.", "Build a 3-month emergency fund."),
+    ];
+    tips.push("💡 " + genTips[new Date().getDate() % genTips.length]);
+    if (totX === 0 && totD === 0) setAdv(L("Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!", "No data yet. Add expenses and income."));
+    else setAdv(L("📈 " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n"));
+    setTimeout(() => setAdvL(false), 400);
+  };
+
+
   if (boot) return <div style={{ ...makeS(th).pg, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>{Ico.wallet(th.ac)}</div>;
   if (onbStep >= 0 && onbStep < ONB_SLIDES.length) return <OnboardingPage th={th} lg={lg} setLg={setLg} dark={dark} onbStep={onbStep} setOnbStep={setOnbStep} />;
   if (scr === "login") return (
@@ -615,13 +746,13 @@ export default function App() {
 
       {/* Pages */}
       <div style={{ padding: "14px 16px 100px" }}>
-        {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} />}
+        {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} fetchRates={fetchRates} rateL={rateL} setShowGift={setShowGift} setShowBilim={setShowBilim} setShowAddVazifa={setShowAddVazifa} />}
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} />}
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
-        {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} adv={adv} setAdv={setAdv} advL={advL} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} />}
-        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} addKidAccount={addKidAccount} activatePremium={activatePremium} logout={logout} saveProfile={saveProfile} fRef={fRef} doPhoto={doPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} />}
+        {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
+        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
       {/* AddTransactionModal */}
