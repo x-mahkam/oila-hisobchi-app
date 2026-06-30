@@ -1,25 +1,16 @@
-import { useState, useRef, useCallback, useMemo } from "react";
-import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, BH } from "../components/common/index.jsx";
+import { useMemo } from "react";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
-import { KATS, KN, DARS, DN, VALS, COUNTRIES, GOAL_PRESETS, KID_GOAL_PRESETS, VAZIFA_PRESETS, QUICK_ADD } from "../utils/constants.js";
-import { f, td, nt, tm } from "../utils/formatters.js";
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { f } from "../utils/formatters.js";
 
 export default function TasksPage({
-  // Data
-  user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
-  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
-  setXar, setDar, setMaq, setQarzlar, setVazifalar,
-  setKidBalances, setNotifs,
-  // State
-  dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
-  // Form states - barcha keraklilar
-  ...props
+  user, azolar, vazifalar, kidBalances,
+  lg, isKid, th, t,
+  buzz,
+  setShowAddVazifa,
+  vazifaDone, vazifaApprove, vazifaReject, delVazifa,
 }) {
-  const th = useMemo(() => makeS.th || props.th, [dark]);
   const S = useMemo(() => makeS(th), [th]);
-  const t = props.t;
 
   return (
     <div>
@@ -85,7 +76,7 @@ export default function TasksPage({
                 {isKid&&st==="pending"&&<button onClick={()=>vazifaDone(v.id)} style={{flex:1,background:th.ac,border:"none",borderRadius:10,padding:"10px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>✓ {lg==="uz"?"Bajardim":"Done"}</button>}
                 {isKid&&st==="done"&&<div style={{flex:1,textAlign:"center",fontSize:12,color:th.am,fontWeight:600,padding:"10px"}}>⏳ {lg==="uz"?"Ota-ona tasdig'i kutilmoqda":"Awaiting approval"}</div>}
                 {isKid&&st==="approved"&&<div style={{flex:1,textAlign:"center",fontSize:12,color:th.gr,fontWeight:700,padding:"10px"}}>🎉 {lg==="uz"?"Mukofot olindi!":"Reward received!"}</div>}
-                {!isKid&&st==="done"&&<><button onClick={()=>vazifaApprove(v.id)} style={{flex:2,background:th.gr,border:"none",borderRadius:10,padding:"10px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>✓ {lg==="uz"?"Tasdiqlash":"Approve"}</button><button onClick={()=>vazifaReject(v.id)} style={{flex:1,background:th.am+"18",border:"1px solid "+th.am+"44",borderRadius:10,padding:"10px",color:th.am,cursor:"pointer",fontWeight:700,fontSize:13}}>↩</button></>}
+                {!isKid&&st==="done"&&<><button onClick={()=>vazifaApprove(v.id)} style={{flex:2,background:th.gr,border:"none",borderRadius:10,padding:"10px",color:"#fff",cursor:"pointer",fontWeight:700,fontSize:13}}>✓ {lg==="uz"?"Tasdiqlash":"Approve"}</button>{vazifaReject&&<button onClick={()=>vazifaReject(v.id)} style={{flex:1,background:th.am+"18",border:"1px solid "+th.am+"44",borderRadius:10,padding:"10px",color:th.am,cursor:"pointer",fontWeight:700,fontSize:13}}>↩</button>}</>}
                 {!isKid&&st!=="done"&&<button onClick={()=>delVazifa(v.id)} style={{width:"100%",background:th.rd+"11",border:"1px solid "+th.rd+"33",borderRadius:10,padding:"9px",color:th.rd,cursor:"pointer",fontWeight:600,fontSize:12}}>{lg==="uz"?"O'chirish":"Delete"}</button>}
               </div>
             </div>;
