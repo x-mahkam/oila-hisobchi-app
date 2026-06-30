@@ -90,6 +90,49 @@ export function Tst({ msg, type, th }) {
   );
 }
 
+export function SL({ ch, th }) {
+  return <div style={{ fontSize:10, color:th.t2, textTransform:"uppercase", letterSpacing:1.5, fontWeight:700, marginBottom:8 }}>{ch}</div>;
+}
+
+export function SC({ label, value, color, th }) {
+  return (
+    <div style={{ background:th.sur, borderRadius:18, border:"1px solid "+th.bor, textAlign:"center", padding:"12px 8px", margin:0 }}>
+      <div style={{ fontSize:9, color:th.t2, marginBottom:3, fontWeight:600 }}>{label}</div>
+      <div style={{ fontSize:16, fontWeight:800, color }}>{value}</div>
+    </div>
+  );
+}
+
+// Bitta xarajat/daromad qatori (tarix ro'yxatida ishlatiladi)
+export function TxRow({ item, th, S, KATS, KN, DARS, DN, lg, gN, gP, f, user, onDelete, Ico }) {
+  const isX = !!item.kategoriya;
+  const ki = isX ? KATS.findIndex(k => k.id === item.kategoriya) : -1;
+  const di = !isX ? DARS.findIndex(d => d.id === item.tur) : -1;
+  const cl = isX ? (KATS[ki]?.c || "#64748b") : (DARS[di]?.c || "#64748b");
+  return (
+    <div style={{ ...S.cd, padding:"10px 13px", display:"flex", alignItems:"center", gap:10, marginBottom:7 }}>
+      <div style={{ width:38, height:38, borderRadius:11, background:cl+"18", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+        {isX ? <KatIco id={item.kategoriya} c={cl} s={20}/> : <DarIco id={item.tur} c={cl} s={20}/>}
+      </div>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:13, fontWeight:600, color:th.t1, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {item.izoh}{item.repeat && Ico && <span style={{ marginLeft:5 }}>{Ico.repeat(th.ac)}</span>}
+        </div>
+        <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:2 }}>
+          <Av src={gP(item.uid)} name={gN(item.uid)} size={14} ac={th.ac}/>
+          <span style={{ fontSize:10, color:th.t2 }}>{gN(item.uid)} · {item.sana}</span>
+        </div>
+      </div>
+      <span style={{ fontWeight:700, color:isX?th.rd:th.gr, fontSize:13, whiteSpace:"nowrap" }}>{isX?"-":"+"}{f(item.summa,true)}</span>
+      {isX && item.uid===user?.id && onDelete && (
+        <button onClick={() => onDelete(item)} style={{ background:"none", border:"none", cursor:"pointer", flexShrink:0, display:"flex", padding:"2px" }}>
+          {Ico ? Ico.trash(th.t2) : "✕"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function BH({ label, th, onBack }) {
   return (
     <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:20 }}>
