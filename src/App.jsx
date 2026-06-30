@@ -865,6 +865,26 @@ export default function App() {
       {confetti && <Confetti th={th} />}
       {showNotifs && <NotifPanel notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} />}
       {showPremModal && <PremiumModal th={th} S={S} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
+      {showBilim && (
+        <div style={{ position: "fixed", inset: 0, background: th.bg, zIndex: 1500, overflowY: "auto" }}>
+          <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
+        </div>
+      )}
+      {showGift && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowGift(false)}>
+          <div style={{ background: th.bg, borderRadius: "24px 24px 0 0", maxWidth: 480, width: "100%", padding: "24px 20px 32px" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, borderRadius: 2, background: th.bor, margin: "0 auto 18px" }} />
+            <div style={{ fontSize: 42, textAlign: "center", marginBottom: 8 }}>🎁</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: th.t1, marginBottom: 6, textAlign: "center" }}>{lg === "uz" ? "Sovg'a puli kiritish" : "Add gift money"}</div>
+            <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pulni qo'shing" : "Add money from relatives"}</div>
+            <label style={S.lb}>{lg === "uz" ? "Summa" : "Amount"}</label>
+            <input style={{ ...S.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} type="number" value={giftSum} onChange={e => setGiftSum(e.target.value)} placeholder="0" />
+            <label style={S.lb}>{lg === "uz" ? "Kimdan? (ixtiyoriy)" : "From whom? (optional)"}</label>
+            <input style={S.ip} value={giftFrom} onChange={e => setGiftFrom(e.target.value)} placeholder={lg === "uz" ? "Masalan: Buvi" : "e.g. Grandma"} />
+            <button onClick={addGiftMoney} style={{ ...S.bt(), marginTop: 6, marginBottom: 0 }}>{lg === "uz" ? "Qo'shish" : "Add"}</button>
+          </div>
+        </div>
+      )}
       {debts.qarzDonePrompt && <QarzDonePrompt q={debts.qarzDonePrompt} th={th} S={S} lg={lg} f={f} onAddDaromad={debts.addQarzAsDaromad} onAddXarajat={debts.addQarzAsXarajat} onClose={() => debts.setQarzDonePrompt(null)} />}
       {debts.partialQarz && <PartialQarzModal q={debts.partialQarz} partialSum={debts.partialSum} setPartialSum={debts.setPartialSum} th={th} S={S} lg={lg} f={f} t={t} onConfirm={debts.applyPartial} onClose={() => { debts.setPartialQarz(null); debts.setPartialSum(""); }} />}
       {debts.inviteQarz && <InviteQarzModal inviteQarz={debts.inviteQarz} th={th} lg={lg} user={user} qarzTur={debts.qarzTur} qarzKim={debts.qarzKim} qarzSum={debts.qarzSum} qarzlar={qarzlar} setQarzlar={setQarzlar} ok$={ok$} t={t} f={f} onClose={() => debts.setInviteQarz(null)} />}
