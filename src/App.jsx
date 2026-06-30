@@ -293,6 +293,172 @@ export default function App() {
   };
   const handleResetPw = () => { setResetInput(fEm.trim() || ""); setResetSent(false); setShowResetScreen(true); };
 
+  const sendResetEmail = async () => {
+    const email = resetInput.trim().toLowerCase();
+    if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return ok$(lg === "uz" ? "To'g'ri email kiriting" : "Enter valid email", "err");
+    let exists = false;
+    try { const uid = await db.gFresh("em_" + email); if (uid) exists = true; } catch (e) { exists = false; }
+    if (!exists) {
+      ok$(lg === "uz" ? "Bu email ro'yxatdan o'tmagan. Ro'yxatdan o'ting." : "Email not registered. Please sign up.", "err");
+      setTimeout(() => { setShowResetScreen(false); setReg(true); setFEm(email); }, 1600);
+      return;
+    }
+    try { await auth.resetPassword(email); setResetSent(true); }
+    catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error", "err"); }
+  };
+
+  const handleGoogleUser = async (gUser) => {
+    let u = await db.g("user_" + gUser.uid);
+    if (!u) {
+      const uid = gUser.uid;
+      const displayName = gUser.displayName || gUser.email?.split("@")[0] || "Foydalanuvchi";
+      const email = (gUser.email || "").toLowerCase();
+      const famId = "fam_" + uid + "_" + Date.now();
+      u = { id: uid, oilaId: famId, ism: displayName, email, tel: "", photo: gUser.photoURL || null, rol: "bosh", val: "uzs", lg, dark, registeredAt: new Date().toISOString(), loginMethod: "google" };
+      await db.s("user_" + uid, u);
+      await db.s("fam_" + famId, { id: famId, nomi: displayName + (lg === "uz" ? " oilasi" : " family"), boshId: uid, azolar: [uid], yaratilgan: new Date().toISOString() });
+      if (email) await db.s("em_" + email, uid);
+    }
+    localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
+    setUser(u); await loadFam(u); setScr("bosh");
+    ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + u.ism + " 👋");
+  };
+  const doGoogleLogin = async () => {
+    try {
+      const res = await auth.googleLogin();
+      if (res?.user) await handleGoogleUser(res.user);
+    } catch (e) {
+      if (e.code !== "auth/popup-closed-by-user") {
+        ok$((lg === "uz" ? "Google bilan kirishda xato: " : "Google sign-in error: ") + (e.message || e.code), "err");
+      }
+    }
+  };
+
+  const doAuth = async () => {
+    try {
+      // BOLA KIRISHI (login + parol, telefonsiz)
+      if (kidLoginMode) {
+        const loginKey = fTel.trim().toLowerCase();
+        if (!loginKey || !fPw.trim()) return ok$(lg === "uz" ? "Login va parolni yozing" : "Enter login and password", "err");
+        const kidUid = await db.gFresh("kidlogin_" + loginKey);
+        if (!kidUid) return ok$(lg === "uz" ? "Login topilmadi. Ota-onangdan so'ra." : "Login not found", "err");
+        buzz(15);
+        try { await auth.loginAnon(); } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
+        const ku = await db.g("user_" + kidUid);
+        if (!ku || ku.rol !== "kid") return ok$(lg === "uz" ? "Login topilmadi" : "Not found", "err");
+        if (await hp(fPw) !== ku.ph) { try { await auth.logout(); } catch (e) {} return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err"); }
+        localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
+        setUser(ku); await loadFam(ku); setScr("bosh");
+        ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + ku.ism + " 👋");
+        return;
+      }
+      if (reg) {
+        if (!fIsm.trim() || !fTel.trim() || fPw.length < 6) return ok$(lg === "uz" ? "Ism, telefon va parol (6+ belgi) kiriting" : "Enter name, phone and password (6+)", "err");
+        if (!fEm.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fEm.trim())) return ok$(lg === "uz" ? "To'g'ri email kiriting" : "Enter valid email", "err");
+        if (await db.g("tel9_" + normTel(fTel))) return ok$(lg === "uz" ? "Bu telefon allaqachon ro'yxatda" : "Phone already registered", "err");
+        let authUser;
+        try { authUser = await auth.register(fEm.trim().toLowerCase(), fPw); }
+        catch (e) {
+          const msg = e.code === "auth/email-already-in-use" ? (lg === "uz" ? "Bu email allaqachon ishlatilgan" : "Email already in use") : e.code === "auth/weak-password" ? (lg === "uz" ? "Parol juda zaif (6+ belgi)" : "Weak password") : (lg === "uz" ? "Ro'yxatda xato: " : "Register error: ") + (e.code || e.message);
+          return ok$(msg, "err");
+        }
+        const uid = authUser.uid, ph = await hp(fPw);
+        if (join) {
+          if (!fKd.trim()) return ok$(t.fa, "err");
+          const o = await db.g("oila_" + fKd.trim()); if (!o) return ok$(t.ffe, "err");
+          if ((o.azolarIds || []).length >= 2 && !o.premium) {
+            return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
+          }
+          const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
+          const nu = { id: uid, ism: fIsm.trim(), email: fEm.trim().toLowerCase(), tel, ph, oilaId: fKd.trim(), rol: "azo", rel: fRel || "boshqa", photo: null };
+          await db.s("user_" + uid, nu); if (fEm.trim()) await db.s("em_" + fEm.toLowerCase(), uid);
+          if (n9) { await db.s("tel9_" + n9, uid); await db.s("tel_" + tel, uid); await db.s("tphone_" + n9, fEm.trim().toLowerCase()); }
+          if (fRefCode.trim()) {
+            const refUid = fRefCode.trim(); const refUser = await db.g("user_" + refUid);
+            if (refUser && refUid !== uid) {
+              const refList = (await db.g("refs_" + refUid)) || [];
+              if (!refList.find(r => r.uid === uid)) {
+                refList.push({ uid, ism: fIsm.trim(), sana: new Date().toISOString() });
+                await db.s("refs_" + refUid, refList);
+                const rn = { id: Date.now() + Math.random(), type: "yangilik", title: lg === "uz" ? "Yangi taklif! 🎉" : "New referral!", body: (fIsm.trim()) + " " + (lg === "uz" ? "sizning havolangiz orqali qo'shildi" : "joined via your link"), sana: new Date().toISOString(), read: false };
+                const rc = (await db.g("notif_" + refUid)) || [];
+                await db.s("notif_" + refUid, [rn, ...rc].slice(0, 100));
+              }
+            }
+          }
+          await db.s("x_" + fKd.trim() + "_" + uid, []); await db.s("d_" + fKd.trim() + "_" + uid, []);
+          o.azolarIds = [...(o.azolarIds || []), uid]; await db.s("oila_" + o.id, o);
+          const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
+          localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); await loadFam(nu); setScr("bosh"); ok$(t.jf2); addStar(15, lg === "uz" ? "Oila azosi qoshildi" : "Family member added");
+        } else {
+          if (!fON.trim()) return ok$(t.fa, "err");
+          const oid = "o" + Date.now();
+          const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
+          const nu = { id: uid, ism: fIsm.trim(), email: fEm.trim().toLowerCase(), tel, ph, oilaId: oid, rol: "bosh", rel: "bosh", photo: null };
+          const no_ = { id: oid, nomi: fON.trim(), boshId: uid, azolarIds: [uid], budjet: 2000000, katLimits: {} };
+          await db.s("user_" + uid, nu); if (fEm.trim()) await db.s("em_" + fEm.toLowerCase(), uid);
+          if (n9) { await db.s("tel9_" + n9, uid); await db.s("tel_" + tel, uid); await db.s("tphone_" + n9, fEm.trim().toLowerCase()); }
+          if (fRefCode.trim()) {
+            const refUid = fRefCode.trim(); const refUser = await db.g("user_" + refUid);
+            if (refUser && refUid !== uid) {
+              const refList = (await db.g("refs_" + refUid)) || [];
+              if (!refList.find(r => r.uid === uid)) {
+                refList.push({ uid, ism: fIsm.trim(), sana: new Date().toISOString() });
+                await db.s("refs_" + refUid, refList);
+                const rn = { id: Date.now() + Math.random(), type: "yangilik", title: lg === "uz" ? "Yangi taklif! 🎉" : "New referral!", body: (fIsm.trim()) + " " + (lg === "uz" ? "sizning havolangiz orqali qo'shildi" : "joined via your link"), sana: new Date().toISOString(), read: false };
+                const rc = (await db.g("notif_" + refUid)) || [];
+                await db.s("notif_" + refUid, [rn, ...rc].slice(0, 100));
+              }
+            }
+          }
+          await db.s("oila_" + oid, no_); await db.s("x_" + oid + "_" + uid, []); await db.s("d_" + oid + "_" + uid, []);
+          const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
+          localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); setOila(no_); setAzolar([nu]); setXar([]); setDar([]); setMaq([]); setScr("bosh"); ok$(t.fc3);
+        }
+      } else {
+        // BOLA LOGINI: agar email/telefon emas, oddiy login kiritilgan bo'lsa
+        const tryLogin = fTel.trim().toLowerCase();
+        if (tryLogin && !tryLogin.includes("@") && !/^[0-9+ ]+$/.test(tryLogin)) {
+          const kidUid = await db.gFresh("kidlogin_" + tryLogin);
+          if (kidUid) {
+            const ku = await db.g("user_" + kidUid);
+            if (ku && ku.rol === "kid") {
+              if (await hp(fPw) !== ku.ph) return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
+              buzz(15);
+              try { await auth.loginAnon(); } catch (e) {}
+              localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
+              setUser(ku); await loadFam(ku); setScr("bosh");
+              ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + ku.ism + " 👋");
+              return;
+            }
+          }
+          return ok$(lg === "uz" ? "Login yoki parol noto'g'ri" : "Wrong login or password", "err");
+        }
+        let email = fEm.trim().toLowerCase();
+        if (!email && fTel.trim()) {
+          const n9 = normTel(fTel);
+          const foundEmail = await db.g("tphone_" + n9);
+          if (foundEmail) email = foundEmail;
+          else return ok$(lg === "uz" ? "Bu telefon topilmadi. Email bilan kiring yoki ro'yxatdan o'ting." : "Phone not found", "err");
+        }
+        if (!email || !fPw.trim()) return ok$(lg === "uz" ? "Telefon/email va parol kiriting" : "Enter phone/email and password", "err");
+        let authUser;
+        try { authUser = await auth.login(email, fPw); }
+        catch (e) {
+          const msg = (e.code === "auth/wrong-password" || e.code === "auth/invalid-credential") ? (lg === "uz" ? "Email yoki parol noto'g'ri" : "Wrong email or password") : e.code === "auth/user-not-found" ? (lg === "uz" ? "Foydalanuvchi topilmadi" : "User not found") : e.code === "auth/too-many-requests" ? (lg === "uz" ? "Ko'p urinish. Biroz kuting." : "Too many attempts") : (lg === "uz" ? "Kirishda xato: " : "Login error: ") + (e.code || e.message);
+          return ok$(msg, "err");
+        }
+        let u = await db.g("user_" + authUser.uid);
+        if (!u) { const oldUid = await db.g("em_" + email); if (oldUid) u = await db.g("user_" + oldUid); }
+        if (!u) return ok$(lg === "uz" ? "Profil topilmadi" : "Profile not found", "err");
+        localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); await loadFam(u); setScr("bosh"); ok$(t.wc + ", " + u.ism + " 👋");
+      }
+    } catch (err) {
+      console.error("AUTH ERROR:", err);
+      ok$((lg === "uz" ? "Xatolik: " : "Error: ") + (err.code || err.message || "Firebase ulanmadi."), "err");
+    }
+  };
+
   // handleAuth — login/register
   const handleAuth = useCallback(async () => {
     // Auth logikasi useAuth hookga o'tkazish mumkin, hozircha shu yerda qoladi
@@ -665,6 +831,7 @@ export default function App() {
       resetSent={resetSent} setResetSent={setResetSent}
       fRefCode={fRefCode} setFRefCode={setFRefCode} val={val} setVal={setVal}
       tst={tst} ok$={ok$} t={t} isPremium={isPremium}
+      doAuth={doAuth} sendResetEmail={sendResetEmail} doGoogleLogin={doGoogleLogin}
       setUser={setUser} setScr={setScr} setBoot={setBoot} loadFam={loadFam}
       switchAuthMode={switchAuthMode} genPassword={genPassword} handleResetPw={handleResetPw}
     />
