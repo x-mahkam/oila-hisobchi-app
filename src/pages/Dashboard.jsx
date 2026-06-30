@@ -168,7 +168,7 @@ export default function DashboardPage({
       {/* ===== KATTALAR BOSH SAHIFASI ===== */}
       {!isKid && (
         <div>
-          <div className="anim-fadeUp" style={{ background: "linear-gradient(135deg," + th.ac + " 0%," + th.ac2 + " 60%,#a78bfa 100%)", borderRadius: 24, padding: "20px 22px", marginBottom: 16, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px " + th.ac + "40" }}>
+          <div className="anim-fadeUp" style={{ background: myBal < 0 ? "linear-gradient(135deg,#dc2626 0%,#b91c1c 60%,#7f1d1d 100%)" : "linear-gradient(135deg," + th.ac + " 0%," + th.ac2 + " 60%,#a78bfa 100%)", borderRadius: 24, padding: "20px 22px", marginBottom: 16, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px " + (myBal < 0 ? "#dc262640" : th.ac + "40") }}>
             <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
             <div style={{ position: "absolute", bottom: -40, left: -20, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
             <div style={{ position: "relative" }}>
@@ -177,7 +177,12 @@ export default function DashboardPage({
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{user?.ism || ""} 👋</div>
               <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>{lg === "uz" ? "Mening balansim (bu oy)" : "My balance"}</div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: 14, letterSpacing: "-0.5px" }}>{myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>
+              <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: myBal < 0 ? 8 : 14, letterSpacing: "-0.5px" }}>{myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>
+              {myBal < 0 && (
+                <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontSize: 12, color: "#fff", fontWeight: 600 }}>
+                  ⚠️ {lg === "uz" ? "Balans manfiy! Avval daromad kiriting." : "Negative balance! Add income first."}
+                </div>
+              )}
               <div style={{ display: "flex", gap: 10 }}>
                 <div style={{ flex: 1, background: "rgba(255,255,255,0.13)", borderRadius: 13, padding: "10px 13px" }}>
                   <div style={{ fontSize: 10, color: "rgba(255,255,255,0.75)", marginBottom: 3, display: "flex", alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#86efac" }} />{t.inc}</div>
