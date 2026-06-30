@@ -12,29 +12,51 @@ export function useAuth() {
   const loadFam = useCallback(async (u) => {
     try {
       const oilaId = u.oilaId;
-      const [ms, xArr, dArr, maqR, qarzR, qreqR, xreqR, notifR, vazR, kidbR] = await Promise.all([
-        db.g("fam_" + oilaId),
-        db.g("x_" + oilaId + "_" + u.id),
-        db.g("d_" + oilaId + "_" + u.id),
+
+      // Oila hujjatini olish (azolarIds maydoni bilan)
+      const ms = await db.g("fam_" + oilaId) || await db.g("oila_" + oilaId);
+
+      // Oila a'zolari ro'yxati — azolarIds yoki azolar maydonidan
+      const memberIds = ms?.azolarIds || ms?.azolar || [u.id];
+
+      // Barcha a'zolar ma'lumotlarini yuklash
+      const members = await Promise.all(memberIds.map(id => db.g("user_" + id)));
+      const validMembers = members.filter(Boolean);
+      setAzolar(validMembers);
+      setOila(ms || { id: oilaId, oilaId, azolarIds: [u.id] });
+
+      // Barcha a'zolarning xarajat va daromadlarini yuklash
+      const allXar = [];
+      const allDar = [];
+      await Promise.all(validMembers.map(async (member) => {
+        try {
+          const xArr = await db.g("x_" + oilaId + "_" + member.id);
+          const dArr = await db.g("d_" + oilaId + "_" + member.id);
+          if (xArr?.length) allXar.push(...xArr.map(x => ({ ...x, uid: member.id })));
+          if (dArr?.length) allDar.push(...dArr.map(d => ({ ...d, uid: member.id })));
+        } catch {}
+      }));
+      setXar(allXar);
+      setDar(allDar);
+
+      // Umumiy oila ma'lumotlari
+      const [maqR, qarzR, qreqR, xreqR, notifR, vazR, kidbR] = await Promise.all([
         db.g("maq_" + oilaId),
         db.g("qarz_" + oilaId),
-        db.g("qreq_" + (u.tel||"")),
+        db.g("qreq_" + (u.tel || "")),
         db.g("xreq_" + u.id),
         db.g("notif_" + u.id),
         db.g("vazifa_" + oilaId),
         db.g("kidbal_" + oilaId),
       ]);
 
-      setOila(ms);
-      setXar((xArr||[]).map(x=>({...x, uid:u.id})));
-      setDar((dArr||[]).map(d=>({...d, uid:u.id})));
-      setMaq(maqR||[]);
-      setQarzlar(qarzR||[]);
-      setQarzReqs(qreqR||[]);
-      setXReqs(xreqR||[]);
-      setNotifs(notifR||[]);
-      setVazifalar(vazR||[]);
-      setKidBalances(kidbR||{});
+      setMaq(maqR || []);
+      setQarzlar(qarzR || []);
+      setQarzReqs(qreqR || []);
+      setXReqs(xreqR || []);
+      setNotifs(notifR || []);
+      setVazifalar(vazR || []);
+      setKidBalances(kidbR || {});
 
       // Garden
       try {
@@ -44,12 +66,7 @@ export function useAuth() {
         if (s != null) setStars(s);
       } catch {}
 
-      // Oila a'zolari
-      if (ms?.azolar?.length) {
-        const members = await Promise.all(ms.azolar.map(id => db.g("user_" + id)));
-        setAzolar(members.filter(Boolean));
-      }
-    } catch(e) {
+    } catch (e) {
       console.error("loadFam:", e);
     }
   }, []);
