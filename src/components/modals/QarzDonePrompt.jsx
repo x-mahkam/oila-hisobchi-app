@@ -1,4 +1,4 @@
-export default function QarzDonePrompt({ q, th, S, lg, f, onAddDaromad, onAddXarajat, onClose }) {
+export default function QarzDonePrompt({ q, th, STY, lg, f, onAddDaromad, onAddXarajat, onClose }) {
   const isLent = q.tur === "bergan";
   const dc = isLent ? th.gr : th.rd;
   return (

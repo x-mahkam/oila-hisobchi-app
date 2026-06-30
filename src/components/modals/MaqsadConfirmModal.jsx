@@ -1,4 +1,4 @@
-export default function MaqsadConfirmModal({ info, th, lg, f, S, onBought, onCancel }) {
+export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onCancel }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 1001, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ background: th.sur, borderRadius: 24, padding: "28px 24px", width: "100%", maxWidth: 380 }}>

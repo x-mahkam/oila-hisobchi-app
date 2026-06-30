@@ -1,6 +1,6 @@
 import { MoneyInput } from "../common/index.jsx";
 
-export default function PartialQarzModal({ q, partialSum, setPartialSum, th, S, lg, f, t, onConfirm, onClose }) {
+export default function PartialQarzModal({ q, partialSum, setPartialSum, th, STY, lg, f, t, onConfirm, onClose }) {
   const isLent = q.tur === "bergan";
   const dc = isLent ? th.gr : th.rd;
   const pay = Number(partialSum) || 0;
@@ -14,8 +14,8 @@ export default function PartialQarzModal({ q, partialSum, setPartialSum, th, S, 
           <div style={{ fontSize: 17, fontWeight: 800, color: th.t1, marginBottom: 4 }}>{lg === "uz" ? "Qisman qaytarish" : "Partial payment"}</div>
           <div style={{ fontSize: 13, color: th.t2 }}>{q.kim} · {lg === "uz" ? "Jami" : "Total"}: {f(q.summa, true)}</div>
         </div>
-        <label style={S.lb}>{lg === "uz" ? "Qaytarilgan summa" : "Returned amount"}</label>
-        <MoneyInput autoFocus style={{ ...S.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} value={partialSum} onChange={setPartialSum} placeholder="0" th={th} />
+        <label style={STY.lb}>{lg === "uz" ? "Qaytarilgan summa" : "Returned amount"}</label>
+        <MoneyInput autoFocus style={{ ...STY.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} value={partialSum} onChange={setPartialSum} placeholder="0" th={th} />
         <div style={{ display: "flex", gap: 6, marginBottom: 14, flexWrap: "wrap" }}>
           {[25, 50, 75].map(pct => (
             <button key={pct} onClick={() => setPartialSum(String(Math.round(q.summa * pct / 100)))} style={{ flex: 1, background: th.bg, border: "1px solid " + th.bor, borderRadius: 9, padding: "7px 0", color: th.t2, cursor: "pointer", fontSize: 12, fontWeight: 600 }}>{pct}%</button>
