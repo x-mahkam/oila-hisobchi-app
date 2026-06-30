@@ -1,13 +1,13 @@
 import { useCallback } from "react";
 import { db } from "../firebase.js";
-import { td, f } from "../utils/formatters.js";
+import { td, nt, f } from "../utils/formatters.js";
 import { useApp } from "../context/AppContext.jsx";
 
 export function useFamily() {
   const { user, oila, azolar, setAzolar, setOila,
           vazifalar, setVazifalar, kidBalances, setKidBalances,
           xar, setXar, dar, setDar,
-          ok$, buzz, addStar, addNotif, fireConfetti, lg, nt } = useApp();
+          ok$, buzz, addStar, addNotif, fireConfetti, lg } = useApp();
 
   // Vazifa bajarildi (bola)
   const vazifaDone = useCallback(async (id) => {

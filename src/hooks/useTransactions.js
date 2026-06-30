@@ -53,6 +53,19 @@ export function useTransactions() {
       izoh: izoh || KN[lg][KATS.findIndex(k=>k.id===kategoriya)],
       sana, vaqt: nt(), repeat, uid: user.id
     };
+
+    // Balans tekshiruvi — manusga tushsa bloklash
+    const myDar = dar.filter(d => d.uid === user.id).reduce((s, d) => s + Number(d.summa || 0), 0);
+    const myXar = xar.filter(x => x.uid === user.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+    const currentBal = myDar - myXar;
+    if (sum > currentBal) {
+      ok$(lg === "uz"
+        ? "❌ Balans yetarli emas! Balans: " + f(Math.max(0, currentBal), true) + ". Avval daromad kiriting."
+        : "❌ Insufficient balance! Balance: " + f(Math.max(0, currentBal), true) + ". Add income first.",
+        "err"
+      );
+      return;
+    }
     const existing = (await db.g(key)) || [];
     await db.s(key, [item, ...existing]);
     setXar(prev => [item, ...prev]);
