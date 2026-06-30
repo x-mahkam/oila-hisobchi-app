@@ -104,13 +104,13 @@ export function SC({ label, value, color, th }) {
 }
 
 // Bitta xarajat/daromad qatori (tarix ro'yxatida ishlatiladi)
-export function TxRow({ item, th, S, KATS, KN, DARS, DN, lg, gN, gP, f, user, onDelete, Ico }) {
+export function TxRow({ item, th, STY, KATS, KN, DARS, DN, lg, gN, gP, f, user, onDelete, Ico }) {
   const isX = !!item.kategoriya;
   const ki = isX ? KATS.findIndex(k => k.id === item.kategoriya) : -1;
   const di = !isX ? DARS.findIndex(d => d.id === item.tur) : -1;
   const cl = isX ? (KATS[ki]?.c || "#64748b") : (DARS[di]?.c || "#64748b");
   return (
-    <div style={{ ...S.cd, padding:"10px 13px", display:"flex", alignItems:"center", gap:10, marginBottom:7 }}>
+    <div style={{ ...STY.cd, padding:"10px 13px", display:"flex", alignItems:"center", gap:10, marginBottom:7 }}>
       <div style={{ width:38, height:38, borderRadius:11, background:cl+"18", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
         {isX ? <KatIco id={item.kategoriya} c={cl} s={20}/> : <DarIco id={item.tur} c={cl} s={20}/>}
       </div>
