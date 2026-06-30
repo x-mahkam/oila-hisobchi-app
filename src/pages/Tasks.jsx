@@ -10,7 +10,7 @@ export default function TasksPage({
   setShowAddVazifa,
   vazifaDone, vazifaApprove, vazifaReject, delVazifa,
 }) {
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
 
   return (
     <div>
@@ -24,7 +24,7 @@ export default function TasksPage({
           </div>
         </div>}
         {/* OTA-ONA: vazifa qo'shish tugmasi */}
-        {!isKid&&<button onClick={()=>{buzz(10);setShowAddVazifa(true);}} style={{...S.bt(),marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Yangi vazifa berish":lg==="ru"?"Новое задание":"New task"}</button>}
+        {!isKid&&<button onClick={()=>{buzz(10);setShowAddVazifa(true);}} style={{...STY.bt(),marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{Ico.add("#fff")}{lg==="uz"?"Yangi vazifa berish":lg==="ru"?"Новое задание":"New task"}</button>}
         {/* REYTING (leaderboard) - bolalar bor bo'lsa */}
         {(()=>{
           const kids=azolar.filter(a=>a.rol==="kid");
@@ -34,7 +34,7 @@ export default function TasksPage({
             return {...k,done,ball:done*10,bal:kidBalances[k.id]||0};
           }).sort((a,b)=>b.ball-a.ball);
           const medals=["🥇","🥈","🥉"];
-          return <div style={{...S.cd,marginBottom:16,background:"linear-gradient(135deg,#8b5cf60a,"+th.sur+")",border:"1px solid #8b5cf622"}}>
+          return <div style={{...STY.cd,marginBottom:16,background:"linear-gradient(135deg,#8b5cf60a,"+th.sur+")",border:"1px solid #8b5cf622"}}>
             <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>🏆 {lg==="uz"?"Bolalar reytingi":lg==="ru"?"Рейтинг детей":"Kids leaderboard"}</div>
             {ranked.map((k,i)=>(
               <div key={k.id} style={{display:"flex",alignItems:"center",gap:11,padding:"9px 0",borderBottom:i<ranked.length-1?"1px solid "+th.bor:"none"}}>

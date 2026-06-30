@@ -14,7 +14,7 @@ export default function ChartsPage({
   ...props
 }) {
   const th = props.th;
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
 
   return (
     <div>
@@ -26,7 +26,7 @@ export default function ChartsPage({
       </div>
 
       {ctab === "line" && (
-        <div style={S.cd}>
+        <div style={STY.cd}>
           <div style={{ fontSize: 12, fontWeight: 600, color: th.t2, marginBottom: 12 }}>{t.l7}</div>
           <ResponsiveContainer width="100%" height={200}>
             <LineChart data={lineD} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
@@ -46,7 +46,7 @@ export default function ChartsPage({
       )}
 
       {ctab === "bar" && (
-        <div style={S.cd}>
+        <div style={STY.cd}>
           <div style={{ fontSize: 12, fontWeight: 600, color: th.t2, marginBottom: 12 }}>{t.l6}</div>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={barD} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
@@ -61,7 +61,7 @@ export default function ChartsPage({
       )}
 
       {ctab === "pie" && (
-        <div style={S.cd}>
+        <div style={STY.cd}>
           <div style={{ fontSize: 12, fontWeight: 600, color: th.t2, marginBottom: 12 }}>{t.bc}</div>
           {pieD.length === 0 ? (
             <div style={{ textAlign: "center", padding: 30, color: th.t2 }}>--</div>
@@ -91,12 +91,12 @@ export default function ChartsPage({
         </div>
       )}
 
-      <div style={{ ...S.cd, marginTop: 4 }}>
+      <div style={{ ...STY.cd, marginTop: 4 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: th.t2, marginBottom: 12 }}>{t.hm}</div>
         <Heat xar={xar} ac={th.ac} />
       </div>
 
-      <div style={S.cd}>
+      <div style={STY.cd}>
         <div style={{ fontSize: 12, fontWeight: 600, color: th.t2, marginBottom: 10 }}>{t.st}</div>
         {[
           { l: t.ad, v: f(Math.round(jX / Math.max(1, new Date().getDate())), true) },
@@ -104,7 +104,7 @@ export default function ChartsPage({
           { l: t.bs, v: f(Math.max(0, bdj - jX), true) },
           { l: t.rc, v: (bX.length + bD.length) + " ta" },
         ].map(item => (
-          <div key={item.l} style={{ ...S.row, padding: "8px 0", borderBottom: "1px solid " + th.bor }}>
+          <div key={item.l} style={{ ...STY.row, padding: "8px 0", borderBottom: "1px solid " + th.bor }}>
             <span style={{ fontSize: 12, color: th.t2 }}>{item.l}</span>
             <span style={{ fontSize: 12, fontWeight: 700, color: th.ac }}>{item.v}</span>
           </div>

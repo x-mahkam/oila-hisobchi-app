@@ -14,7 +14,7 @@ export default function ReportsPage({
   adv, advL, aiAdv,
   adminStats, adminLoad, loadAdminStats,
 }) {
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
 
   // ── Admin panel ──────────────────────────────────────────
   if (scr === "admin" && isAdmin) {
@@ -30,16 +30,16 @@ export default function ReportsPage({
         ) : adminStats && (
           <div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 11, marginBottom: 14 }}>
-              <div style={{ ...S.cd, margin: 0, textAlign: "center", background: "linear-gradient(135deg," + th.ac + "15," + th.ac2 + "08)", border: "1px solid " + th.ac + "33" }}>
+              <div style={{ ...STY.cd, margin: 0, textAlign: "center", background: "linear-gradient(135deg," + th.ac + "15," + th.ac2 + "08)", border: "1px solid " + th.ac + "33" }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: th.ac }}>{adminStats.totalUsers}</div>
                 <div style={{ fontSize: 11, color: th.t2, fontWeight: 600, marginTop: 2 }}>{lg === "uz" ? "Jami foydalanuvchi" : "Total users"}</div>
               </div>
-              <div style={{ ...S.cd, margin: 0, textAlign: "center", background: "linear-gradient(135deg," + th.gr + "15," + th.gr + "08)", border: "1px solid " + th.gr + "33" }}>
+              <div style={{ ...STY.cd, margin: 0, textAlign: "center", background: "linear-gradient(135deg," + th.gr + "15," + th.gr + "08)", border: "1px solid " + th.gr + "33" }}>
                 <div style={{ fontSize: 32, fontWeight: 800, color: th.gr }}>{adminStats.totalOilas}</div>
                 <div style={{ fontSize: 11, color: th.t2, fontWeight: 600, marginTop: 2 }}>{lg === "uz" ? "Jami oila" : "Total families"}</div>
               </div>
             </div>
-            <div style={{ ...S.cd, marginBottom: 14 }}>
+            <div style={{ ...STY.cd, marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, marginBottom: 12 }}>📈 {lg === "uz" ? "Yangi qo'shilganlar" : "New signups"}</div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
                 <div style={{ textAlign: "center" }}><div style={{ fontSize: 22, fontWeight: 800, color: th.ac }}>{adminStats.todayU}</div><div style={{ fontSize: 10, color: th.t2 }}>{lg === "uz" ? "Bugun" : "Today"}</div></div>
@@ -47,7 +47,7 @@ export default function ReportsPage({
                 <div style={{ textAlign: "center" }}><div style={{ fontSize: 22, fontWeight: 800, color: th.gr }}>{adminStats.monthU}</div><div style={{ fontSize: 10, color: th.t2 }}>{lg === "uz" ? "30 kun" : "30 days"}</div></div>
               </div>
             </div>
-            <div style={{ ...S.cd, marginBottom: 14 }}>
+            <div style={{ ...STY.cd, marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, marginBottom: 12 }}>💰 {lg === "uz" ? "Moliyaviy faollik" : "Financial activity"}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Jami daromad" : "Total income"}</span><span style={{ fontSize: 14, fontWeight: 700, color: th.gr }}>{f(adminStats.totD, true)}</span></div>
@@ -55,7 +55,7 @@ export default function ReportsPage({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid " + th.bor, paddingTop: 9 }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Yozuvlar soni" : "Records"}</span><span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{adminStats.xCount + adminStats.dCount} (X:{adminStats.xCount} / D:{adminStats.dCount})</span></div>
               </div>
             </div>
-            <div style={{ ...S.cd, marginBottom: 14 }}>
+            <div style={{ ...STY.cd, marginBottom: 14 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, marginBottom: 12 }}>📊 {lg === "uz" ? "Boshqa" : "Other"}</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Premium oilalar" : "Premium families"}</span><span style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>⭐ {adminStats.premOilas}</span></div>
@@ -63,7 +63,7 @@ export default function ReportsPage({
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Jami yozuvlar (DB)" : "Total DB docs"}</span><span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{adminStats.docCount}</span></div>
               </div>
             </div>
-            <div style={{ ...S.cd, marginBottom: 14 }}>
+            <div style={{ ...STY.cd, marginBottom: 14 }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>💬 {lg === "uz" ? "Foydalanuvchi fikrlari" : "User feedback"} ({adminStats.fbCount || 0})</div>
                 {adminStats.avgRating > 0 && <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>⭐ {adminStats.avgRating}</div>}
@@ -90,7 +90,7 @@ export default function ReportsPage({
             </div>
           </div>
         )}
-        <button onClick={loadAdminStats} style={{ ...S.bt(), display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.repeat("#fff")}{lg === "uz" ? "Yangilash" : "Refresh"}</button>
+        <button onClick={loadAdminStats} style={{ ...STY.bt(), display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.repeat("#fff")}{lg === "uz" ? "Yangilash" : "Refresh"}</button>
       </div>
     );
   }
@@ -103,9 +103,9 @@ export default function ReportsPage({
         {advL ? (
           <div style={{ textAlign: "center", padding: "64px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>{Ico.brain(th.ac)}<div style={{ color: th.t2 }}>{t.an}</div></div>
         ) : adv && (
-          <div style={{ ...S.cd, lineHeight: 1.85, fontSize: 14, color: th.t1, whiteSpace: "pre-wrap" }}>{adv}</div>
+          <div style={{ ...STY.cd, lineHeight: 1.85, fontSize: 14, color: th.t1, whiteSpace: "pre-wrap" }}>{adv}</div>
         )}
-        {!advL && <button onClick={aiAdv} style={{ ...S.bt(), marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.repeat(th.ac)}{t.na}</button>}
+        {!advL && <button onClick={aiAdv} style={{ ...STY.bt(), marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.repeat(th.ac)}{t.na}</button>}
       </div>
     );
   }
@@ -139,7 +139,7 @@ export default function ReportsPage({
           return { ...a, ax, ad, relEmoji: rel ? rel.emoji : "👤", pctX: totX > 0 ? Math.round(ax / totX * 100) : 0, pctD: totD > 0 ? Math.round(ad / totD * 100) : 0 };
         }).sort((p, q) => q.ax - p.ax);
         return (
-          <div style={{ ...S.cd, background: "linear-gradient(135deg," + th.ac + "12," + th.ac2 + "06)", border: "1.5px solid " + th.ac + "33", marginBottom: 14 }}>
+          <div style={{ ...STY.cd, background: "linear-gradient(135deg," + th.ac + "12," + th.ac2 + "06)", border: "1.5px solid " + th.ac + "33", marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <span style={{ fontSize: 18 }}>👑</span>
               <div style={{ fontSize: 14, fontWeight: 800, color: th.ac }}>{lg === "uz" ? "Oila boshi paneli" : "Head of family panel"}</div>
@@ -191,7 +191,7 @@ export default function ReportsPage({
         const sLabel = score >= 75 ? (lg === "uz" ? "Zo'r!" : "Excellent!") : score >= 50 ? (lg === "uz" ? "Yaxshi" : "Good") : (lg === "uz" ? "Yaxshilash kerak" : "Needs work");
         if (jX === 0 && jD === 0) return null;
         return (
-          <div style={{ ...S.cd, marginBottom: 14 }}>
+          <div style={{ ...STY.cd, marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
               <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
                 <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke={th.bor} strokeWidth="8" /><circle cx="40" cy="40" r="34" fill="none" stroke={sColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - score / 100)} transform="rotate(-90 40 40)" /></svg>
@@ -216,7 +216,7 @@ export default function ReportsPage({
       {canSeeReport && azolar.length > 1 && (
         <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", paddingBottom: 4 }}>
           {[{ id: "all", ism: t.all }, ...azolar].map(a => (
-            <button key={a.id} onClick={() => setHisFil(a.id)} style={S.ch(hisFil === a.id, th.ac)}>{a.ism}</button>
+            <button key={a.id} onClick={() => setHisFil(a.id)} style={STY.ch(hisFil === a.id, th.ac)}>{a.ism}</button>
           ))}
         </div>
       )}
@@ -235,10 +235,10 @@ export default function ReportsPage({
             const tx = fX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
             if (!tx) return null;
             return (
-              <div key={k.id} style={{ ...S.cd, padding: "9px 12px", display: "flex", alignItems: "center", gap: 9, marginBottom: 7 }}>
+              <div key={k.id} style={{ ...STY.cd, padding: "9px 12px", display: "flex", alignItems: "center", gap: 9, marginBottom: 7 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 9, background: k.c + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><KatIco id={k.id} c={k.c} s={17} /></div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ ...S.row, marginBottom: 3 }}><span style={{ fontSize: 12, fontWeight: 600, color: th.t1 }}>{KN[lg][i]}</span><span style={{ fontSize: 12, fontWeight: 700, color: k.c }}>{f(tx, true)}</span></div>
+                  <div style={{ ...STY.row, marginBottom: 3 }}><span style={{ fontSize: 12, fontWeight: 600, color: th.t1 }}>{KN[lg][i]}</span><span style={{ fontSize: 12, fontWeight: 700, color: k.c }}>{f(tx, true)}</span></div>
                   <div style={{ background: th.bg, borderRadius: 4, height: 6 }}><div style={{ width: fjX > 0 ? Math.min(100, (tx / fjX) * 100) + "%" : "0%", height: "100%", background: k.c, borderRadius: 4 }} /></div>
                   <div style={{ fontSize: 9, color: th.t2, marginTop: 2 }}>{fjX > 0 ? Math.round((tx / fjX) * 100) : 0}%</div>
                 </div>
@@ -255,7 +255,7 @@ export default function ReportsPage({
             const tx = fD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0);
             if (!tx) return null;
             return (
-              <div key={d.id} style={{ ...S.cd, padding: "9px 12px", ...S.row, marginBottom: 7 }}>
+              <div key={d.id} style={{ ...STY.cd, padding: "9px 12px", ...STY.row, marginBottom: 7 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: d.c + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><DarIco id={d.id} c={d.c} s={17} /></div>
                   <span style={{ fontSize: 13, fontWeight: 600, color: th.t1 }}>{DN[lg][i]}</span>
@@ -274,8 +274,8 @@ export default function ReportsPage({
             const ax = bX.filter(x => x.uid === a.id).reduce((s, x) => s + Number(x.summa || 0), 0);
             const ad = bD.filter(d => d.uid === a.id).reduce((s, d) => s + Number(d.summa || 0), 0);
             return (
-              <div key={a.id} style={{ ...S.cd, padding: "12px 14px", marginBottom: 8 }}>
-                <div style={{ ...S.row, marginBottom: 10 }}>
+              <div key={a.id} style={{ ...STY.cd, padding: "12px 14px", marginBottom: 8 }}>
+                <div style={{ ...STY.row, marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <Av src={a.photo} name={a.ism} size={32} ac={th.ac} />
                     <span style={{ fontWeight: 700, fontSize: 14, color: th.t1 }}>{a.ism}{a.id === user.id && <span style={{ color: th.ac, fontSize: 10 }}> ({t.me})</span>}</span>
@@ -309,7 +309,7 @@ export default function ReportsPage({
         if (mostActive && mostActive.cnt > 0) awards.push({ emoji: "⚡", color: "#6366f1", titleUz: "Eng faol a'zo", titleEn: "Most active", who: mostActive, val: mostActive.cnt + (lg === "uz" ? " yozuv" : " records") });
         if (awards.length === 0) return null;
         return (
-          <div style={{ ...S.cd, background: "linear-gradient(135deg,#f59e0b0d,#ec489908)", border: "1.5px solid #f59e0b33", marginBottom: 14, marginTop: 8 }}>
+          <div style={{ ...STY.cd, background: "linear-gradient(135deg,#f59e0b0d,#ec489908)", border: "1.5px solid #f59e0b33", marginBottom: 14, marginTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ fontSize: 18 }}>🏅</span><div style={{ fontSize: 14, fontWeight: 800, color: "#f59e0b" }}>{lg === "uz" ? "Oilaviy reyting" : "Family ranking"}</div></div>
             <div style={{ fontSize: 11, color: th.t2, marginBottom: 14 }}>{tm()} · {lg === "uz" ? "Bu oy yutuqlari" : "This month's achievements"}</div>
             {awards.map((aw, i) => (
@@ -328,16 +328,16 @@ export default function ReportsPage({
       })()}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
-        <button onClick={exportExcel} disabled={exportLoading} style={{ ...S.bt("#10b981", "#059669"), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: exportLoading ? .6 : 1, position: "relative" }}>
+        <button onClick={exportExcel} disabled={exportLoading} style={{ ...STY.bt("#10b981", "#059669"), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: exportLoading ? .6 : 1, position: "relative" }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 6l2.5 3L5 12M9 12h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           {exportLoading ? "..." : "Excel"}{!isPremium && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 8, background: "#f59e0b", color: "#fff", borderRadius: 8, padding: "1px 5px", fontWeight: 800 }}>PRO</span>}
         </button>
-        <button onClick={exportPDF} style={{ ...S.bt("#ef4444", "#dc2626"), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <button onClick={exportPDF} style={{ ...STY.bt("#ef4444", "#dc2626"), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 4h5l3 3v7H5V4z" stroke="white" strokeWidth="1.3" strokeLinejoin="round" /><line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth="1.2" strokeLinecap="round" /></svg>
           PDF{!isPremium && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 8, background: "#f59e0b", color: "#fff", borderRadius: 8, padding: "1px 5px", fontWeight: 800 }}>PRO</span>}
         </button>
       </div>
-      <button onClick={aiAdv} style={{ ...S.bt(), marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.brain(th.ac)}{t.aa}</button>
+      <button onClick={aiAdv} style={{ ...STY.bt(), marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.brain(th.ac)}{t.aa}</button>
     </div>
   );
 }

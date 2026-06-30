@@ -17,7 +17,7 @@ export default function DebtsPage({
   acceptPayReq, rejectPayReq, refreshQarzReqs,
   generateTilxat,
 }) {
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
   const gN2 = uid => azolar.find(a => a.id === uid)?.ism || "?";
 
   const myQ = qarzlar.filter(q => !q.uid || q.uid === user.id);
@@ -30,7 +30,7 @@ export default function DebtsPage({
 
   return (
     <div>
-      <div style={{ ...S.row, marginBottom: 16 }}>
+      <div style={{ ...STY.row, marginBottom: 16 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Qarzlar" : "Debts"}</div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={refreshQarzReqs} style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: 10, padding: "7px 11px", cursor: "pointer", display: "flex", alignItems: "center" }}>{Ico.repeat(th.t2)}</button>
@@ -39,25 +39,25 @@ export default function DebtsPage({
       </div>
 
       {showAddQarz && (
-        <div style={{ ...S.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
+        <div style={{ ...STY.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: th.ac, marginBottom: 13 }}>{lg === "uz" ? "Yangi qarz" : "New debt"}</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            <button onClick={() => setQarzTur("olgan")} style={{ ...S.tb(qarzTur === "olgan"), flex: 1 }}>{lg === "uz" ? "Oldim" : "I borrowed"}</button>
-            <button onClick={() => setQarzTur("bergan")} style={{ ...S.tb(qarzTur === "bergan"), flex: 1 }}>{lg === "uz" ? "Berdim" : "I lent"}</button>
+            <button onClick={() => setQarzTur("olgan")} style={{ ...STY.tb(qarzTur === "olgan"), flex: 1 }}>{lg === "uz" ? "Oldim" : "I borrowed"}</button>
+            <button onClick={() => setQarzTur("bergan")} style={{ ...STY.tb(qarzTur === "bergan"), flex: 1 }}>{lg === "uz" ? "Berdim" : "I lent"}</button>
           </div>
           <div style={{ background: qarzTur === "olgan" ? th.rd + "11" : th.gr + "11", borderRadius: 11, padding: "9px 13px", marginBottom: 12, fontSize: 12, color: qarzTur === "olgan" ? th.rd : th.gr, fontWeight: 600 }}>
             {qarzTur === "olgan" ? (lg === "uz" ? "Kimdir menga pul berdi — men qarzdorman" : "Someone lent me money — I owe") : (lg === "uz" ? "Men birovga pul berdim — ular qarzdor" : "I lent money — they owe me")}
           </div>
-          <label style={S.lb}>{lg === "uz" ? "Ism (kim?)" : "Person name"}</label>
-          <input style={S.ip} value={qarzKim} onChange={e => setQarzKim(e.target.value)} placeholder={lg === "uz" ? "Masalan: Akbar aka" : "e.g. John"} />
-          <label style={S.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
-          <MoneyInput style={{ ...S.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} value={qarzSum} onChange={setQarzSum} placeholder="0" th={th} />
-          <label style={S.lb}>{lg === "uz" ? "Sana" : "Date"}</label>
-          <input type="date" style={S.ip} value={qarzSana} onChange={e => setQarzSana(e.target.value)} />
-          <label style={S.lb}>{lg === "uz" ? "Qaytarish sanasi" : "Return date"}</label>
-          <input type="date" style={S.ip} value={qarzQaytSana} onChange={e => setQarzQaytSana(e.target.value)} />
-          <label style={S.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
-          <input style={S.ip} value={qarzIzoh} onChange={e => setQarzIzoh(e.target.value)} placeholder="..." />
+          <label style={STY.lb}>{lg === "uz" ? "Ism (kim?)" : "Person name"}</label>
+          <input style={STY.ip} value={qarzKim} onChange={e => setQarzKim(e.target.value)} placeholder={lg === "uz" ? "Masalan: Akbar aka" : "e.g. John"} />
+          <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+          <MoneyInput style={{ ...STY.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} value={qarzSum} onChange={setQarzSum} placeholder="0" th={th} />
+          <label style={STY.lb}>{lg === "uz" ? "Sana" : "Date"}</label>
+          <input type="date" style={STY.ip} value={qarzSana} onChange={e => setQarzSana(e.target.value)} />
+          <label style={STY.lb}>{lg === "uz" ? "Qaytarish sanasi" : "Return date"}</label>
+          <input type="date" style={STY.ip} value={qarzQaytSana} onChange={e => setQarzQaytSana(e.target.value)} />
+          <label style={STY.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
+          <input style={STY.ip} value={qarzIzoh} onChange={e => setQarzIzoh(e.target.value)} placeholder="..." />
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: qarzLinked ? 12 : 14, background: th.surH, border: "1px solid " + th.bor, borderRadius: 13, padding: "12px 14px" }}>
             <div onClick={() => setQarzLinked(v => !v)} style={{ width: 46, height: 26, borderRadius: 13, background: qarzLinked ? th.ac : "#334155", cursor: "pointer", position: "relative", transition: "background .3s", flexShrink: 0 }}>
               <div style={{ position: "absolute", top: 3, left: qarzLinked ? 23 : 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "left .3s" }} />
@@ -69,17 +69,17 @@ export default function DebtsPage({
           </div>
           {qarzLinked && (
             <>
-              <label style={S.lb}>{lg === "uz" ? "Qarzdor telefon raqami" : "Person's phone"}</label>
-              <input style={S.ip} type="tel" value={qarzTel} onChange={e => setQarzTel(e.target.value)} placeholder="+998 90 123 45 67" />
+              <label style={STY.lb}>{lg === "uz" ? "Qarzdor telefon raqami" : "Person's phone"}</label>
+              <input style={STY.ip} type="tel" value={qarzTel} onChange={e => setQarzTel(e.target.value)} placeholder="+998 90 123 45 67" />
               <div style={{ background: th.ac + "11", borderRadius: 11, padding: "9px 13px", marginBottom: 12, fontSize: 11, color: th.t2 }}>{lg === "uz" ? "Bu raqam bilan ro'yxatdan o'tgan foydalanuvchiga so'rov boradi." : "A request is sent to the registered user."}</div>
             </>
           )}
-          <button onClick={qarzLinked ? sendQarzRequest : addQarz} style={S.bt()}>{qarzLinked ? (lg === "uz" ? "So'rov yuborish" : "Send request") : (lg === "uz" ? "Saqlash" : "Save")}</button>
+          <button onClick={qarzLinked ? sendQarzRequest : addQarz} style={STY.bt()}>{qarzLinked ? (lg === "uz" ? "So'rov yuborish" : "Send request") : (lg === "uz" ? "Saqlash" : "Save")}</button>
         </div>
       )}
 
       {qarzReqs.length > 0 && (
-        <div style={{ ...S.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14, background: th.am + "0a" }}>
+        <div style={{ ...STY.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14, background: th.am + "0a" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: th.am, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a5 5 0 00-5 5v3l-1.5 2.5h13L14 10V7a5 5 0 00-5-5z" fill={th.am} opacity=".2" stroke={th.am} strokeWidth="1.3" /></svg>
             {lg === "uz" ? "Yangi qarz so'rovlari" : "New requests"} ({qarzReqs.length})
@@ -111,11 +111,11 @@ export default function DebtsPage({
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
-        <div style={{ ...S.cd, textAlign: "center", margin: 0, border: "1px solid " + th.gr + "44" }}>
+        <div style={{ ...STY.cd, textAlign: "center", margin: 0, border: "1px solid " + th.gr + "44" }}>
           <div style={{ fontSize: 10, color: th.gr, fontWeight: 700, marginBottom: 4 }}>{lg === "uz" ? "Menga qaytariladi" : "They owe me"}</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: th.gr }}>{f(olganSum, true)}</div>
         </div>
-        <div style={{ ...S.cd, textAlign: "center", margin: 0, border: "1px solid " + th.rd + "44" }}>
+        <div style={{ ...STY.cd, textAlign: "center", margin: 0, border: "1px solid " + th.rd + "44" }}>
           <div style={{ fontSize: 10, color: th.rd, fontWeight: 700, marginBottom: 4 }}>{lg === "uz" ? "Men qaytaraman" : "I owe"}</div>
           <div style={{ fontSize: 18, fontWeight: 800, color: th.rd }}>{f(berganSum, true)}</div>
         </div>
@@ -123,14 +123,14 @@ export default function DebtsPage({
 
       {active.length > 0 && (
         <div>
-          <div style={S.sec}>{isBosh && memberActive.length > 0 ? (lg === "uz" ? "Mening qarzlarim" : "My debts") : (lg === "uz" ? "Faol qarzlar" : "Active debts")} ({active.length})</div>
+          <div style={STY.sec}>{isBosh && memberActive.length > 0 ? (lg === "uz" ? "Mening qarzlarim" : "My debts") : (lg === "uz" ? "Faol qarzlar" : "Active debts")} ({active.length})</div>
           {active.map(q => {
             const isLent = q.tur === "bergan";
             const color = isLent ? th.gr : th.rd;
             const today = new Date().toISOString().slice(0, 10);
             const overdue = q.qaytSana && q.qaytSana < today;
             return (
-              <div key={q.id} style={{ ...S.cd, padding: "13px 15px", marginBottom: 10, border: "1px solid " + (overdue ? th.rd + "55" : th.bor) }}>
+              <div key={q.id} style={{ ...STY.cd, padding: "13px 15px", marginBottom: 10, border: "1px solid " + (overdue ? th.rd + "55" : th.bor) }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 42, height: 42, borderRadius: 12, background: color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{isLent ? "💰" : "💸"}</div>
@@ -182,7 +182,7 @@ export default function DebtsPage({
 
       {isBosh && memberActive.length > 0 && (
         <div style={{ marginTop: active.length > 0 ? 18 : 0 }}>
-          <div style={{ ...S.sec, display: "flex", alignItems: "center", gap: 6 }}>👨‍👩‍👧‍👦 {lg === "uz" ? "Oila a'zolari qarzlari" : "Members' debts"} ({memberActive.length})</div>
+          <div style={{ ...STY.sec, display: "flex", alignItems: "center", gap: 6 }}>👨‍👩‍👧‍👦 {lg === "uz" ? "Oila a'zolari qarzlari" : "Members' debts"} ({memberActive.length})</div>
           {memberActive.map(q => {
             const isLent = q.tur === "bergan";
             const color = isLent ? th.gr : th.rd;
@@ -190,7 +190,7 @@ export default function DebtsPage({
             const overdue = q.qaytSana && q.qaytSana < today;
             const owner = azolar.find(a => a.id === q.uid);
             return (
-              <div key={q.id} style={{ ...S.cd, padding: "12px 14px", marginBottom: 9, border: "1px solid " + th.bor, borderLeft: "3px solid " + th.ac }}>
+              <div key={q.id} style={{ ...STY.cd, padding: "12px 14px", marginBottom: 9, border: "1px solid " + th.bor, borderLeft: "3px solid " + th.ac }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, paddingBottom: 8, borderBottom: "1px solid " + th.bor }}>
                   <Av src={owner?.photo} name={owner?.ism || q.kim} size={26} ac={th.ac} />
                   <span style={{ fontSize: 12, fontWeight: 700, color: th.ac }}>{gN2(q.uid)}</span>
@@ -219,12 +219,12 @@ export default function DebtsPage({
 
       {done.length > 0 && (
         <div>
-          <div style={S.sec}>{lg === "uz" ? "Qaytarilganlar" : "Returned"} ({done.length})</div>
+          <div style={STY.sec}>{lg === "uz" ? "Qaytarilganlar" : "Returned"} ({done.length})</div>
           {done.slice(0, 8).map(q => {
             const isLent = q.tur === "bergan";
             const dc = isLent ? th.gr : th.rd;
             return (
-              <div key={q.id} style={{ ...S.cd, padding: "11px 14px", marginBottom: 8, borderLeft: "3px solid " + dc + "66" }}>
+              <div key={q.id} style={{ ...STY.cd, padding: "11px 14px", marginBottom: 8, borderLeft: "3px solid " + dc + "66" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 9, background: dc + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{isLent ? "💰" : "💸"}</div>

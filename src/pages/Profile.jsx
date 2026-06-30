@@ -31,13 +31,13 @@ export default function ProfilePage({
   showValDD, setShowValDD,
   showBilim, setShowBilim,
 }) {
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
 
   return (
     <div>
       {pTab === "main" && (
         <div>
-          <div style={{ ...S.row, marginBottom: 20 }}>
+          <div style={{ ...STY.row, marginBottom: 20 }}>
             <div style={{ fontSize: 20, fontWeight: 800, color: th.t1 }}>{t.prf}</div>
             <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: th.rd, fontWeight: 700, fontSize: 14 }}>{Ico.door(th.rd)}{t.lo}</button>
           </div>
@@ -109,7 +109,7 @@ export default function ProfilePage({
       {pTab === "shaxsiy" && (
         <div>
           <BH label={t.shaxsiy} th={th} onBack={() => setPTab("main")} />
-          <div style={{ ...S.cd, textAlign: "center", padding: "22px 16px", marginBottom: 12 }}>
+          <div style={{ ...STY.cd, textAlign: "center", padding: "22px 16px", marginBottom: 12 }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
               <div style={{ position: "relative", padding: 4, borderRadius: "50%", background: isPremium ? "linear-gradient(135deg,#f59e0b,#ec4899,#6366f1)" : "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")" }}>
                 <div style={{ padding: 3, borderRadius: "50%", background: th.sur }}>
@@ -123,33 +123,33 @@ export default function ProfilePage({
               {user?.photo && <button onClick={rmPhoto} style={{ background: th.rd + "18", border: "1px solid " + th.rd + "44", borderRadius: 10, padding: "7px 14px", color: th.rd, cursor: "pointer", fontWeight: 600, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>{Ico.trash(th.rd)}{t.rp}</button>}
             </div>
           </div>
-          <div style={S.cd}>
-            <div style={{ ...S.row, marginBottom: edN ? 12 : 0 }}>
+          <div style={STY.cd}>
+            <div style={{ ...STY.row, marginBottom: edN ? 12 : 0 }}>
               <div><div style={{ fontSize: 10, color: th.t2, marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>{lg === "uz" ? "Ism" : "Name"}</div><div style={{ fontSize: 15, fontWeight: 600, color: th.t1 }}>{user?.ism}</div></div>
               <button onClick={() => { setEdN(v => !v); setNewN(user?.ism || ""); }} style={{ background: th.ac + "18", border: "1px solid " + th.ac + "44", borderRadius: 9, padding: "6px 12px", color: th.ac, cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{Ico.edit(th.ac)}{edN ? t.cn : t.ep}</button>
             </div>
-            {edN && <div><div style={{ height: 10 }} /><input style={S.ip} value={newN} onChange={e => setNewN(e.target.value)} placeholder="Ism" autoFocus /><button onClick={updName} style={S.bt()}>{t.un}</button></div>}
+            {edN && <div><div style={{ height: 10 }} /><input style={STY.ip} value={newN} onChange={e => setNewN(e.target.value)} placeholder="Ism" autoFocus /><button onClick={updName} style={STY.bt()}>{t.un}</button></div>}
           </div>
-          <div style={S.cd}><div style={{ fontSize: 10, color: th.t2, marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Email</div><div style={{ fontSize: 15, fontWeight: 600, color: th.t1 }}>{user?.email}</div></div>
-          <div style={S.cd}>
+          <div style={STY.cd}><div style={{ fontSize: 10, color: th.t2, marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Email</div><div style={{ fontSize: 15, fontWeight: 600, color: th.t1 }}>{user?.email}</div></div>
+          <div style={STY.cd}>
             <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, marginBottom: 10 }}>{lg === "uz" ? "Bu oy statistikasi" : "Stats"}</div>
             {[
               { l: lg === "uz" ? "Xarajat" : "Expense", v: f(bX.filter(x => x.uid === user.id).reduce((s, x) => s + Number(x.summa || 0), 0), true), c: th.rd },
               { l: lg === "uz" ? "Daromad" : "Income", v: f(bD.filter(d => d.uid === user.id).reduce((s, d) => s + Number(d.summa || 0), 0), true), c: th.gr },
               { l: lg === "uz" ? "Jami yozuvlar" : "Total records", v: xar.filter(x => x.uid === user.id).length + " ta", c: th.ac },
             ].map(item => (
-              <div key={item.l} style={{ ...S.row, padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{item.l}</span><span style={{ fontSize: 13, fontWeight: 700, color: item.c }}>{item.v}</span></div>
+              <div key={item.l} style={{ ...STY.row, padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{item.l}</span><span style={{ fontSize: 13, fontWeight: 700, color: item.c }}>{item.v}</span></div>
             ))}
           </div>
           {user?.rol === "bosh" && (
-            <div style={{ ...S.cd, background: th.ac + "0d", border: "1px solid " + th.ac + "33" }}>
+            <div style={{ ...STY.cd, background: th.ac + "0d", border: "1px solid " + th.ac + "33" }}>
               <div style={{ fontSize: 11, color: th.t2, marginBottom: 5, fontWeight: 600 }}>{Ico.key(th.ac)}{t.fc2}</div>
               <div style={{ fontFamily: "monospace", fontSize: 12, color: th.ac, wordBreak: "break-all", fontWeight: 700 }}>{oila?.id}</div>
               <div style={{ fontSize: 10, color: th.t2, marginTop: 5 }}>{t.fcd}</div>
             </div>
           )}
           {!isKid && (
-            <button onClick={() => { buzz(10); setShowAddKid(true); }} style={{ ...S.cd, width: "100%", background: "linear-gradient(135deg,#f59e0b0d,#ec48990d)", border: "1px solid #f59e0b33", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
+            <button onClick={() => { buzz(10); setShowAddKid(true); }} style={{ ...STY.cd, width: "100%", background: "linear-gradient(135deg,#f59e0b0d,#ec48990d)", border: "1px solid #f59e0b33", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, textAlign: "left" }}>
               <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#f59e0b,#ec4899)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>👶</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Bola akkaunti qo'shish" : "Add kid account"}</div>
@@ -159,7 +159,7 @@ export default function ProfilePage({
             </button>
           )}
           {user?.rol === "bosh" && azolar.length > 1 && (
-            <div style={{ ...S.cd }}>
+            <div style={{ ...STY.cd }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, marginBottom: 3, display: "flex", alignItems: "center", gap: 6 }}>👨‍👩‍👧‍👦 {lg === "uz" ? "Oila a'zolari va ruxsatlar" : "Members & access"}</div>
               <div style={{ fontSize: 10, color: th.t2, marginBottom: 12 }}>{lg === "uz" ? "Kimga umumiy hisobotni ko'rishga ruxsat berasiz?" : "Who can view the full family report?"}</div>
               {azolar.map(a => {
@@ -185,7 +185,7 @@ export default function ProfilePage({
             </div>
           )}
           {azolar.length > 0 && (
-            <div style={S.cd}>
+            <div style={STY.cd}>
               <div style={{ fontWeight: 700, marginBottom: 12, color: th.t1 }}>{t.fam}: {oila?.nomi}</div>
               {azolar.map(a => (
                 <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: "1px solid " + th.bor }}>
@@ -205,11 +205,11 @@ export default function ProfilePage({
       {pTab === "budjet" && (
         <div>
           <BH label={lg === "uz" ? "Budjet va limitlar" : "Budget & limits"} th={th} onBack={() => setPTab("main")} />
-          <div style={{ ...S.cd, background: "linear-gradient(135deg," + th.ac + "15," + th.ac2 + "08)", border: "1.5px solid " + th.ac + "33" }}>
+          <div style={{ ...STY.cd, background: "linear-gradient(135deg," + th.ac + "15," + th.ac2 + "08)", border: "1.5px solid " + th.ac + "33" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: th.ac, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>{Ico.wallet(th.ac)}{lg === "uz" ? "Oylik budjet" : "Monthly budget"}</div>
             <div style={{ fontSize: 11, color: th.t2, marginBottom: 14 }}>{lg === "uz" ? "Bu oy uchun umumiy xarajat chegarasi" : "Total spending limit this month"}</div>
-            <label style={S.lb}>{t.mb}</label>
-            <MoneyInput style={{ ...S.ip, fontSize: 22, fontWeight: 800, textAlign: "center", marginBottom: 4 }} value={fBj} onChange={setFBj} placeholder="2 000 000" th={th} />
+            <label style={STY.lb}>{t.mb}</label>
+            <MoneyInput style={{ ...STY.ip, fontSize: 22, fontWeight: 800, textAlign: "center", marginBottom: 4 }} value={fBj} onChange={setFBj} placeholder="2 000 000" th={th} />
             <div style={{ fontSize: 11, color: th.t2, textAlign: "center" }}>{f(Number(fBj) || 0, false)}</div>
           </div>
           {(() => {
@@ -242,7 +242,7 @@ export default function ProfilePage({
               </div>
             );
           })()}
-          <div style={S.cd}>
+          <div style={STY.cd}>
             <div style={{ fontWeight: 700, marginBottom: 6, color: th.t1 }}>{lg === "uz" ? "Kategoriya limitlari" : "Category limits"}</div>
             <div style={{ fontSize: 11, color: th.t2, marginBottom: 14 }}>{lg === "uz" ? "Har bir kategoriya uchun alohida chegara (ixtiyoriy)" : "Separate limit per category (optional)"}</div>
             {KATS.map((k, i) => (
@@ -269,7 +269,7 @@ export default function ProfilePage({
             }
             return null;
           })()}
-          <button onClick={saveBj} style={{ ...S.bt(), display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.check("#fff")}{t.sv}</button>
+          <button onClick={saveBj} style={{ ...STY.bt(), display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.check("#fff")}{t.sv}</button>
         </div>
       )}
 
@@ -410,7 +410,7 @@ export default function ProfilePage({
             </div>
           ))}
           <div style={{ fontSize: 11, color: th.t2, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 10, marginTop: 20 }}>{lg === "uz" ? "Taklif va kamchiliklar" : "Feedback"}</div>
-          <div style={S.cd}>
+          <div style={STY.cd}>
             <div style={{ fontSize: 14, fontWeight: 700, color: th.t1, marginBottom: 4 }}>{lg === "uz" ? "Ilovani baholang" : "Rate the app"}</div>
             <div style={{ fontSize: 12, color: th.t2, marginBottom: 12 }}>{lg === "uz" ? "Fikringiz biz uchun muhim!" : "Your opinion matters!"}</div>
             <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 16 }}>
@@ -426,7 +426,7 @@ export default function ProfilePage({
               ))}
             </div>
             <textarea value={fbText} onChange={e => setFbText(e.target.value)} placeholder={lg === "uz" ? "Fikr, taklif yoki kamchilikni yozing..." : "Write your feedback..."} style={{ width: "100%", minHeight: 90, background: th.surH, border: "1.5px solid " + th.bor, borderRadius: 13, padding: "12px 14px", color: th.t1, fontSize: 14, outline: "none", boxSizing: "border-box", resize: "vertical", fontFamily: "inherit", marginBottom: 12 }} />
-            <button onClick={sendFeedback} disabled={fbSending} style={{ ...S.bt(), marginBottom: 0, opacity: fbSending ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <button onClick={sendFeedback} disabled={fbSending} style={{ ...STY.bt(), marginBottom: 0, opacity: fbSending ? 0.6 : 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M16 2L8 10M16 2l-5 14-3-6-6-3 14-5z" stroke="#fff" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {fbSending ? (lg === "uz" ? "Yuborilmoqda..." : "Sending...") : (lg === "uz" ? "Yuborish" : "Send")}
             </button>
@@ -443,13 +443,13 @@ export default function ProfilePage({
             <div style={{ fontSize: 42, textAlign: "center", marginBottom: 8 }}>👶</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: th.t1, marginBottom: 6, textAlign: "center" }}>{lg === "uz" ? "Bola akkaunti yaratish" : "Create kid account"}</div>
             <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>{lg === "uz" ? "Farzandingiz uchun login va parol yarating." : "Create a login for your child."}</div>
-            <label style={S.lb}>{lg === "uz" ? "Bola ismi" : "Child's name"}</label>
-            <input style={S.ip} value={kidName} onChange={e => setKidName(e.target.value)} placeholder={lg === "uz" ? "Jahongir" : "Name"} />
-            <label style={S.lb}>{lg === "uz" ? "Login" : "Login"}</label>
-            <input style={S.ip} value={kidLogin} onChange={e => setKidLogin(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())} placeholder="jahongir2015" />
-            <label style={S.lb}>{lg === "uz" ? "Parol" : "Password"}</label>
-            <input style={S.ip} type="text" value={kidPw} onChange={e => setKidPw(e.target.value)} placeholder={lg === "uz" ? "Kamida 4 belgi" : "Min 4 chars"} />
-            <button onClick={addKidAccount} style={{ ...S.bt(), marginTop: 6, marginBottom: 0 }}>{lg === "uz" ? "Akkaunt yaratish" : "Create account"}</button>
+            <label style={STY.lb}>{lg === "uz" ? "Bola ismi" : "Child's name"}</label>
+            <input style={STY.ip} value={kidName} onChange={e => setKidName(e.target.value)} placeholder={lg === "uz" ? "Jahongir" : "Name"} />
+            <label style={STY.lb}>{lg === "uz" ? "Login" : "Login"}</label>
+            <input style={STY.ip} value={kidLogin} onChange={e => setKidLogin(e.target.value.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())} placeholder="jahongir2015" />
+            <label style={STY.lb}>{lg === "uz" ? "Parol" : "Password"}</label>
+            <input style={STY.ip} type="text" value={kidPw} onChange={e => setKidPw(e.target.value)} placeholder={lg === "uz" ? "Kamida 4 belgi" : "Min 4 chars"} />
+            <button onClick={addKidAccount} style={{ ...STY.bt(), marginTop: 6, marginBottom: 0 }}>{lg === "uz" ? "Akkaunt yaratish" : "Create account"}</button>
           </div>
         </div>
       )}

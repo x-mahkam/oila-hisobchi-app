@@ -12,11 +12,11 @@ export default function GoalsPage({
   editMq, setEditMq, editMqN, setEditMqN, editMqS, setEditMqS,
   addMq, tupMq, delMq, saveEditMq,
 }) {
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
 
   return (
     <div>
-      <div style={{ ...S.row, marginBottom: 12 }}>
+      <div style={{ ...STY.row, marginBottom: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: th.t1 }}>{isKid ? (lg === "uz" ? "🌟 Orzularim" : "🌟 My dreams") : t.goal}</div>
         {maqTab === "mine" && <button onClick={() => setAddM(v => !v)} style={{ background: th.ac, border: "none", borderRadius: 10, padding: "7px 14px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 4px 12px " + th.ac + "44" }}>{Ico.add("#fff")}</button>}
       </div>
@@ -33,29 +33,29 @@ export default function GoalsPage({
       )}
 
       {addM && (
-        <GoalForm th={th} S={S} lg={lg} isKid={isKid} f={f} t={t} addMq={addMq} setAddM={setAddM} />
+        <GoalForm th={th} STY={STY} lg={lg} isKid={isKid} f={f} t={t} addMq={addMq} setAddM={setAddM} />
       )}
 
       {tupId && (
-        <div style={{ ...S.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
+        <div style={{ ...STY.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: th.t1 }}>{t.tp}</div>
-          <MoneyInput autoFocus style={S.ip} value={tupS} onChange={setTupS} placeholder="..." th={th} />
+          <MoneyInput autoFocus style={STY.ip} value={tupS} onChange={setTupS} placeholder="..." th={th} />
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={tupMq} style={{ ...S.bt(), marginBottom: 0, flex: 1 }}>{t.am}</button>
+            <button onClick={tupMq} style={{ ...STY.bt(), marginBottom: 0, flex: 1 }}>{t.am}</button>
             <button onClick={() => setTupId(null)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 14, padding: 14, color: th.t2, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>{t.cn}</button>
           </div>
         </div>
       )}
 
       {editMq && (
-        <div style={{ ...S.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14 }}>
+        <div style={{ ...STY.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14 }}>
           <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: th.am }}>{lg === "uz" ? "Maqsadni tahrirlash" : "Edit goal"}</div>
-          <label style={S.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
-          <input style={S.ip} value={editMqN} onChange={e => setEditMqN(e.target.value)} placeholder="..." />
-          <label style={S.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
-          <MoneyInput style={S.ip} value={editMqS} onChange={setEditMqS} placeholder="..." th={th} />
+          <label style={STY.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
+          <input style={STY.ip} value={editMqN} onChange={e => setEditMqN(e.target.value)} placeholder="..." />
+          <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+          <MoneyInput style={STY.ip} value={editMqS} onChange={setEditMqS} placeholder="..." th={th} />
           <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={saveEditMq} style={{ ...S.bt(), marginBottom: 0, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{Ico.check("#fff")}{t.sv}</button>
+            <button onClick={saveEditMq} style={{ ...STY.bt(), marginBottom: 0, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{Ico.check("#fff")}{t.sv}</button>
             <button onClick={() => setEditMq(null)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 14, padding: 14, color: th.t2, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>{t.cn}</button>
           </div>
         </div>
@@ -78,8 +78,8 @@ export default function GoalsPage({
         return filteredMaq.map(m => {
           const p = Math.round(m.jamg / m.maqsad * 100);
           return (
-            <div key={m.id} style={{ ...S.cd, marginBottom: 10 }}>
-              <div style={{ ...S.row, alignItems: "flex-start", marginBottom: 10 }}>
+            <div key={m.id} style={{ ...STY.cd, marginBottom: 10 }}>
+              <div style={{ ...STY.row, alignItems: "flex-start", marginBottom: 10 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15, color: th.t1 }}>{m.ism}</div>
                   <div style={{ fontSize: 12, color: th.t2, marginTop: 2 }}>{f(m.jamg, true)} / {f(m.maqsad, true)}</div>
@@ -119,7 +119,7 @@ export default function GoalsPage({
                   {m.status === "parent_confirmed" && <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginTop: 4 }}>✅ {lg === "uz" ? "Ota-ona tasdiqladi! Siz ham tasdiqlang" : "Parent confirmed! Confirm yours too"}</div>}
                 </div>
               ) : (
-                <div style={{ ...S.row }}>
+                <div style={{ ...STY.row }}>
                   <span style={{ fontSize: 11, color: th.t2 }}>{t.rem}: {f(m.maqsad - m.jamg, true)}</span>
                   <button onClick={() => { setTupId(m.id); setTupS(""); }} style={{ background: m.rang + "18", border: "1px solid " + m.rang + "44", borderRadius: 9, padding: "5px 12px", color: m.rang, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{t.am}</button>
                 </div>
@@ -133,7 +133,7 @@ export default function GoalsPage({
 }
 
 // ── Separate, self-contained "new goal" form (has its own state) ──
-function GoalForm({ th, S, lg, isKid, f, t, addMq, setAddM }) {
+function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
   const [mN, setMN] = useState("");
   const [mS, setMS] = useState("");
   const [mR, setMR] = useState(th.gr);
@@ -144,9 +144,9 @@ function GoalForm({ th, S, lg, isKid, f, t, addMq, setAddM }) {
   };
 
   return (
-    <div style={{ ...S.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
+    <div style={{ ...STY.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: th.ac, marginBottom: 13 }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
-      <label style={S.lb}>{lg === "uz" ? "Tayyor maqsadlar" : "Quick presets"}</label>
+      <label style={STY.lb}>{lg === "uz" ? "Tayyor maqsadlar" : "Quick presets"}</label>
       <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 12 }}>
         {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((p, i) => (
           <button key={i} onClick={() => { setMN(p[lg] || p.uz); setMR(p.rang); }} style={{ flexShrink: 0, background: mN === (p[lg] || p.uz) ? p.rang + "18" : th.bg, border: "1.5px solid " + (mN === (p[lg] || p.uz) ? p.rang : th.bor), borderRadius: 12, padding: "10px 12px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 78 }}>
@@ -155,10 +155,10 @@ function GoalForm({ th, S, lg, isKid, f, t, addMq, setAddM }) {
           </button>
         ))}
       </div>
-      <label style={S.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
-      <input style={S.ip} value={mN} onChange={e => setMN(e.target.value)} placeholder={lg === "uz" ? "Yoki o'zingiz yozing..." : "Or write your own..."} />
-      <label style={S.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
-      <MoneyInput style={S.ip} value={mS} onChange={setMS} placeholder="5 000 000" th={th} />
+      <label style={STY.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
+      <input style={STY.ip} value={mN} onChange={e => setMN(e.target.value)} placeholder={lg === "uz" ? "Yoki o'zingiz yozing..." : "Or write your own..."} />
+      <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+      <MoneyInput style={STY.ip} value={mS} onChange={setMS} placeholder="5 000 000" th={th} />
       {mS && Number(mS) > 0 && (
         <div style={{ background: "linear-gradient(135deg," + th.ac + "11," + th.ac2 + "08)", border: "1px solid " + th.ac + "33", borderRadius: 13, padding: "13px 15px", marginBottom: 13 }}>
           <div style={{ fontSize: 11, color: th.ac, fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>💡 {lg === "uz" ? "Avtomatik hisob" : "Auto calculation"}</div>
@@ -174,13 +174,13 @@ function GoalForm({ th, S, lg, isKid, f, t, addMq, setAddM }) {
           <div style={{ fontSize: 11, color: th.t2, marginTop: 8, paddingTop: 8, borderTop: "1px solid " + th.bor }}>{lg === "uz" ? "Har oy ajratsangiz, shu muddatda yig'asiz" : "Save monthly to reach your goal"}</div>
         </div>
       )}
-      <label style={S.lb}>{lg === "uz" ? "Rang" : "Color"}</label>
+      <label style={STY.lb}>{lg === "uz" ? "Rang" : "Color"}</label>
       <div style={{ display: "flex", gap: 8, marginBottom: 13 }}>
         {[th.gr, th.ac, "#f59e0b", "#8b5cf6", th.rd, "#06b6d4"].map(r => (
           <button key={r} onClick={() => setMR(r)} style={{ width: 32, height: 32, borderRadius: "50%", background: r, border: mR === r ? "3px solid " + th.t1 : "3px solid transparent", cursor: "pointer", flexShrink: 0 }} />
         ))}
       </div>
-      <button onClick={submit} style={S.bt()}>{t.sv}</button>
+      <button onClick={submit} style={STY.bt()}>{t.sv}</button>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { COUNTRIES, VALS, RELATIONS } from "../utils/constants.js";
 import { td } from "../utils/formatters.js";
 
 export default function LoginPage({
-  th, S, lg, setLg, dark, setDark,
+  th, STY, lg, setLg, dark, setDark,
   reg, setReg, kidLoginMode, setKidLoginMode, join, setJoin,
   fIsm, setFIsm, fEm, setFEm, fPw, setFPw,
   fON, setFON, fKd, setFKd, fTel, setFTel,
@@ -22,7 +22,7 @@ export default function LoginPage({
   switchAuthMode, genPassword,
 }) {
   return (
-    <div style={S.pg}>
+    <div style={STY.pg}>
     <Tst msg={tst.msg} type={tst.type} th={th}/>
     <div style={{position:"fixed",top:-120,left:"50%",transform:"translateX(-50%)",width:450,height:450,borderRadius:"50%",background:"radial-gradient(circle,"+th.ac+"1a,transparent 70%)",pointerEvents:"none"}}/>
     <div style={{padding:"50px 24px 40px",position:"relative"}}>
@@ -32,17 +32,17 @@ export default function LoginPage({
         <div style={{color:th.t2,fontSize:13,marginTop:5}}>{lg==="uz"?"Daromad \u00b7 Xarajat \u00b7 Maqsad \u00b7 Oila":lg==="ru"?"\u0414\u043e\u0445\u043e\u0434 \u00b7 \u0420\u0430\u0441\u0445\u043e\u0434 \u00b7 \u0426\u0435\u043b\u0438 \u00b7 \u0421\u0435\u043c\u044c\u044f":"Income \u00b7 Expense \u00b7 Goals \u00b7 Family"}</div>
       </div>
       <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:20}}>
-        {["uz","ru","en"].map(l=><button key={l} onClick={()=>{setLg(l);localStorage.setItem("oilaV7L",l);}} style={{...S.ch(lg===l),padding:"5px 12px"}}>{l.toUpperCase()}</button>)}
-        <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...S.ch(true,th.t2),padding:"5px 12px",display:"flex",alignItems:"center",gap:4}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?(lg==="uz"?"Kunduz":"Light"):(lg==="uz"?"Tungi":"Dark")}</button>
+        {["uz","ru","en"].map(l=><button key={l} onClick={()=>{setLg(l);localStorage.setItem("oilaV7L",l);}} style={{...STY.ch(lg===l),padding:"5px 12px"}}>{l.toUpperCase()}</button>)}
+        <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...STY.ch(true,th.t2),padding:"5px 12px",display:"flex",alignItems:"center",gap:4}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?(lg==="uz"?"Kunduz":"Light"):(lg==="uz"?"Tungi":"Dark")}</button>
       </div>
       <div style={{display:"flex",gap:6,marginBottom:18}}>
-        <button onClick={()=>switchAuthMode(false,false)} style={{...S.tb(!reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
-        <button onClick={()=>switchAuthMode(true,false)} style={{...S.tb(reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
-        <button onClick={()=>switchAuthMode(false,true)} style={{...S.tb(kidLoginMode),fontSize:13,padding:"11px 6px"}}>👶 {lg==="uz"?"Bola":lg==="ru"?"\u0420\u0435\u0431\u0451\u043d\u043e\u043a":"Kid"}</button>
+        <button onClick={()=>switchAuthMode(false,false)} style={{...STY.tb(!reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
+        <button onClick={()=>switchAuthMode(true,false)} style={{...STY.tb(reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
+        <button onClick={()=>switchAuthMode(false,true)} style={{...STY.tb(kidLoginMode),fontSize:13,padding:"11px 6px"}}>👶 {lg==="uz"?"Bola":lg==="ru"?"\u0420\u0435\u0431\u0451\u043d\u043e\u043a":"Kid"}</button>
       </div>
-      <div style={S.cd}>
-        {reg&&<><label style={S.lb}>{lg==="uz"?"Ism familiya":lg==="ru"?"Имя и фамилия":"Full name"}</label><input style={S.ip} value={fIsm} onChange={e=>setFIsm(e.target.value)} placeholder={lg==="uz"?"Ism familiyangiz":lg==="ru"?"Имя Фамилия":"First and last name"}/>
-        <label style={S.lb}>{lg==="uz"?"Davlat":lg==="ru"?"Страна":"Country"}</label>
+      <div style={STY.cd}>
+        {reg&&<><label style={STY.lb}>{lg==="uz"?"Ism familiya":lg==="ru"?"Имя и фамилия":"Full name"}</label><input style={STY.ip} value={fIsm} onChange={e=>setFIsm(e.target.value)} placeholder={lg==="uz"?"Ism familiyangiz":lg==="ru"?"Имя Фамилия":"First and last name"}/>
+        <label style={STY.lb}>{lg==="uz"?"Davlat":lg==="ru"?"Страна":"Country"}</label>
         <div style={{position:"relative",marginBottom:12}}>
           <button onClick={()=>setShowCountryDD(v=>!v)} style={{width:"100%",background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,color:th.t1,fontSize:14}}>
             {(()=>{const sc=COUNTRIES.find(c=>c.code===fCountry)||COUNTRIES[0];return <><span style={{fontSize:20}}>{sc.flag}</span><span style={{flex:1,textAlign:"left",fontWeight:600}}>{sc[lg]||sc.uz}</span><span style={{fontSize:11,color:th.t2}}>{(VALS.find(v=>v.id===sc.val)||{}).b}</span><span style={{transform:showCountryDD?"rotate(180deg)":"none",transition:"transform .2s"}}>{Ico.chevron(th.t2,false)}</span></>;})()}
@@ -53,44 +53,44 @@ export default function LoginPage({
             </button>))}
           </div>}
         </div>
-        <label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
+        <label style={STY.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
         <div style={{display:"flex",gap:8,marginBottom:11}}>
           <div style={{display:"flex",alignItems:"center",gap:5,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 12px",flexShrink:0}}>
             <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.code===fCountry)||COUNTRIES[0]).flag}</span>
             <span style={{fontSize:14,fontWeight:700,color:th.t1}}>{(COUNTRIES.find(c=>c.code===fCountry)||COUNTRIES[0]).dial}</span>
           </div>
-          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
+          <input style={{...STY.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div>
         {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
         {/* BOLA KIRISHI: faqat login + parol */}
         {kidLoginMode&&<><div style={{textAlign:"center",marginBottom:14}}><div style={{fontSize:36,marginBottom:6}}>👶</div><div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ota-onang bergan login va parolni yoz":lg==="ru"?"Введи логин от родителей":"Enter the login your parent gave you"}</div></div>
-        <label style={S.lb}>{lg==="uz"?"Logining":"Your login"}</label>
-        <input style={S.ip} type="text" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase())} placeholder="mohichehra25" autoFocus/></>}
+        <label style={STY.lb}>{lg==="uz"?"Logining":"Your login"}</label>
+        <input style={STY.ip} type="text" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase())} placeholder="mohichehra25" autoFocus/></>}
         {/* ODDIY KIRISH: telefon */}
-        {!reg&&!kidLoginMode&&<><label style={S.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
+        {!reg&&!kidLoginMode&&<><label style={STY.lb}>{lg==="uz"?"Telefon raqami":lg==="ru"?"Номер телефона":"Phone number"}</label>
         <div style={{display:"flex",gap:8,marginBottom:11}}>
           <div style={{display:"flex",alignItems:"center",gap:4,background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"0 10px",flexShrink:0,width:96}}>
             <span style={{fontSize:18}}>{(COUNTRIES.find(c=>c.dial===fDial)||{flag:"🌐"}).flag}</span>
             <input style={{background:"none",border:"none",outline:"none",color:th.t1,fontSize:14,fontWeight:700,width:52}} type="tel" value={fDial} onChange={e=>{let v=e.target.value.replace(/[^0-9+]/g,"");if(!v.startsWith("+"))v="+"+v;setFDial(v);const c=COUNTRIES.find(x=>x.dial===v);if(c)setFCountry(c.code);}} placeholder="+998"/>
           </div>
-          <input style={{...S.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
+          <input style={{...STY.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div></>}
-        {reg&&<><label style={S.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
-        <input style={S.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
-        <label style={S.lb}>{lg==="uz"?"Parol":"Password"}</label>
+        {reg&&<><label style={STY.lb}>{lg==="uz"?"Email (parolni tiklash uchun)":lg==="ru"?"Email (для сброса пароля)":"Email (for password reset)"}</label>
+        <input style={STY.ip} type="email" value={fEm} onChange={e=>setFEm(e.target.value)} placeholder="email@example.com"/></>}
+        <label style={STY.lb}>{lg==="uz"?"Parol":"Password"}</label>
         <div style={{position:"relative",marginBottom:reg?14:4}}>
-          <input style={{...S.ip,marginBottom:0,paddingRight:reg?108:44}} type={showPw?"text":"password"} value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 6 belgi":"Min 6 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
+          <input style={{...STY.ip,marginBottom:0,paddingRight:reg?108:44}} type={showPw?"text":"password"} value={fPw} onChange={e=>setFPw(e.target.value)} placeholder={reg?(lg==="uz"?"Kamida 6 belgi":"Min 6 chars"):(lg==="uz"?"Parolingiz":"Password")}/>
           <button onClick={()=>setShowPw(v=>!v)} style={{position:"absolute",right:reg?64:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",cursor:"pointer",fontSize:16,padding:4}} title={showPw?"Yashirish":"Ko'rsatish"}>{showPw?"🙈":"👁"}</button>
           {reg&&<button onClick={genPassword} style={{position:"absolute",right:8,top:"50%",transform:"translateY(-50%)",background:th.ac+"18",border:"1px solid "+th.ac+"44",borderRadius:8,cursor:"pointer",fontSize:11,padding:"5px 9px",color:th.ac,fontWeight:700}} title={lg==="uz"?"Parol yaratish":"Generate"}>🎲</button>}
         </div>
         {reg&&<>
           <div style={{display:"flex",gap:8,marginBottom:13}}>
-            <button onClick={()=>setJoin(false)} style={S.tb(!join)}>{lg==="uz"?"Yangi oila":"New family"}</button>
-            <button onClick={()=>setJoin(true)} style={S.tb(join)}>{lg==="uz"?"Qo'shilish":"Join"}</button>
+            <button onClick={()=>setJoin(false)} style={STY.tb(!join)}>{lg==="uz"?"Yangi oila":"New family"}</button>
+            <button onClick={()=>setJoin(true)} style={STY.tb(join)}>{lg==="uz"?"Qo'shilish":"Join"}</button>
           </div>
-          {!join?<><label style={S.lb}>{lg==="uz"?"Oila nomi":"Family name"}</label><input style={S.ip} value={fON} onChange={e=>setFON(e.target.value)} placeholder={lg==="uz"?"Karimov oilasi":"Family name"}/></>
-          :<><label style={S.lb}>{lg==="uz"?"Oila kodi":"Family code"}</label><input style={S.ip} value={fKd} onChange={e=>setFKd(e.target.value)} placeholder={lg==="uz"?"Bosh a'zodan oling":"Get from head member"}/><div style={{background:th.ac+"11",borderRadius:11,padding:11,marginBottom:11,fontSize:12,color:th.t2}}>{lg==="uz"?"Kodni Profil > Shaxsiy ma'lumotlar bo'limida toping":"Find code in Profile > Personal info"}</div>
-          <label style={S.lb}>{lg==="uz"?"Oila boshiga kim bo'lasiz?":lg==="ru"?"Кем вы приходитесь главе?":"Your relation to head"}</label>
+          {!join?<><label style={STY.lb}>{lg==="uz"?"Oila nomi":"Family name"}</label><input style={STY.ip} value={fON} onChange={e=>setFON(e.target.value)} placeholder={lg==="uz"?"Karimov oilasi":"Family name"}/></>
+          :<><label style={STY.lb}>{lg==="uz"?"Oila kodi":"Family code"}</label><input style={STY.ip} value={fKd} onChange={e=>setFKd(e.target.value)} placeholder={lg==="uz"?"Bosh a'zodan oling":"Get from head member"}/><div style={{background:th.ac+"11",borderRadius:11,padding:11,marginBottom:11,fontSize:12,color:th.t2}}>{lg==="uz"?"Kodni Profil > Shaxsiy ma'lumotlar bo'limida toping":"Find code in Profile > Personal info"}</div>
+          <label style={STY.lb}>{lg==="uz"?"Oila boshiga kim bo'lasiz?":lg==="ru"?"Кем вы приходитесь главе?":"Your relation to head"}</label>
           <div style={{position:"relative",marginBottom:11}}>
             <button onClick={()=>setShowRelDD(v=>!v)} style={{width:"100%",background:th.surH,border:"1.5px solid "+th.bor,borderRadius:12,padding:"12px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,color:th.t1,fontSize:14}}>
               {(()=>{const sr=RELATIONS.find(r=>r.id===fRel);return sr?<><span style={{fontSize:20}}>{sr.emoji}</span><span style={{flex:1,textAlign:"left",fontWeight:600}}>{sr[lg]||sr.uz}</span></>:<span style={{flex:1,textAlign:"left",color:th.t2}}>{lg==="uz"?"Tanlang...":lg==="ru"?"Выберите...":"Select..."}</span>;})()}
@@ -103,7 +103,7 @@ export default function LoginPage({
             </div>}
           </div></>}
         </>}
-        <button onClick={doAuth} style={S.bt()}>{kidLoginMode?(lg==="uz"?"👶 Kirish":"👶 Login"):reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
+        <button onClick={doAuth} style={STY.bt()}>{kidLoginMode?(lg==="uz"?"👶 Kirish":"👶 Login"):reg?(lg==="uz"?"Ro'yxatdan o'tish":"Register"):(lg==="uz"?"Kirish":"Login")}</button>
         {!kidLoginMode&&<div style={{display:"flex",alignItems:"center",gap:10,margin:"18px 0 4px"}}>
           <div style={{flex:1,height:1,background:th.bor}}/>
           <span style={{fontSize:12,color:th.t2,whiteSpace:"nowrap"}}>{lg==="uz"?"yoki":"или / or"}</span>
@@ -122,9 +122,9 @@ export default function LoginPage({
           <div style={{fontSize:44,textAlign:"center",marginBottom:14}}>🔑</div>
           <div style={{fontSize:18,fontWeight:800,color:th.t1,textAlign:"center",marginBottom:8}}>{lg==="uz"?"Parolni tiklash":lg==="ru"?"Сброс пароля":"Reset password"}</div>
           <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18}}>{lg==="uz"?"Ro'yxatdan o'tgan emailingizni kiriting. Tiklash havolasini yuboramiz.":"Enter your registered email."}</div>
-          <label style={S.lb}>Email</label>
-          <input style={S.ip} type="email" value={resetInput} onChange={e=>setResetInput(e.target.value)} placeholder="email@example.com" autoFocus/>
-          <button onClick={sendResetEmail} style={{...S.bt(),marginTop:6,marginBottom:10}}>{lg==="uz"?"Tiklash xatini yuborish":lg==="ru"?"Отправить":"Send reset link"}</button>
+          <label style={STY.lb}>Email</label>
+          <input style={STY.ip} type="email" value={resetInput} onChange={e=>setResetInput(e.target.value)} placeholder="email@example.com" autoFocus/>
+          <button onClick={sendResetEmail} style={{...STY.bt(),marginTop:6,marginBottom:10}}>{lg==="uz"?"Tiklash xatini yuborish":lg==="ru"?"Отправить":"Send reset link"}</button>
           <button onClick={()=>setShowResetScreen(false)} style={{width:"100%",background:"transparent",border:"none",color:th.t2,cursor:"pointer",fontSize:13,fontWeight:600,padding:"8px"}}>{lg==="uz"?"Bekor qilish":"Cancel"}</button>
         </>:<>
           <div style={{fontSize:44,textAlign:"center",marginBottom:14}}>📧</div>
@@ -132,7 +132,7 @@ export default function LoginPage({
           <div style={{fontSize:13,color:th.t2,textAlign:"center",lineHeight:1.7,marginBottom:8}}>{lg==="uz"?"Parolni tiklash havolasi yuborildi:":"Reset link sent to:"}</div>
           <div style={{fontSize:14,fontWeight:700,color:th.ac,textAlign:"center",background:th.ac+"11",borderRadius:10,padding:"10px",marginBottom:14,wordBreak:"break-all"}}>{resetInput}</div>
           <div style={{fontSize:12,color:th.t2,textAlign:"center",lineHeight:1.6,marginBottom:18}}>{lg==="uz"?"📌 Pochtangizni oching va havolani bosing. Ko'rinmasa, Spam papkasini tekshiring.":"Check inbox and Spam."}</div>
-          <button onClick={()=>setShowResetScreen(false)} style={{...S.bt(),marginBottom:0}}>{lg==="uz"?"Tushunarli":"Got it"}</button>
+          <button onClick={()=>setShowResetScreen(false)} style={{...STY.bt(),marginBottom:0}}>{lg==="uz"?"Tushunarli":"Got it"}</button>
         </>}
       </div>
     </div>}

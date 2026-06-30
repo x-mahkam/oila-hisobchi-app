@@ -9,7 +9,7 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
 
 
     return (
-    <div style={{...S.pg,minHeight:"100vh",display:"flex",flexDirection:"column",background:dark?"#0f172a":"#f8fafc"}}>
+    <div style={{...STY.pg,minHeight:"100vh",display:"flex",flexDirection:"column",background:dark?"#0f172a":"#f8fafc"}}>
       <div style={{position:"fixed",top:-100,left:"50%",transform:"translateX(-50%)",width:500,height:500,borderRadius:"50%",background:"radial-gradient(circle,"+s.color+"22,transparent 70%)",pointerEvents:"none",transition:"background .5s"}}/>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"20px 24px",position:"relative",zIndex:2}}>
         <div style={{display:"flex",gap:6}}>

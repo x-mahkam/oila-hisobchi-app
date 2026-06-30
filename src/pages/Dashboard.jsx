@@ -19,7 +19,7 @@ export default function DashboardPage({
   fetchRates, rateL,
   setShowGift, setShowBilim, setShowAddVazifa,
 }) {
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
   const [quickItem, setQuickItem] = useState(null);
   const [quickSum, setQuickSum] = useState("");
 
@@ -44,10 +44,10 @@ export default function DashboardPage({
       <div>
         <SL ch={t.res + " (" + srchR.length + ")"} th={th} />
         {srch?.trim() && srchR.length === 0 && (
-          <div style={{ ...S.cd, textAlign: "center", color: th.t2, padding: 28 }}>{t.nf2}</div>
+          <div style={{ ...STY.cd, textAlign: "center", color: th.t2, padding: 28 }}>{t.nf2}</div>
         )}
         {srchR.map(item => (
-          <TxRow key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} S={S} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />
+          <TxRow key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />
         ))}
       </div>
     );
@@ -57,7 +57,7 @@ export default function DashboardPage({
     <div>
       {/* So'rovlar */}
       {xReqs.length > 0 && (
-        <div style={{ ...S.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14, background: th.am + "0a" }}>
+        <div style={{ ...STY.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14, background: th.am + "0a" }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: th.am, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ fontSize: 16 }}>📥</span>{lg === "uz" ? "So'rovlar" : "Requests"} ({xReqs.length})
           </div>
@@ -204,12 +204,12 @@ export default function DashboardPage({
           </div>
 
           {quickItem && (
-            <div style={{ ...S.cd, marginBottom: 14, border: "1.5px solid " + th.ac + "55" }}>
+            <div style={{ ...STY.cd, marginBottom: 14, border: "1.5px solid " + th.ac + "55" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
                 <span style={{ fontSize: 22 }}>{quickItem.emoji}</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{quickItem[lg] || quickItem.uz}</span>
               </div>
-              <MoneyInput style={{ ...S.ip, fontSize: 20, fontWeight: 800, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
+              <MoneyInput style={{ ...STY.ip, fontSize: 20, fontWeight: 800, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
               <div style={{ display: "flex", gap: 8 }}>
                 <button onClick={() => setQuickItem(null)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 12, padding: "11px", color: th.t2, cursor: "pointer", fontWeight: 700 }}>{lg === "uz" ? "Bekor" : "Cancel"}</button>
                 <button onClick={quickAdd} style={{ flex: 2, background: th.ac, border: "none", borderRadius: 12, padding: "11px", color: "#fff", cursor: "pointer", fontWeight: 700 }}>{lg === "uz" ? "Saqlash" : "Save"}</button>
@@ -217,14 +217,14 @@ export default function DashboardPage({
             </div>
           )}
 
-          <div style={{ ...S.cd, marginBottom: 14 }}>
-            <div style={{ ...S.row, marginBottom: 8 }}><span style={{ color: th.t2, fontSize: 12 }}>{t.bud}</span><span style={{ fontWeight: 700, fontSize: 12, color: th.t1 }}>{f(bdj, true)}</span></div>
+          <div style={{ ...STY.cd, marginBottom: 14 }}>
+            <div style={{ ...STY.row, marginBottom: 8 }}><span style={{ color: th.t2, fontSize: 12 }}>{t.bud}</span><span style={{ fontWeight: 700, fontSize: 12, color: th.t1 }}>{f(bdj, true)}</span></div>
             <div style={{ background: th.bg, borderRadius: 10, height: 12, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg," + bRng + "88," + bRng + ")", borderRadius: 10, transition: "width .6s" }} /></div>
-            <div style={{ ...S.row, marginTop: 7 }}><span style={{ color: bRng, fontSize: 11, fontWeight: 700 }}>{pct}% {t.sp}</span><span style={{ color: bdj - jX >= 0 ? th.gr : th.rd, fontSize: 11 }}>{f(Math.abs(bdj - jX), true)} {bdj - jX >= 0 ? t.lf : t.ex}</span></div>
+            <div style={{ ...STY.row, marginTop: 7 }}><span style={{ color: bRng, fontSize: 11, fontWeight: 700 }}>{pct}% {t.sp}</span><span style={{ color: bdj - jX >= 0 ? th.gr : th.rd, fontSize: 11 }}>{f(Math.abs(bdj - jX), true)} {bdj - jX >= 0 ? t.lf : t.ex}</span></div>
           </div>
 
-          <div style={{ ...S.cd, marginBottom: 14 }}>
-            <div style={{ ...S.row, marginBottom: 12 }}>
+          <div style={{ ...STY.cd, marginBottom: 14 }}>
+            <div style={{ ...STY.row, marginBottom: 12 }}>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}>{Ico.bank(th.ac)}{t.rates}</div>
                 <div style={{ fontSize: 10, color: th.t2, marginTop: 2 }}>
@@ -267,10 +267,10 @@ export default function DashboardPage({
                 const ov = lim && tx > lim;
                 const sp = Array.from({ length: 7 }, (_, si) => { const d = new Date(); d.setDate(d.getDate() - 6 + si); return xar.filter(x => x.kategoriya === k.id && x.sana === d.toISOString().slice(0, 10)).reduce((s, x) => s + Number(x.summa || 0), 0); });
                 return (
-                  <div key={k.id} style={{ ...S.cd, padding: "10px 13px", display: "flex", alignItems: "center", gap: 10, marginBottom: 7, borderColor: ov ? th.rd + "44" : th.bor }}>
+                  <div key={k.id} style={{ ...STY.cd, padding: "10px 13px", display: "flex", alignItems: "center", gap: 10, marginBottom: 7, borderColor: ov ? th.rd + "44" : th.bor }}>
                     <div style={{ width: 36, height: 36, borderRadius: 10, background: k.c + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><KatIco id={k.id} c={k.c} s={20} /></div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ ...S.row, marginBottom: 3 }}><span style={{ fontSize: 12, fontWeight: 600, color: th.t1 }}>{KN[lg][i]}</span><span style={{ fontWeight: 700, color: ov ? th.rd : k.c, fontSize: 12 }}>{f(tx, true)}</span></div>
+                      <div style={{ ...STY.row, marginBottom: 3 }}><span style={{ fontSize: 12, fontWeight: 600, color: th.t1 }}>{KN[lg][i]}</span><span style={{ fontWeight: 700, color: ov ? th.rd : k.c, fontSize: 12 }}>{f(tx, true)}</span></div>
                       <div style={{ background: th.bg, borderRadius: 4, height: 5 }}><div style={{ width: Math.min(100, (tx / jX) * 100) + "%", height: "100%", background: k.c, borderRadius: 4 }} /></div>
                       {lim && <div style={{ fontSize: 9, color: ov ? th.rd : th.t2, marginTop: 2 }}>Limit: {f(lim, true)}{ov ? " ⚠" : ""}</div>}
                     </div>
@@ -281,13 +281,13 @@ export default function DashboardPage({
             </div>
           )}
 
-          <div style={{ ...S.cd, marginBottom: 14 }}>
+          <div style={{ ...STY.cd, marginBottom: 14 }}>
             <div style={{ fontSize: 11, color: th.t2, marginBottom: 10, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>{Ico.fire(th.rd)}{t.hm}</div>
             <Heat xar={xar} ac={th.ac} />
           </div>
 
           {maq.length === 0 && (
-            <button onClick={() => { buzz(8); setScr("maqsad"); }} style={{ ...S.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px dashed " + th.ac + "55", background: th.ac + "08", display: "flex", alignItems: "center", gap: 12 }}>
+            <button onClick={() => { buzz(8); setScr("maqsad"); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px dashed " + th.ac + "55", background: th.ac + "08", display: "flex", alignItems: "center", gap: 12 }}>
               <div style={{ width: 42, height: 42, borderRadius: 12, background: th.ac + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎯</div>
               <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Maqsad qo'ying" : "Set a goal"}</div><div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Uy, mashina, sayohat uchun jamg'aring" : "Save for your dreams"}</div></div>
               <span style={{ fontSize: 18, color: th.ac }}>›</span>
@@ -299,7 +299,7 @@ export default function DashboardPage({
             const activeVaz = vazifalar.filter(v => v.status === "pending");
             if (pendingVaz.length === 0 && activeVaz.length === 0) {
               return (
-                <button onClick={() => { buzz(8); setShowAddVazifa(true); }} style={{ ...S.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px dashed #f59e0b55", background: "#f59e0b08", display: "flex", alignItems: "center", gap: 12 }}>
+                <button onClick={() => { buzz(8); setShowAddVazifa(true); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px dashed #f59e0b55", background: "#f59e0b08", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, background: "#f59e0b18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📋</div>
                   <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Farzandga vazifa bering" : "Assign task to child"}</div><div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Bolalar uchun topshiriqlar yarating" : "Create tasks for kids"}</div></div>
                   <span style={{ fontSize: 18, color: "#f59e0b" }}>›</span>
@@ -307,7 +307,7 @@ export default function DashboardPage({
               );
             }
             return (
-              <div style={{ ...S.cd, marginBottom: 14 }}>
+              <div style={{ ...STY.cd, marginBottom: 14 }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}>
                     📋 {lg === "uz" ? "Farzand vazifalari" : "Child tasks"}
@@ -338,12 +338,12 @@ export default function DashboardPage({
               <div style={{ width: 80, height: 80, borderRadius: "50%", background: th.ac + "11", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, marginBottom: 14 }}>💳</div>
               <div style={{ fontSize: 16, fontWeight: 700, color: th.t1, marginBottom: 6 }}>{lg === "uz" ? "Hali xarajat kiritilmagan" : "No transactions yet"}</div>
               <div style={{ fontSize: 13, color: th.t2, marginBottom: 18, maxWidth: 240 }}>{lg === "uz" ? "Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing" : "Use quick add buttons above or tap + below"}</div>
-              <button onClick={() => setScr("qoshish")} style={{ ...S.bt(), width: "auto", padding: "12px 28px", marginBottom: 0, display: "flex", alignItems: "center", gap: 8 }}>{Ico.add("#fff")}{lg === "uz" ? "Xarajat qo'shish" : "Add expense"}</button>
+              <button onClick={() => setScr("qoshish")} style={{ ...STY.bt(), width: "auto", padding: "12px 28px", marginBottom: 0, display: "flex", alignItems: "center", gap: 8 }}>{Ico.add("#fff")}{lg === "uz" ? "Xarajat qo'shish" : "Add expense"}</button>
             </div>
           ) : (
             [...xar.filter(x => x.uid === user?.id).slice(0, 8).map(x => ({ ...x, tp: "x" })), ...dar.filter(d => d.uid === user?.id).slice(0, 5).map(d => ({ ...d, tp: "d" }))]
               .sort((a, b) => b.id - a.id).slice(0, 12)
-              .map(item => <TxRow key={item.tp + item.id} item={item} th={th} S={S} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)
+              .map(item => <TxRow key={item.tp + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)
           )}
         </div>
       )}
