@@ -1,10 +1,8 @@
 import { Ico } from "../../utils/icons.jsx";
-import { td } from "../../utils/formatters.js";
 
 export default function BottomNav({
   navItems, scr, setScr, th, isKid, buzz,
   setShowAddModal, setAddModalTab, setAddStep, setAddKat,
-  setFS, setFIz, setFSn, setFDS, setFDI
 }) {
   return (
     <div style={{
@@ -21,8 +19,6 @@ export default function BottomNav({
               setAddModalTab(isKid ? "daromad" : "xarajat");
               setAddStep("kat");
               setAddKat(null);
-              setFS(""); setFIz(""); setFSn(td());
-              setFDS(""); setFDI("");
             }}
             style={{ width:56, height:56, borderRadius:"50%", background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", boxShadow:"0 6px 22px "+th.ac+"55", flexShrink:0 }}
             className="anim-pulse">
