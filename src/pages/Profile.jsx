@@ -10,7 +10,7 @@ export default function ProfilePage({
   isPremium, isKid, isAdmin,
   th, t, f, lg, dark, val, setVal, setLg, setDark,
   bX, bD,
-  ok$, buzz,
+  ok$, buzz, addStar,
   pTab, setPTab,
   edN, setEdN, newN, setNewN, updName,
   fBj, setFBj, fKL, setFKL, saveBj,
