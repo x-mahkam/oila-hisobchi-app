@@ -41,7 +41,7 @@ import { usePremium }        from "./hooks/usePremium.js";
 import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 
 // Utils
-import { td, nt, tm, fmtN, normTel }           from "./utils/formatters.js";
+import { td, nt, tm, fmtN, normTel, hp }       from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, ADMIN_TEL, TL } from "./utils/constants.js";
 import { db, auth }          from "./firebase.js";
 
@@ -580,7 +580,6 @@ export default function App() {
   const addKidAccount = async () => {
     if (!kidName.trim() || !kidLogin.trim() || kidPw.length < 4) return ok$(lg === "uz" ? "Ism, login va parol (4+) kiriting" : "Fill all fields", "err");
     buzz(12);
-    const { hp } = await import("./utils/formatters.js");
     const loginKey = kidLogin.trim().toLowerCase();
     if (await db.gFresh("kidlogin_" + loginKey)) return ok$(lg === "uz" ? "Bu login band" : "Login taken", "err");
     try {
