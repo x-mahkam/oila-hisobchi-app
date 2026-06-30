@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { KatIco, DarIco, MoneyInput, Tst } from "../components/common/index.jsx";
 import { Ico } from "../utils/icons.jsx";
-import { COUNTRIES, VALS } from "../utils/constants.js";
+import { COUNTRIES, VALS, RELATIONS } from "../utils/constants.js";
 import { td } from "../utils/formatters.js";
 
 export default function LoginPage({
-  th, S, lg, setLg, dark,
+  th, S, lg, setLg, dark, setDark,
   reg, setReg, kidLoginMode, setKidLoginMode, join, setJoin,
   fIsm, setFIsm, fEm, setFEm, fPw, setFPw,
   fON, setFON, fKd, setFKd, fTel, setFTel,
@@ -16,8 +16,10 @@ export default function LoginPage({
   showResetConfirm, setShowResetConfirm, resetEmail, setResetEmail,
   resetInput, setResetInput, resetSent, setResetSent,
   fRefCode, setFRefCode, val, setVal,
-  tst, ok$, doGoogleLogin, handleAuth, handleResetPw,
-  COUNTRIES, VALS, t, isPremium
+  tst, ok$, doGoogleLogin, doAuth, sendResetEmail, handleResetPw,
+  t, isPremium,
+  setUser, setScr, setBoot, loadFam,
+  switchAuthMode, genPassword,
 }) {
   return (
     <div style={S.pg}>
@@ -134,25 +136,5 @@ export default function LoginPage({
         </>}
       </div>
     </div>}
-  </div>;
-
-  const isKid=user?.rol==="kid";
-  const hasKids=azolar.some(a=>a.rol==="kid");
-  const vazLb=lg==="uz"?"Vazifa":lg==="ru"?"Задания":"Tasks";
-  // Pastki nav — hammaga bir xil
-  // Bola uchun alohida nav (3 tab, + yo'q), kattalar uchun alohida (5 tab)
-  // pageProps — barcha page componentlarga uzatiladigan umumiy props
-  const pageProps = {
-    user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
-    kidBalances, notifs, qarzReqs, xReqs, rates, stars, gardenData,
-    setXar, setDar, setMaq, setQarzlar, setVazifalar,
-    setKidBalances, setNotifs, setStars,
-    dark, lg, val, setScr, scr, isPremium, isKid,
-    isBosh: user?.rol==="bosh",
-    hasKids, isAdmin,
-    th, S, Ico, t, f, ok$, buzz, addStar, addNotif, fireConfetti,
-    showPremModal, setShowPremModal, activatePremium,
-    confetti, setConfetti,
-  }
-  );
+  </div>);
 }
