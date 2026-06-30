@@ -577,11 +577,13 @@ export default function App() {
     ok$(lg === "uz" ? "🎁 " + f(summa, true) + " cho'ntagingizga qo'shildi!" : "Added to your pocket!");
     fireConfetti();
   };
+  const [kidCreated, setKidCreated] = useState(null); // { ism, login, pw }
+
   const addKidAccount = async () => {
     if (!kidName.trim() || !kidLogin.trim() || kidPw.length < 4) return ok$(lg === "uz" ? "Ism, login va parol (4+) kiriting" : "Fill all fields", "err");
     buzz(12);
     const loginKey = kidLogin.trim().toLowerCase();
-    if (await db.gFresh("kidlogin_" + loginKey)) return ok$(lg === "uz" ? "Bu login band" : "Login taken", "err");
+    if (await db.gFresh("kidlogin_" + loginKey)) return ok$(lg === "uz" ? "Bu login band, boshqa login tanlang" : "Login taken, choose another", "err");
     try {
       const uid = "kid" + Date.now();
       const ph = await hp(kidPw);
@@ -591,8 +593,8 @@ export default function App() {
       await db.s("oila_" + oila.id, o2); setOila(o2);
       setAzolar([...azolar, nu]);
       setShowAddKid(false); setKidName(""); setKidLogin(""); setKidPw("");
-      ok$(lg === "uz" ? "Bola akkaunti yaratildi! 👶 Login: " + loginKey : "Kid account created!");
-    } catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error", "err"); }
+      setKidCreated({ ism: nu.ism, login: loginKey, pw: kidPw });
+    } catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error: " + (e.code || e.message), "err"); }
   };
 
   // ── Vazifa ────────────────────────────────────────────────
@@ -869,7 +871,39 @@ export default function App() {
           <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
         </div>
       )}
-      {showGift && (
+      {kidCreated && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:1002, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+          <div style={{ background: th.sur, borderRadius:24, padding:"32px 24px", width:"100%", maxWidth:360, textAlign:"center" }}>
+            <div style={{ fontSize:56, marginBottom:12 }}>👶✅</div>
+            <div style={{ fontSize:20, fontWeight:800, color:th.t1, marginBottom:8 }}>
+              {lg==="uz" ? "Akkaunt yaratildi!" : "Account created!"}
+            </div>
+            <div style={{ fontSize:13, color:th.t2, marginBottom:20, lineHeight:1.6 }}>
+              {lg==="uz" ? "Farzandingiz quyidagi ma'lumotlar bilan kirishi mumkin:" : "Your child can log in with:"}
+            </div>
+            <div style={{ background:th.bg, borderRadius:16, padding:"16px 20px", marginBottom:20, textAlign:"left" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                <span style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Ism":"Name"}</span>
+                <span style={{ fontSize:14, fontWeight:700, color:th.t1 }}>{kidCreated.ism}</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                <span style={{ fontSize:12, color:th.t2 }}>Login</span>
+                <span style={{ fontSize:14, fontWeight:800, color:th.ac, fontFamily:"monospace" }}>{kidCreated.login}</span>
+              </div>
+              <div style={{ display:"flex", justifyContent:"space-between" }}>
+                <span style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Parol":"Password"}</span>
+                <span style={{ fontSize:14, fontWeight:800, color:th.gr, fontFamily:"monospace" }}>{kidCreated.pw}</span>
+              </div>
+            </div>
+            <div style={{ background:th.am+"15", border:"1px solid "+th.am+"44", borderRadius:12, padding:"10px 14px", marginBottom:20, fontSize:12, color:th.am, lineHeight:1.5 }}>
+              ⚠️ {lg==="uz" ? "Bu parolni yozib oling! Keyinchalik ko'rsatilmaydi." : "Save this password! It won't be shown again."}
+            </div>
+            <button onClick={() => { setKidCreated(null); buzz(10); }} style={{ width:"100%", background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:14, padding:"14px", color:"#fff", fontWeight:700, fontSize:16, cursor:"pointer" }}>
+              {lg==="uz" ? "Tushunarli, yopish" : "Got it, close"}
+            </button>
+          </div>
+        </div>
+      )}
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowGift(false)}>
           <div style={{ background: th.bg, borderRadius: "24px 24px 0 0", maxWidth: 480, width: "100%", padding: "24px 20px 32px" }} onClick={e => e.stopPropagation()}>
             <div style={{ width: 40, height: 4, borderRadius: 2, background: th.bor, margin: "0 auto 18px" }} />

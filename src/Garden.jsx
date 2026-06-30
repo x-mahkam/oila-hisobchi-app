@@ -405,7 +405,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const currentStage = STAGES[Math.min(Math.max(mainStage, 0), STAGES.length - 1)];
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(180deg,#0ea5e9 0%,#38bdf8 25%,#7dd3fc 45%,#86efac 60%,#22c55e 75%,#15803d 100%)", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", fontFamily: "'Segoe UI',system-ui,sans-serif" }}>
+    <div style={{ height:"100dvh", maxHeight:"100dvh", background:"linear-gradient(180deg,#0ea5e9 0%,#38bdf8 25%,#7dd3fc 45%,#86efac 60%,#22c55e 75%,#15803d 100%)", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif" }}>
 
       {/* ── CSS ── */}
       <style>{`
@@ -505,7 +505,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           )}
           <div style={{ animation: growAnim === 0 ? "growPop 0.8s ease" : "none" }}>
             {mainStage >= 0
-              ? <PlantSVG stage={mainStage} size={160} />
+              ? <PlantSVG stage={mainStage} size={Math.min(160, window.innerHeight * 0.22)} />
               : <div style={{ width: 120, height: 80, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, opacity: 0.5 }}>🌰</div>
             }
           </div>
