@@ -168,7 +168,7 @@ export default function App() {
   const APP_VER = "1.0.0";
 
   // ── Computed ─────────────────────────────────────────────
-  const S = useMemo(() => makeS(th), [th]);
+  const STY = useMemo(() => makeS(th), [th]);
   const f = useCallback((n, sh) => fmtN(n, val, sh), [val]);
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh";
@@ -815,7 +815,7 @@ export default function App() {
   if (boot) return <div style={{ ...makeS(th).pg, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>{Ico.wallet(th.ac)}</div>;
   if (onbStep >= 0 && onbStep < ONB_SLIDES.length) return <OnboardingPage th={th} lg={lg} setLg={setLg} dark={dark} onbStep={onbStep} setOnbStep={setOnbStep} />;
   if (scr === "login") return (
-    <LoginPage th={th} S={S} lg={lg} setLg={setLg} dark={dark} setDark={setDark}
+    <LoginPage th={th} STY={STY} lg={lg} setLg={setLg} dark={dark} setDark={setDark}
       reg={reg} setReg={setReg} kidLoginMode={kidLoginMode} setKidLoginMode={setKidLoginMode}
       join={join} setJoin={setJoin} fIsm={fIsm} setFIsm={setFIsm} fEm={fEm} setFEm={setFEm}
       fPw={fPw} setFPw={setFPw} fON={fON} setFON={setFON} fKd={fKd} setFKd={setFKd}
@@ -848,7 +848,7 @@ export default function App() {
     setXar, setDar, setMaq, setQarzlar, setVazifalar,
     setKidBalances, setNotifs, setStars,
     dark, lg, val, setScr, scr, isPremium, isKid, isBosh, hasKids, isAdmin,
-    th, S, t, f, ok$, buzz, addStar, addNotif, fireConfetti,
+    th, STY, t, f, ok$, buzz, addStar, addNotif, fireConfetti,
     showPremModal, setShowPremModal, activatePremium,
     gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng,
     canSeeReport, srchR, lineD, barD, pieD,
@@ -856,14 +856,14 @@ export default function App() {
   };
 
   return (
-    <div style={S.pg}>
+    <div style={STY.pg}>
       <Tst msg={tst.msg} type={tst.type} th={th} />
       <input ref={fRef} type="file" accept="image/*" style={{ display: "none" }} onChange={doPhoto} />
 
       {/* Global Modals */}
       {confetti && <Confetti th={th} />}
       {showNotifs && <NotifPanel notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} />}
-      {showPremModal && <PremiumModal th={th} S={S} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
+      {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
       {showBilim && (
         <div style={{ position: "fixed", inset: 0, background: th.bg, zIndex: 1500, overflowY: "auto" }}>
           <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
@@ -876,22 +876,22 @@ export default function App() {
             <div style={{ fontSize: 42, textAlign: "center", marginBottom: 8 }}>🎁</div>
             <div style={{ fontSize: 18, fontWeight: 800, color: th.t1, marginBottom: 6, textAlign: "center" }}>{lg === "uz" ? "Sovg'a puli kiritish" : "Add gift money"}</div>
             <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pulni qo'shing" : "Add money from relatives"}</div>
-            <label style={S.lb}>{lg === "uz" ? "Summa" : "Amount"}</label>
-            <input style={{ ...S.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} type="number" value={giftSum} onChange={e => setGiftSum(e.target.value)} placeholder="0" />
-            <label style={S.lb}>{lg === "uz" ? "Kimdan? (ixtiyoriy)" : "From whom? (optional)"}</label>
-            <input style={S.ip} value={giftFrom} onChange={e => setGiftFrom(e.target.value)} placeholder={lg === "uz" ? "Masalan: Buvi" : "e.g. Grandma"} />
-            <button onClick={addGiftMoney} style={{ ...S.bt(), marginTop: 6, marginBottom: 0 }}>{lg === "uz" ? "Qo'shish" : "Add"}</button>
+            <label style={STY.lb}>{lg === "uz" ? "Summa" : "Amount"}</label>
+            <input style={{ ...STY.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} type="number" value={giftSum} onChange={e => setGiftSum(e.target.value)} placeholder="0" />
+            <label style={STY.lb}>{lg === "uz" ? "Kimdan? (ixtiyoriy)" : "From whom? (optional)"}</label>
+            <input style={STY.ip} value={giftFrom} onChange={e => setGiftFrom(e.target.value)} placeholder={lg === "uz" ? "Masalan: Buvi" : "e.g. Grandma"} />
+            <button onClick={addGiftMoney} style={{ ...STY.bt(), marginTop: 6, marginBottom: 0 }}>{lg === "uz" ? "Qo'shish" : "Add"}</button>
           </div>
         </div>
       )}
-      {debts.qarzDonePrompt && <QarzDonePrompt q={debts.qarzDonePrompt} th={th} S={S} lg={lg} f={f} onAddDaromad={debts.addQarzAsDaromad} onAddXarajat={debts.addQarzAsXarajat} onClose={() => debts.setQarzDonePrompt(null)} />}
-      {debts.partialQarz && <PartialQarzModal q={debts.partialQarz} partialSum={debts.partialSum} setPartialSum={debts.setPartialSum} th={th} S={S} lg={lg} f={f} t={t} onConfirm={debts.applyPartial} onClose={() => { debts.setPartialQarz(null); debts.setPartialSum(""); }} />}
+      {debts.qarzDonePrompt && <QarzDonePrompt q={debts.qarzDonePrompt} th={th} STY={STY} lg={lg} f={f} onAddDaromad={debts.addQarzAsDaromad} onAddXarajat={debts.addQarzAsXarajat} onClose={() => debts.setQarzDonePrompt(null)} />}
+      {debts.partialQarz && <PartialQarzModal q={debts.partialQarz} partialSum={debts.partialSum} setPartialSum={debts.setPartialSum} th={th} STY={STY} lg={lg} f={f} t={t} onConfirm={debts.applyPartial} onClose={() => { debts.setPartialQarz(null); debts.setPartialSum(""); }} />}
       {debts.inviteQarz && <InviteQarzModal inviteQarz={debts.inviteQarz} th={th} lg={lg} user={user} qarzTur={debts.qarzTur} qarzKim={debts.qarzKim} qarzSum={debts.qarzSum} qarzlar={qarzlar} setQarzlar={setQarzlar} ok$={ok$} t={t} f={f} onClose={() => debts.setInviteQarz(null)} />}
-      {maqsadConfirmNotif && <MaqsadConfirmModal info={maqsadConfirmNotif} th={th} lg={lg} f={f} S={S} onBought={confirmMaqBought} onCancel={cancelMaqReturn} />}
+      {maqsadConfirmNotif && <MaqsadConfirmModal info={maqsadConfirmNotif} th={th} lg={lg} f={f} STY={STY} onBought={confirmMaqBought} onCancel={cancelMaqReturn} />}
 
       {/* Header */}
       <div style={{ background: th.sur, padding: "14px 18px 10px", borderBottom: "1px solid " + th.bor, position: "sticky", top: 0, zIndex: 20 }}>
-        <div style={{ ...S.row, marginBottom: scr === "bosh" && !showS ? 10 : 0 }}>
+        <div style={{ ...STY.row, marginBottom: scr === "bosh" && !showS ? 10 : 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <button onClick={() => { setScr("profil"); setPTab("main"); }} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, position: "relative" }}>
               <Av src={user?.photo} name={user?.ism} size={36} ac={th.ac} />
@@ -917,7 +917,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        {showS && <input autoFocus style={{ ...S.ip, marginBottom: 0, marginTop: 8 }} value={srch} onChange={e => setSrch(e.target.value)} placeholder={t.sch} />}
+        {showS && <input autoFocus style={{ ...STY.ip, marginBottom: 0, marginTop: 8 }} value={srch} onChange={e => setSrch(e.target.value)} placeholder={t.sch} />}
       </div>
 
       {/* Pages */}
@@ -932,7 +932,7 @@ export default function App() {
       </div>
 
       {/* AddTransactionModal */}
-      {showAddModal && <AddTransactionModal th={th} S={S} lg={lg} t={t} f={f} ok$={ok$} buzz={buzz} user={user} oila={oila} azolar={azolar} xar={xar} dar={dar} addX={addX} addD={addD} addModalTab={addModalTab} setAddModalTab={setAddModalTab} addStep={addStep} setAddStep={setAddStep} addKat={addKat} setAddKat={setAddKat} isPremium={isPremium} setShowPremModal={setShowPremModal} onClose={() => setShowAddModal(false)} />}
+      {showAddModal && <AddTransactionModal th={th} STY={STY} lg={lg} t={t} f={f} ok$={ok$} buzz={buzz} user={user} oila={oila} azolar={azolar} xar={xar} dar={dar} addX={addX} addD={addD} addModalTab={addModalTab} setAddModalTab={setAddModalTab} addStep={addStep} setAddStep={setAddStep} addKat={addKat} setAddKat={setAddKat} isPremium={isPremium} setShowPremModal={setShowPremModal} onClose={() => setShowAddModal(false)} />}
 
       {/* Bottom Nav */}
       <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} />
