@@ -144,7 +144,7 @@ export default function ProfilePage({
           {user?.rol === "bosh" && (
             <div style={{ ...STY.cd, background: th.ac + "0d", border: "1px solid " + th.ac + "33" }}>
               <div style={{ fontSize: 11, color: th.t2, marginBottom: 5, fontWeight: 600 }}>{Ico.key(th.ac)}{t.fc2}</div>
-              <div style={{ fontFamily: "monospace", fontSize: 12, color: th.ac, wordBreak: "break-all", fontWeight: 700 }}>{oila?.id}</div>
+              <div style={{ fontFamily: "monospace", fontSize: 14, color: th.ac, wordBreak: "break-all", fontWeight: 800, letterSpacing: 1, padding: "8px 0" }}>{user?.oilaId || "—"}</div>
               <div style={{ fontSize: 10, color: th.t2, marginTop: 5 }}>{t.fcd}</div>
             </div>
           )}
