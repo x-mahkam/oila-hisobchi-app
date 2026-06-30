@@ -589,8 +589,11 @@ export default function App() {
       const ph = await hp(kidPw);
       const nu = { id: uid, ism: kidName.trim(), login: loginKey, ph, oilaId: user.oilaId, rol: "kid", rel: "farzand", photo: null, parentId: user.id };
       await db.s("user_" + uid, nu); await db.s("kidlogin_" + loginKey, uid);
-      const o2 = { ...oila, azolarIds: [...(oila.azolarIds || []), uid] };
-      await db.s("oila_" + oila.id, o2); setOila(o2);
+      const o2 = { ...oila, azolarIds: [...(oila.azolarIds || oila.azolar || [user.id]), uid] };
+      // ikki kalitga ham yozamiz: eski fam_ va yangi oila_
+      if (oila.id) await db.s("oila_" + oila.id, o2);
+      await db.s("fam_" + user.oilaId, { ...o2, azolar: o2.azolarIds });
+      setOila(o2);
       setAzolar([...azolar, nu]);
       setShowAddKid(false); setKidName(""); setKidLogin(""); setKidPw("");
       setKidCreated({ ism: nu.ism, login: loginKey, pw: kidPw });

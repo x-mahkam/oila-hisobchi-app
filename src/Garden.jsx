@@ -405,7 +405,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const currentStage = STAGES[Math.min(Math.max(mainStage, 0), STAGES.length - 1)];
 
   return (
-    <div style={{ height:"100dvh", maxHeight:"100dvh", background:"linear-gradient(180deg,#0ea5e9 0%,#38bdf8 25%,#7dd3fc 45%,#86efac 60%,#22c55e 75%,#15803d 100%)", position:"relative", overflow:"hidden", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif" }}>
+    <div style={{ height:"100dvh", background:"linear-gradient(180deg,#0ea5e9 0%,#38bdf8 25%,#7dd3fc 45%,#86efac 60%,#22c55e 75%,#15803d 100%)", position:"relative", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif", overflow:"hidden" }}>
 
       {/* ── CSS ── */}
       <style>{`
@@ -496,7 +496,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
       </div>
 
       {/* ── O'simlik maydoni ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", overflowY: "auto", overflowX: "hidden" }}>
 
         {/* Asosiy o'simlik */}
         <div style={{ position: "relative", marginBottom: -8, zIndex: 10 }}>
@@ -516,7 +516,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         </div>
 
         {/* ── Yashil zamin ── */}
-        <div style={{ background: "linear-gradient(180deg,#16a34a 0%,#14532d 100%)", width: "100%", borderRadius: "40px 40px 0 0", padding: "22px 18px 32px", position: "relative", zIndex: 9 }}>
+        <div style={{ background: "linear-gradient(180deg,#16a34a 0%,#14532d 100%)", width: "100%", borderRadius: "40px 40px 0 0", padding: "16px 14px 24px", position: "relative", zIndex: 9, flexShrink: 0 }}>
 
           {/* Daraxt bosqichi nomi */}
           <div style={{ textAlign: "center", marginBottom: 16 }}>
