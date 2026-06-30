@@ -5,7 +5,7 @@ import { Ico } from "../../utils/icons.jsx";
 import { td } from "../../utils/formatters.js";
 
 export default function AddTransactionModal({
-  th, S, lg, f, ok$, buzz,
+  th, STY, lg, f, ok$, buzz,
   user, oila, azolar, xar, dar,
   addX, addD,
   addModalTab, setAddModalTab,
@@ -117,15 +117,15 @@ export default function AddTransactionModal({
                 <div style={{ fontSize: 11, color: th.t2 }}>{lg === "uz" ? "Xarajat kategoriyasi" : "Expense category"}</div>
               </div>
             </div>
-            <label style={S.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
-            <MoneyInput style={{ ...S.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fS} onChange={setFS} placeholder="0" autoFocus th={th} />
-            <label style={S.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
-            <input style={S.ip} value={fIz} onChange={e => setFIz(e.target.value)} placeholder={lg === "uz" ? "Nima uchun?" : "What for?"} />
-            <label style={S.lb}>{lg === "uz" ? "Sana" : "Date"}</label>
-            <input type="date" style={S.ip} value={fSn} onChange={e => setFSn(e.target.value)} />
+            <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+            <MoneyInput style={{ ...STY.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fS} onChange={setFS} placeholder="0" autoFocus th={th} />
+            <label style={STY.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
+            <input style={STY.ip} value={fIz} onChange={e => setFIz(e.target.value)} placeholder={lg === "uz" ? "Nima uchun?" : "What for?"} />
+            <label style={STY.lb}>{lg === "uz" ? "Sana" : "Date"}</label>
+            <input type="date" style={STY.ip} value={fSn} onChange={e => setFSn(e.target.value)} />
             {azolar.length > 1 && (
               <>
-                <label style={S.lb}>{lg === "uz" ? "Kim uchun?" : "For whom?"}</label>
+                <label style={STY.lb}>{lg === "uz" ? "Kim uchun?" : "For whom?"}</label>
                 <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 6, marginBottom: 12 }}>
                   <button onClick={() => setXForMember("")} style={{ flexShrink: 0, background: !xForMember ? th.ac + "18" : th.surH, border: "1.5px solid " + (!xForMember ? th.ac : th.bor), borderRadius: 11, padding: "9px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: !xForMember ? th.ac : th.t2, fontSize: 12, fontWeight: 600 }}>
                     <Av src={user?.photo} name={user?.ism} size={22} ac={th.ac} />{lg === "uz" ? "O'zim" : "Me"}
@@ -142,7 +142,7 @@ export default function AddTransactionModal({
               <input type="checkbox" id="rep2" checked={fRp} onChange={e => setFRp(e.target.checked)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: th.ac }} />
               <label htmlFor="rep2" style={{ fontSize: 13, color: th.t1, cursor: "pointer" }}>{lg === "uz" ? "Takroriy (oy sayin)" : "Recurring (monthly)"}</label>
             </div>
-            <button onClick={saveX} style={{ ...S.bt(th.rd, "#dc2626"), marginBottom: 8 }}>
+            <button onClick={saveX} style={{ ...STY.bt(th.rd, "#dc2626"), marginBottom: 8 }}>
               {Ico.check("#fff")}{lg === "uz" ? " Xarajatni saqlash" : " Save expense"}
             </button>
           </div>
@@ -159,11 +159,11 @@ export default function AddTransactionModal({
                 <div style={{ fontSize: 11, color: th.t2 }}>{lg === "uz" ? "Daromad turi" : "Income type"}</div>
               </div>
             </div>
-            <label style={S.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
-            <MoneyInput style={{ ...S.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fDS} onChange={setFDS} placeholder="0" autoFocus th={th} />
-            <label style={S.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
-            <input style={S.ip} value={fDI} onChange={e => setFDI(e.target.value)} placeholder={lg === "uz" ? "Masalan: may oyligi" : "e.g. May salary"} />
-            <button onClick={saveD} style={{ ...S.bt(), marginBottom: 8 }}>
+            <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+            <MoneyInput style={{ ...STY.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fDS} onChange={setFDS} placeholder="0" autoFocus th={th} />
+            <label style={STY.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
+            <input style={STY.ip} value={fDI} onChange={e => setFDI(e.target.value)} placeholder={lg === "uz" ? "Masalan: may oyligi" : "e.g. May salary"} />
+            <button onClick={saveD} style={{ ...STY.bt(), marginBottom: 8 }}>
               {Ico.check("#fff")}{lg === "uz" ? " Daromadni saqlash" : " Save income"}
             </button>
           </div>
