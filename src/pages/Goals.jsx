@@ -8,6 +8,7 @@ export default function GoalsPage({
   user, maq, isKid,
   th, t, f, lg,
   addM, setAddM, maqTab, setMaqTab,
+  canSeeReport, isBosh,
   tupId, setTupId, tupS, setTupS,
   editMq, setEditMq, editMqN, setEditMqN, editMqS, setEditMqS,
   addMq, tupMq, delMq, saveEditMq,
@@ -21,7 +22,7 @@ export default function GoalsPage({
         {maqTab === "mine" && <button onClick={() => setAddM(v => !v)} style={{ background: th.ac, border: "none", borderRadius: 10, padding: "7px 14px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 4px 12px " + th.ac + "44" }}>{Ico.add("#fff")}</button>}
       </div>
 
-      {!isKid && (
+      {!isKid && canSeeReport && (
         <div style={{ display: "flex", background: th.bg, borderRadius: 14, padding: 3, marginBottom: 14, gap: 3 }}>
           <button onClick={() => setMaqTab("mine")} style={{ flex: 1, padding: "10px", borderRadius: 11, border: "none", background: maqTab === "mine" ? th.sur : "transparent", color: maqTab === "mine" ? th.t1 : th.t2, fontWeight: maqTab === "mine" ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: maqTab === "mine" ? "0 2px 8px rgba(0,0,0,0.1)" : "none", transition: "all .2s" }}>
             🎯 {lg === "uz" ? "O'zimning" : "My goals"}
