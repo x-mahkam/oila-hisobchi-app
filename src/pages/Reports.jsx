@@ -131,7 +131,7 @@ export default function ReportsPage({
       {/* ── YANGI: Vizual chart bloki ── */}
       <ReportVisualBlock
         th={th} lg={lg} f={f}
-        bX={fX} bD={fD} fjX={fjX} fjD={fjD}
+        bX={bX} bD={bD} fjX={fjX} fjD={fjD}
         KATS={KATS} KN={KN}
       />
 
@@ -349,253 +349,472 @@ export default function ReportsPage({
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// ReportVisualBlock — hisobot vizual qismi (donut + progress)
-// ─────────────────────────────────────────────────────────────
-function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
-  const KAT_EMOJI = { oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊", kommunal:"🏠", konil:"🎬", talim:"📚", hadya:"🎁", boshqa:"💸" };
-  const [chartTab, setChartTab] = useState("xarajat"); // xarajat | daromad
-  const [activeIdx, setActiveIdx] = useState(null);
-  const [barsReady, setBarsReady] = useState(false);
 
+// ═══════════════════════════════════════════════════════════════
+// ReportVisualBlock — 3 slide swipeable chart (rasmdagi kabi)
+// ═══════════════════════════════════════════════════════════════
+function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
+  const KAT_EMOJI = {
+    oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊",
+    kommunal:"🏠", konil:"🎬", talim:"📚", hadya:"🎁", qarz:"💸", boshqa:"💳"
+  };
+
+  // ── Davr tanlash state ─────────────────────────────────
+  const [scope,    setScope]   = useState("mine");   // mine | family
+  const [period,   setPeriod]  = useState("oy");     // hafta | oy | yil
+  const [slideIdx, setSlideIdx] = useState(0);       // 0=donut+dates, 1=donut+cats, 2=line
+
+  // Joriy sana
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  const thisMonth = now.getMonth(); // 0-based
+  const thisWeek = getWeekNum(now);
+
+  function getWeekNum(d) {
+    const s = new Date(d.getFullYear(), 0, 1);
+    return Math.ceil(((d - s) / 86400000 + s.getDay() + 1) / 7);
+  }
+
+  // Davr variantlari
+  const periodOptions = {
+    hafta: Array.from({ length: Math.min(thisWeek, 8) }, (_, i) => {
+      const w = thisWeek - (Math.min(thisWeek, 8) - 1 - i);
+      if (w === thisWeek) return { key: `${thisYear}-W${w}`, label: "Bu hafta", sub: "" };
+      if (w === thisWeek - 1) return { key: `${thisYear}-W${w}`, label: "O'tgan hafta", sub: "" };
+      return { key: `${thisYear}-W${w}`, label: `${w}-hafta`, sub: `${thisYear}` };
+    }),
+    oy: Array.from({ length: thisMonth + 1 }, (_, i) => {
+      const months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
+      const m = i;
+      return { key: `${thisYear}-${String(m+1).padStart(2,"0")}`, label: months_uz[m], sub: String(thisYear) };
+    }),
+    yil: [
+      { key: `${thisYear-2}`, label: String(thisYear-2), sub: "" },
+      { key: `${thisYear-1}`, label: "O'tgan yil", sub: String(thisYear-1) },
+      { key: `${thisYear}`,   label: "Bu yil",     sub: String(thisYear) },
+    ],
+  };
+
+  const opts = periodOptions[period];
+  const [selIdx, setSelIdx] = useState(opts.length - 1);
+  const selectedOpt = opts[Math.min(selIdx, opts.length - 1)];
+  const scrollRef = useRef(null);
+
+  // Period o'zgarganda oxirgi variantni tanlash
   useEffect(() => {
-    setBarsReady(false);
-    const t = setTimeout(() => setBarsReady(true), 80);
-    return () => clearTimeout(t);
-  }, [chartTab]);
+    const newOpts = periodOptions[period];
+    setSelIdx(newOpts.length - 1);
+    setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = scrollRef.current.scrollWidth;
+      }
+    }, 50);
+  }, [period]);
 
-  // Xarajat kategoriyalari
-  const catData = KATS.map((k, i) => {
-    const sum = bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-    return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💰", sum };
-  }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
+  // ── Ma'lumotlarni tanlangan davrga filtrlash ─────────────
+  const filteredX = useMemo(() => {
+    return bX.filter(x => {
+      if (!x.sana) return false;
+      const key = selectedOpt.key;
+      if (period === "oy")    return x.sana.startsWith(key);
+      if (period === "yil")   return x.sana.startsWith(key.substring(0, 4));
+      if (period === "hafta") {
+        const d = new Date(x.sana);
+        const w = getWeekNum(d);
+        const y = d.getFullYear();
+        return `${y}-W${w}` === key;
+      }
+      return false;
+    });
+  }, [bX, selectedOpt, period]);
 
-  const total = chartTab === "xarajat" ? fjX : fjD;
-  const displayData = catData.slice(0, 6);
-  const savingsRate = fjD > 0 ? Math.max(0, Math.round((fjD - fjX) / fjD * 100)) : 0;
+  const filteredD = useMemo(() => {
+    return bD.filter(d => {
+      if (!d.sana) return false;
+      const key = selectedOpt.key;
+      if (period === "oy")    return d.sana.startsWith(key);
+      if (period === "yil")   return d.sana.startsWith(key.substring(0, 4));
+      if (period === "hafta") {
+        const dt = new Date(d.sana);
+        const w = getWeekNum(dt);
+        const y = dt.getFullYear();
+        return `${y}-W${w}` === key;
+      }
+      return false;
+    });
+  }, [bD, selectedOpt, period]);
 
-  const isEmpty = total === 0 && fjX === 0 && fjD === 0;
+  const totalX = filteredX.reduce((s, x) => s + Number(x.summa || 0), 0);
+  const totalD = filteredD.reduce((s, d) => s + Number(d.summa || 0), 0);
+
+  // Kategoriyalar
+  const catData = useMemo(() => KATS.map((k, i) => {
+    const sum = filteredX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+    return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💳", sum };
+  }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum), [filteredX, lg]);
+
+  // Sanalar bo'yicha xarajatlar (slide 1 uchun)
+  const dateData = useMemo(() => {
+    const map = {};
+    filteredX.forEach(x => {
+      if (!x.sana) return;
+      map[x.sana] = (map[x.sana] || 0) + Number(x.summa || 0);
+    });
+    return Object.entries(map)
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .slice(0, 6)
+      .map(([sana, sum]) => ({ sana, sum }));
+  }, [filteredX]);
+
+  // Line chart ma'lumotlari (slide 3 uchun)
+  const lineData = useMemo(() => {
+    if (period === "oy") {
+      // Oyning har kuni
+      const key = selectedOpt.key;
+      const [y, m] = key.split("-").map(Number);
+      const daysInMonth = new Date(y, m, 0).getDate();
+      return Array.from({ length: daysInMonth }, (_, i) => {
+        const day = String(i + 1).padStart(2, "0");
+        const sana = `${y}-${String(m).padStart(2,"0")}-${day}`;
+        const sum = filteredX.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
+        return { label: `${m}/${i+1}`, sum, sana };
+      });
+    }
+    if (period === "hafta") {
+      const key = selectedOpt.key;
+      const [y, wPart] = key.split("-W");
+      const w = parseInt(wPart);
+      const jan1 = new Date(parseInt(y), 0, 1);
+      const weekStart = new Date(jan1.getTime() + (w - 1) * 7 * 86400000);
+      return Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(weekStart.getTime() + i * 86400000);
+        const sana = d.toISOString().slice(0,10);
+        const sum = filteredX.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
+        const days = ["Ya","Du","Se","Ch","Pa","Sh","Ya"];
+        return { label: days[d.getDay()], sum, sana };
+      });
+    }
+    if (period === "yil") {
+      const y = parseInt(selectedOpt.key.slice(0,4));
+      const months_uz = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
+      return Array.from({ length: 12 }, (_, i) => {
+        const prefix = `${y}-${String(i+1).padStart(2,"0")}`;
+        const sum = filteredX.filter(x => x.sana?.startsWith(prefix)).reduce((s, x) => s + Number(x.summa||0), 0);
+        return { label: months_uz[i], sum };
+      });
+    }
+    return [];
+  }, [filteredX, period, selectedOpt]);
+
+  const lineMax = Math.max(...lineData.map(d => d.sum), 1);
+  const lineAvg = lineData.length ? Math.round(lineData.reduce((s, d) => s + d.sum, 0) / lineData.filter(d=>d.sum>0).length || 0) : 0;
+
+  // ── Swipe ────────────────────────────────────────────────
+  const touchStart = useRef(null);
+  const onTouchStart = e => { touchStart.current = e.touches[0].clientX; };
+  const onTouchEnd = e => {
+    if (touchStart.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStart.current;
+    if (dx < -40) setSlideIdx(s => Math.min(s + 1, 2));
+    if (dx >  40) setSlideIdx(s => Math.max(s - 1, 0));
+    touchStart.current = null;
+  };
+
+  // ── Donut SVG ────────────────────────────────────────────
+  const DonutEl = ({ size = 140, highlightIdx }) => {
+    const cx = size/2, cy = size/2, R = size*0.36, ri = size*0.24, gap = 0.025;
+    if (!catData.length || totalX === 0) return (
+      <svg width={size} height={size}>
+        <circle cx={cx} cy={cy} r={(R+ri)/2} fill="none" stroke={th.bor} strokeWidth={R-ri} opacity={0.3}/>
+        <circle cx={cx} cy={cy} r={ri-3} fill={th.bg}/>
+        <text x={cx} y={cy-6} textAnchor="middle" fill={th.t3} fontSize={9} fontWeight={600}>MA'LUMOT</text>
+        <text x={cx} y={cy+8} textAnchor="middle" fill={th.t3} fontSize={9} fontWeight={600}>YO'Q</text>
+      </svg>
+    );
+    let cursor = -Math.PI/2;
+    const segs = catData.slice(0,6).map((cat, i) => {
+      const angle = (cat.sum / totalX) * 2 * Math.PI - gap;
+      const sa = cursor + gap/2, ea = cursor + gap/2 + angle;
+      cursor += angle + gap;
+      const large = angle > Math.PI ? 1 : 0;
+      const d = [
+        `M ${cx+R*Math.cos(sa)} ${cy+R*Math.sin(sa)}`,
+        `A ${R} ${R} 0 ${large} 1 ${cx+R*Math.cos(ea)} ${cy+R*Math.sin(ea)}`,
+        `L ${cx+ri*Math.cos(ea)} ${cy+ri*Math.sin(ea)}`,
+        `A ${ri} ${ri} 0 ${large} 0 ${cx+ri*Math.cos(sa)} ${cy+ri*Math.sin(sa)}`,
+        "Z"
+      ].join(" ");
+      const midA = sa + angle/2;
+      return { ...cat, d, midA, i };
+    });
+    return (
+      <svg width={size} height={size} style={{overflow:"visible"}}>
+        <circle cx={cx} cy={cy} r={(R+ri)/2} fill="none" stroke={th.bor} strokeWidth={R-ri} opacity={0.25}/>
+        {segs.map((seg, i) => (
+          <path key={seg.id} d={seg.d} fill={seg.color}
+            opacity={highlightIdx===null||highlightIdx===undefined ? 0.9 : highlightIdx===i ? 1 : 0.3}
+            style={{
+              transform: highlightIdx===i ? `translate(${Math.cos(seg.midA)*5}px,${Math.sin(seg.midA)*5}px)` : "none",
+              transition:"all .18s ease",
+              filter: highlightIdx===i ? `drop-shadow(0 0 6px ${seg.color}88)` : "none",
+            }}
+          />
+        ))}
+        <circle cx={cx} cy={cy} r={ri-3} fill={th.bg}/>
+      </svg>
+    );
+  };
+
+  const fmtN = n => n >= 1000000 ? (n/1000000).toFixed(1)+" mln" : n >= 1000 ? Math.round(n/1000)+"K" : String(n);
+  const [hovCat, setHovCat] = useState(null);
 
   return (
     <div style={{ marginBottom: 18 }}>
 
-      {/* Tab: xarajat / daromad */}
-      <div style={{ display: "flex", background: th.surH, borderRadius: 12, padding: 3, marginBottom: 14, gap: 3 }}>
-        {[["xarajat", lg === "uz" ? "Xarajat" : "Expenses"], ["daromad", lg === "uz" ? "Daromad" : "Income"]].map(([key, label]) => (
-          <button key={key} onClick={() => setChartTab(key)} style={{
-            flex: 1, padding: "9px 0", border: "none", borderRadius: 9, cursor: "pointer",
-            fontWeight: 700, fontSize: 13, transition: "all .2s",
-            background: chartTab === key
-              ? key === "xarajat"
-                ? "linear-gradient(135deg," + th.rd + "cc," + th.rd + "88)"
-                : "linear-gradient(135deg," + th.gr + "cc," + th.gr + "88)"
-              : "transparent",
-            color: chartTab === key ? "#fff" : th.t2,
-            boxShadow: chartTab === key ? "0 3px 10px " + (key === "xarajat" ? th.rd : th.gr) + "44" : "none",
+      {/* ── Scope toggle ── */}
+      <div style={{ display:"flex", background:th.surH, borderRadius:12, padding:3, marginBottom:12, gap:3 }}>
+        {[["mine", lg==="uz"?"O'zimning":"Mine"], ["family", lg==="uz"?"Oilamning":"Family"]].map(([key, label]) => (
+          <button key={key} onClick={() => setScope(key)} style={{
+            flex:1, padding:"9px 0", border:"none", borderRadius:9, cursor:"pointer",
+            fontWeight:700, fontSize:13, transition:"all .2s",
+            background: scope===key ? "linear-gradient(135deg,"+th.ac+","+th.ac2+")" : "transparent",
+            color: scope===key ? "#fff" : th.t3,
+            boxShadow: scope===key ? "0 3px 10px "+th.ac+"44" : "none",
           }}>{label}</button>
         ))}
       </div>
 
-      {/* Donut chart + markaziy raqam */}
-      <div style={{ background: th.sur, borderRadius: 20, border: "1px solid " + th.bor, padding: "20px 16px 16px", marginBottom: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+      {/* ── Davr (Hafta/Oy/Yil) ── */}
+      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
+        {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => (
+          <button key={key} onClick={() => setPeriod(key)} style={{
+            flex:1, padding:"9px 0", borderRadius:10, border:"none", cursor:"pointer",
+            fontWeight:700, fontSize:13, transition:"all .2s",
+            background: period===key ? th.ac : th.sur,
+            color: period===key ? (th.ac==="#f5b731"||th.ac==="#f59e0b"?"#111":"#fff") : th.t3,
+            boxShadow: period===key ? "0 3px 10px "+th.ac+"33" : "none",
+          }}>{label}</button>
+        ))}
+      </div>
 
-          {/* SVG Donut */}
-          <div style={{ flexShrink: 0, position: "relative", width: 130, height: 130 }}>
-            <DonutSVG
-              data={displayData}
-              total={total}
-              activeIdx={activeIdx}
-              setActiveIdx={setActiveIdx}
-              th={th}
-              isExpense={chartTab === "xarajat"}
-            />
-            {/* Center */}
-            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-              {isEmpty ? (
-                <>
-                  <div style={{ fontSize: 24 }}>{chartTab === "xarajat" ? "💸" : "💰"}</div>
-                  <div style={{ fontSize: 10, color: th.t3, marginTop: 4 }}>{lg === "uz" ? "Ma'lumot yo'q" : "No data"}</div>
-                </>
-              ) : activeIdx !== null && displayData[activeIdx] ? (
-                <>
-                  <div style={{ fontSize: 16 }}>{displayData[activeIdx].icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: displayData[activeIdx].color, marginTop: 2 }}>
-                    {total > 0 ? Math.round(displayData[activeIdx].sum / total * 100) : 0}%
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div style={{ fontSize: 9, color: th.t3, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
-                    {chartTab === "xarajat" ? (lg === "uz" ? "xarajat" : "spent") : (lg === "uz" ? "daromad" : "income")}
-                  </div>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: chartTab === "xarajat" ? th.rd : th.gr, letterSpacing: -0.5, lineHeight: 1.1 }}>
-                    {f(total, true)}
-                  </div>
-                </>
-              )}
+      {/* ── Davr variantlari (scroll) ── */}
+      <div ref={scrollRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:10, marginBottom:4, scrollbarWidth:"none" }}>
+        <style>{`.scrollhide::-webkit-scrollbar{display:none}`}</style>
+        {opts.map((opt, i) => (
+          <button key={opt.key} onClick={() => setSelIdx(i)} style={{
+            flexShrink:0, padding:"7px 14px", borderRadius:20, border:"none", cursor:"pointer",
+            fontWeight: selIdx===i ? 800 : 500, fontSize:13, transition:"all .2s",
+            background: selIdx===i ? "transparent" : "transparent",
+            color: selIdx===i ? th.t1 : th.t3,
+            borderBottom: selIdx===i ? "2px solid "+th.ac : "2px solid transparent",
+            borderRadius: 0,
+          }}>
+            {opt.label}
+            {opt.sub && <span style={{ display:"block", fontSize:10, color:th.t3, fontWeight:400 }}>{opt.sub}</span>}
+          </button>
+        ))}
+      </div>
+
+      {/* ── 3 ta slide (swipeable) ── */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        style={{ background:th.sur, borderRadius:20, border:"1px solid "+th.bor, overflow:"hidden", marginBottom:12 }}
+      >
+        {/* Slide 0: Donut + sanalar */}
+        {slideIdx === 0 && (
+          <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
+              <DonutEl size={140} highlightIdx={null}/>
+              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
+                <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
+                  {totalX > 0 ? "+" + fmtN(totalX) : lg==="uz"?"Ma'lumot\nyoq":"No data"}
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Legend */}
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-            {isEmpty && (
-              <div style={{ fontSize: 12, color: th.t3, lineHeight: 1.6 }}>
-                {lg === "uz" ? "Hali bu oy uchun ma'lumot kiritilmagan. Xarajat yoki daromad qo'shing." : "No data yet. Add expenses or income."}
-              </div>
-            )}
-            {!isEmpty && displayData.slice(0, 5).map((cat, i) => (
-              <div
-                key={cat.id}
-                onMouseEnter={() => setActiveIdx(i)}
-                onMouseLeave={() => setActiveIdx(null)}
-                onTouchStart={() => setActiveIdx(i)}
-                onTouchEnd={() => setActiveIdx(null)}
-                style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", opacity: activeIdx === null || activeIdx === i ? 1 : 0.45, transition: "opacity .2s" }}
-              >
-                <div style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }}/>
-                <span style={{ fontSize: 11, color: th.t1, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>
-                  {cat.name}
-                </span>
-                <span style={{ fontSize: 11, fontWeight: 800, color: cat.color, flexShrink: 0 }}>
-                  {total > 0 ? Math.round(cat.sum / total * 100) : 0}%
-                </span>
-              </div>
-            ))}
-            )}
-            {/* Tejamkorlik ko'rsatkichi */}
-            {fjD > 0 && (
-              <div style={{ marginTop: 4, paddingTop: 6, borderTop: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 6 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: th.ac, flexShrink: 0 }}/>
-                <span style={{ fontSize: 10, color: th.t2, flex: 1 }}>{lg === "uz" ? "Tejamkorlik" : "Savings"}</span>
-                <span style={{ fontSize: 11, fontWeight: 800, color: savingsRate > 20 ? th.gr : savingsRate > 0 ? th.am : th.rd }}>
-                  {savingsRate}%
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Daromad / Xarajat balans bar */}
-        {fjD > 0 && fjX > 0 && (
-          <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid " + th.bor }}>
-            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
-              <span style={{ fontSize: 10, color: th.gr, fontWeight: 700 }}>↑ {f(fjD, true)}</span>
-              <span style={{ fontSize: 10, color: th.t3 }}>{lg === "uz" ? "balans" : "balance"}</span>
-              <span style={{ fontSize: 10, color: th.rd, fontWeight: 700 }}>↓ {f(fjX, true)}</span>
-            </div>
-            <div style={{ height: 8, borderRadius: 4, background: th.bor, overflow: "hidden", position: "relative" }}>
-              <div style={{
-                position: "absolute", left: 0, top: 0, bottom: 0,
-                width: fjD > 0 ? Math.min(100, fjX / fjD * 100) + "%" : "0%",
-                background: "linear-gradient(90deg," + th.rd + "88," + th.rd + ")",
-                borderRadius: 4, transition: "width .8s cubic-bezier(0.34,1.56,0.64,1)",
-              }}/>
-              <div style={{
-                position: "absolute", left: 0, top: 0, bottom: 0,
-                width: fjD > 0 ? Math.min(100, (fjD - fjX) / fjD * 100) + "%" : "0%",
-                background: "linear-gradient(90deg," + th.gr + "88," + th.gr + ")",
-                borderRadius: 4, marginLeft: fjD > 0 ? Math.min(100, fjX / fjD * 100) + "%" : "0%",
-                transition: "all .8s cubic-bezier(0.34,1.56,0.64,1)",
-              }}/>
+            <div style={{ flex:1, minWidth:0 }}>
+              {dateData.length === 0
+                ? <div style={{ fontSize:12, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?"Bu davrda xarajat yo'q":"No expenses this period"}</div>
+                : dateData.slice(0,5).map((d, i) => {
+                    const col = catData[i % catData.length]?.color || th.ac;
+                    return (
+                      <div key={d.sana} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
+                        <div style={{ width:18, height:18, borderRadius:"50%", background:col+"22", border:"2px solid "+col, flexShrink:0 }}/>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:12, color:th.t2 }}>
+                            {(() => {
+                              const dt = new Date(d.sana);
+                              const months = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
+                              return `${months[dt.getMonth()]} ${dt.getDate()}`;
+                            })()}
+                          </div>
+                        </div>
+                        <div style={{ fontSize:12, fontWeight:700, color:th.t1, textAlign:"right" }}>
+                          {d.sum.toLocaleString("uz-UZ")}
+                        </div>
+                      </div>
+                    );
+                  })
+              }
             </div>
           </div>
         )}
+
+        {/* Slide 1: Donut + kategoriya % */}
+        {slideIdx === 1 && (
+          <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
+              <DonutEl size={140} highlightIdx={hovCat}/>
+              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
+                {hovCat !== null && catData[hovCat]
+                  ? <>
+                      <div style={{ fontSize:18 }}>{catData[hovCat].icon}</div>
+                      <div style={{ fontSize:11, fontWeight:900, color:catData[hovCat].color }}>
+                        {totalX>0?Math.round(catData[hovCat].sum/totalX*100):0}%
+                      </div>
+                    </>
+                  : <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
+                      {totalX > 0 ? "+" + fmtN(totalX) : "—"}
+                    </div>
+                }
+              </div>
+            </div>
+            <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:7 }}>
+              {catData.length === 0
+                ? <div style={{ fontSize:12, color:th.t3 }}>{lg==="uz"?"Bu davrda xarajat yo'q":"No data"}</div>
+                : catData.slice(0,5).map((cat, i) => (
+                    <div key={cat.id} style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer" }}
+                      onMouseEnter={() => setHovCat(i)} onMouseLeave={() => setHovCat(null)}
+                      onTouchStart={() => setHovCat(i)} onTouchEnd={() => setHovCat(null)}>
+                      <div style={{ width:14, height:14, borderRadius:"50%", background:cat.color+"22", border:"2px solid "+cat.color, flexShrink:0 }}/>
+                      <span style={{ flex:1, fontSize:12, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{cat.name}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:cat.color, flexShrink:0 }}>
+                        {totalX>0?(cat.sum/totalX*100).toFixed(2):0}%
+                      </span>
+                    </div>
+                  ))
+              }
+              {catData.length > 5 && (
+                <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+                  <div style={{ width:14, height:14, borderRadius:"50%", background:th.t3+"22", border:"2px solid "+th.t3, flexShrink:0 }}/>
+                  <span style={{ flex:1, fontSize:12, color:th.t2, fontWeight:600 }}>{lg==="uz"?"Boshqa":"Other"}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:th.t3, flexShrink:0 }}>
+                    {totalX>0?(catData.slice(5).reduce((s,c)=>s+c.sum,0)/totalX*100).toFixed(2):0}%
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Slide 2: Line chart */}
+        {slideIdx === 2 && (
+          <div style={{ padding:"16px 16px 10px" }}>
+            <div style={{ marginBottom:10 }}>
+              <div style={{ fontSize:12, color:th.t2 }}>Total: <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
+              <div style={{ fontSize:12, color:th.t2 }}>Average: <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
+            </div>
+            <LineChartSVG data={lineData} lineMax={lineMax} th={th} f={f}/>
+          </div>
+        )}
+
+        {/* Slide dots */}
+        <div style={{ display:"flex", justifyContent:"center", gap:8, padding:"10px 0 14px" }}>
+          {[0,1,2].map(i => (
+            <div key={i} onClick={() => setSlideIdx(i)} style={{
+              width: slideIdx===i ? 20 : 7, height:7, borderRadius:4,
+              background: slideIdx===i ? th.ac : th.t3+"44",
+              transition:"all .3s", cursor:"pointer",
+            }}/>
+          ))}
+        </div>
       </div>
 
-      {/* Kategoriya progress barlari */}
-      {displayData.length > 0 && chartTab === "xarajat" && !isEmpty && (
-        <div style={{ background: th.sur, borderRadius: 20, border: "1px solid " + th.bor, padding: "16px 14px", marginBottom: 4 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.8 }}>
-            {lg === "uz" ? "Kategoriya taqsimoti" : "Category breakdown"}
+      {/* ── Kategoriya breakdown ro'yxati ── */}
+      {catData.length > 0 && (
+        <div style={{ background:th.sur, borderRadius:20, border:"1px solid "+th.bor, padding:"16px 14px" }}>
+          <div style={{ fontSize:12, fontWeight:700, color:th.t2, marginBottom:14, textTransform:"uppercase", letterSpacing:0.8 }}>
+            {lg==="uz"?"Kategoriyalar":"Categories"}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
-            {displayData.map((cat, i) => {
-              const pct = total > 0 ? cat.sum / total * 100 : 0;
-              return (
-                <div key={cat.id}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: cat.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{cat.icon}</div>
-                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: th.t1 }}>{cat.name}</span>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: th.t1 }}>{f(cat.sum, true)}</span>
-                    <span style={{ fontSize: 11, color: cat.color, fontWeight: 700, minWidth: 36, textAlign: "right" }}>{pct.toFixed(1)}%</span>
+          {catData.map((cat, i) => {
+            const pct = totalX>0 ? cat.sum/totalX*100 : 0;
+            return (
+              <div key={cat.id} style={{ marginBottom:16 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:cat.color+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>
+                    {cat.icon}
                   </div>
-                  <div style={{ height: 5, background: th.bor, borderRadius: 3, overflow: "hidden" }}>
-                    <div style={{
-                      height: "100%",
-                      width: barsReady ? pct + "%" : "0%",
-                      background: "linear-gradient(90deg," + cat.color + "66," + cat.color + ")",
-                      borderRadius: 3,
-                      transition: "width " + (0.5 + i * 0.06) + "s cubic-bezier(0.34,1.56,0.64,1)",
-                    }}/>
-                  </div>
+                  <span style={{ flex:1, fontSize:14, fontWeight:600, color:th.t1 }}>{cat.name}</span>
+                  <span style={{ fontSize:13, fontWeight:700, color:th.t2, marginRight:8 }}>{pct.toFixed(2)}%</span>
+                  <span style={{ fontSize:14, fontWeight:800, color:th.t1 }}>{cat.sum.toLocaleString("uz-UZ")}</span>
                 </div>
-              );
-            })}
-          </div>
+                <div style={{ height:5, background:th.bor, borderRadius:3, overflow:"hidden", marginLeft:46 }}>
+                  <div style={{
+                    height:"100%", width:pct+"%",
+                    background:"linear-gradient(90deg,"+cat.color+"66,"+cat.color+")",
+                    borderRadius:3, transition:"width "+(0.5+i*0.06)+"s cubic-bezier(0.34,1.56,0.64,1)",
+                  }}/>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-// ── Donut SVG component ────────────────────────────────────────
-function DonutSVG({ data, total, activeIdx, setActiveIdx, th, isExpense }) {
-  const size = 130;
-  const cx = size / 2;
-  const cy = size / 2;
-  const R = 52;
-  const ri = 34;
-  const gap = 0.025;
-
-  if (!data.length || total === 0) {
-    return (
-      <svg width={size} height={size}>
-        <circle cx={cx} cy={cy} r={(R + ri) / 2} fill="none" stroke={th.bor} strokeWidth={R - ri}/>
-      </svg>
-    );
-  }
-
-  let cursor = -Math.PI / 2;
-  const segments = data.map((cat, i) => {
-    const angle = (cat.sum / total) * (2 * Math.PI) - gap;
-    const sa = cursor + gap / 2;
-    const ea = cursor + gap / 2 + angle;
-    cursor += angle + gap;
-    const large = angle > Math.PI ? 1 : 0;
-    const d = [
-      `M ${cx + R * Math.cos(sa)} ${cy + R * Math.sin(sa)}`,
-      `A ${R} ${R} 0 ${large} 1 ${cx + R * Math.cos(ea)} ${cy + R * Math.sin(ea)}`,
-      `L ${cx + ri * Math.cos(ea)} ${cy + ri * Math.sin(ea)}`,
-      `A ${ri} ${ri} 0 ${large} 0 ${cx + ri * Math.cos(sa)} ${cy + ri * Math.sin(sa)}`,
-      "Z",
-    ].join(" ");
-    const midA = sa + angle / 2;
-    return { ...cat, d, midA };
-  });
+// ── Line chart SVG ─────────────────────────────────────────────
+function LineChartSVG({ data, lineMax, th, f }) {
+  const W = 320, H = 160, padL = 10, padR = 10, padT = 16, padB = 28;
+  const iW = W - padL - padR;
+  const iH = H - padT - padB;
+  if (!data.length) return null;
+  const pts = data.map((d, i) => ({
+    x: padL + (i / Math.max(data.length - 1, 1)) * iW,
+    y: padT + iH - (d.sum / lineMax) * iH,
+    ...d
+  }));
+  const pathD = pts.map((p, i) => (i === 0 ? `M ${p.x} ${p.y}` : `L ${p.x} ${p.y}`)).join(" ");
+  // show tick labels — first, middle, last, and max point
+  const maxPt = pts.reduce((mx, p) => p.sum > mx.sum ? p : mx, pts[0]);
+  const labelIdxs = new Set([0, Math.floor(pts.length/2), pts.length-1, pts.indexOf(maxPt)]);
 
   return (
-    <svg width={size} height={size} style={{ overflow: "visible" }}>
-      <circle cx={cx} cy={cy} r={(R + ri) / 2} fill="none" stroke={th.bor} strokeWidth={R - ri} opacity={0.3}/>
-      {segments.map((seg, i) => (
-        <path
-          key={seg.id}
-          d={seg.d}
-          fill={seg.color}
-          opacity={activeIdx === null ? 0.9 : activeIdx === i ? 1 : 0.25}
-          style={{
-            cursor: "pointer",
-            transform: activeIdx === i ? `translate(${Math.cos(seg.midA) * 5}px, ${Math.sin(seg.midA) * 5}px)` : "none",
-            transition: "all 0.18s ease",
-            filter: activeIdx === i ? `drop-shadow(0 0 6px ${seg.color}88)` : "none",
-          }}
-          onMouseEnter={() => setActiveIdx(i)}
-          onMouseLeave={() => setActiveIdx(null)}
-          onTouchStart={(e) => { e.preventDefault(); setActiveIdx(i); }}
-          onTouchEnd={() => setActiveIdx(null)}
-        />
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow:"visible" }}>
+      {/* Y grid lines */}
+      {[0,0.5,1].map((pct, i) => {
+        const y = padT + iH * (1 - pct);
+        return (
+          <g key={i}>
+            <line x1={padL} y1={y} x2={W-padR} y2={y} stroke={th.bor} strokeWidth={0.8} strokeDasharray={i>0?"4,4":""}/>
+            {i > 0 && <text x={padL} y={y-3} fontSize={8} fill={th.t3}>{f(lineMax * pct, true)}</text>}
+          </g>
+        );
+      })}
+      {/* Area fill */}
+      <path
+        d={pathD + ` L ${pts[pts.length-1].x} ${padT+iH} L ${pts[0].x} ${padT+iH} Z`}
+        fill={"url(#lineGrad)"}
+        opacity={0.15}
+      />
+      <defs>
+        <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={th.ac} stopOpacity={0.8}/>
+          <stop offset="100%" stopColor={th.ac} stopOpacity={0}/>
+        </linearGradient>
+      </defs>
+      {/* Line */}
+      <path d={pathD} fill="none" stroke={th.ac} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"/>
+      {/* Dots + labels */}
+      {pts.map((pt, i) => (
+        <g key={i}>
+          <circle cx={pt.x} cy={pt.y} r={pt.sum > 0 ? 4 : 2.5} fill={pt.sum > 0 ? th.ac : th.t3} opacity={0.9}/>
+          {labelIdxs.has(i) && (
+            <text x={pt.x} y={H-4} fontSize={9} fill={th.t3} textAnchor="middle">{pt.label}</text>
+          )}
+        </g>
       ))}
-      <circle cx={cx} cy={cy} r={ri - 3} fill={th.sur}/>
     </svg>
   );
 }
