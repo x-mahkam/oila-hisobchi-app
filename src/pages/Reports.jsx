@@ -374,7 +374,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
   const displayData = catData.slice(0, 6);
   const savingsRate = fjD > 0 ? Math.max(0, Math.round((fjD - fjX) / fjD * 100)) : 0;
 
-  if (total === 0 && fjX === 0 && fjD === 0) return null;
+  const isEmpty = total === 0 && fjX === 0 && fjD === 0;
 
   return (
     <div style={{ marginBottom: 18 }}>
@@ -412,7 +412,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
             />
             {/* Center */}
             <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
-              {activeIdx !== null && displayData[activeIdx] ? (
+              {isEmpty ? (
+                <>
+                  <div style={{ fontSize: 24 }}>{chartTab === "xarajat" ? "💸" : "💰"}</div>
+                  <div style={{ fontSize: 10, color: th.t3, marginTop: 4 }}>{lg === "uz" ? "Ma'lumot yo'q" : "No data"}</div>
+                </>
+              ) : activeIdx !== null && displayData[activeIdx] ? (
                 <>
                   <div style={{ fontSize: 16 }}>{displayData[activeIdx].icon}</div>
                   <div style={{ fontSize: 12, fontWeight: 800, color: displayData[activeIdx].color, marginTop: 2 }}>
@@ -434,7 +439,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
 
           {/* Legend */}
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
-            {displayData.slice(0, 5).map((cat, i) => (
+            {isEmpty && (
+              <div style={{ fontSize: 12, color: th.t3, lineHeight: 1.6 }}>
+                {lg === "uz" ? "Hali bu oy uchun ma'lumot kiritilmagan. Xarajat yoki daromad qo'shing." : "No data yet. Add expenses or income."}
+              </div>
+            )}
+            {!isEmpty && displayData.slice(0, 5).map((cat, i) => (
               <div
                 key={cat.id}
                 onMouseEnter={() => setActiveIdx(i)}
@@ -452,6 +462,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
                 </span>
               </div>
             ))}
+            )}
             {/* Tejamkorlik ko'rsatkichi */}
             {fjD > 0 && (
               <div style={{ marginTop: 4, paddingTop: 6, borderTop: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 6 }}>
@@ -493,7 +504,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
       </div>
 
       {/* Kategoriya progress barlari */}
-      {displayData.length > 0 && chartTab === "xarajat" && (
+      {displayData.length > 0 && chartTab === "xarajat" && !isEmpty && (
         <div style={{ background: th.sur, borderRadius: 20, border: "1px solid " + th.bor, padding: "16px 14px", marginBottom: 4 }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.8 }}>
             {lg === "uz" ? "Kategoriya taqsimoti" : "Category breakdown"}
