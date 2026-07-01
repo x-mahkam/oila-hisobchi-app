@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { KatIco, DarIco, Av, SL, SC } from "../components/common/index.jsx";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
@@ -127,6 +127,13 @@ export default function ReportsPage({
           <span style={{ fontSize: 16 }}>🔒</span>{lg === "uz" ? "Siz faqat o'z hisobotingizni ko'rasiz. Umumiy oila hisoboti uchun oila boshidan ruxsat so'rang." : "You see only your own report. Ask the head for full access."}
         </div>
       )}
+
+      {/* ── YANGI: Vizual chart bloki ── */}
+      <ReportVisualBlock
+        th={th} lg={lg} f={f}
+        bX={fX} bD={fD} fjX={fjX} fjD={fjD}
+        KATS={KATS} KN={KN}
+      />
 
       {/* Oila boshi paneli */}
       {canSeeReport && azolar.length > 1 && (() => {
@@ -339,5 +346,245 @@ export default function ReportsPage({
       </div>
       <button onClick={aiAdv} style={{ ...STY.bt(), marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.brain(th.ac)}{t.aa}</button>
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// ReportVisualBlock — hisobot vizual qismi (donut + progress)
+// ─────────────────────────────────────────────────────────────
+function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN }) {
+  const KAT_EMOJI = { oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊", kommunal:"🏠", konil:"🎬", talim:"📚", hadya:"🎁", boshqa:"💸" };
+  const [chartTab, setChartTab] = useState("xarajat"); // xarajat | daromad
+  const [activeIdx, setActiveIdx] = useState(null);
+  const [barsReady, setBarsReady] = useState(false);
+
+  useEffect(() => {
+    setBarsReady(false);
+    const t = setTimeout(() => setBarsReady(true), 80);
+    return () => clearTimeout(t);
+  }, [chartTab]);
+
+  // Xarajat kategoriyalari
+  const catData = KATS.map((k, i) => {
+    const sum = bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+    return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💰", sum };
+  }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
+
+  const total = chartTab === "xarajat" ? fjX : fjD;
+  const displayData = catData.slice(0, 6);
+  const savingsRate = fjD > 0 ? Math.max(0, Math.round((fjD - fjX) / fjD * 100)) : 0;
+
+  if (total === 0 && fjX === 0 && fjD === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 18 }}>
+
+      {/* Tab: xarajat / daromad */}
+      <div style={{ display: "flex", background: th.surH, borderRadius: 12, padding: 3, marginBottom: 14, gap: 3 }}>
+        {[["xarajat", lg === "uz" ? "Xarajat" : "Expenses"], ["daromad", lg === "uz" ? "Daromad" : "Income"]].map(([key, label]) => (
+          <button key={key} onClick={() => setChartTab(key)} style={{
+            flex: 1, padding: "9px 0", border: "none", borderRadius: 9, cursor: "pointer",
+            fontWeight: 700, fontSize: 13, transition: "all .2s",
+            background: chartTab === key
+              ? key === "xarajat"
+                ? "linear-gradient(135deg," + th.rd + "cc," + th.rd + "88)"
+                : "linear-gradient(135deg," + th.gr + "cc," + th.gr + "88)"
+              : "transparent",
+            color: chartTab === key ? "#fff" : th.t2,
+            boxShadow: chartTab === key ? "0 3px 10px " + (key === "xarajat" ? th.rd : th.gr) + "44" : "none",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Donut chart + markaziy raqam */}
+      <div style={{ background: th.sur, borderRadius: 20, border: "1px solid " + th.bor, padding: "20px 16px 16px", marginBottom: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+
+          {/* SVG Donut */}
+          <div style={{ flexShrink: 0, position: "relative", width: 130, height: 130 }}>
+            <DonutSVG
+              data={displayData}
+              total={total}
+              activeIdx={activeIdx}
+              setActiveIdx={setActiveIdx}
+              th={th}
+              isExpense={chartTab === "xarajat"}
+            />
+            {/* Center */}
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+              {activeIdx !== null && displayData[activeIdx] ? (
+                <>
+                  <div style={{ fontSize: 16 }}>{displayData[activeIdx].icon}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: displayData[activeIdx].color, marginTop: 2 }}>
+                    {total > 0 ? Math.round(displayData[activeIdx].sum / total * 100) : 0}%
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontSize: 9, color: th.t3, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 2 }}>
+                    {chartTab === "xarajat" ? (lg === "uz" ? "xarajat" : "spent") : (lg === "uz" ? "daromad" : "income")}
+                  </div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: chartTab === "xarajat" ? th.rd : th.gr, letterSpacing: -0.5, lineHeight: 1.1 }}>
+                    {f(total, true)}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Legend */}
+          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 6 }}>
+            {displayData.slice(0, 5).map((cat, i) => (
+              <div
+                key={cat.id}
+                onMouseEnter={() => setActiveIdx(i)}
+                onMouseLeave={() => setActiveIdx(null)}
+                onTouchStart={() => setActiveIdx(i)}
+                onTouchEnd={() => setActiveIdx(null)}
+                style={{ display: "flex", alignItems: "center", gap: 7, cursor: "pointer", opacity: activeIdx === null || activeIdx === i ? 1 : 0.45, transition: "opacity .2s" }}
+              >
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: cat.color, flexShrink: 0 }}/>
+                <span style={{ fontSize: 11, color: th.t1, flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 600 }}>
+                  {cat.name}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: cat.color, flexShrink: 0 }}>
+                  {total > 0 ? Math.round(cat.sum / total * 100) : 0}%
+                </span>
+              </div>
+            ))}
+            {/* Tejamkorlik ko'rsatkichi */}
+            {fjD > 0 && (
+              <div style={{ marginTop: 4, paddingTop: 6, borderTop: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: th.ac, flexShrink: 0 }}/>
+                <span style={{ fontSize: 10, color: th.t2, flex: 1 }}>{lg === "uz" ? "Tejamkorlik" : "Savings"}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: savingsRate > 20 ? th.gr : savingsRate > 0 ? th.am : th.rd }}>
+                  {savingsRate}%
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Daromad / Xarajat balans bar */}
+        {fjD > 0 && fjX > 0 && (
+          <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid " + th.bor }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 7 }}>
+              <span style={{ fontSize: 10, color: th.gr, fontWeight: 700 }}>↑ {f(fjD, true)}</span>
+              <span style={{ fontSize: 10, color: th.t3 }}>{lg === "uz" ? "balans" : "balance"}</span>
+              <span style={{ fontSize: 10, color: th.rd, fontWeight: 700 }}>↓ {f(fjX, true)}</span>
+            </div>
+            <div style={{ height: 8, borderRadius: 4, background: th.bor, overflow: "hidden", position: "relative" }}>
+              <div style={{
+                position: "absolute", left: 0, top: 0, bottom: 0,
+                width: fjD > 0 ? Math.min(100, fjX / fjD * 100) + "%" : "0%",
+                background: "linear-gradient(90deg," + th.rd + "88," + th.rd + ")",
+                borderRadius: 4, transition: "width .8s cubic-bezier(0.34,1.56,0.64,1)",
+              }}/>
+              <div style={{
+                position: "absolute", left: 0, top: 0, bottom: 0,
+                width: fjD > 0 ? Math.min(100, (fjD - fjX) / fjD * 100) + "%" : "0%",
+                background: "linear-gradient(90deg," + th.gr + "88," + th.gr + ")",
+                borderRadius: 4, marginLeft: fjD > 0 ? Math.min(100, fjX / fjD * 100) + "%" : "0%",
+                transition: "all .8s cubic-bezier(0.34,1.56,0.64,1)",
+              }}/>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Kategoriya progress barlari */}
+      {displayData.length > 0 && chartTab === "xarajat" && (
+        <div style={{ background: th.sur, borderRadius: 20, border: "1px solid " + th.bor, padding: "16px 14px", marginBottom: 4 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 14, textTransform: "uppercase", letterSpacing: 0.8 }}>
+            {lg === "uz" ? "Kategoriya taqsimoti" : "Category breakdown"}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+            {displayData.map((cat, i) => {
+              const pct = total > 0 ? cat.sum / total * 100 : 0;
+              return (
+                <div key={cat.id}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: cat.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, flexShrink: 0 }}>{cat.icon}</div>
+                    <span style={{ flex: 1, fontSize: 12, fontWeight: 600, color: th.t1 }}>{cat.name}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: th.t1 }}>{f(cat.sum, true)}</span>
+                    <span style={{ fontSize: 11, color: cat.color, fontWeight: 700, minWidth: 36, textAlign: "right" }}>{pct.toFixed(1)}%</span>
+                  </div>
+                  <div style={{ height: 5, background: th.bor, borderRadius: 3, overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%",
+                      width: barsReady ? pct + "%" : "0%",
+                      background: "linear-gradient(90deg," + cat.color + "66," + cat.color + ")",
+                      borderRadius: 3,
+                      transition: "width " + (0.5 + i * 0.06) + "s cubic-bezier(0.34,1.56,0.64,1)",
+                    }}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Donut SVG component ────────────────────────────────────────
+function DonutSVG({ data, total, activeIdx, setActiveIdx, th, isExpense }) {
+  const size = 130;
+  const cx = size / 2;
+  const cy = size / 2;
+  const R = 52;
+  const ri = 34;
+  const gap = 0.025;
+
+  if (!data.length || total === 0) {
+    return (
+      <svg width={size} height={size}>
+        <circle cx={cx} cy={cy} r={(R + ri) / 2} fill="none" stroke={th.bor} strokeWidth={R - ri}/>
+      </svg>
+    );
+  }
+
+  let cursor = -Math.PI / 2;
+  const segments = data.map((cat, i) => {
+    const angle = (cat.sum / total) * (2 * Math.PI) - gap;
+    const sa = cursor + gap / 2;
+    const ea = cursor + gap / 2 + angle;
+    cursor += angle + gap;
+    const large = angle > Math.PI ? 1 : 0;
+    const d = [
+      `M ${cx + R * Math.cos(sa)} ${cy + R * Math.sin(sa)}`,
+      `A ${R} ${R} 0 ${large} 1 ${cx + R * Math.cos(ea)} ${cy + R * Math.sin(ea)}`,
+      `L ${cx + ri * Math.cos(ea)} ${cy + ri * Math.sin(ea)}`,
+      `A ${ri} ${ri} 0 ${large} 0 ${cx + ri * Math.cos(sa)} ${cy + ri * Math.sin(sa)}`,
+      "Z",
+    ].join(" ");
+    const midA = sa + angle / 2;
+    return { ...cat, d, midA };
+  });
+
+  return (
+    <svg width={size} height={size} style={{ overflow: "visible" }}>
+      <circle cx={cx} cy={cy} r={(R + ri) / 2} fill="none" stroke={th.bor} strokeWidth={R - ri} opacity={0.3}/>
+      {segments.map((seg, i) => (
+        <path
+          key={seg.id}
+          d={seg.d}
+          fill={seg.color}
+          opacity={activeIdx === null ? 0.9 : activeIdx === i ? 1 : 0.25}
+          style={{
+            cursor: "pointer",
+            transform: activeIdx === i ? `translate(${Math.cos(seg.midA) * 5}px, ${Math.sin(seg.midA) * 5}px)` : "none",
+            transition: "all 0.18s ease",
+            filter: activeIdx === i ? `drop-shadow(0 0 6px ${seg.color}88)` : "none",
+          }}
+          onMouseEnter={() => setActiveIdx(i)}
+          onMouseLeave={() => setActiveIdx(null)}
+          onTouchStart={(e) => { e.preventDefault(); setActiveIdx(i); }}
+          onTouchEnd={() => setActiveIdx(null)}
+        />
+      ))}
+      <circle cx={cx} cy={cy} r={ri - 3} fill={th.sur}/>
+    </svg>
   );
 }
