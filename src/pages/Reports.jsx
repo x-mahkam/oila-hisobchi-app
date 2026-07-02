@@ -8,7 +8,7 @@ import { tm } from "../utils/formatters.js";
 export default function ReportsPage({
   user, azolar, qarzlar, maq,
   th, t, f, lg, scr, isPremium, isAdmin,
-  bX, bD, jX, jD, bdj, canSeeReport,
+  bX, bD, jX, jD, bdj, canSeeReport, xar, dar,
   hisFil, setHisFil,
   exportLoading, exportExcel, exportPDF,
   adv, advL, aiAdv,
@@ -133,6 +133,7 @@ export default function ReportsPage({
         th={th} lg={lg} f={f}
         bX={bX} bD={bD} fjX={fjX} fjD={fjD}
         KATS={KATS} KN={KN}
+        xar={xar} dar={dar} user={user} azolar={azolar} canSeeReport={canSeeReport}
       />
 
       {/* Oila boshi paneli */}
@@ -202,7 +203,7 @@ export default function ReportsPage({
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
               <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
                 <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke={th.bor} strokeWidth="8" /><circle cx="40" cy="40" r="34" fill="none" stroke={sColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - score / 100)} transform="rotate(-90 40 40)" /></svg>
-                <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 22, fontWeight: 800, color: sColor }}>{score}</span><span style={{ fontSize: 9, color: th.t2 }}>/100</span></div>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 22, fontWeight: 800, color: sColor }}>{score}</span><span style={{ fontSize: 9, color: th.t2 }}>/100</span></div>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 11, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}</div>
@@ -350,10 +351,31 @@ export default function ReportsPage({
 }
 
 
+// ── ISO hafta helperlari: hafta DOIM Dushanbadan boshlanadi ──
+function getISOWeekR(d) {
+  const date = new Date(d);
+  date.setHours(0,0,0,0);
+  date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
+  const jan1 = new Date(date.getFullYear(), 0, 1);
+  return Math.round(((date - jan1) / 86400000 - 3 + (jan1.getDay() + 6) % 7) / 7) + 1;
+}
+function getMondayR(year, week) {
+  const jan4 = new Date(year, 0, 4);
+  const jd = jan4.getDay() || 7; // 1=Du ... 7=Ya
+  const m = new Date(jan4);
+  m.setDate(jan4.getDate() - (jd - 1) + (week - 1) * 7);
+  return m;
+}
+// Mahalliy sana (toISOString UTC+5 da 1 kun orqaga surib yuboradi)
+function fmtLocalR(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+const HAFTA_KUN = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba → Yakshanba
+
 // ═══════════════════════════════════════════════════════════════
-// ReportVisualBlock — 3 slide swipeable chart (rasmdagi kabi)
+// ReportVisualBlock — 4 slide swipeable chart
 // ═══════════════════════════════════════════════════════════════
-function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
+function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, user, azolar, canSeeReport }) {
   const KAT_EMOJI = {
     oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊",
     kommunal:"🏠", konil:"🎬", talim:"📚", hadya:"🎁", qarz:"💸", boshqa:"💳"
@@ -362,26 +384,24 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
   // ── Davr tanlash state ─────────────────────────────────
   const [scope,    setScope]   = useState("mine");   // mine | family
   const [period,   setPeriod]  = useState("oy");     // hafta | oy | yil
-  const [slideIdx, setSlideIdx] = useState(0);       // 0=donut+dates, 1=donut+cats, 2=line
+  const [slideIdx, setSlideIdx] = useState(0);       // 0=donut+dates, 1=donut+cats, 2=line, 3=oila a'zolari
 
   // Joriy sana
   const now = new Date();
   const thisYear = now.getFullYear();
   const thisMonth = now.getMonth(); // 0-based
-  const thisWeek = getWeekNum(now);
-
-  function getWeekNum(d) {
-    const s = new Date(d.getFullYear(), 0, 1);
-    return Math.ceil(((d - s) / 86400000 + s.getDay() + 1) / 7);
-  }
+  const thisWeek = getISOWeekR(now);
 
   // Davr variantlari
   const periodOptions = {
     hafta: Array.from({ length: Math.min(thisWeek, 8) }, (_, i) => {
       const w = thisWeek - (Math.min(thisWeek, 8) - 1 - i);
-      if (w === thisWeek) return { key: `${thisYear}-W${w}`, label: "Bu hafta", sub: "" };
-      if (w === thisWeek - 1) return { key: `${thisYear}-W${w}`, label: "O'tgan hafta", sub: "" };
-      return { key: `${thisYear}-W${w}`, label: `${w}-hafta`, sub: `${thisYear}` };
+      const mo = getMondayR(thisYear, w);
+      const su = new Date(mo.getTime() + 6 * 86400000);
+      const sub = `${mo.getDate()}.${String(mo.getMonth()+1).padStart(2,"0")} – ${su.getDate()}.${String(su.getMonth()+1).padStart(2,"0")}`;
+      if (w === thisWeek) return { key: `${thisYear}-W${w}`, label: "Bu hafta", sub };
+      if (w === thisWeek - 1) return { key: `${thisYear}-W${w}`, label: "O'tgan hafta", sub };
+      return { key: `${thisYear}-W${w}`, label: `${w}-hafta`, sub };
     }),
     oy: Array.from({ length: thisMonth + 1 }, (_, i) => {
       const months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
@@ -411,38 +431,49 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
     }, 50);
   }, [period]);
 
+  // ── Scope filtri: O'zimning = faqat o'z yozuvlari ─────────
+  // To'liq tarix: xar/dar (bX/bD faqat joriy oy — o'tgan davrlar uchun yetmaydi)
+  const allXr = (xar && xar.length ? xar : bX) || [];
+  const allDr = (dar && dar.length ? dar : bD) || [];
+  const srcX = useMemo(() => (scope === "mine" || !canSeeReport)
+    ? allXr.filter(x => x.uid === user?.id || !x.uid) : allXr
+  , [allXr, scope, canSeeReport, user]);
+  const srcD = useMemo(() => (scope === "mine" || !canSeeReport)
+    ? allDr.filter(d => d.uid === user?.id || !d.uid) : allDr
+  , [allDr, scope, canSeeReport, user]);
+
   // ── Ma'lumotlarni tanlangan davrga filtrlash ─────────────
   const filteredX = useMemo(() => {
-    return bX.filter(x => {
+    return srcX.filter(x => {
       if (!x.sana) return false;
       const key = selectedOpt.key;
       if (period === "oy")    return x.sana.startsWith(key);
       if (period === "yil")   return x.sana.startsWith(key.substring(0, 4));
       if (period === "hafta") {
         const d = new Date(x.sana);
-        const w = getWeekNum(d);
+        const w = getISOWeekR(d);
         const y = d.getFullYear();
         return `${y}-W${w}` === key;
       }
       return false;
     });
-  }, [bX, selectedOpt, period]);
+  }, [srcX, selectedOpt, period]);
 
   const filteredD = useMemo(() => {
-    return bD.filter(d => {
+    return srcD.filter(d => {
       if (!d.sana) return false;
       const key = selectedOpt.key;
       if (period === "oy")    return d.sana.startsWith(key);
       if (period === "yil")   return d.sana.startsWith(key.substring(0, 4));
       if (period === "hafta") {
         const dt = new Date(d.sana);
-        const w = getWeekNum(dt);
+        const w = getISOWeekR(dt);
         const y = dt.getFullYear();
         return `${y}-W${w}` === key;
       }
       return false;
     });
-  }, [bD, selectedOpt, period]);
+  }, [srcD, selectedOpt, period]);
 
   const totalX = filteredX.reduce((s, x) => s + Number(x.summa || 0), 0);
   const totalD = filteredD.reduce((s, d) => s + Number(d.summa || 0), 0);
@@ -481,17 +512,15 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
       });
     }
     if (period === "hafta") {
+      // ISO hafta: Dushanbadan boshlanib, Yakshanbada tugaydi
       const key = selectedOpt.key;
       const [y, wPart] = key.split("-W");
-      const w = parseInt(wPart);
-      const jan1 = new Date(parseInt(y), 0, 1);
-      const weekStart = new Date(jan1.getTime() + (w - 1) * 7 * 86400000);
+      const monday = getMondayR(parseInt(y), parseInt(wPart));
       return Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(weekStart.getTime() + i * 86400000);
-        const sana = d.toISOString().slice(0,10);
+        const d = new Date(monday.getTime() + i * 86400000);
+        const sana = fmtLocalR(d);
         const sum = filteredX.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
-        const days = ["Ya","Du","Se","Ch","Pa","Sh","Ya"];
-        return { label: days[d.getDay()], sum, sana };
+        return { label: `${HAFTA_KUN[i]} ${d.getDate()}`, sum, sana };
       });
     }
     if (period === "yil") {
@@ -509,21 +538,35 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
   const lineMax = Math.max(...lineData.map(d => d.sum), 1);
   const lineAvg = lineData.length ? Math.round(lineData.reduce((s, d) => s + d.sum, 0) / lineData.filter(d=>d.sum>0).length || 0) : 0;
 
+  // ── 4-slayd: oila a'zolari xarajat ulushi ─────────────────
+  const MEM_COLORS = ["#22C55E","#3B82F6","#A855F7","#F97316","#F5B731","#EC4899","#06B6D4"];
+  const members = useMemo(() => {
+    if (scope !== "family" || !canSeeReport || !(azolar || []).length) return [];
+    return azolar.map((a, i) => ({
+      id: a.id, ism: a.ism || "?", color: MEM_COLORS[i % MEM_COLORS.length],
+      sum: filteredX.filter(x => x.uid === a.id || (!x.uid && a.id === user?.id))
+        .reduce((s, x) => s + Number(x.summa || 0), 0),
+    })).filter(m => m.sum > 0).sort((a, b) => b.sum - a.sum);
+  }, [azolar, filteredX, scope, canSeeReport, user]);
+  const memTotal = members.reduce((s, m) => s + m.sum, 0);
+  const [hovMem, setHovMem] = useState(null);
+
   // ── Swipe ────────────────────────────────────────────────
+  const maxSlide = (scope === "family" && canSeeReport) ? 3 : 2;
   const touchStart = useRef(null);
   const onTouchStart = e => { touchStart.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
     if (touchStart.current === null) return;
     const dx = e.changedTouches[0].clientX - touchStart.current;
-    if (dx < -40) setSlideIdx(s => Math.min(s + 1, 2));
+    if (dx < -40) setSlideIdx(s => Math.min(s + 1, maxSlide));
     if (dx >  40) setSlideIdx(s => Math.max(s - 1, 0));
     touchStart.current = null;
   };
 
   // ── Donut SVG ────────────────────────────────────────────
-  const DonutEl = ({ size = 140, highlightIdx }) => {
+  const DonutEl = ({ size = 140, highlightIdx, data = catData, total = totalX }) => {
     const cx = size/2, cy = size/2, R = size*0.36, ri = size*0.24, gap = 0.025;
-    if (!catData.length || totalX === 0) return (
+    if (!data.length || total === 0) return (
       <svg width={size} height={size}>
         <circle cx={cx} cy={cy} r={(R+ri)/2} fill="none" stroke={th.bor} strokeWidth={R-ri} opacity={0.3}/>
         <circle cx={cx} cy={cy} r={ri-3} fill={th.bg}/>
@@ -532,8 +575,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
       </svg>
     );
     let cursor = -Math.PI/2;
-    const segs = catData.slice(0,6).map((cat, i) => {
-      const angle = (cat.sum / totalX) * 2 * Math.PI - gap;
+    const segs = data.slice(0,6).map((cat, i) => {
+      const angle = (cat.sum / total) * 2 * Math.PI - gap;
       const sa = cursor + gap/2, ea = cursor + gap/2 + angle;
       cursor += angle + gap;
       const large = angle > Math.PI ? 1 : 0;
@@ -574,11 +617,11 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
       {/* ── Scope toggle ── */}
       <div style={{ display:"flex", background:th.surH, borderRadius:12, padding:3, marginBottom:12, gap:3 }}>
         {[["mine", lg==="uz"?"O'zimning":"Mine"], ["family", lg==="uz"?"Oilamning":"Family"]].map(([key, label]) => (
-          <button key={key} onClick={() => setScope(key)} style={{
+          <button key={key} onClick={() => { setScope(key); setSlideIdx(0); }} style={{
             flex:1, padding:"9px 0", border:"none", borderRadius:9, cursor:"pointer",
             fontWeight:700, fontSize:13, transition:"all .2s",
-            background: scope===key ? "linear-gradient(135deg,"+th.ac+","+th.ac2+")" : "transparent",
-            color: scope===key ? "#fff" : th.t3,
+            background: scope===key ? "linear-gradient(135deg,"+th.ac+","+th.ac2+")" : (th.dark ? "#374151" : "transparent"),
+            color: scope===key ? "#fff" : (th.dark ? "#D1D5DB" : th.t3),
             boxShadow: scope===key ? "0 3px 10px "+th.ac+"44" : "none",
           }}>{label}</button>
         ))}
@@ -590,8 +633,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
           <button key={key} onClick={() => setPeriod(key)} style={{
             flex:1, padding:"9px 0", borderRadius:10, border:"none", cursor:"pointer",
             fontWeight:700, fontSize:13, transition:"all .2s",
-            background: period===key ? th.ac : th.sur,
-            color: period===key ? (th.ac==="#f5b731"||th.ac==="#f59e0b"?"#111":"#fff") : th.t3,
+            background: period===key ? th.ac : (th.dark ? "#374151" : th.sur),
+            color: period===key ? (th.ac==="#f5b731"||th.ac==="#f59e0b"?"#111":"#fff") : (th.dark ? "#D1D5DB" : th.t3),
             boxShadow: period===key ? "0 3px 10px "+th.ac+"33" : "none",
           }}>{label}</button>
         ))}
@@ -605,7 +648,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
             flexShrink:0, padding:"7px 14px", borderRadius:20, border:"none", cursor:"pointer",
             fontWeight: selIdx===i ? 800 : 500, fontSize:13, transition:"all .2s",
             background: selIdx===i ? "transparent" : "transparent",
-            color: selIdx===i ? th.t1 : th.t3,
+            color: selIdx===i ? th.t1 : th.t2,
             borderBottom: selIdx===i ? "2px solid "+th.ac : "2px solid transparent",
             borderRadius: 0,
           }}>
@@ -615,7 +658,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
         ))}
       </div>
 
-      {/* ── 3 ta slide (swipeable) ── */}
+      {/* ── Slide'lar (swipeable) ── */}
       <div
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
@@ -626,7 +669,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
           <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={null}/>
-              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
+              <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
                   {totalX > 0 ? "+" + fmtN(totalX) : lg==="uz"?"Ma'lumot\nyoq":"No data"}
                 </div>
@@ -665,7 +708,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
           <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={hovCat}/>
-              <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
+              <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 {hovCat !== null && catData[hovCat]
                   ? <>
                       <div style={{ fontSize:18 }}>{catData[hovCat].icon}</div>
@@ -718,9 +761,47 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
           </div>
         )}
 
+        {/* Slide 3: Oila a'zolari ulushi — faqat "Oilamning" tanlanganda */}
+        {slideIdx === 3 && scope === "family" && canSeeReport && (
+          <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
+            <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
+              <DonutEl size={140} highlightIdx={hovMem} data={members} total={memTotal}/>
+              <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
+                {hovMem !== null && members[hovMem]
+                  ? <>
+                      <div style={{ fontSize:10, fontWeight:800, color:members[hovMem].color, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{members[hovMem].ism?.split(" ")[0]}</div>
+                      <div style={{ fontSize:12, fontWeight:900, color:members[hovMem].color }}>{memTotal>0?(members[hovMem].sum/memTotal*100).toFixed(1):0}%</div>
+                    </>
+                  : <>
+                      <div style={{ fontSize:10, fontWeight:700, color:th.t2 }}>{lg==="uz"?"Oila jami":"Family total"}</div>
+                      <div style={{ fontSize:12, fontWeight:900, color:th.t1 }}>{memTotal>0?fmtN(memTotal):"\u2014"}</div>
+                    </>
+                }
+              </div>
+            </div>
+            <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:8 }}>
+              {members.length === 0
+                ? <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Bu davrda ma'lumot yo'q":"No data this period"}</div>
+                : members.slice(0,6).map((m, i) => (
+                    <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}
+                      onMouseEnter={() => setHovMem(i)} onMouseLeave={() => setHovMem(null)}
+                      onTouchStart={() => setHovMem(i)} onTouchEnd={() => setHovMem(null)}>
+                      <div style={{ width:15, height:15, borderRadius:"50%", background:m.color+"22", border:"2px solid "+m.color, flexShrink:0 }}/>
+                      <span style={{ flex:1, fontSize:12, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.ism}</span>
+                      <div style={{ textAlign:"right", flexShrink:0 }}>
+                        <div style={{ fontSize:12, fontWeight:800, color:m.color }}>{memTotal>0?(m.sum/memTotal*100).toFixed(1):0}%</div>
+                        <div style={{ fontSize:9, color:th.t2 }}>{m.sum.toLocaleString("uz-UZ")}</div>
+                      </div>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+        )}
+
         {/* Slide dots */}
         <div style={{ display:"flex", justifyContent:"center", gap:8, padding:"10px 0 14px" }}>
-          {[0,1,2].map(i => (
+          {Array.from({ length: maxSlide + 1 }, (_, i) => (
             <div key={i} onClick={() => setSlideIdx(i)} style={{
               width: slideIdx===i ? 20 : 7, height:7, borderRadius:4,
               background: slideIdx===i ? th.ac : th.t3+"44",
@@ -766,6 +847,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar }) {
 
 // ── Line chart SVG ─────────────────────────────────────────────
 function LineChartSVG({ data, lineMax, th, f }) {
+  // O'q yozuvlari uchun DOIM ochiq rang (dark temada #D1D5DB)
+  const AXIS = th.dark ? "#D1D5DB" : (th.t3 || "#64748b");
   const W = 320, H = 160, padL = 10, padR = 10, padT = 16, padB = 28;
   const iW = W - padL - padR;
   const iH = H - padT - padB;
@@ -788,7 +871,7 @@ function LineChartSVG({ data, lineMax, th, f }) {
         return (
           <g key={i}>
             <line x1={padL} y1={y} x2={W-padR} y2={y} stroke={th.bor} strokeWidth={0.8} strokeDasharray={i>0?"4,4":""}/>
-            {i > 0 && <text x={padL} y={y-3} fontSize={8} fill={th.t3}>{f(lineMax * pct, true)}</text>}
+            {i > 0 && <text x={padL} y={y-3} fontSize={9} fill={AXIS} fontWeight={600}>{f(lineMax * pct, true)}</text>}
           </g>
         );
       })}
@@ -809,9 +892,9 @@ function LineChartSVG({ data, lineMax, th, f }) {
       {/* Dots + labels */}
       {pts.map((pt, i) => (
         <g key={i}>
-          <circle cx={pt.x} cy={pt.y} r={pt.sum > 0 ? 4 : 2.5} fill={pt.sum > 0 ? th.ac : th.t3} opacity={0.9}/>
+          <circle cx={pt.x} cy={pt.y} r={pt.sum > 0 ? 4 : 2.5} fill={pt.sum > 0 ? th.ac : AXIS} opacity={0.9}/>
           {labelIdxs.has(i) && (
-            <text x={pt.x} y={H-4} fontSize={9} fill={th.t3} textAnchor="middle">{pt.label}</text>
+            <text x={pt.x} y={H-4} fontSize={9} fill={AXIS} fontWeight={600} textAnchor="middle">{pt.label}</text>
           )}
         </g>
       ))}

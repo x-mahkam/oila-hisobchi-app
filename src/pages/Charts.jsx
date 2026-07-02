@@ -7,7 +7,7 @@ const KAT_EMOJI = { oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊",
 const DAR_EMOJI = { oylik:"💼", qoshimcha:"⚡", biznes:"🏢", sovga:"🎁", boshqa:"💰" };
 const M_UZ = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
 const M_SH  = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
-const DAYS  = ["Du","Se","Ch","Pa","Sh","Ya","Ya"]; // Dushanba=0
+const DAYS  = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba=0 ... Yakshanba=6
 const COLORS = ["#7C6FF7","#F5B731","#22C55E","#EF4444","#06B6D4","#F97316","#EC4899"];
 const SLIDE_H = 250; // barcha slide'lar bir xil balandlik
 
@@ -33,6 +33,11 @@ function getISOWeek(d) {
   date.setDate(date.getDate() + 3 - ((date.getDay() + 6) % 7));
   const jan1 = new Date(date.getFullYear(), 0, 1);
   return Math.round(((date - jan1) / 86400000 - 3 + (jan1.getDay() + 6) % 7) / 7) + 1;
+}
+
+// Mahalliy sana (toISOString UTC ga o'girib yuboradi — Toshkentda xato)
+function fmtLocalDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 
 function fmtBig(n) {
@@ -157,9 +162,9 @@ function Toggle({ options, value, onChange, th, color }) {
           <button key={k} onClick={()=>onChange(k)} style={{
             flex:1, padding:"10px 0", borderRadius:9, cursor:"pointer",
             fontWeight:800, fontSize:14, transition:"all .22s",
-            border:`1.5px solid ${active ? ac : th.bor}`,
-            background: active ? ac+"28" : "transparent",
-            color: active ? ac : th.t2,
+            border:`1.5px solid ${active ? ac : (th.dark?"#4B5563":th.bor)}`,
+            background: active ? ac+"28" : (th.dark?"#374151":"transparent"),
+            color: active ? ac : (th.dark?"#D1D5DB":th.t2),
           }}>{l}</button>
         );
       })}
@@ -215,8 +220,9 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
   const selOpt=opts[Math.min(selIdx,opts.length-1)]||opts[opts.length-1];
 
   // ── Ma'lumot manbalari ─────────────────────────────────────
-  const allX=bX||xar||[];
-  const allD=bD||dar||[];
+  // To'liq tarix: xar/dar (bX/bD faqat joriy oy — yil va o'tgan haftalar uchun yetmaydi)
+  const allX=(xar&&xar.length?xar:bX)||[];
+  const allD=(dar&&dar.length?dar:bD)||[];
 
   // Scope filtri: #5 muammo — ruxsatsiz a'zolar faqat o'z ma'lumotini ko'radi
   const srcX=useMemo(()=>scope==="mine"||!canSeeReport
@@ -265,10 +271,12 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
     if(scope!=="family"||!canSeeReport||!azolar?.length) return [];
     return azolar.map((a,i)=>({
       ...a, color:COLORS[i%COLORS.length],
-      sum:(type==="xarajat"?byPeriod(allX.filter(x=>x.uid===a.id)):byPeriod(allD.filter(d=>d.uid===a.id)))
+      sum:(type==="xarajat"
+        ?byPeriod(allX.filter(x=>x.uid===a.id||(!x.uid&&a.id===user?.id)))
+        :byPeriod(allD.filter(d=>d.uid===a.id||(!d.uid&&a.id===user?.id))))
         .reduce((s,x)=>s+Number(x.summa||0),0)
     })).filter(m=>m.sum>0).sort((a,b)=>b.sum-a.sum);
-  },[allX,allD,azolar,byPeriod,type,scope,canSeeReport]);
+  },[allX,allD,azolar,byPeriod,type,scope,canSeeReport,user]);
   const memTotal=members.reduce((s,m)=>s+m.sum,0);
 
   // ── Slide 0: sanalar ──────────────────────────────────────
@@ -309,7 +317,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       const monday=getMondayOfISOWeek(parseInt(yS),parseInt(wS));
       return Array.from({length:7},(_,i)=>{
         const d=new Date(monday.getTime()+i*86400000);
-        const sana=d.toISOString().slice(0,10);
+        const sana=fmtLocalDate(d);
         // label: "Du 23 Iyn"
         const label=`${DAYS[i]} ${d.getDate()} ${M_SH[d.getMonth()]}`;
         return{label,sum:curr.filter(x=>x.sana===sana).reduce((s,x)=>s+Number(x.summa||0),0),color:getCol(sana)};
@@ -331,7 +339,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
   const lineAvg=activePts.length?Math.round(activePts.reduce((s,d)=>s+d.sum,0)/activePts.length):0;
 
   // ── Swipe ──────────────────────────────────────────────────
-  const maxSlide=(scope==="family"&&canSeeReport&&members.length>0)?3:2;
+  const maxSlide=(scope==="family"&&canSeeReport)?3:2;
   const onTS=e=>{tx.current=e.touches[0].clientX;};
   const onTE=e=>{
     if(tx.current==null)return;
@@ -365,9 +373,9 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
             <button key={k} onClick={()=>{setType(k);setSlide(0);setHov(null);}} style={{
               flex:1,padding:"9px 0",borderRadius:9,cursor:"pointer",
               fontWeight:700,fontSize:13,transition:"all .22s",
-              border:`1.5px solid ${active?ac:th.bor}`,
-              background:active?ac+"28":"transparent",
-              color:active?ac:th.t2,
+              border:`1.5px solid ${active?ac:(th.dark?"#4B5563":th.bor)}`,
+              background:active?ac+"28":(th.dark?"#374151":"transparent"),
+              color:active?ac:(th.dark?"#D1D5DB":th.t2),
             }}>{l}</button>
           );
         })}
@@ -384,9 +392,9 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
             <button key={k} onClick={()=>setPeriod(k)} style={{
               padding:"10px 0",borderRadius:9,cursor:"pointer",
               fontWeight:800,fontSize:14,transition:"all .22s",
-              border:`1.5px solid ${active?th.ac:th.bor}`,
-              background:active?th.ac+"28":"transparent",
-              color:active?th.ac:th.t2,
+              border:`1.5px solid ${active?th.ac:(th.dark?"#4B5563":th.bor)}`,
+              background:active?th.ac+"28":(th.dark?"#374151":"transparent"),
+              color:active?th.ac:(th.dark?"#D1D5DB":th.t2),
             }}>{l}</button>
           );
         })}
@@ -419,7 +427,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
           <div style={slideWrap}>
             <div style={{flexShrink:0,position:"relative",width:150,height:150}}>
               <Donut data={cats} total={total} size={150} hov={hov} setHov={setHov} bgColor={th.sur}/>
-              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",
+              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",flexDirection:"column",
                 alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
                 {hov!=null&&cats[hov]?(
                   <><div style={{fontSize:20}}>{cats[hov].icon}</div>
@@ -459,7 +467,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
           <div style={slideWrap}>
             <div style={{flexShrink:0,position:"relative",width:150,height:150}}>
               <Donut data={cats} total={total} size={150} hov={hov} setHov={setHov} bgColor={th.sur}/>
-              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",
+              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",flexDirection:"column",
                 alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
                 {hov!=null&&cats[hov]?(
                   <><div style={{fontSize:20}}>{cats[hov].icon}</div>
@@ -534,7 +542,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
           <div style={slideWrap}>
             <div style={{flexShrink:0,position:"relative",width:150,height:150}}>
               <Donut data={members} total={memTotal} size={150} hov={hov} setHov={setHov} bgColor={th.sur}/>
-              <div style={{position:"absolute",inset:0,display:"flex",flexDirection:"column",
+              <div style={{position:"absolute",top:0,left:0,right:0,bottom:0,display:"flex",flexDirection:"column",
                 alignItems:"center",justifyContent:"center",pointerEvents:"none"}}>
                 {hov!=null&&members[hov]?(
                   <><div style={{fontSize:10,fontWeight:800,color:members[hov].color,
