@@ -99,6 +99,12 @@ export const GOAL_PRESETS = [
   {emoji:"🎓",uz:"Ta'lim / O'qish",    ru:"Образование",       en:"Education",      rang:"#ef4444"},
   {emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",           en:"Emergency",      rang:"#14b8a6"},
   {emoji:"💼",uz:"Biznes boshlash",     ru:"Бизнес",           en:"Business",       rang:"#f97316"},
+  {emoji:"💻",uz:"Kompyuter / Noutbuk", ru:"Компьютер",       en:"Computer",     rang:"#0ea5e9"},
+  {emoji:"🛠️",uz:"Uy ta'miri",         ru:"Ремонт",           en:"Home repair",  rang:"#84cc16"},
+  {emoji:"💎",uz:"Tilla taqinchoq",     ru:"Украшения",       en:"Jewelry",      rang:"#eab308"},
+  {emoji:"🐑",uz:"Qurbonlik",           ru:"Курбан",           en:"Qurbani",      rang:"#a855f7"},
+  {emoji:"🏍️",uz:"Mototsikl",          ru:"Мотоцикл",       en:"Motorcycle",   rang:"#f43f5e"},
+  {emoji:"🎉",uz:"Bayram / Marosim",    ru:"Праздник",         en:"Celebration",  rang:"#22c55e"},
 ];
 
 export const KID_GOAL_PRESETS = [
@@ -114,6 +120,10 @@ export const KID_GOAL_PRESETS = [
   {emoji:"👟",uz:"Krossovka",             ru:"Кроссовки",             en:"Sneakers",    rang:"#f97316"},
   {emoji:"🎂",uz:"Tug'ilgan kun",         ru:"День рождения",         en:"Birthday",    rang:"#ec4899"},
   {emoji:"💰",uz:"Jamg'arma",             ru:"Накопления",            en:"Savings",     rang:"#10b981"},
+  {emoji:"⌚",uz:"Aqlli soat",            ru:"Смарт-часы",       en:"Smart watch",  rang:"#0ea5e9"},
+  {emoji:"🛹",uz:"Skeytbord",            ru:"Скейтборд",        en:"Skateboard",   rang:"#84cc16"},
+  {emoji:"🎸",uz:"Gitara",               ru:"Гитара",            en:"Guitar",       rang:"#f43f5e"},
+  {emoji:"🐹",uz:"Uy hayvoni",           ru:"Питомец",          en:"Pet",          rang:"#eab308"},
 ];
 
 export const ONB_SLIDES = [
