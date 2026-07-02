@@ -38,6 +38,7 @@ export default function TasksPage({
   vTitle, setVTitle, vReward, setVReward, vAssignee, setVAssignee, vEmoji, setVEmoji,
   addVazifa,
   vazifaDone, vazifaApprove, vazifaReject, delVazifa,
+  cleanupKidDuplicates, isBosh,
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   // Dublikat bola yozuvlaridan (qayta yaratilgan akkauntlar) eng yangisi olinadi
@@ -176,6 +177,17 @@ export default function TasksPage({
         </div>
       )}
 
+      {/* ── Dublikat bola akkauntlarini tozalash (oila boshi) ── */}
+      {!isKid && isBosh && azolar.filter(a => a.rol === "kid").length > kids.length && (
+        <button onClick={() => { buzz(10); cleanupKidDuplicates && cleanupKidDuplicates(); }} style={{ width:"100%", background:th.am+"12", border:"1.5px solid "+th.am+"44", borderRadius:14, padding:"12px 14px", cursor:"pointer", display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+          <span style={{ fontSize:20 }}>{"\ud83e\uddf9"}</span>
+          <span style={{ flex:1, textAlign:"left" }}>
+            <span style={{ display:"block", fontSize:13, fontWeight:700, color:th.am }}>{lg==="uz"?"Eski bola akkauntlarini tozalash":"Clean duplicate kid accounts"}</span>
+            <span style={{ display:"block", fontSize:10, color:th.t2, marginTop:2 }}>{lg==="uz"?"Dublikatlar o'chiriladi, pullar haqiqiy akkauntga jamlanadi":"Removes duplicates, merges balances"}</span>
+          </span>
+        </button>
+      )}
+
       {/* ── Ota-ona: vazifa qo'shish tugmasi ── */}
       {!isKid && (
         <button onClick={() => { buzz(10); setShowAddVazifa(true); }} style={{...STY.bt(), marginBottom:16, display:"flex", alignItems:"center", justifyContent:"center", gap:8}}>
@@ -189,7 +201,9 @@ export default function TasksPage({
           <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>🏆 {lg==="uz"?"Bolalar reytingi":"Kids leaderboard"}</div>
           {kids.map((k, i) => {
             const done = vazifalar.filter(v=>(v.assignedTo===k.id||(v.assignedLogin&&k.login&&v.assignedLogin===k.login)||(v.assignedName&&k.ism&&v.assignedName.trim().toLowerCase()===k.ism.trim().toLowerCase()))&&v.status==="approved").length;
-            const bal = kidBalances[k.id]||0;
+            const nmb = x => (x || "").trim().toLowerCase();
+            const balIds = azolar.filter(a => a.rol === "kid" && ((a.login && k.login && a.login === k.login) || (a.ism && k.ism && nmb(a.ism) === nmb(k.ism)))).map(a => a.id);
+            const bal = (balIds.length ? balIds : [k.id]).reduce((sm, id) => sm + (kidBalances[id] || 0), 0);
             const medals = ["🥇","🥈","🥉"];
             return (
               <div key={k.id} style={{display:"flex",alignItems:"center",gap:11,padding:"9px 0",borderBottom:i<kids.length-1?"1px solid "+th.bor:"none"}}>
