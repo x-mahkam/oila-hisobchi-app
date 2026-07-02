@@ -41,7 +41,7 @@ import { usePremium }        from "./hooks/usePremium.js";
 import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 
 // Utils
-import { td, nt, tm, fmtN, normTel, hp }       from "./utils/formatters.js";
+import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, ADMIN_TEL, TL } from "./utils/constants.js";
 import { db, auth }          from "./firebase.js";
 
@@ -671,7 +671,63 @@ export default function App() {
   // ── Tilxat ────────────────────────────────────────────────
   const generateTilxat = (q) => {
     if (!q.linked || q.linkStatus !== "accepted") { ok$(lg === "uz" ? "Tilxat faqat ikki tomon tasdiqlagan qarzlar uchun" : "Receipt only for confirmed debts", "err"); return; }
-    // ... (tilxat logikasi shu yerda qoladi, qisqartirish mumkin emas)
+    try {
+      const isLent = q.tur === "bergan";
+      const beruvchi = isLent ? (user.ism || "") : q.kim;      // qarz beruvchi
+      const oluvchi  = isLent ? q.kim : (user.ism || "");      // qarz oluvchi
+      const berTel   = isLent ? (user.tel || "\u2014") : (q.linkedTel || "\u2014");
+      const olTel    = isLent ? (q.linkedTel || "\u2014") : (user.tel || "\u2014");
+      const asl = Number(q.asl || (Number(q.summa) + Number(q.paidPart || 0)));
+      const qoldiq = Number(q.summa);
+      const soz = sonSoz(asl);
+      const raqam = "T-" + String(q.id).slice(-8);
+      const bugun = new Date().toLocaleDateString("uz-UZ");
+      const row = (l, v) => "<tr><td class='l'>" + l + "</td><td class='v'>" + v + "</td></tr>";
+      const H = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Tilxat " + raqam + "</title><style>" +
+        "*{box-sizing:border-box}body{font-family:Georgia,'Times New Roman',serif;max-width:640px;margin:0 auto;padding:34px 28px;color:#1f2937;font-size:14px;line-height:1.65}" +
+        ".brd{border:2.5px solid #6366f1;border-radius:14px;padding:30px 28px;position:relative}" +
+        "h1{text-align:center;color:#6366f1;letter-spacing:6px;font-size:26px;margin:0 0 4px}" +
+        ".num{text-align:center;color:#6b7280;font-size:12px;margin-bottom:22px}" +
+        "table{width:100%;border-collapse:collapse;margin:14px 0}" +
+        "td{padding:7px 4px;border-bottom:1px dashed #d1d5db;vertical-align:top}" +
+        ".l{color:#6b7280;width:42%;font-size:12px}.v{font-weight:700}" +
+        ".sum{background:#eef2ff;border:1.5px solid #6366f155;border-radius:10px;padding:13px 16px;margin:16px 0;text-align:center}" +
+        ".sum .d{font-size:22px;font-weight:800;color:#6366f1}.sum .w{font-size:12px;color:#4b5563;font-style:italic;margin-top:3px}" +
+        ".st{display:inline-block;background:#10b98118;color:#059669;border:1.5px solid #10b98155;border-radius:8px;padding:3px 12px;font-weight:700;font-size:12px}" +
+        ".sig{display:flex;gap:24px;margin-top:30px}.sig>div{flex:1;text-align:center}.sig .ln{border-top:1.5px solid #9ca3af;margin-top:38px;padding-top:6px;font-size:11px;color:#6b7280}" +
+        ".foot{margin-top:26px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center;line-height:1.5}" +
+        ".btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#6366f1;color:#fff;border:none;padding:13px 32px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.4)}" +
+        "@media print{.btn{display:none}body{padding:12px}}</style></head><body><div class='brd'>" +
+        "<h1>TILXAT</h1><div class='num'>\u2116 " + raqam + " \u00B7 " + bugun + "</div>" +
+        "<table>" +
+        row("Qarz beruvchi:", beruvchi + " <span style='color:#6b7280;font-weight:400;font-size:11px'>(" + berTel + ")</span>") +
+        row("Qarz oluvchi:", oluvchi + " <span style='color:#6b7280;font-weight:400;font-size:11px'>(" + olTel + ")</span>") +
+        row("Qarz berilgan sana:", q.sana || "\u2014") +
+        row("Qaytarish muddati:", q.qaytSana || "\u2014") +
+        (q.izoh ? row("Izoh:", q.izoh) : "") +
+        (q.paidPart > 0 ? row("Qisman qaytarilgan:", Number(q.paidPart).toLocaleString("uz-UZ") + " so'm") + row("Qoldiq:", qoldiq.toLocaleString("uz-UZ") + " so'm") : "") +
+        row("Holati:", "<span class='st'>" + (q.paid ? "\u2713 TO'LIQ QAYTARILGAN" : "\u2713 IKKI TOMON TASDIQLAGAN") + "</span>") +
+        "</table>" +
+        "<div class='sum'><div class='d'>" + asl.toLocaleString("uz-UZ") + " so'm</div><div class='w'>(" + soz + " so'm)</div></div>" +
+        "<p style='font-size:12.5px;color:#374151'>Ushbu tilxat <b>" + beruvchi + "</b> tomonidan <b>" + oluvchi + "</b>ga yuqorida ko'rsatilgan miqdorda qarz berilganligini tasdiqlaydi. Qarz ikkala tomon tomonidan <b>Oila Hisobchi</b> ilovasida elektron tarzda tasdiqlangan.</p>" +
+        "<div class='sig'><div><div class='ln'>Qarz beruvchi imzosi</div></div><div><div class='ln'>Qarz oluvchi imzosi</div></div></div>" +
+        "<div class='foot'>Oila Hisobchi ilovasi tomonidan yaratilgan \u00B7 " + bugun + "<br/>Hujjat raqami: " + raqam + "</div>" +
+        "</div><button class='btn' onclick='window.print()'>PDF saqlash / Chop etish</button></body></html>";
+      const w = window.open("", "_blank");
+      if (w && w.document) {
+        w.document.write(H); w.document.close();
+        ok$(lg === "uz" ? "Tilxat tayyor!" : "Receipt ready!");
+      } else {
+        // WebView/APK: yangi oyna ochilmasa \u2014 fayl sifatida yuklab berish
+        const blob = new Blob([H], { type: "text/html;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url; a.download = "tilxat_" + raqam + ".html";
+        document.body.appendChild(a); a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
+        ok$(lg === "uz" ? "Tilxat yuklab olindi!" : "Receipt downloaded!");
+      }
+    } catch (e) { console.error("tilxat:", e); ok$(lg === "uz" ? "Tilxat yaratishda xato" : "Receipt error", "err"); }
   };
 
   // ── Notification handlers ────────────────────────────────
