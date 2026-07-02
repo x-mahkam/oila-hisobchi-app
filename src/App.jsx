@@ -381,6 +381,14 @@ export default function App() {
         const ku = await db.g("user_" + kidUid);
         if (!ku || ku.rol !== "kid") return ok$(lg === "uz" ? "Login topilmadi" : "Not found", "err");
         if (await hp(fPw) !== ku.ph) { try { await auth.logout(); } catch (e) {} return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err"); }
+        // O'z-o'zini davolash: bola oilaId'si ota-onaning JORIY oilasi bilan moslanadi
+        // (eski migratsiyadan keyin farq qilib qolgan bo'lsa, vazifa/balans boshqa kalitga tushardi)
+        try {
+          if (ku.parentId) {
+            const pu = await db.g("user_" + ku.parentId);
+            if (pu?.oilaId && pu.oilaId !== ku.oilaId) { ku.oilaId = pu.oilaId; await db.s("user_" + ku.id, ku); }
+          }
+        } catch (e2) {}
         localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
         setUser(ku); await loadFam(ku); setScr("bosh");
         ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + ku.ism + " 👋");
@@ -460,6 +468,12 @@ export default function App() {
               if (await hp(fPw) !== ku.ph) return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
               buzz(15);
               try { await auth.loginAnon(); } catch (e) {}
+              try {
+                if (ku.parentId) {
+                  const pu = await db.g("user_" + ku.parentId);
+                  if (pu?.oilaId && pu.oilaId !== ku.oilaId) { ku.oilaId = pu.oilaId; await db.s("user_" + ku.id, ku); }
+                }
+              } catch (e2) {}
               localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
               setUser(ku); await loadFam(ku); setScr("bosh");
               ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + ku.ism + " 👋");
