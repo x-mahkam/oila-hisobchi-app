@@ -405,31 +405,38 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const currentStage = STAGES[Math.min(Math.max(mainStage, 0), STAGES.length - 1)];
 
   return (
-    <div style={{ height:"100dvh", background:"linear-gradient(180deg,#0ea5e9 0%,#38bdf8 25%,#7dd3fc 45%,#86efac 60%,#22c55e 75%,#15803d 100%)", position:"relative", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif", overflow:"hidden" }}>
+    <div style={{ height:"100dvh", background:"linear-gradient(180deg,#87CEEB 0%,#9fe3ff 24%,#c9f2c0 55%,#7CDB6F 100%)", position:"relative", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif", overflow:"hidden" }}>
 
       {/* ── CSS ── */}
       <style>{`
-        @keyframes sway{0%,100%{transform:rotate(-1.5deg)}50%{transform:rotate(1.5deg)}}
-        @keyframes cloudDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(16px)}}
-        @keyframes coinFly{0%{transform:translateY(0) scale(0.5);opacity:1}100%{transform:translateY(-90px) scale(1.2);opacity:0}}
-        @keyframes sunPulse{0%,100%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.15) rotate(8deg)}}
-        @keyframes growPop{0%{transform:scale(0.7)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+        @keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+        @keyframes sunPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+        @keyframes growPop{0%{transform:scale(0.6)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+        @keyframes coinFly{0%{transform:translateY(0) scale(0.6);opacity:1}100%{transform:translateY(-120px) scale(1.3);opacity:0}}
+        @keyframes cloudDrift{0%,100%{transform:translateX(0)}50%{transform:translateX(18px)}}
         @keyframes waterDrop{0%{transform:translateY(-10px) scale(0.8);opacity:0}30%{opacity:1}100%{transform:translateY(40px) scale(0.4);opacity:0}}
         @keyframes shimmer{0%,100%{opacity:0.6}50%{opacity:1}}
-        @keyframes msgSlide{0%{transform:translateY(-20px);opacity:0}15%,85%{transform:translateY(0);opacity:1}100%{transform:translateY(-20px);opacity:0}}
+        @keyframes msgSlide{0%{transform:translate(-50%,-20px);opacity:0}15%,85%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-20px);opacity:0}}
         @keyframes digBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         @keyframes birdFly{0%{transform:translateX(-20px)}100%{transform:translateX(120vw)}}
-        @keyframes leafFall{0%{transform:rotate(0deg) translateY(0)}100%{transform:rotate(360deg) translateY(60px);opacity:0}}
       `}</style>
+
+      {/* ── Quyosh va bulutlar (dekorativ) ── */}
+      <div style={{ position:"absolute", inset:0, pointerEvents:"none", zIndex:1 }}>
+        <div style={{ position:"absolute", top:14, right:"10%", fontSize:58, animation:"sunPulse 4s ease-in-out infinite", filter:"drop-shadow(0 0 16px #fde68a)" }}>☀️</div>
+        <div style={{ position:"absolute", top:30, left:"8%", fontSize:44, opacity:0.85, animation:"cloudDrift 12s ease-in-out infinite" }}>☁️</div>
+        <div style={{ position:"absolute", top:64, right:"32%", fontSize:32, opacity:0.7, animation:"cloudDrift 16s ease-in-out infinite reverse" }}>☁️</div>
+        <div style={{ position:"absolute", top:40, animation:"birdFly 18s linear infinite", fontSize:18 }}>🐦</div>
+      </div>
 
       {/* ── Motivatsion xabar ── */}
       {msg && (
-        <div style={{ position: "fixed", top: 70, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,0.75)", color: "#fff", borderRadius: 24, padding: "10px 22px", fontSize: 14, fontWeight: 700, zIndex: 999, whiteSpace: "nowrap", animation: "msgSlide 3s ease forwards", backdropFilter: "blur(8px)" }}>
+        <div style={{ position: "fixed", top: 70, left: "50%", background: "rgba(0,0,0,0.75)", color: "#fff", borderRadius: 24, padding: "10px 22px", fontSize: 14, fontWeight: 700, zIndex: 999, whiteSpace: "nowrap", animation: "msgSlide 3s ease forwards", backdropFilter: "blur(8px)" }}>
           {msg.icon} {msg.text}
         </div>
       )}
 
-      {/* ── Uçuvchi tangalar ── */}
+      {/* ── Uchuvchi tangalar ── */}
       {flyCoins.map(c => (
         <div key={c.id} style={{ position: "fixed", left: c.x + "%", top: c.y + "%", zIndex: 998, animation: "coinFly 1.4s ease forwards", pointerEvents: "none", fontSize: 18, fontWeight: 800, color: "#fbbf24", textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
           +{c.amount}🪙
@@ -437,173 +444,120 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
       ))}
 
       {/* ── Header ── */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px 6px", position: "relative", zIndex: 20 }}>
-        <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.3)", letterSpacing: 0.5 }}>
-            🌿 {L("Baraka Bog'i", "Сад Бараки")}
-          </div>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"18px 16px 4px", position:"relative", zIndex:20 }}>
+        <button onClick={onBack} style={{ width:40, height:40, borderRadius:"50%", background:"rgba(255,255,255,0.35)", backdropFilter:"blur(6px)", border:"none", cursor:"pointer", color:"#fff", fontSize:18, fontWeight:800 }}>←</button>
+        <div style={{ background:"rgba(255,255,255,0.35)", backdropFilter:"blur(6px)", padding:"9px 22px", borderRadius:24, color:"#fff", fontWeight:800, fontSize:18, boxShadow:"0 4px 14px rgba(0,0,0,0.15)" }}>
+          🌱 {L("Baraka Bog'i", "Сад Бараки")}
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={handleDailyGift} style={{ width: 40, height: 40, borderRadius: "50%", background: dailyDone ? "rgba(255,255,255,0.15)" : "rgba(251,191,36,0.85)", border: "none", cursor: dailyDone ? "default" : "pointer", fontSize: 18, backdropFilter: "blur(4px)" }} title={L("Kunlik sovg'a", "Ежедневный бонус")}>
-            🎁
-          </button>
-          <button onClick={() => setShowInfo(true)} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", fontSize: 17, color: "#fff", fontWeight: 800, backdropFilter: "blur(4px)" }}>
-            ?
-          </button>
+        <div style={{ display:"flex", gap:8 }}>
+          <button onClick={handleDailyGift} style={{ width:40, height:40, borderRadius:"50%", background: dailyDone ? "rgba(255,255,255,0.2)" : "rgba(251,191,36,0.9)", border:"none", cursor: dailyDone ? "default" : "pointer", fontSize:18 }} title={L("Kunlik sovg'a","Ежедневный бонус")}>🎁</button>
+          <button onClick={() => setShowInfo(true)} style={{ width:40, height:40, borderRadius:"50%", background:"rgba(255,255,255,0.35)", backdropFilter:"blur(6px)", border:"none", cursor:"pointer", color:"#fff", fontSize:17, fontWeight:800 }}>?</button>
         </div>
       </div>
 
-      {/* ── Counter'lar ── */}
-      <div style={{ display: "flex", justifyContent: "center", gap: 8, padding: "4px 18px 0", zIndex: 20, position: "relative", flexWrap: "wrap" }}>
+      {/* ── Currency Bar ── */}
+      <div style={{ display:"flex", justifyContent:"center", gap:10, padding:"10px 16px 0", zIndex:20, position:"relative", flexWrap:"wrap" }}>
         {[
-          { ico: "🪙", val: coins,    label: L("Baraka Coin", "Монет"),    color: "#fbbf24" },
-          { ico: "⚡", val: energy,   label: L("Energiya",    "Энергия"),  color: "#a78bfa", onClick: suns.length > 0 ? collectSuns : null, badge: suns.length > 0 ? suns.length : null },
-          { ico: "💎", val: crystals, label: L("Kristal",     "Кристаллов"),color: "#67e8f9" },
-        ].map((c, i) => (
-          <div key={i} onClick={c.onClick} style={{ background: "rgba(0,0,0,0.35)", borderRadius: 30, padding: "6px 14px", display: "flex", alignItems: "center", gap: 6, cursor: c.onClick ? "pointer" : "default", backdropFilter: "blur(6px)", border: `1.5px solid ${c.color}44`, position: "relative" }}>
-            <span style={{ fontSize: 16 }}>{c.ico}</span>
+          { ico:"🪙", val: coins, label: L("Baraka Coin","Монет"), onClick:null, badge:null },
+          { ico:"⚡", val: energy, label: L("Energiya","Энергия"), onClick: suns.length > 0 ? collectSuns : null, badge: suns.length > 0 ? suns.length : null },
+          { ico:"💎", val: crystals, label: L("Kristal","Кристаллов"), onClick:null, badge:null },
+        ].map((c,i) => (
+          <div key={i} onClick={c.onClick} style={{ background:"rgba(255,255,255,0.35)", backdropFilter:"blur(6px)", borderRadius:24, padding:"8px 16px", display:"flex", alignItems:"center", gap:8, cursor:c.onClick?"pointer":"default", boxShadow:"0 4px 14px rgba(0,0,0,0.12)", position:"relative" }}>
+            <span style={{ fontSize:22 }}>{c.ico}</span>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.color, lineHeight: 1 }}>{c.val.toLocaleString()}</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", lineHeight: 1 }}>{c.label}</div>
+              <div style={{ fontSize:16, fontWeight:800, color:"#fff", lineHeight:1, textShadow:"0 1px 3px rgba(0,0,0,0.25)" }}>{c.val.toLocaleString()}</div>
+              <div style={{ fontSize:10, color:"rgba(255,255,255,0.85)", lineHeight:1, marginTop:2 }}>{c.label}</div>
             </div>
-            {c.badge && <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", fontSize: 9, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{c.badge}</div>}
+            {c.badge && <div style={{ position:"absolute", top:-4, right:-4, width:16, height:16, borderRadius:"50%", background:"#ef4444", fontSize:9, fontWeight:800, color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", border:"1.5px solid #fff" }}>{c.badge}</div>}
           </div>
         ))}
       </div>
 
-      {/* ── Osmon: bulutlar, qushlar, quyosh ── */}
-      <div style={{ position: "relative", height: 90, overflow: "visible", zIndex: 5, flexShrink: 0 }}>
-        {/* Quyosh */}
-        <div style={{ position: "absolute", right: "12%", top: 8, fontSize: 36, animation: "sunPulse 3s ease-in-out infinite", filter: "drop-shadow(0 0 12px #fde68a)" }}>☀️</div>
-        {/* Bulutlar */}
-        {[{ l: "5%", t: 10, s: 42, d: "9s" }, { l: "45%", t: 4, s: 30, d: "13s", rev: true }, { l: "68%", t: 22, s: 24, d: "16s" }].map((c, i) => (
-          <div key={i} style={{ position: "absolute", left: c.l, top: c.t, fontSize: c.s, opacity: 0.85, animation: `cloudDrift ${c.d} ease-in-out infinite ${c.rev ? "reverse" : ""}`, filter: "drop-shadow(0 3px 6px rgba(0,0,0,0.1))" }}>☁️</div>
-        ))}
-        {/* Qush */}
-        <div style={{ position: "absolute", top: 15, animation: "birdFly 18s linear infinite", fontSize: 16 }}>🐦</div>
-        {/* Yig'ish mumkin bo'lsa quyosh */}
-        {suns.length > 0 && (
-          <div onClick={collectSuns} style={{ position: "absolute", top: 8, left: "40%", animation: "sunPulse 2s ease-in-out infinite", cursor: "pointer", zIndex: 10 }}>
-            <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: 20, padding: "4px 10px", display: "flex", alignItems: "center", gap: 5 }}>
-              <span style={{ fontSize: 20, filter: "drop-shadow(0 0 8px #fde68a)" }}>☀️</span>
-              <span style={{ fontSize: 13, fontWeight: 800, color: "#fde68a" }}>×{suns.length}</span>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* ── Asosiy bog' maydoni ── */}
+      <div style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-end", position:"relative", overflowY:"auto", overflowX:"hidden" }}>
 
-      {/* ── O'simlik maydoni ── */}
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", overflowY: "auto", overflowX: "hidden" }}>
-
-        {/* Asosiy o'simlik */}
-        <div style={{ position: "relative", marginBottom: -8, zIndex: 10 }}>
+        {/* Asosiy daraxt */}
+        <div style={{ position:"relative", marginBottom:-10, zIndex:10, transform:"scale(1.15)" }}>
           {waterAnim && (
-            <div style={{ position: "absolute", top: "20%", left: "50%", transform: "translateX(-50%)", fontSize: 28, zIndex: 20, animation: "waterDrop 1.2s ease forwards" }}>💧</div>
+            <div style={{ position:"absolute", top:"15%", left:"50%", transform:"translateX(-50%)", fontSize:30, zIndex:20, animation:"waterDrop 1.2s ease forwards" }}>💧</div>
           )}
           <div style={{ animation: growAnim === 0 ? "growPop 0.8s ease" : "none" }}>
             {mainStage >= 0
               ? <PlantSVG stage={mainStage} size={Math.min(160, window.innerHeight * 0.22)} />
-              : <div style={{ width: 120, height: 80, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 40, opacity: 0.5 }}>🌰</div>
+              : <div style={{ width:120, height:80, display:"flex", alignItems:"center", justifyContent:"center", fontSize:64, opacity:0.6 }}>🌰</div>
             }
           </div>
-          {/* Hosil tayyor belgisi */}
           {mainPlot?.harvestReady && (
-            <div onClick={() => handleHarvest(0)} style={{ position: "absolute", top: 0, right: -20, background: "linear-gradient(135deg,#f59e0b,#d97706)", borderRadius: "50%", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, cursor: "pointer", boxShadow: "0 4px 12px rgba(245,158,11,0.6)", animation: "shimmer 2s ease-in-out infinite" }}>🎁</div>
+            <div onClick={() => handleHarvest(0)} style={{ position:"absolute", top:0, right:-20, background:"linear-gradient(135deg,#f59e0b,#d97706)", borderRadius:"50%", width:42, height:42, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, cursor:"pointer", boxShadow:"0 4px 12px rgba(245,158,11,0.6)", animation:"shimmer 2s ease-in-out infinite" }}>🎁</div>
           )}
         </div>
 
-        {/* ── Yashil zamin ── */}
-        <div style={{ background: "linear-gradient(180deg,#16a34a 0%,#14532d 100%)", width: "100%", borderRadius: "40px 40px 0 0", padding: "16px 14px 24px", position: "relative", zIndex: 9, flexShrink: 0 }}>
+        {/* Yashil zamin (soddalashtirilgan, oq/yumshoq uslub) */}
+        <div style={{ width:"100%", background:"linear-gradient(180deg,#4ade80 0%,#22c55e 40%,#16a34a 100%)", borderRadius:"46px 46px 0 0", padding:"22px 18px 28px", position:"relative", zIndex:9, flexShrink:0, boxShadow:"0 -10px 26px rgba(0,0,0,0.15)" }}>
 
-          {/* Daraxt bosqichi nomi */}
-          <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.3)" }}>
-              {mainStage >= 0 ? `${currentStage.emoji} ${L(currentStage.name, currentStage.nameRu)}` : L("🌰 Urug' ekish kerak", "🌰 Нужно посеять")}
+          {/* Bosqich nomi + progress */}
+          <div style={{ textAlign:"center", marginBottom:20 }}>
+            <div style={{ fontSize:19, fontWeight:900, color:"#fff", textShadow:"0 2px 8px rgba(0,0,0,0.3)" }}>
+              {mainStage >= 0 ? `${currentStage.emoji} ${L(currentStage.name, currentStage.nameRu)}` : L("🌰 Urug' ekish kerak","🌰 Нужно посеять")}
             </div>
-            {/* Progress bar */}
             {mainStage >= 0 && mainStage < STAGES.length - 1 && (
-              <div style={{ marginTop: 8 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 30, height: 8, overflow: "hidden", margin: "0 20px" }}>
-                  <div style={{ width: `${Math.min(100, ((mainPlot?.waterCount || 0) / STAGES[mainStage].waterNeeded) * 100)}%`, height: "100%", background: "linear-gradient(90deg,#fbbf24,#f59e0b)", borderRadius: 30, transition: "width .5s" }} />
+              <div style={{ marginTop:10 }}>
+                <div style={{ background:"rgba(255,255,255,0.3)", borderRadius:30, height:12, overflow:"hidden", margin:"0 24px", boxShadow:"inset 0 2px 4px rgba(0,0,0,0.2)" }}>
+                  <div style={{ width:`${Math.min(100, ((mainPlot?.waterCount||0)/STAGES[mainStage].waterNeeded)*100)}%`, height:"100%", background:"linear-gradient(90deg,#fff,#e0f2fe)", borderRadius:30, transition:"width .5s" }} />
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
-                  💧 {mainPlot?.waterCount || 0}/{STAGES[mainStage]?.waterNeeded} → {L(STAGES[mainStage + 1]?.name, STAGES[mainStage + 1]?.nameRu)}
+                <div style={{ fontSize:12, fontWeight:700, color:"#fff", textShadow:"0 1px 3px rgba(0,0,0,0.3)", marginTop:6 }}>
+                  💧 {mainPlot?.waterCount||0}/{STAGES[mainStage]?.waterNeeded} → {L(STAGES[mainStage+1]?.name, STAGES[mainStage+1]?.nameRu)}
                 </div>
               </div>
             )}
           </div>
 
-          {/* ── Qo'shni uchastkalar ── */}
-          <div style={{ display: "flex", justifyContent: "space-around", marginBottom: 18, gap: 10 }}>
+          {/* Qo'shni uchastkalar */}
+          <div style={{ display:"flex", justifyContent:"center", gap:16, marginBottom:24 }}>
             {plots.slice(1).map(plot => {
               const pl = PLOTS.find(p => p.id === plot.id);
               const isUnlocked = plot.unlocked || plot.stage >= 0;
               const isDigging = digAnim?.plotId === plot.id;
               return (
-                <div key={plot.id} onClick={() => { if (!isUnlocked) setShowUnlock(plot.id); else if (plot.stage < 0) setShowPlant(plot.id); else if (plot.harvestReady) handleHarvest(plot.id); }}
-                  style={{ flex: 1, height: 70, borderRadius: 40, background: isUnlocked ? "#2d6a1e" : "#7a5038", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `3px solid ${isUnlocked ? "#4ade80" : "#5c3a1e"}`, cursor: "pointer", transition: "all .2s", boxShadow: "inset 0 3px 10px rgba(0,0,0,0.3)" }}>
-                  {isDigging
-                    ? <span style={{ fontSize: 26, animation: "digBounce 0.4s ease infinite" }}>⛏️</span>
-                    : isUnlocked
-                      ? plot.stage >= 0
-                        ? plot.harvestReady
-                          ? <span style={{ fontSize: 24, animation: "shimmer 1.5s ease infinite" }}>🎁</span>
-                          : <div style={{ transform: "scale(0.4)", marginTop: -20 }}><PlantSVG stage={plot.stage} size={100} animated={false} /></div>
-                        : <span style={{ fontSize: 24, opacity: 0.6 }}>🌰</span>
-                      : <>
-                          <span style={{ fontSize: 20 }}>🔒</span>
-                          <span style={{ fontSize: 10, color: "#fde68a", fontWeight: 700, marginTop: 2 }}>{pl?.unlockCost.toLocaleString()}🪙</span>
-                        </>
-                  }
+                <div key={plot.id} style={{ textAlign:"center" }}>
+                  <div onClick={() => { if (!isUnlocked) setShowUnlock(plot.id); else if (plot.stage < 0) setShowPlant(plot.id); else if (plot.harvestReady) handleHarvest(plot.id); }}
+                    style={{ width:64, height:64, borderRadius:"50%", background:isUnlocked ? "radial-gradient(circle at 35% 30%,#a9713f,#6b4423 75%)" : "radial-gradient(circle at 35% 30%,#c99a63,#8a5a2f 75%)", display:"flex", alignItems:"center", justifyContent:"center", border:"4px solid rgba(255,255,255,0.7)", cursor:"pointer", boxShadow:"0 4px 10px rgba(0,0,0,0.25), inset 0 3px 6px rgba(0,0,0,0.3)" }}>
+                    {isDigging
+                      ? <span style={{ fontSize:24, animation:"digBounce 0.4s ease infinite" }}>⛏️</span>
+                      : isUnlocked
+                        ? plot.stage >= 0
+                          ? plot.harvestReady
+                            ? <span style={{ fontSize:22, animation:"shimmer 1.5s ease infinite" }}>🎁</span>
+                            : <div style={{ transform:"scale(0.38)" }}><PlantSVG stage={plot.stage} size={100} animated={false} /></div>
+                          : <span style={{ fontSize:22, opacity:0.7 }}>🌰</span>
+                        : <span style={{ fontSize:20 }}>🔒</span>
+                    }
+                  </div>
+                  {!isUnlocked && <div style={{ fontSize:10, fontWeight:700, color:"#fde68a", marginTop:4 }}>{pl?.unlockCost.toLocaleString()}🪙</div>}
                 </div>
               );
             })}
           </div>
 
-          {/* ── Pastki boshqaruv ── */}
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            {/* Tanga (chap) */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "linear-gradient(145deg,#fbbf24,#d97706)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 14px rgba(245,158,11,0.6)", border: "3px solid #fde68a" }}>
-                <span style={{ fontSize: 26 }}>🪙</span>
-              </div>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "#fbbf24" }}>{coins.toLocaleString()}</span>
-            </div>
-
-            {/* Markaziy tugmalar */}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
-              {mainStage < 0
-                ? <button onClick={() => setShowPlant(0)} style={{ width: "100%", padding: "14px", borderRadius: 16, border: "none", background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 14px rgba(245,158,11,0.5)" }}>
-                    🌰 {L("Urug' ekish", "Посеять семя")}
-                  </button>
-                : mainPlot?.harvestReady
-                  ? <button onClick={() => handleHarvest(0)} style={{ width: "100%", padding: "14px", borderRadius: 16, border: "none", background: "linear-gradient(135deg,#22c55e,#15803d)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 14px rgba(34,197,94,0.5)", animation: "shimmer 2s ease-in-out infinite" }}>
-                      🎁 {L("Hosil yig'ish", "Собрать урожай")} +{HARVEST_COINS[Math.min(mainStage, HARVEST_COINS.length-1)]}🪙
-                    </button>
-                  : <button onClick={() => handleWater(0)} disabled={!waterReady} style={{ width: "100%", padding: "14px", borderRadius: 16, border: "none", background: waterReady ? "linear-gradient(135deg,#0ea5e9,#0284c7)" : "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 800, fontSize: 15, cursor: waterReady ? "pointer" : "not-allowed", boxShadow: waterReady ? "0 4px 14px rgba(14,165,233,0.5)" : "none", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-                      {waterReady ? <>💧 {L("Sug'orish", "Полить")}</> : <>⏳ {fTime(waterTimer)}</>}
-                    </button>
-              }
-              {!waterReady && energy >= 100 && (
-                <button onClick={handleSpeedUp} style={{ background: "rgba(0,0,0,0.3)", border: "none", borderRadius: 12, padding: "7px 14px", color: "#a78bfa", fontSize: 13, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                  ⚡ {L("Tezlashtirish -100", "Ускорить -100")}
+          {/* Markaziy katta harakat tugmasi (oq, "Sug'orish" uslubida) */}
+          <div style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:10 }}>
+            {mainStage < 0
+              ? <button onClick={() => setShowPlant(0)} style={{ width:"100%", padding:"16px", borderRadius:24, border:"none", background:"#fff", color:"#15803d", fontWeight:800, fontSize:16, cursor:"pointer", boxShadow:"0 6px 18px rgba(0,0,0,0.2)" }}>
+                  🌰 {L("Urug' ekish","Посеять семя")}
                 </button>
-              )}
-            </div>
-
-            {/* Suv idishi (o'ng) */}
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: waterReady ? "linear-gradient(145deg,#0ea5e9,#0369a1)" : "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: waterReady ? "0 4px 14px rgba(14,165,233,0.6)" : "none", border: `3px solid ${waterReady ? "#38bdf8" : "rgba(255,255,255,0.3)"}`, position: "relative" }}>
-                <span style={{ fontSize: 26 }}>🫗</span>
-                {waterReady && <div style={{ position: "absolute", top: -3, right: -3, width: 14, height: 14, borderRadius: "50%", background: "#22c55e", border: "2px solid #fff" }} />}
-              </div>
-              <span style={{ fontSize: 10, fontWeight: 700, color: waterReady ? "#7dd3fc" : "rgba(255,255,255,0.5)" }}>
-                {waterReady ? L("Tayyor!", "Готово!") : fTime(waterTimer)}
-              </span>
-            </div>
+              : mainPlot?.harvestReady
+                ? <button onClick={() => handleHarvest(0)} style={{ width:"100%", padding:"16px", borderRadius:24, border:"none", background:"#fff", color:"#d97706", fontWeight:800, fontSize:16, cursor:"pointer", boxShadow:"0 6px 18px rgba(0,0,0,0.2)", animation:"shimmer 2s ease-in-out infinite" }}>
+                    🎁 {L("Hosil yig'ish","Собрать урожай")} +{HARVEST_COINS[Math.min(mainStage,HARVEST_COINS.length-1)]}🪙
+                  </button>
+                : <button onClick={() => handleWater(0)} disabled={!waterReady} style={{ width:"100%", padding:"16px", borderRadius:24, border:"none", background: waterReady ? "#fff" : "rgba(255,255,255,0.35)", color: waterReady ? "#0284c7" : "rgba(255,255,255,0.8)", fontWeight:800, fontSize:16, cursor: waterReady ? "pointer" : "not-allowed", boxShadow: waterReady ? "0 6px 18px rgba(0,0,0,0.2)" : "none", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
+                    {waterReady ? <>💧 {L("Sug'orish","Полить")}</> : <>⏳ {fTime(waterTimer)}</>}
+                  </button>
+            }
+            {!waterReady && energy >= 100 && (
+              <button onClick={handleSpeedUp} style={{ background:"rgba(0,0,0,0.25)", border:"none", borderRadius:14, padding:"7px 16px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}>
+                ⚡ {L("Tezlashtirish -100","Ускорить -100")}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -612,28 +566,18 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
 
       {/* Uchastka ochish modali */}
       {showUnlock !== null && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowUnlock(null)}>
-          <div style={{ background: dark ? "#1e293b" : "#fff", borderRadius: 28, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: dark ? "#fff" : "#111", marginBottom: 8 }}>
-              {L("Yangi uchastka", "Новый участок")}
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }} onClick={() => setShowUnlock(null)}>
+          <div style={{ background: dark ? "#1e293b" : "#fff", borderRadius:28, padding:"28px 24px", width:"100%", maxWidth:340, textAlign:"center" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:48, marginBottom:12 }}>🔒</div>
+            <div style={{ fontSize:18, fontWeight:800, color: dark ? "#fff" : "#111", marginBottom:8 }}>{L("Yangi uchastka","Новый участок")}</div>
+            <div style={{ fontSize:14, color: dark ? "#94a3b8" : "#666", marginBottom:20 }}>
+              {L("Bu uchastkani ochish uchun kerak:","Для открытия нужно:")}
+              <div style={{ fontSize:24, fontWeight:800, color:"#f59e0b", margin:"8px 0" }}>🪙 {PLOTS.find(p => p.id === showUnlock)?.unlockCost.toLocaleString()} Baraka Coin</div>
+              <div style={{ fontSize:13, color: dark ? "#64748b" : "#999" }}>{L(`Sizda: ${coins.toLocaleString()} Coin`, `У вас: ${coins.toLocaleString()} монет`)}</div>
             </div>
-            <div style={{ fontSize: 14, color: dark ? "#94a3b8" : "#666", marginBottom: 20 }}>
-              {L("Bu uchastkani ochish uchun kerak:", "Для открытия нужно:")}
-              <div style={{ fontSize: 24, fontWeight: 800, color: "#f59e0b", margin: "8px 0" }}>
-                🪙 {PLOTS.find(p => p.id === showUnlock)?.unlockCost.toLocaleString()} Baraka Coin
-              </div>
-              <div style={{ fontSize: 13, color: dark ? "#64748b" : "#999" }}>
-                {L(`Sizda: ${coins.toLocaleString()} Coin`, `У вас: ${coins.toLocaleString()} монет`)}
-              </div>
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowUnlock(null)} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: dark ? "#334155" : "#f1f5f9", color: dark ? "#94a3b8" : "#666", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
-                {L("Bekor", "Отмена")}
-              </button>
-              <button onClick={() => handleUnlock(showUnlock)} disabled={coins < (PLOTS.find(p => p.id === showUnlock)?.unlockCost || 0)} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: coins >= (PLOTS.find(p => p.id === showUnlock)?.unlockCost || 0) ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#e5e7eb", color: "#fff", fontWeight: 800, cursor: coins >= (PLOTS.find(p => p.id === showUnlock)?.unlockCost || 0) ? "pointer" : "not-allowed", fontSize: 14 }}>
-                🔓 {L("Ochish", "Открыть")}
-              </button>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setShowUnlock(null)} style={{ flex:1, padding:"13px", borderRadius:14, border:"none", background: dark ? "#334155" : "#f1f5f9", color: dark ? "#94a3b8" : "#666", fontWeight:700, cursor:"pointer", fontSize:14 }}>{L("Bekor","Отмена")}</button>
+              <button onClick={() => handleUnlock(showUnlock)} disabled={coins < (PLOTS.find(p => p.id === showUnlock)?.unlockCost||0)} style={{ flex:1, padding:"13px", borderRadius:14, border:"none", background: coins >= (PLOTS.find(p => p.id === showUnlock)?.unlockCost||0) ? "linear-gradient(135deg,#f59e0b,#d97706)" : "#e5e7eb", color:"#fff", fontWeight:800, cursor: coins >= (PLOTS.find(p => p.id === showUnlock)?.unlockCost||0) ? "pointer" : "not-allowed", fontSize:14 }}>🔓 {L("Ochish","Открыть")}</button>
             </div>
           </div>
         </div>
@@ -641,22 +585,16 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
 
       {/* Ekish modali */}
       {showPlant !== null && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={() => setShowPlant(null)}>
-          <div style={{ background: dark ? "#1e293b" : "#fff", borderRadius: 28, padding: "28px 24px", width: "100%", maxWidth: 340, textAlign: "center" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 52, marginBottom: 10 }}>🌰</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: dark ? "#fff" : "#111", marginBottom: 8 }}>
-              {L("Baraka urug'ini ekish", "Посеять семя Бараки")}
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:20 }} onClick={() => setShowPlant(null)}>
+          <div style={{ background: dark ? "#1e293b" : "#fff", borderRadius:28, padding:"28px 24px", width:"100%", maxWidth:340, textAlign:"center" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:52, marginBottom:10 }}>🌰</div>
+            <div style={{ fontSize:18, fontWeight:800, color: dark ? "#fff" : "#111", marginBottom:8 }}>{L("Baraka urug'ini ekish","Посеять семя Бараки")}</div>
+            <div style={{ fontSize:13, color: dark ? "#94a3b8" : "#666", lineHeight:1.7, marginBottom:20 }}>
+              {L("Urug' ekib, muntazam sug'oring. Har bir moliyaviy amal daraxtingizni o'stiradi. Baraka daraxti bo'lganda katta mukofot!","Посейте семя и регулярно поливайте. Каждое финансовое действие растит ваше дерево!")}
             </div>
-            <div style={{ fontSize: 13, color: dark ? "#94a3b8" : "#666", lineHeight: 1.7, marginBottom: 20 }}>
-              {L("Urug' ekib, muntazam sug'oring. Har bir moliyaviy amal daraxtingizni o'stiradi. Baraka daraxti bo'lganda katta mukofot!", "Посейте семя и регулярно поливайте. Каждое финансовое действие растит ваше дерево!")}
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => setShowPlant(null)} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: dark ? "#334155" : "#f1f5f9", color: dark ? "#94a3b8" : "#666", fontWeight: 700, cursor: "pointer" }}>
-                {L("Bekor", "Отмена")}
-              </button>
-              <button onClick={() => handlePlant(showPlant)} style={{ flex: 1, padding: "13px", borderRadius: 14, border: "none", background: "linear-gradient(135deg,#22c55e,#15803d)", color: "#fff", fontWeight: 800, cursor: "pointer" }}>
-                🌰 {L("Ekish", "Посеять")}
-              </button>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setShowPlant(null)} style={{ flex:1, padding:"13px", borderRadius:14, border:"none", background: dark ? "#334155" : "#f1f5f9", color: dark ? "#94a3b8" : "#666", fontWeight:700, cursor:"pointer" }}>{L("Bekor","Отмена")}</button>
+              <button onClick={() => handlePlant(showPlant)} style={{ flex:1, padding:"13px", borderRadius:14, border:"none", background:"linear-gradient(135deg,#22c55e,#15803d)", color:"#fff", fontWeight:800, cursor:"pointer" }}>🌰 {L("Ekish","Посеять")}</button>
             </div>
           </div>
         </div>
@@ -664,37 +602,35 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
 
       {/* Ma'lumot modali */}
       {showInfo && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 100, display: "flex", alignItems: "flex-end" }} onClick={() => setShowInfo(false)}>
-          <div style={{ background: dark ? "#1e293b" : "#fff", borderRadius: "28px 28px 0 0", padding: "24px 22px 40px", width: "100%", maxHeight: "80vh", overflowY: "auto" }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize: 17, fontWeight: 900, color: dark ? "#fff" : "#111", textAlign: "center", marginBottom: 18 }}>
-              🌿 {L("Baraka Bog'i haqida", "О Саде Бараки")}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", marginBottom: 10 }}>🪙 {L("Baraka Coin qanday olinadi?", "Как получить монеты?")}</div>
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:100, display:"flex", alignItems:"flex-end" }} onClick={() => setShowInfo(false)}>
+          <div style={{ background: dark ? "#1e293b" : "#fff", borderRadius:"28px 28px 0 0", padding:"24px 22px 40px", width:"100%", maxHeight:"80vh", overflowY:"auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:17, fontWeight:900, color: dark ? "#fff" : "#111", textAlign:"center", marginBottom:18 }}>🌿 {L("Baraka Bog'i haqida","О Саде Бараки")}</div>
+            <div style={{ fontSize:13, fontWeight:800, color:"#f59e0b", marginBottom:10 }}>🪙 {L("Baraka Coin qanday olinadi?","Как получить монеты?")}</div>
             {[
-              ["💸", L("Xarajat qo'shish", "Добавить расход"),   "+5🪙"],
-              ["💰", L("Daromad qo'shish","Добавить доход"),     "+10🪙"],
-              ["📷", L("QR kod skanerlash","Сканировать QR"),    "+10🪙"],
-              ["🎯", L("Maqsad yaratish",  "Создать цель"),      "+20🪙"],
-              ["✅", L("Maqsadga erishish","Достичь цели"),      "+50🪙"],
-              ["💳", L("Qarzni yopish",    "Закрыть долг"),      "+30🪙"],
-              ["👨‍👩‍👧", L("Oila a'zosi qo'shish","Добавить участника"),"+15🪙"],
-              ["📅", L("7 kun ketma-ket",  "7 дней подряд"),     "+25🪙"],
-              ["🎁", L("Kunlik sovg'a",    "Ежедневный бонус"),  "+50🪙"],
-              ["☀️", L("Quyosh yig'ish",   "Собрать солнце"),    "+15⚡"],
+              ["💸", L("Xarajat qo'shish","Добавить расход"), "+5🪙"],
+              ["💰", L("Daromad qo'shish","Добавить доход"), "+10🪙"],
+              ["📷", L("QR kod skanerlash","Сканировать QR"), "+10🪙"],
+              ["🎯", L("Maqsad yaratish","Создать цель"), "+20🪙"],
+              ["✅", L("Maqsadga erishish","Достичь цели"), "+50🪙"],
+              ["💳", L("Qarzni yopish","Закрыть долг"), "+30🪙"],
+              ["👨‍👩‍👧", L("Oila a'zosi qo'shish","Добавить участника"), "+15🪙"],
+              ["📅", L("7 kun ketma-ket","7 дней подряд"), "+25🪙"],
+              ["🎁", L("Kunlik sovg'a","Ежедневный бонус"), "+50🪙"],
+              ["☀️", L("Quyosh yig'ish","Собрать солнце"), "+15⚡"],
             ].map(([ico, txt, val], i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < 9 ? `1px solid ${dark?"#334155":"#f3f4f6"}` : "none" }}>
-                <span style={{ fontSize: 20, width: 28, textAlign: "center" }}>{ico}</span>
-                <span style={{ flex: 1, fontSize: 13, color: dark ? "#cbd5e1" : "#444" }}>{txt}</span>
-                <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", background: dark ? "#451a03" : "#fef3c7", borderRadius: 10, padding: "3px 10px" }}>{val}</span>
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 0", borderBottom: i < 9 ? `1px solid ${dark?"#334155":"#f3f4f6"}` : "none" }}>
+                <span style={{ fontSize:20, width:28, textAlign:"center" }}>{ico}</span>
+                <span style={{ flex:1, fontSize:13, color: dark ? "#cbd5e1" : "#444" }}>{txt}</span>
+                <span style={{ fontSize:13, fontWeight:800, color:"#f59e0b", background: dark ? "#451a03" : "#fef3c7", borderRadius:10, padding:"3px 10px" }}>{val}</span>
               </div>
             ))}
-            <div style={{ marginTop: 14, padding: "14px", background: dark ? "#0f172a" : "#f0fdf4", borderRadius: 16, fontSize: 13, color: dark ? "#86efac" : "#15803d", lineHeight: 1.8 }}>
-              <b>{L("Uchastkalar ochilishi:", "Открытие участков:")}</b><br />
+            <div style={{ marginTop:14, padding:"14px", background: dark ? "#0f172a" : "#f0fdf4", borderRadius:16, fontSize:13, color: dark ? "#86efac" : "#15803d", lineHeight:1.8 }}>
+              <b>{L("Uchastkalar ochilishi:","Открытие участков:")}</b><br />
               {PLOTS.slice(1).map(p => <span key={p.id}>🔒 {p.unlockCost.toLocaleString()}🪙<br/></span>)}
-              <br/><b>{L("O'sish bosqichlari:", "Стадии роста:")}</b><br />
+              <br/><b>{L("O'sish bosqichlari:","Стадии роста:")}</b><br />
               {STAGES.map(s => `${s.emoji} ${L(s.name, s.nameRu)}`).join(" → ")}
             </div>
-            <button onClick={() => setShowInfo(false)} style={{ width: "100%", marginTop: 16, padding: "15px", background: "linear-gradient(135deg,#22c55e,#15803d)", border: "none", borderRadius: 16, color: "#fff", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>OK</button>
+            <button onClick={() => setShowInfo(false)} style={{ width:"100%", marginTop:16, padding:"15px", background:"linear-gradient(135deg,#22c55e,#15803d)", border:"none", borderRadius:16, color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer" }}>OK</button>
           </div>
         </div>
       )}
