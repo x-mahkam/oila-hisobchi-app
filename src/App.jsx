@@ -74,16 +74,32 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scr]);
 
-  // Vazifalar sinxronizatsiyasi: vazifa sahifasi yoki bola bosh sahifasi ochilganda
+  // Vazifalar sinxronizatsiyasi: vazifa sahifasi, bola bosh sahifasi yoki login tugagach
   // (ota-ona bergan vazifa bola qurilmasida darhol ko'rinishi uchun)
   useEffect(() => {
     if (!user?.oilaId) return;
-    if (scr === "vazifa" || (scr === "bosh" && isKid)) {
+    if (!(scr === "vazifa" || (scr === "bosh" && isKid))) return;
+    const loadVaz = () => {
       db.g("vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifalar(v); }).catch(() => {});
       db.g("kidbal_" + user.oilaId).then(k => { if (k && typeof k === "object") setKidBalances(k); }).catch(() => {});
-    }
+    };
+    loadVaz();
+    const iv = setInterval(loadVaz, 20000); // har 20 soniyada avtomatik yangilanadi
+    return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scr]);
+  }, [scr, user?.oilaId]);
+
+  // Qo'lda yangilash (Vazifalar sahifasidagi tugma uchun)
+  const refreshVazifalar = async () => {
+    if (!user?.oilaId) return;
+    try {
+      const v = await db.g("vazifa_" + user.oilaId);
+      if (Array.isArray(v)) setVazifalar(v);
+      const k = await db.g("kidbal_" + user.oilaId);
+      if (k && typeof k === "object") setKidBalances(k);
+      ok$(lg === "uz" ? "Yangilandi" : "Refreshed");
+    } catch (e) {}
+  };
   const { markNotifRead, markAllRead, clearNotifs, unreadCount } = useNotifications();
   const { waterGarden } = useGarden();
   const { showPremModal, setShowPremModal, activatePremium } = usePremium();
@@ -622,7 +638,8 @@ export default function App() {
   const addVazifa = async () => {
     if (!vTitle.trim() || !vReward || Number(vReward) <= 0 || !vAssignee) return ok$(lg === "uz" ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
     buzz(12);
-    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, createdBy: user.id, status: "pending", sana: td(), doneSana: "", paidSana: "" };
+    const kd = azolar.find(a => a.id === vAssignee);
+    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, status: "pending", sana: td(), doneSana: "", paidSana: "" };
     const upd = [item, ...vazifalar];
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
     setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚");
@@ -1180,6 +1197,11 @@ export default function App() {
             <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pulni qo'shing" : "Add money from relatives"}</div>
             <label style={STY.lb}>{lg === "uz" ? "Summa" : "Amount"}</label>
             <input style={{ ...STY.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} type="number" value={giftSum} onChange={e => setGiftSum(e.target.value)} placeholder="0" />
+            <div style={{ display: "flex", gap: 7, marginBottom: 12 }}>
+              {[5000, 10000, 20000, 50000].map(sm => (
+                <button key={sm} onClick={() => setGiftSum(String(sm))} style={{ flex: 1, background: String(giftSum) === String(sm) ? th.ac + "22" : th.surH, border: "1.5px solid " + (String(giftSum) === String(sm) ? th.ac : th.bor), borderRadius: 10, padding: "8px 0", cursor: "pointer", fontSize: 11, fontWeight: 700, color: String(giftSum) === String(sm) ? th.ac : th.t2 }}>{f(sm, true)}</button>
+              ))}
+            </div>
             <label style={STY.lb}>{lg === "uz" ? "Kimdan?" : "From whom?"}</label>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
               {[
@@ -1262,7 +1284,7 @@ export default function App() {
         {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} fetchRates={fetchRates} rateL={rateL} setShowGift={setShowGift} setShowBilim={setShowBilim} setShowAddVazifa={setShowAddVazifa} />}
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} />}
-        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} />}
+        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} refreshVazifalar={refreshVazifalar} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
