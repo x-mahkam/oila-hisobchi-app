@@ -38,15 +38,24 @@ export function useFamily() {
     await db.s("vazifa_" + user.oilaId, upd);
     setVazifalar(upd);
 
-    // Bola balansiga qo'shish — eski id'ga berilgan bo'lsa ham, login/ism bo'yicha
-    // HAQIQIY (eng yangi) bola akkauntini topamiz
+    // Bola balansiga qo'shish — bir xil bolaning BARCHA yozuvlari (eski id, login, ism)
+    // ichidan ENG YANGI akkaunti tanlanadi (eski o'lik yozuv id bo'yicha mos kelsa ham)
     const kidsAll = azolar.filter(a => a.rol === "kid");
-    const realKid = kidsAll.find(a => a.id === v.assignedTo)
-      || kidsAll.find(a => v.assignedLogin && a.login === v.assignedLogin)
-      || kidsAll.find(a => v.assignedName && a.ism && a.ism.trim().toLowerCase() === v.assignedName.trim().toLowerCase());
+    const nm = (x) => (x || "").trim().toLowerCase();
+    const cand = kidsAll.filter(a =>
+      a.id === v.assignedTo ||
+      (v.assignedLogin && a.login && a.login === v.assignedLogin) ||
+      (v.assignedName && a.ism && nm(a.ism) === nm(v.assignedName))
+    );
+    const realKid = cand.sort((a, b) => String(b.id).localeCompare(String(a.id)))[0];
     const kidId = realKid?.id || v.assignedTo;
     const kb = {...kidBalances};
     kb[kidId] = (kb[kidId]||0) + v.reward;
+    // Eski id'da qolib ketgan cho'ntak puli bo'lsa — yangi akkauntga ko'chiriladi
+    if (kidId !== v.assignedTo && kb[v.assignedTo]) {
+      kb[kidId] += Number(kb[v.assignedTo]) || 0;
+      delete kb[v.assignedTo];
+    }
     await db.s("kidbal_" + user.oilaId, kb);
     setKidBalances(kb);
 
