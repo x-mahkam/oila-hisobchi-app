@@ -5,6 +5,7 @@ import { useApp } from "../context/AppContext.jsx";
 
 export function useGoals() {
   const { user, oila, azolar, maq, setMaq, xar, setXar, dar,
+          kidBalances, setKidBalances,
           ok$, buzz, addStar, addNotif, fireConfetti, lg, isPremium,
           setMaqsadConfirmNotif } = useApp();
 
@@ -48,6 +49,21 @@ export function useGoals() {
       const xk = "x_" + user.oilaId + "_" + user.id;
       await db.s(xk, [xItem, ...((await db.g(xk))||[])]);
       setXar(x => [xItem, ...x]);
+    } else {
+      // Bola: orzuga qo'shilgan pul CHO'NTAK PULIDAN yechiladi
+      const myPocket = Number(kidBalances?.[user.id] || 0);
+      if (myPocket < summa) {
+        return ok$(
+          lg === "uz"
+            ? "❌ Cho'ntak pulingiz yetarli emas! Sizda: " + f(myPocket, true)
+            : "❌ Not enough pocket money!",
+          "err"
+        );
+      }
+      const kb = { ...(kidBalances || {}) };
+      kb[user.id] = myPocket - summa;
+      await db.s("kidbal_" + user.oilaId, kb);
+      setKidBalances(kb);
     }
 
     const tgtGoal = maq.find(m=>m.id===tupId);
@@ -93,10 +109,18 @@ export function useGoals() {
     setMaq(u);
     setTupId(null); setTupS("");
     ok$(isKid?(lg==="uz"?"Orzungizga "+f(summa,true)+" jamg'arildi! 🌟":"Saved!"):lg==="uz"?"Yangilandi":"Updated");
-  }, [tupId, tupS, maq, user, oila, azolar, xar, dar, ok$, buzz, addStar, addNotif, fireConfetti, lg]);
+  }, [tupId, tupS, maq, user, oila, azolar, xar, dar, kidBalances, ok$, buzz, addStar, addNotif, fireConfetti, lg]);
 
   const delMq = useCallback(async (id) => {
     const goal = maq.find(m=>m.id===id);
+    // Bola o'chirsa — jamg'arilgan pul cho'ntak puliga qaytariladi
+    if (goal?.jamg > 0 && !goal?.paid && user?.rol === "kid") {
+      const kb = { ...(kidBalances || {}) };
+      kb[user.id] = (Number(kb[user.id]) || 0) + Number(goal.jamg);
+      await db.s("kidbal_" + user.oilaId, kb);
+      setKidBalances(kb);
+      ok$(lg === "uz" ? "Pul cho'ntagingizga qaytarildi: +" + f(goal.jamg, true) : "Returned to pocket money");
+    }
     // Agar pul jamg'arilgan bo'lsa qaytarish
     if (goal?.jamg > 0 && !goal?.paid && user?.rol !== "kid") {
       const dItem = {
@@ -110,7 +134,7 @@ export function useGoals() {
     const u = maq.filter(m=>m.id!==id);
     await db.s("maq_" + user.oilaId, u);
     setMaq(u);
-  }, [maq, user, lg]);
+  }, [maq, user, kidBalances, ok$, lg]);
 
   return { tupId, setTupId, tupS, setTupS, addMq, tupMq, delMq };
 }

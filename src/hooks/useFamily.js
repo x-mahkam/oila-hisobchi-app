@@ -38,8 +38,8 @@ export function useFamily() {
     await db.s("vazifa_" + user.oilaId, upd);
     setVazifalar(upd);
 
-    // Bola balansiga qo'shish — bir xil bolaning BARCHA yozuvlari (eski id, login, ism)
-    // ichidan ENG YANGI akkaunti tanlanadi (eski o'lik yozuv id bo'yicha mos kelsa ham)
+    // Bola balansiga qo'shish — pul bola LOGIN bilan kiradigan HAQIQIY akkauntga borishi shart.
+    // Yagona ishonchli manba: kidlogin_<login> → uid xaritasi.
     const kidsAll = azolar.filter(a => a.rol === "kid");
     const nm = (x) => (x || "").trim().toLowerCase();
     const cand = kidsAll.filter(a =>
@@ -47,15 +47,23 @@ export function useFamily() {
       (v.assignedLogin && a.login && a.login === v.assignedLogin) ||
       (v.assignedName && a.ism && nm(a.ism) === nm(v.assignedName))
     );
-    const realKid = cand.sort((a, b) => String(b.id).localeCompare(String(a.id)))[0];
-    const kidId = realKid?.id || v.assignedTo;
-    const kb = {...kidBalances};
-    kb[kidId] = (kb[kidId]||0) + v.reward;
-    // Eski id'da qolib ketgan cho'ntak puli bo'lsa — yangi akkauntga ko'chiriladi
-    if (kidId !== v.assignedTo && kb[v.assignedTo]) {
-      kb[kidId] += Number(kb[v.assignedTo]) || 0;
-      delete kb[v.assignedTo];
+    let kidId = v.assignedTo;
+    const loginKey = v.assignedLogin || cand.map(a => a.login).find(Boolean);
+    if (loginKey) {
+      try {
+        const realUid = await db.gFresh("kidlogin_" + loginKey);
+        if (realUid) kidId = realUid;
+      } catch (e2) {}
+    } else if (cand.length) {
+      kidId = cand.sort((a, b) => String(b.id).localeCompare(String(a.id)))[0].id;
     }
+    const kb = {...kidBalances};
+    // Xuddi shu bolaning boshqa (eski/dublikat) id'larida qolib ketgan pul — haqiqiy akkauntga jamlanadi
+    const staleIds = [v.assignedTo, ...cand.map(a => a.id)].filter((id, i, arr) => id !== kidId && arr.indexOf(id) === i);
+    staleIds.forEach(id => {
+      if (kb[id]) { kb[kidId] = (kb[kidId] || 0) + (Number(kb[id]) || 0); delete kb[id]; }
+    });
+    kb[kidId] = (kb[kidId] || 0) + v.reward;
     await db.s("kidbal_" + user.oilaId, kb);
     setKidBalances(kb);
 
