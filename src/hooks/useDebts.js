@@ -25,6 +25,9 @@ export function useDebts() {
   const [partialSum, setPartialSum] = useState("");
   const [inviteQarz, setInviteQarz] = useState(null);
 
+  // Bazadan yangi qarz ro'yxati (eskirgan lokal holat bilan ustidan yozib yubormaslik uchun)
+  const freshQarz = async () => (await db.g("qarz_" + user.oilaId)) || [];
+
   // Joriy foydalanuvchi balansi (uid'siz eski yozuvlar ham o'ziniki hisoblanadi)
   const getMyBal = () => {
     const d = dar.filter(i => i.uid === user.id || !i.uid).reduce((s, i) => s + Number(i.summa || 0), 0);
@@ -64,7 +67,7 @@ export function useDebts() {
       izoh: qarzIzoh, sana: qarzSana, qaytSana: qarzQaytSana,
       paid: false, paidSana: "",
     };
-    const upd = [item, ...qarzlar];
+    const upd = [item, ...(await freshQarz())];
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
 
@@ -116,7 +119,7 @@ export function useDebts() {
     await db.s("notif_" + targetUid, [rN, ...rC].slice(0, 100));
 
     const myItem = { id: req.id, uid: user.id, tur: qarzTur, kim: qarzKim.trim(), summa: Number(qarzSum), izoh: qarzIzoh, sana: qarzSana, qaytSana: qarzQaytSana, paid: false, paidSana: "", linked: true, linkedTel: cleanTel, linkStatus: "pending" };
-    const upd = [myItem, ...qarzlar];
+    const upd = [myItem, ...(await freshQarz())];
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     resetQarzForm();
@@ -141,7 +144,7 @@ export function useDebts() {
 
     // MUHIM: uid qo'shildi — busiz bir oilada ikkala tomonga "meniki" bo'lib ko'rinardi
     const item = { id: req.id, uid: user.id, tur: myTur, kim: req.fromIsm, summa: req.summa, izoh: req.izoh, sana: req.sana, qaytSana: req.qaytSana, paid: false, paidSana: "", linked: true, linkedTel: req.fromTel, linkStatus: "accepted" };
-    const upd = [item, ...qarzlar];
+    const upd = [item, ...(await freshQarz()).filter(q => !(q.id === item.id && q.uid === user.id))];
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
 
@@ -152,26 +155,27 @@ export function useDebts() {
     // Sender statusini yangilash + sender balansiga yozuv (IKKALA yo'nalishda ham)
     const senderUser = await db.g("user_" + req.fromUid);
     if (senderUser) {
-      const sq = (await db.g("qarz_" + senderUser.oilaId)) || [];
-      await db.s("qarz_" + senderUser.oilaId, sq.map(q =>
-        (q.id === req.id && (!q.uid || q.uid === senderUser.id)) ? { ...q, linkStatus: "accepted" } : q));
+      // MUHIM: senderUser.id o'rniga req.fromUid — user hujjatida id maydoni
+      // bo'lmasa ham to'g'ri ishlashi uchun (KUTILMOQDA qolib ketish xatosi shu edi)
+      const sOila = senderUser.oilaId || user.oilaId;
+      const sq = (await db.g("qarz_" + sOila)) || [];
+      await db.s("qarz_" + sOila, sq.map(q =>
+        (q.id === req.id && q.uid !== user.id && (!q.uid || q.uid === req.fromUid || q.uid === senderUser.id)) ? { ...q, linkStatus: "accepted" } : q));
       if (req.tur === "bergan") {
         // Sender qarz BERGAN → sender balansidan xarajat (-)
-        const xItem = { id: Date.now() + 2, kategoriya: "qarz", summa: req.summa, izoh: (lg === "uz" ? "Qarz berildi (tasdiqlangan): " : "Loan given: ") + user.ism, sana: req.sana, vaqt: nt(), uid: senderUser.id, repeat: false, fromQarz: req.id };
-        const xk = "x_" + senderUser.oilaId + "_" + senderUser.id;
+        const xItem = { id: Date.now() + 2, kategoriya: "qarz", summa: req.summa, izoh: (lg === "uz" ? "Qarz berildi (tasdiqlangan): " : "Loan given: ") + user.ism, sana: req.sana, vaqt: nt(), uid: req.fromUid, repeat: false, fromQarz: req.id };
+        const xk = "x_" + sOila + "_" + req.fromUid;
         await db.s(xk, [xItem, ...((await db.g(xk)) || [])]);
-        if (senderUser.id === user.id) setXar(x => [xItem, ...x]);
       } else {
-        // Sender qarz OLGAN → sender balansiga daromad (+) — OLDIN YO'Q EDI, tuzatildi
-        const dItem = { id: Date.now() + 2, tur: "qarz", summa: req.summa, izoh: (lg === "uz" ? "Qarz olindi (tasdiqlangan): " : "Loan received: ") + user.ism, sana: req.sana, vaqt: nt(), uid: senderUser.id, fromQarz: req.id };
-        const dk = "d_" + senderUser.oilaId + "_" + senderUser.id;
+        // Sender qarz OLGAN → sender balansiga daromad (+)
+        const dItem = { id: Date.now() + 2, tur: "qarz", summa: req.summa, izoh: (lg === "uz" ? "Qarz olindi (tasdiqlangan): " : "Loan received: ") + user.ism, sana: req.sana, vaqt: nt(), uid: req.fromUid, fromQarz: req.id };
+        const dk = "d_" + sOila + "_" + req.fromUid;
         await db.s(dk, [dItem, ...((await db.g(dk)) || [])]);
-        if (senderUser.id === user.id) setDar(d => [dItem, ...d]);
       }
       // Sender'ga xabar
       const sN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? "✅ Qarz tasdiqlandi" : "Debt confirmed", body: (user.ism || "") + " " + (lg === "uz" ? "qarzni tasdiqladi" : "confirmed the debt") + ": " + fmtN(Number(req.summa), val, true), sana: new Date().toISOString(), read: false };
-      const sC = (await db.g("notif_" + senderUser.id)) || [];
-      await db.s("notif_" + senderUser.id, [sN, ...sC].slice(0, 100));
+      const sC = (await db.g("notif_" + req.fromUid)) || [];
+      await db.s("notif_" + req.fromUid, [sN, ...sC].slice(0, 100));
     }
 
     // O'z balansga bog'lash
@@ -198,14 +202,15 @@ export function useDebts() {
     const senderUser = await db.g("user_" + req.fromUid);
     if (senderUser) {
       const sq = (await db.g("qarz_" + senderUser.oilaId)) || [];
-      await db.s("qarz_" + senderUser.oilaId, sq.map(q => q.id === req.id ? { ...q, linkStatus: "rejected" } : q));
+      await db.s("qarz_" + senderUser.oilaId, sq.map(q => (q.id === req.id && (!q.uid || q.uid === req.fromUid || q.uid === senderUser.id)) ? { ...q, linkStatus: "rejected" } : q));
     }
     ok$(lg === "uz" ? "Rad etildi" : "Rejected", "warn");
   }, [qarzReqs, user, ok$, lg]);
 
   // Qarzni to'langan deb belgilash
   const markQarzPaid = useCallback(async (id) => {
-    const q = qarzlar.find(x => x.id === id && (!x.uid || x.uid === user.id));
+    const list = await freshQarz();
+    const q = list.find(x => x.id === id && (!x.uid || x.uid === user.id));
     // Men qarzdorman va qaytarmoqchiman → balans yetarli bo'lishi shart (minusga tushmaslik)
     // (faqat bog'langan qarzlar — tasdiqlanganda balansdan avtomatik yechiladi)
     if (q && q.tur === "olgan" && q.linked && q.linkStatus === "accepted" && q.linkedTel && getMyBal() < Number(q.summa)) {
@@ -219,7 +224,7 @@ export function useDebts() {
     if (q?.linked && q?.linkStatus === "accepted" && q?.linkedTel) {
       const targetUid = await db.g("tel_" + q.linkedTel);
       if (targetUid) {
-        const upd = qarzlar.map(x => (x.id === id && (!x.uid || x.uid === user.id)) ? { ...x, payStatus: "pending", payBy: user.id } : x);
+        const upd = list.map(x => (x.id === id && (!x.uid || x.uid === user.id)) ? { ...x, payStatus: "pending", payBy: user.id } : x);
         await db.s("qarz_" + user.oilaId, upd);
         setQarzlar(upd);
         const payReq = { id: "pay_" + id, debtId: id, fromUid: user.id, fromIsm: user.ism, fromTel: user.tel || "", toTel: q.linkedTel, summa: q.summa, kim: q.kim, tur: q.tur, sana: td(), type: "payment" };
@@ -232,7 +237,7 @@ export function useDebts() {
         return;
       }
     }
-    const upd = qarzlar.map(x => (x.id === id && (!x.uid || x.uid === user.id)) ? { ...x, paid: true, paidSana: td() } : x);
+    const upd = list.map(x => (x.id === id && (!x.uid || x.uid === user.id)) ? { ...x, paid: true, paidSana: td() } : x);
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     if (q) setQarzDonePrompt(q);
@@ -246,7 +251,7 @@ export function useDebts() {
     const q = partialQarz;
     if (pay >= q.summa) { setPartialQarz(null); setPartialSum(""); markQarzPaid(q.id); return; }
     const paidSoFar = (q.paidPart || 0) + pay;
-    const upd = qarzlar.map(x => (x.id === q.id && (!x.uid || x.uid === user.id)) ? { ...x, summa: x.summa - pay, paidPart: paidSoFar, asl: x.asl || q.summa + (q.paidPart || 0) } : x);
+    const upd = (await freshQarz()).map(x => (x.id === q.id && (!x.uid || x.uid === user.id)) ? { ...x, summa: x.summa - pay, paidPart: paidSoFar, asl: x.asl || q.summa + (q.paidPart || 0) } : x);
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     setPartialQarz(null); setPartialSum("");
@@ -256,7 +261,7 @@ export function useDebts() {
 
   // Qarzni o'chirish
   const delQarz = useCallback(async (id) => {
-    const upd = qarzlar.filter(q => !(q.id === id && (!q.uid || q.uid === user.id)));
+    const upd = (await freshQarz()).filter(q => !(q.id === id && (!q.uid || q.uid === user.id)));
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
   }, [qarzlar, user]);
@@ -306,8 +311,9 @@ export function useDebts() {
 
   // Qaytarishni tasdiqlash
   const acceptPayReq = useCallback(async (req) => {
-    const doneQ = qarzlar.find(q => q.id === req.debtId && (!q.uid || q.uid === user.id));
-    const upd = qarzlar.map(q => (q.id === req.debtId && (!q.uid || q.uid === user.id)) ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed" } : q);
+    const list = await freshQarz();
+    const doneQ = list.find(q => q.id === req.debtId && (!q.uid || q.uid === user.id));
+    const upd = list.map(q => (q.id === req.debtId && (!q.uid || q.uid === user.id)) ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed" } : q);
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     if (doneQ) setQarzDonePrompt({ ...doneQ, paid: true });
@@ -316,27 +322,28 @@ export function useDebts() {
     await db.s("qreq_" + user.tel, newReqs);
     const fromUser = await db.g("user_" + req.fromUid);
     if (fromUser) {
-      const fq = (await db.g("qarz_" + fromUser.oilaId)) || [];
-      await db.s("qarz_" + fromUser.oilaId, fq.map(q => q.id === req.debtId ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed" } : q));
-      const fromDebt = fq.find(q => q.id === req.debtId && (!q.uid || q.uid === fromUser.id));
+      const fOila = fromUser.oilaId || user.oilaId;
+      const fq = (await db.g("qarz_" + fOila)) || [];
+      await db.s("qarz_" + fOila, fq.map(q => q.id === req.debtId ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed" } : q));
+      const fromDebt = fq.find(q => q.id === req.debtId && (!q.uid || q.uid === req.fromUid || q.uid === fromUser.id));
       if (fromDebt) {
         // Qaytarish tasdiqlandi → sender balansiga avtomatik teskari yozuv
         if (fromDebt.tur === "bergan") {
           // Sender qarz bergan edi, endi qaytarib oldi → daromad (+)
-          const dItem = { id: Date.now() + 3, tur: "qarz", summa: fromDebt.summa, izoh: (lg === "uz" ? "Qarz qaytdi: " : "Debt returned: ") + fromDebt.kim, sana: td(), vaqt: nt(), uid: fromUser.id, fromQarz: fromDebt.id };
-          const dk = "d_" + fromUser.oilaId + "_" + fromUser.id;
+          const dItem = { id: Date.now() + 3, tur: "qarz", summa: fromDebt.summa, izoh: (lg === "uz" ? "Qarz qaytdi: " : "Debt returned: ") + fromDebt.kim, sana: td(), vaqt: nt(), uid: req.fromUid, fromQarz: fromDebt.id };
+          const dk = "d_" + fOila + "_" + req.fromUid;
           await db.s(dk, [dItem, ...((await db.g(dk)) || [])]);
-          if (fromUser.id === user.id) setDar(d => [dItem, ...d]);
+          if (req.fromUid === user.id) setDar(d => [dItem, ...d]);
         } else {
           // Sender qarz olgan edi, endi qaytardi → xarajat (-)
-          const xItem = { id: Date.now() + 3, kategoriya: "qarz", summa: fromDebt.summa, izoh: (lg === "uz" ? "Qarz qaytarildi: " : "Debt repaid: ") + fromDebt.kim, sana: td(), vaqt: nt(), uid: fromUser.id, repeat: false, fromQarz: fromDebt.id };
-          const xk = "x_" + fromUser.oilaId + "_" + fromUser.id;
+          const xItem = { id: Date.now() + 3, kategoriya: "qarz", summa: fromDebt.summa, izoh: (lg === "uz" ? "Qarz qaytarildi: " : "Debt repaid: ") + fromDebt.kim, sana: td(), vaqt: nt(), uid: req.fromUid, repeat: false, fromQarz: fromDebt.id };
+          const xk = "x_" + fOila + "_" + req.fromUid;
           await db.s(xk, [xItem, ...((await db.g(xk)) || [])]);
-          if (fromUser.id === user.id) setXar(x => [xItem, ...x]);
+          if (req.fromUid === user.id) setXar(x => [xItem, ...x]);
         }
         const pN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? "✅ Qarz qaytarishi tasdiqlandi" : "Return confirmed", body: (user.ism || "") + ": " + fmtN(fromDebt.summa, val, true), sana: new Date().toISOString(), read: false };
-        const pC = (await db.g("notif_" + fromUser.id)) || [];
-        await db.s("notif_" + fromUser.id, [pN, ...pC].slice(0, 100));
+        const pC = (await db.g("notif_" + req.fromUid)) || [];
+        await db.s("notif_" + req.fromUid, [pN, ...pC].slice(0, 100));
       }
     }
     ok$(lg === "uz" ? "Qaytarish tasdiqlandi!" : "Return confirmed!");
@@ -349,19 +356,36 @@ export function useDebts() {
     const fromUser = await db.g("user_" + req.fromUid);
     if (fromUser) {
       const fq = (await db.g("qarz_" + fromUser.oilaId)) || [];
-      await db.s("qarz_" + fromUser.oilaId, fq.map(q => (q.id === req.debtId && (!q.uid || q.uid === fromUser.id)) ? { ...q, payStatus: null, payBy: null } : q));
+      await db.s("qarz_" + fromUser.oilaId, fq.map(q => (q.id === req.debtId && (!q.uid || q.uid === req.fromUid || q.uid === fromUser.id)) ? { ...q, payStatus: null, payBy: null } : q));
     }
     ok$(lg === "uz" ? "Qaytarish rad etildi" : "Return rejected", "warn");
   }, [qarzReqs, user, ok$, lg]);
 
-  const refreshQarzReqs = useCallback(async () => {
-    if (user?.tel) {
-      setQarzReqs((await db.g("qreq_" + user.tel)) || []);
+  // To'liq yangilash: so'rovlar, qarzlar, bildirishnomalar VA balans (xarajat/daromad)
+  // silent === true bo'lsa toast ko'rsatilmaydi (avtomatik sinxronizatsiya uchun)
+  const refreshQarzReqs = useCallback(async (silent) => {
+    if (!user?.id) return;
+    try {
+      if (user.tel) setQarzReqs((await db.g("qreq_" + user.tel)) || []);
       setQarzlar((await db.g("qarz_" + user.oilaId)) || []);
       setNotifs((await db.g("notif_" + user.id)) || []);
-      ok$(lg === "uz" ? "Yangilandi" : "Refreshed");
-    }
-  }, [user, ok$, lg]);
+      // Balans sinxronizatsiyasi: barcha a'zolarning xarajat/daromadlari
+      if ((azolar || []).length) {
+        const allX = [], allD = [];
+        await Promise.all(azolar.map(async (m) => {
+          try {
+            const xA = await db.g("x_" + user.oilaId + "_" + m.id);
+            const dA = await db.g("d_" + user.oilaId + "_" + m.id);
+            if (xA?.length) allX.push(...xA.map(x => ({ ...x, uid: m.id })));
+            if (dA?.length) allD.push(...dA.map(d => ({ ...d, uid: m.id })));
+          } catch {}
+        }));
+        setXar(allX);
+        setDar(allD);
+      }
+      if (silent !== true) ok$(lg === "uz" ? "Yangilandi" : "Refreshed");
+    } catch (e) { console.error("refreshQarzReqs:", e); }
+  }, [user, azolar, ok$, lg]);
 
   return {
     // State
