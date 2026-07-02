@@ -92,11 +92,13 @@ export default function DebtsPage({
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
                   <div style={{ width: 42, height: 42, borderRadius: 12, background: (isPay ? th.gr : th.ac) + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, flexShrink: 0 }}>{isPay ? "✅" : "👤"}</div>
                   <div style={{ flex: 1 }}><div style={{ fontWeight: 700, fontSize: 14, color: th.t1 }}>{req.fromIsm}</div><div style={{ fontSize: 11, color: th.t2 }}>{req.fromTel}</div></div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: isPay ? th.gr : (theyLent ? th.rd : th.gr) }}>{f(req.summa, true)}</div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: isPay ? th.gr : (theyLent ? th.rd : th.gr) }}>{f(isPay ? (req.paySum || req.summa) : req.summa, true)}</div>
                 </div>
                 <div style={{ background: th.bg, borderRadius: 10, padding: "8px 12px", marginBottom: 10, fontSize: 12, color: th.t1 }}>
                   {isPay
-                    ? <span style={{ fontWeight: 600, color: th.gr }}>{lg === "uz" ? req.fromIsm + " qarzni qaytardim deyapti. Tasdiqlaysizmi?" : req.fromIsm + " says the debt is returned. Confirm?"}</span>
+                    ? <span style={{ fontWeight: 600, color: th.gr }}>{lg === "uz"
+                        ? req.fromIsm + (req.partial ? " qarzning " + f(req.paySum || 0, true) + " qismini qaytardim deyapti. Tasdiqlaysizmi?" : " qarzni qaytardim deyapti. Tasdiqlaysizmi?")
+                        : req.fromIsm + " says the debt is returned. Confirm?"}</span>
                     : (theyLent ? (lg === "uz" ? req.fromIsm + " sizga " + f(req.summa, true) + " qarz berdi" : "They lent you money") : (lg === "uz" ? "Siz " + req.fromIsm + " dan " + f(req.summa, true) + " oldingiz" : "You borrowed"))}
                   {!isPay && req.qaytSana && <div style={{ fontSize: 11, color: th.t2, marginTop: 3 }}>{lg === "uz" ? "Qaytarish" : "Return"}: {req.qaytSana}</div>}
                 </div>
