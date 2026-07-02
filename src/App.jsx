@@ -67,6 +67,12 @@ export default function App() {
   const { tupId, setTupId, tupS, setTupS, addMq, tupMq, delMq } = useGoals();
   const { vazifaDone, vazifaApprove } = useFamily();
   const debts = useDebts();
+
+  // Qarz sahifasi ochilganda avtomatik sinxronizatsiya (holat + balans)
+  useEffect(() => {
+    if (scr === "qarz" && user?.id) debts.refreshQarzReqs(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scr]);
   const { markNotifRead, markAllRead, clearNotifs, unreadCount } = useNotifications();
   const { waterGarden } = useGarden();
   const { showPremModal, setShowPremModal, activatePremium } = usePremium();
