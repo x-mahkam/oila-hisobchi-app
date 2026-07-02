@@ -51,10 +51,13 @@ export default function TasksPage({
 
       {/* ── Vazifa qo'shish oynasi ── */}
       {showAddVazifa && !isKid && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,.7)", zIndex:1000, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => { setShowAddVazifa(false); setSelPreset(null); }}>
-          <div style={{ background:th.bg, borderRadius:"24px 24px 0 0", maxWidth:480, width:"100%", padding:"22px 18px 34px", maxHeight:"92vh", overflowY:"auto" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width:40, height:4, borderRadius:2, background:th.bor, margin:"0 auto 18px" }}/>
-            <div style={{ fontSize:18, fontWeight:800, color:th.t1, marginBottom:16, textAlign:"center" }}>{"\ud83d\udccb"} {lg==="uz"?"Yangi vazifa berish":"Add new task"}</div>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:th.bg, zIndex:1000, display:"flex", justifyContent:"center", overflowY:"auto" }}>
+          <div style={{ maxWidth:480, width:"100%", padding:"16px 18px calc(30px + env(safe-area-inset-bottom))" }}>
+            {/* Sarlavha + yopish */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+              <button onClick={() => { setShowAddVazifa(false); setSelPreset(null); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, color:th.t1, cursor:"pointer", fontSize:16, fontWeight:800, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>{"\u2190"}</button>
+              <div style={{ flex:1, fontSize:17, fontWeight:800, color:th.t1 }}>{"\ud83d\udccb"} {lg==="uz"?"Yangi vazifa berish":"Add new task"}</div>
+            </div>
 
             {/* Kim uchun */}
             <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Kim uchun?":"For whom?"}</label>
