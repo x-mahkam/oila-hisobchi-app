@@ -174,7 +174,9 @@ export default function DebtsPage({
                       <span style={{ fontSize: 13 }}>📄</span>{lg === "uz" ? "Tilxat" : "Receipt"}
                     </button>
                   )}
-                  <button onClick={() => delQarz(q.id)} style={{ width: 38, background: th.rd + "11", border: "1px solid " + th.rd + "33", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{Ico.trash(th.rd)}</button>
+                  {!(q.linked && q.linkStatus === "accepted") && (
+                    <button onClick={() => delQarz(q.id)} style={{ width: 38, background: th.rd + "11", border: "1px solid " + th.rd + "33", borderRadius: 10, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{Ico.trash(th.rd)}</button>
+                  )}
                 </div>
               </div>
             );
