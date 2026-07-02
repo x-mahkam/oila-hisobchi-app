@@ -11,7 +11,7 @@ export function useGoals() {
   const [tupId, setTupId] = useState(null);
   const [tupS, setTupS]   = useState("");
 
-  const addMq = useCallback(async ({ ism, maqsad, rang }) => {
+  const addMq = useCallback(async ({ ism, maqsad, rang, shared }) => {
     if (!ism?.trim() || !maqsad || Number(maqsad) <= 0) {
       return ok$(lg==="uz"?"Barcha maydonlarni to'ldiring":"Fill all fields", "err");
     }
@@ -19,7 +19,8 @@ export function useGoals() {
 
     const u = [...maq, {
       id:Date.now(), ism:ism.trim(), maqsad:Number(maqsad),
-      jamg:0, rang, createdAt:td(), uid:user.id, status:"active"
+      jamg:0, rang, createdAt:td(), uid:user.id, status:"active",
+      shared: shared === true
     }];
     await db.s("maq_" + user.oilaId, u);
     setMaq(u);

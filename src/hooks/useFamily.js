@@ -38,9 +38,15 @@ export function useFamily() {
     await db.s("vazifa_" + user.oilaId, upd);
     setVazifalar(upd);
 
-    // Bola balansiga qo'shish
+    // Bola balansiga qo'shish — eski id'ga berilgan bo'lsa ham, login/ism bo'yicha
+    // HAQIQIY (eng yangi) bola akkauntini topamiz
+    const kidsAll = azolar.filter(a => a.rol === "kid");
+    const realKid = kidsAll.find(a => a.id === v.assignedTo)
+      || kidsAll.find(a => v.assignedLogin && a.login === v.assignedLogin)
+      || kidsAll.find(a => v.assignedName && a.ism && a.ism.trim().toLowerCase() === v.assignedName.trim().toLowerCase());
+    const kidId = realKid?.id || v.assignedTo;
     const kb = {...kidBalances};
-    kb[v.assignedTo] = (kb[v.assignedTo]||0) + v.reward;
+    kb[kidId] = (kb[kidId]||0) + v.reward;
     await db.s("kidbal_" + user.oilaId, kb);
     setKidBalances(kb);
 
@@ -56,8 +62,8 @@ export function useFamily() {
 
     // Bolaga bildirishnoma
     try {
-      const kn = (await db.g("notif_" + v.assignedTo)) || [];
-      await db.s("notif_" + v.assignedTo, [{
+      const kn = (await db.g("notif_" + kidId)) || [];
+      await db.s("notif_" + kidId, [{
         id:Date.now(), type:"vazifa",
         text:(lg==="uz"?"🏆 Vazifa tasdiqlandi! +":"Task approved! +")+f(v.reward,true),
         sana:new Date().toISOString(), read:false
