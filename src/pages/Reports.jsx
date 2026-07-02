@@ -14,6 +14,8 @@ export default function ReportsPage({
   adv, advL, aiAdv,
   adminStats, adminLoad, loadAdminStats,
 }) {
+  // PDF hisobot doirasi: o'zimning / oilamning
+  const [pdfScope, setPdfScope] = useState(canSeeReport ? "family" : "mine");
   const STY = useMemo(() => makeS(th), [th]);
 
   // ── Admin panel ──────────────────────────────────────────
@@ -136,47 +138,6 @@ export default function ReportsPage({
         xar={xar} dar={dar} user={user} azolar={azolar} canSeeReport={canSeeReport}
       />
 
-      {/* Oila boshi paneli */}
-      {canSeeReport && azolar.length > 1 && (() => {
-        const totX = bX.reduce((s, x) => s + Number(x.summa || 0), 0);
-        const totD = bD.reduce((s, d) => s + Number(d.summa || 0), 0);
-        const memData = azolar.map(a => {
-          const ax = bX.filter(x => x.uid === a.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-          const ad = bD.filter(d => d.uid === a.id).reduce((s, d) => s + Number(d.summa || 0), 0);
-          const rel = RELATIONS.find(r => r.id === a.rel);
-          return { ...a, ax, ad, relEmoji: rel ? rel.emoji : "👤", pctX: totX > 0 ? Math.round(ax / totX * 100) : 0, pctD: totD > 0 ? Math.round(ad / totD * 100) : 0 };
-        }).sort((p, q) => q.ax - p.ax);
-        return (
-          <div style={{ ...STY.cd, background: "linear-gradient(135deg," + th.ac + "12," + th.ac2 + "06)", border: "1.5px solid " + th.ac + "33", marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <span style={{ fontSize: 18 }}>👑</span>
-              <div style={{ fontSize: 14, fontWeight: 800, color: th.ac }}>{lg === "uz" ? "Oila boshi paneli" : "Head of family panel"}</div>
-            </div>
-            <div style={{ fontSize: 11, color: th.t2, marginBottom: 14 }}>{lg === "uz" ? "Oilaning umumiy moliyaviy ko'rinishi" : "Family financial overview"}</div>
-            <div style={{ display: "flex", gap: 10, marginBottom: 16 }}>
-              <div style={{ flex: 1, background: th.gr + "12", borderRadius: 12, padding: "11px 13px", textAlign: "center" }}><div style={{ fontSize: 9, color: th.gr, fontWeight: 700, marginBottom: 3 }}>{lg === "uz" ? "UMUMIY DAROMAD" : "TOTAL INCOME"}</div><div style={{ fontSize: 15, fontWeight: 800, color: th.gr }}>{f(totD, true)}</div></div>
-              <div style={{ flex: 1, background: th.rd + "12", borderRadius: 12, padding: "11px 13px", textAlign: "center" }}><div style={{ fontSize: 9, color: th.rd, fontWeight: 700, marginBottom: 3 }}>{lg === "uz" ? "UMUMIY XARAJAT" : "TOTAL EXPENSE"}</div><div style={{ fontSize: 15, fontWeight: 800, color: th.rd }}>{f(totX, true)}</div></div>
-            </div>
-            <div style={{ fontSize: 11, color: th.t2, fontWeight: 700, marginBottom: 10, textTransform: "uppercase", letterSpacing: 0.5 }}>{lg === "uz" ? "Kim qancha sarflaydi" : "Who spends how much"}</div>
-            {memData.map(m => (
-              <div key={m.id} style={{ marginBottom: 13 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
-                  <span style={{ fontSize: 16 }}>{m.relEmoji}</span>
-                  <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: th.t1 }}>{m.ism}{m.id === user.id && <span style={{ color: th.ac, fontSize: 10 }}> ({t.me})</span>}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>-{f(m.ax, true)}</span>
-                  <span style={{ fontSize: 10, color: th.t2, minWidth: 32, textAlign: "right" }}>{m.pctX}%</span>
-                </div>
-                <div style={{ height: 7, background: th.bg, borderRadius: 4, overflow: "hidden" }}><div style={{ height: "100%", width: m.pctX + "%", background: "linear-gradient(90deg," + th.rd + "," + th.am + ")", borderRadius: 4, transition: "width .5s" }} /></div>
-                {m.ad > 0 && <div style={{ fontSize: 10, color: th.gr, marginTop: 3 }}>{lg === "uz" ? "Daromad hissasi" : "Income share"}: +{f(m.ad, true)} ({m.pctD}%)</div>}
-              </div>
-            ))}
-            <div style={{ marginTop: 8, padding: "11px 13px", background: th.bg, borderRadius: 11, fontSize: 11, color: th.t2, lineHeight: 1.5 }}>
-              {(() => { const top = memData[0]; if (top && top.ax > 0) return lg === "uz" ? "💡 Eng ko'p xarajat: " + top.ism + " (" + top.pctX + "%)." : "Top spender: " + top.ism + " (" + top.pctX + "%)"; return lg === "uz" ? "Hali xarajatlar kam." : "Few expenses yet."; })()}
-            </div>
-          </div>
-        );
-      })()}
-
       {/* Moliyaviy sog'liq skor */}
       {(() => {
         let score = 50;
@@ -236,71 +197,6 @@ export default function ReportsPage({
         <SC label={t.bal} value={(fb < 0 ? "-" : "") + f(Math.abs(fb), true)} color={fb >= 0 ? th.gr : th.rd} th={th} />
       </div>
 
-      {fjX > 0 && (
-        <div>
-          <SL ch={t.ed} th={th} />
-          {KATS.map((k, i) => {
-            const tx = fX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-            if (!tx) return null;
-            return (
-              <div key={k.id} style={{ ...STY.cd, padding: "9px 12px", display: "flex", alignItems: "center", gap: 9, marginBottom: 7 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 9, background: k.c + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><KatIco id={k.id} c={k.c} s={17} /></div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ ...STY.row, marginBottom: 3 }}><span style={{ fontSize: 12, fontWeight: 600, color: th.t1 }}>{KN[lg][i]}</span><span style={{ fontSize: 12, fontWeight: 700, color: k.c }}>{f(tx, true)}</span></div>
-                  <div style={{ background: th.bg, borderRadius: 4, height: 6 }}><div style={{ width: fjX > 0 ? Math.min(100, (tx / fjX) * 100) + "%" : "0%", height: "100%", background: k.c, borderRadius: 4 }} /></div>
-                  <div style={{ fontSize: 9, color: th.t2, marginTop: 2 }}>{fjX > 0 ? Math.round((tx / fjX) * 100) : 0}%</div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {fjD > 0 && (
-        <div>
-          <SL ch={t.isr} th={th} />
-          {DARS.map((d, i) => {
-            const tx = fD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-            if (!tx) return null;
-            return (
-              <div key={d.id} style={{ ...STY.cd, padding: "9px 12px", ...STY.row, marginBottom: 7 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: 9, background: d.c + "18", display: "flex", alignItems: "center", justifyContent: "center" }}><DarIco id={d.id} c={d.c} s={17} /></div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: th.t1 }}>{DN[lg][i]}</span>
-                </div>
-                <span style={{ fontWeight: 700, color: th.gr, fontSize: 13 }}>+{f(tx, true)}</span>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {hisFil === "all" && canSeeReport && azolar.length > 1 && (
-        <div>
-          <SL ch={t.bm} th={th} />
-          {azolar.map(a => {
-            const ax = bX.filter(x => x.uid === a.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-            const ad = bD.filter(d => d.uid === a.id).reduce((s, d) => s + Number(d.summa || 0), 0);
-            return (
-              <div key={a.id} style={{ ...STY.cd, padding: "12px 14px", marginBottom: 8 }}>
-                <div style={{ ...STY.row, marginBottom: 10 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <Av src={a.photo} name={a.ism} size={32} ac={th.ac} />
-                    <span style={{ fontWeight: 700, fontSize: 14, color: th.t1 }}>{a.ism}{a.id === user.id && <span style={{ color: th.ac, fontSize: 10 }}> ({t.me})</span>}</span>
-                  </div>
-                  <span style={{ fontSize: 10, color: th.t2 }}>{a.rol === "bosh" ? t.hd : t.mb2}</span>
-                </div>
-                <div style={{ display: "flex", gap: 12 }}>
-                  <span style={{ fontSize: 12, color: th.gr, fontWeight: 600 }}>+{f(ad, true)}</span>
-                  <span style={{ fontSize: 12, color: th.rd, fontWeight: 600 }}>-{f(ax, true)}</span>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: ad - ax >= 0 ? th.gr : th.rd }}>{ad - ax < 0 ? "-" : ""}{f(Math.abs(ad - ax), true)}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {hisFil === "all" && canSeeReport && azolar.length > 1 && (() => {
         const memStats = azolar.map(a => {
           const ax = bX.filter(x => x.uid === a.id).reduce((s, x) => s + Number(x.summa || 0), 0);
@@ -335,12 +231,28 @@ export default function ReportsPage({
         );
       })()}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 6 }}>
+      {/* Hisobot doirasi: O'zimning / Oilamning */}
+      <div style={{ marginTop: 6, marginBottom: 10 }}>
+        <div style={{ fontSize: 11, color: th.t2, fontWeight: 700, marginBottom: 7, textTransform: "uppercase", letterSpacing: 0.5 }}>{lg === "uz" ? "Hisobotni yuklab olish" : "Download report"}</div>
+        {canSeeReport && azolar.length > 1 && (
+          <div style={{ display: "flex", background: th.surH, borderRadius: 12, padding: 3, gap: 3, border: "1.5px solid " + th.bor, marginBottom: 10 }}>
+            {[["mine", (lg === "uz" ? "O'zimning" : "Mine")], ["family", (lg === "uz" ? "Oilamning" : "Family")]].map(([key, label]) => (
+              <button key={key} onClick={() => setPdfScope(key)} style={{
+                flex: 1, padding: "9px 0", border: "none", borderRadius: 9, cursor: "pointer",
+                fontWeight: 700, fontSize: 13, transition: "all .2s",
+                background: pdfScope === key ? "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")" : (th.dark ? "#374151" : "transparent"),
+                color: pdfScope === key ? "#fff" : (th.dark ? "#D1D5DB" : th.t2),
+              }}>{key === "mine" ? "\ud83d\udc64 " : "\ud83d\udc65 "}{label}</button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <button onClick={exportExcel} disabled={exportLoading} style={{ ...STY.bt("#10b981", "#059669"), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: exportLoading ? .6 : 1, position: "relative" }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 6l2.5 3L5 12M9 12h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           {exportLoading ? "..." : "Excel"}{!isPremium && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 8, background: "#f59e0b", color: "#fff", borderRadius: 8, padding: "1px 5px", fontWeight: 800 }}>PRO</span>}
         </button>
-        <button onClick={exportPDF} style={{ ...STY.bt("#ef4444", "#dc2626"), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <button onClick={() => exportPDF(pdfScope)} style={{ ...STY.bt("#ef4444", "#dc2626"), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 4h5l3 3v7H5V4z" stroke="white" strokeWidth="1.3" strokeLinejoin="round" /><line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth="1.2" strokeLinecap="round" /></svg>
           PDF{!isPremium && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 8, background: "#f59e0b", color: "#fff", borderRadius: 8, padding: "1px 5px", fontWeight: 800 }}>PRO</span>}
         </button>
