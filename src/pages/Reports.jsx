@@ -399,6 +399,13 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       // Qarz berish xarajatlari — yorqin rang bilan (qoraytirilmaydi)
       const qzX = filteredX.filter(x => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
       if (qzX > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz berildi" : "Loan given", color: "#F97316", icon: "🤝", sum: qzX });
+      // Maqsadga (jamg'armaga) qo'shilgan pul — alohida segment
+      const mqX = filteredX.filter(x => x.kategoriya === "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
+      if (mqX > 0) base.push({ id: "maqsad", name: lg === "uz" ? "Jamg'arma (maqsad)" : "Goal savings", color: "#EAB308", icon: "🎯", sum: mqX });
+      // Ro'yxatda yo'q har qanday kategoriya ham chetda qolmasin — donut DOIM 100%
+      const knownX = new Set([...KATS.map(k => k.id), "qarz", "maqsad"]);
+      const otherX = filteredX.filter(x => !knownX.has(x.kategoriya)).reduce((s, x) => s + Number(x.summa || 0), 0);
+      if (otherX > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: "#94A3B8", icon: "📦", sum: otherX });
       return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
     }
     const base = DARS.map((d, i) => {
@@ -408,6 +415,10 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     // Qarz olish daromadlari — yorqin rang bilan
     const qzD = filteredD.filter(x => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
     if (qzD > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz olindi" : "Loan received", color: "#14B8A6", icon: "🤝", sum: qzD });
+    // Ro'yxatda yo'q har qanday daromad turi ham chetda qolmasin
+    const knownD = new Set([...DARS.map(d => d.id), "qarz"]);
+    const otherD = filteredD.filter(x => !knownD.has(x.tur)).reduce((s, x) => s + Number(x.summa || 0), 0);
+    if (otherD > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: "#94A3B8", icon: "📦", sum: otherD });
     return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
   }, [filteredX, filteredD, type, lg]);
 

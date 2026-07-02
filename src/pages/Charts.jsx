@@ -263,6 +263,11 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       }));
       const qzX=filtX.filter(x=>x.kategoriya==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
       if(qzX>0) base.push({id:"qarz",name:lg==="uz"?"Qarz berildi":"Loan given",color:"#F97316",icon:"🤝",sum:qzX});
+      const mqX=filtX.filter(x=>x.kategoriya==="maqsad").reduce((s,x)=>s+Number(x.summa||0),0);
+      if(mqX>0) base.push({id:"maqsad",name:lg==="uz"?"Jamg'arma (maqsad)":"Goal savings",color:"#EAB308",icon:"🎯",sum:mqX});
+      const knownX=new Set([...KATS.map(k=>k.id),"qarz","maqsad"]);
+      const otherX=filtX.filter(x=>!knownX.has(x.kategoriya)).reduce((s,x)=>s+Number(x.summa||0),0);
+      if(otherX>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:"📦",sum:otherX});
       return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
     }
     const base=DARS.map((d,i)=>({
@@ -271,6 +276,9 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
     }));
     const qzD=filtD.filter(x=>x.tur==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
     if(qzD>0) base.push({id:"qarz",name:lg==="uz"?"Qarz olindi":"Loan received",color:"#14B8A6",icon:"🤝",sum:qzD});
+    const knownD=new Set([...DARS.map(d=>d.id),"qarz"]);
+    const otherD=filtD.filter(x=>!knownD.has(x.tur)).reduce((s,x)=>s+Number(x.summa||0),0);
+    if(otherD>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:"📦",sum:otherD});
     return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
   },[filtX,filtD,type,lg]);
 
