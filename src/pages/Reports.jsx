@@ -371,6 +371,8 @@ function fmtLocalR(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 const HAFTA_KUN = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba → Yakshanba
+const DAR_EMOJI = { oylik:"💼", qoshimcha:"⚡", biznes:"🏢", sovga:"🎁", boshqa:"💰" };
+const SLIDE_H = 232; // barcha slaydlar bir xil balandlik
 
 // ═══════════════════════════════════════════════════════════════
 // ReportVisualBlock — 4 slide swipeable chart
@@ -382,6 +384,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   };
 
   // ── Davr tanlash state ─────────────────────────────────
+  const [type,     setType]    = useState("xarajat"); // xarajat | daromad
   const [scope,    setScope]   = useState("mine");   // mine | family
   const [period,   setPeriod]  = useState("oy");     // hafta | oy | yil
   const [slideIdx, setSlideIdx] = useState(0);       // 0=donut+dates, 1=donut+cats, 2=line, 3=oila a'zolari
@@ -475,19 +478,26 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     });
   }, [srcD, selectedOpt, period]);
 
-  const totalX = filteredX.reduce((s, x) => s + Number(x.summa || 0), 0);
-  const totalD = filteredD.reduce((s, d) => s + Number(d.summa || 0), 0);
+  // Tanlangan tur (xarajat/daromad) bo'yicha joriy ma'lumot
+  const curr = type === "xarajat" ? filteredX : filteredD;
+  const totalX = curr.reduce((s, x) => s + Number(x.summa || 0), 0);
 
-  // Kategoriyalar
-  const catData = useMemo(() => KATS.map((k, i) => {
-    const sum = filteredX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-    return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💳", sum };
-  }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum), [filteredX, lg]);
+  // Kategoriyalar (xarajat) yoki daromad turlari
+  const catData = useMemo(() => {
+    if (type === "xarajat") return KATS.map((k, i) => {
+      const sum = filteredX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+      return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💳", sum };
+    }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
+    return DARS.map((d, i) => {
+      const sum = filteredD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+      return { id: d.id, name: DN[lg]?.[i] || d.id, color: d.c, icon: DAR_EMOJI[d.id] || "💰", sum };
+    }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
+  }, [filteredX, filteredD, type, lg]);
 
   // Sanalar bo'yicha xarajatlar (slide 1 uchun)
   const dateData = useMemo(() => {
     const map = {};
-    filteredX.forEach(x => {
+    curr.forEach(x => {
       if (!x.sana) return;
       map[x.sana] = (map[x.sana] || 0) + Number(x.summa || 0);
     });
@@ -495,7 +505,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       .sort((a, b) => b[0].localeCompare(a[0]))
       .slice(0, 6)
       .map(([sana, sum]) => ({ sana, sum }));
-  }, [filteredX]);
+  }, [curr]);
 
   // Line chart ma'lumotlari (slide 3 uchun)
   const lineData = useMemo(() => {
@@ -507,7 +517,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       return Array.from({ length: daysInMonth }, (_, i) => {
         const day = String(i + 1).padStart(2, "0");
         const sana = `${y}-${String(m).padStart(2,"0")}-${day}`;
-        const sum = filteredX.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
+        const sum = curr.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
         return { label: `${m}/${i+1}`, sum, sana };
       });
     }
@@ -519,7 +529,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       return Array.from({ length: 7 }, (_, i) => {
         const d = new Date(monday.getTime() + i * 86400000);
         const sana = fmtLocalR(d);
-        const sum = filteredX.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
+        const sum = curr.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
         return { label: `${HAFTA_KUN[i]} ${d.getDate()}`, sum, sana };
       });
     }
@@ -528,12 +538,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       const months_uz = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
       return Array.from({ length: 12 }, (_, i) => {
         const prefix = `${y}-${String(i+1).padStart(2,"0")}`;
-        const sum = filteredX.filter(x => x.sana?.startsWith(prefix)).reduce((s, x) => s + Number(x.summa||0), 0);
+        const sum = curr.filter(x => x.sana?.startsWith(prefix)).reduce((s, x) => s + Number(x.summa||0), 0);
         return { label: months_uz[i], sum };
       });
     }
     return [];
-  }, [filteredX, period, selectedOpt]);
+  }, [curr, period, selectedOpt]);
 
   const lineMax = Math.max(...lineData.map(d => d.sum), 1);
   const lineAvg = lineData.length ? Math.round(lineData.reduce((s, d) => s + d.sum, 0) / lineData.filter(d=>d.sum>0).length || 0) : 0;
@@ -544,10 +554,10 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     if (scope !== "family" || !canSeeReport || !(azolar || []).length) return [];
     return azolar.map((a, i) => ({
       id: a.id, ism: a.ism || "?", color: MEM_COLORS[i % MEM_COLORS.length],
-      sum: filteredX.filter(x => x.uid === a.id || (!x.uid && a.id === user?.id))
+      sum: curr.filter(x => x.uid === a.id || (!x.uid && a.id === user?.id))
         .reduce((s, x) => s + Number(x.summa || 0), 0),
     })).filter(m => m.sum > 0).sort((a, b) => b.sum - a.sum);
-  }, [azolar, filteredX, scope, canSeeReport, user]);
+  }, [azolar, curr, scope, canSeeReport, user]);
   const memTotal = members.reduce((s, m) => s + m.sum, 0);
   const [hovMem, setHovMem] = useState(null);
 
@@ -614,6 +624,23 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   return (
     <div style={{ marginBottom: 18 }}>
 
+      {/* ── Xarajat / Daromad toggle ── */}
+      <div style={{ display:"flex", background:th.surH, borderRadius:12, padding:3, marginBottom:12, gap:3, border:"1.5px solid "+th.bor }}>
+        {[["xarajat","💸 "+(lg==="uz"?"Xarajat":"Expenses")], ["daromad","💰 "+(lg==="uz"?"Daromad":"Income")]].map(([key, label]) => {
+          const active = type === key;
+          const ac = key === "xarajat" ? th.rd : th.gr;
+          return (
+            <button key={key} onClick={() => { setType(key); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{
+              flex:1, padding:"9px 0", borderRadius:9, cursor:"pointer",
+              fontWeight:700, fontSize:13, transition:"all .2s",
+              border:"1.5px solid "+(active ? ac : (th.dark ? "#4B5563" : th.bor)),
+              background: active ? ac+"28" : (th.dark ? "#374151" : "transparent"),
+              color: active ? ac : (th.dark ? "#D1D5DB" : th.t2),
+            }}>{label}</button>
+          );
+        })}
+      </div>
+
       {/* ── Scope toggle ── */}
       <div style={{ display:"flex", background:th.surH, borderRadius:12, padding:3, marginBottom:12, gap:3 }}>
         {[["mine", lg==="uz"?"O'zimning":"Mine"], ["family", lg==="uz"?"Oilamning":"Family"]].map(([key, label]) => (
@@ -666,7 +693,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       >
         {/* Slide 0: Donut + sanalar */}
         {slideIdx === 0 && (
-          <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ height:SLIDE_H, padding:"0 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={null}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
@@ -677,7 +704,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               {dateData.length === 0
-                ? <div style={{ fontSize:12, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?"Bu davrda xarajat yo'q":"No expenses this period"}</div>
+                ? <div style={{ fontSize:12, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data this period"}</div>
                 : dateData.slice(0,5).map((d, i) => {
                     const col = catData[i % catData.length]?.color || th.ac;
                     return (
@@ -705,7 +732,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
         {/* Slide 1: Donut + kategoriya % */}
         {slideIdx === 1 && (
-          <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ height:SLIDE_H, padding:"0 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={hovCat}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
@@ -724,7 +751,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             </div>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:7 }}>
               {catData.length === 0
-                ? <div style={{ fontSize:12, color:th.t3 }}>{lg==="uz"?"Bu davrda xarajat yo'q":"No data"}</div>
+                ? <div style={{ fontSize:12, color:th.t3 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data"}</div>
                 : catData.slice(0,5).map((cat, i) => (
                     <div key={cat.id} style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer" }}
                       onMouseEnter={() => setHovCat(i)} onMouseLeave={() => setHovCat(null)}
@@ -752,18 +779,22 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
         {/* Slide 2: Line chart */}
         {slideIdx === 2 && (
-          <div style={{ padding:"16px 16px 10px" }}>
-            <div style={{ marginBottom:10 }}>
-              <div style={{ fontSize:12, color:th.t2 }}>Total: <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
-              <div style={{ fontSize:12, color:th.t2 }}>Average: <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
+          <div style={{ height:SLIDE_H, padding:"14px 16px 6px", display:"flex", flexDirection:"column" }}>
+            <div style={{ display:"flex", gap:18, marginBottom:6 }}>
+              <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Jami:":"Total:"} <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
+              <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"O'rtacha:":"Avg:"} <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
             </div>
-            <LineChartSVG data={lineData} lineMax={lineMax} th={th} f={f}/>
+            <div style={{ flex:1, display:"flex", alignItems:"center", overflow:"hidden" }}>
+              <div style={{ width:"100%" }}>
+                <LineChartSVG data={lineData} lineMax={lineMax} th={th} f={f}/>
+              </div>
+            </div>
           </div>
         )}
 
         {/* Slide 3: Oila a'zolari ulushi — faqat "Oilamning" tanlanganda */}
         {slideIdx === 3 && scope === "family" && canSeeReport && (
-          <div style={{ padding:"20px 16px", display:"flex", alignItems:"center", gap:12 }}>
+          <div style={{ height:SLIDE_H, padding:"0 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={hovMem} data={members} total={memTotal}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
@@ -815,7 +846,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       {catData.length > 0 && (
         <div style={{ background:th.sur, borderRadius:20, border:"1px solid "+th.bor, padding:"16px 14px" }}>
           <div style={{ fontSize:12, fontWeight:700, color:th.t2, marginBottom:14, textTransform:"uppercase", letterSpacing:0.8 }}>
-            {lg==="uz"?"Kategoriyalar":"Categories"}
+            {type==="xarajat" ? (lg==="uz"?"Kategoriyalar":"Categories") : (lg==="uz"?"Daromad turlari":"Income types")}
           </div>
           {catData.map((cat, i) => {
             const pct = totalX>0 ? cat.sum/totalX*100 : 0;

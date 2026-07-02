@@ -130,7 +130,7 @@ export default function DebtsPage({
             const today = new Date().toISOString().slice(0, 10);
             const overdue = q.qaytSana && q.qaytSana < today;
             return (
-              <div key={q.id} style={{ ...STY.cd, padding: "13px 15px", marginBottom: 10, border: "1px solid " + (overdue ? th.rd + "55" : th.bor) }}>
+              <div key={q.id + "_" + (q.uid || "o")} style={{ ...STY.cd, padding: "13px 15px", marginBottom: 10, border: "1px solid " + (overdue ? th.rd + "55" : th.bor) }}>
                 <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 42, height: 42, borderRadius: 12, background: color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{isLent ? "💰" : "💸"}</div>
@@ -190,7 +190,7 @@ export default function DebtsPage({
             const overdue = q.qaytSana && q.qaytSana < today;
             const owner = azolar.find(a => a.id === q.uid);
             return (
-              <div key={q.id} style={{ ...STY.cd, padding: "12px 14px", marginBottom: 9, border: "1px solid " + th.bor, borderLeft: "3px solid " + th.ac }}>
+              <div key={q.id + "_" + (q.uid || "o")} style={{ ...STY.cd, padding: "12px 14px", marginBottom: 9, border: "1px solid " + th.bor, borderLeft: "3px solid " + th.ac }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, paddingBottom: 8, borderBottom: "1px solid " + th.bor }}>
                   <Av src={owner?.photo} name={owner?.ism || q.kim} size={26} ac={th.ac} />
                   <span style={{ fontSize: 12, fontWeight: 700, color: th.ac }}>{gN2(q.uid)}</span>
@@ -224,7 +224,7 @@ export default function DebtsPage({
             const isLent = q.tur === "bergan";
             const dc = isLent ? th.gr : th.rd;
             return (
-              <div key={q.id} style={{ ...STY.cd, padding: "11px 14px", marginBottom: 8, borderLeft: "3px solid " + dc + "66" }}>
+              <div key={q.id + "_" + (q.uid || "o")} style={{ ...STY.cd, padding: "11px 14px", marginBottom: 8, borderLeft: "3px solid " + dc + "66" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <div style={{ width: 34, height: 34, borderRadius: 9, background: dc + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, flexShrink: 0 }}>{isLent ? "💰" : "💸"}</div>
