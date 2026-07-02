@@ -40,7 +40,16 @@ export default function TasksPage({
   vazifaDone, vazifaApprove, vazifaReject, delVazifa,
 }) {
   const STY = useMemo(() => makeS(th), [th]);
-  const kids = azolar.filter(a => a.rol === "kid");
+  // Dublikat bola yozuvlaridan (qayta yaratilgan akkauntlar) eng yangisi olinadi
+  const kids = (() => {
+    const raw = azolar.filter(a => a.rol === "kid");
+    const seen = {};
+    [...raw].sort((a, b) => String(b.id).localeCompare(String(a.id))).forEach(k => {
+      const key = (k.login || k.ism || "").trim().toLowerCase();
+      if (!seen[key]) seen[key] = k;
+    });
+    return Object.values(seen);
+  })();
   const [selPreset, setSelPreset] = useState(null);
   const [vSyncing, setVSyncing] = useState(false);
   // Sahifa ochilganda vazifalar va cho'ntak balanslari bazadan qayta yuklanadi
@@ -95,7 +104,7 @@ export default function TasksPage({
               ? <div style={{ background:th.am+"15", border:"1px solid "+th.am+"44", borderRadius:12, padding:"12px 14px", marginBottom:14, fontSize:12, color:th.am }}>{"\u26A0\uFE0F"} {lg==="uz"?"Avval bola akkaunti yarating (Profil \u2192 Bola akkaunti qo'shish)":"Create a kid account first"}</div>
               : <div style={{ display:"flex", gap:8, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
                   {kids.map(k => (
-                    <button key={k.id} onClick={() => setVAssignee(k.id)} style={{ flexShrink:0, background:vAssignee===k.id?th.ac+"18":th.surH, border:"2px solid "+(vAssignee===k.id?th.ac:th.bor), borderRadius:14, padding:"10px 16px", cursor:"pointer", color:vAssignee===k.id?th.ac:th.t2, fontWeight:700, fontSize:13 }}>{"\ud83d\udc76"} {k.ism}</button>
+                    <button key={k.id} onClick={() => setVAssignee(k.id)} style={{ flexShrink:0, background:vAssignee===k.id?th.ac+"18":th.surH, border:"2px solid "+(vAssignee===k.id?th.ac:th.bor), borderRadius:14, padding:"10px 16px", cursor:"pointer", color:vAssignee===k.id?th.ac:th.t2, fontWeight:700, fontSize:13 }}>{"\ud83d\udc76"} {k.ism}{k.login ? <span style={{ display:"block", fontSize:9, fontWeight:400, opacity:.7 }}>{k.login}</span> : null}</button>
                   ))}
                 </div>
             }
@@ -162,7 +171,7 @@ export default function TasksPage({
           <div style={{position:"relative"}}>
             <div style={{fontSize:13,color:"rgba(255,255,255,0.9)",marginBottom:4}}>{lg==="uz"?"Mening cho'ntak pulim":"My pocket money"}</div>
             <div style={{fontSize:32,fontWeight:800,color:"#fff",marginBottom:6}}>{f(kidBalances[user.id]||0,true)}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {vazifalar.filter(v=>(v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login))&&v.status==="approved").length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"}</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {vazifalar.filter(v=>(v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)||(v.assignedName&&user.ism&&v.assignedName.trim().toLowerCase()===user.ism.trim().toLowerCase()))&&v.status==="approved").length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"}</div>
           </div>
         </div>
       )}
@@ -179,7 +188,7 @@ export default function TasksPage({
         <div style={{...STY.cd, marginBottom:16, background:"linear-gradient(135deg,#8b5cf60a,"+th.sur+")", border:"1px solid #8b5cf622"}}>
           <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>🏆 {lg==="uz"?"Bolalar reytingi":"Kids leaderboard"}</div>
           {kids.map((k, i) => {
-            const done = vazifalar.filter(v=>(v.assignedTo===k.id||(v.assignedLogin&&k.login&&v.assignedLogin===k.login))&&v.status==="approved").length;
+            const done = vazifalar.filter(v=>(v.assignedTo===k.id||(v.assignedLogin&&k.login&&v.assignedLogin===k.login)||(v.assignedName&&k.ism&&v.assignedName.trim().toLowerCase()===k.ism.trim().toLowerCase()))&&v.status==="approved").length;
             const bal = kidBalances[k.id]||0;
             const medals = ["🥇","🥈","🥉"];
             return (
@@ -199,7 +208,7 @@ export default function TasksPage({
 
       {/* ── Vazifalar ro'yxati ── */}
       {(() => {
-        const myTasks = isKid ? vazifalar.filter(v=>v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)) : vazifalar;
+        const myTasks = isKid ? vazifalar.filter(v=>v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)||(v.assignedName&&user.ism&&v.assignedName.trim().toLowerCase()===user.ism.trim().toLowerCase())) : vazifalar;
         if (isKid && myTasks.length === 0 && vazifalar.length > 0) return (
           <div style={{textAlign:"center",padding:"30px 20px",color:th.t2}}>
             <div style={{fontSize:40,marginBottom:10}}>{"\ud83d\udd0d"}</div>
