@@ -8,7 +8,7 @@ const EMOJIS = ["📚","🧹","🍽️","🛒","🌱","🐕","🚴","🎨","🏃
 export default function TasksPage({
   user, azolar, vazifalar, kidBalances,
   lg, isKid, th, t,
-  buzz,
+  buzz, setScr,
   showAddVazifa, setShowAddVazifa,
   vTitle, setVTitle, vReward, setVReward, vAssignee, setVAssignee, vEmoji, setVEmoji,
   addVazifa,
@@ -19,6 +19,12 @@ export default function TasksPage({
 
   return (
     <div>
+      {/* ── Sarlavha + orqaga ── */}
+      <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
+        <button onClick={() => { buzz(8); setScr("bosh"); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, color:th.t1, cursor:"pointer", fontSize:16, fontWeight:800, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>{"\u2190"}</button>
+        <div style={{ flex:1, fontSize:16, fontWeight:800, color:th.t1 }}>{"\ud83d\udccb"} {lg==="uz"?"Farzand vazifalari":"Kids' tasks"}</div>
+      </div>
+
       {/* ── Vazifa qo'shish modali ── */}
       {showAddVazifa && !isKid && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.7)", zIndex:1000, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => setShowAddVazifa(false)}>

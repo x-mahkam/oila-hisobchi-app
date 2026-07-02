@@ -21,6 +21,9 @@ export default function DashboardPage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const [quickItem, setQuickItem] = useState(null);
+  const [showRates, setShowRates] = useState(false);
+  const bugun = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
+  const bugunX = xar.filter(x => (x.uid === user?.id || !x.uid) && x.sana === bugun).reduce((sm, x) => sm + Number(x.summa || 0), 0);
   const [quickSum, setQuickSum] = useState("");
 
   const quickAdd = async () => {
@@ -176,7 +179,10 @@ export default function DashboardPage({
                 {(() => { const h = new Date().getHours(); return h < 6 ? (lg === "uz" ? "Xayrli tun" : "Good night") : h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening"); })()}
               </div>
               <div style={{ fontSize: 20, fontWeight: 800, color: "#fff", marginBottom: 14 }}>{user?.ism || ""} 👋</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginBottom: 8 }}>{lg === "uz" ? "Mening balansim (bu oy)" : "My balance"}</div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)" }}>{lg === "uz" ? "Mening balansim (bu oy)" : "My balance"}</div>
+                {bugunX > 0 && <div style={{ fontSize: 11, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: 9, padding: "3px 9px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
+              </div>
               <div style={{ fontSize: 28, fontWeight: 800, color: "#fff", marginBottom: myBal < 0 ? 8 : 14, letterSpacing: "-0.5px" }}>{myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>
               {myBal < 0 && (
                 <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: "8px 12px", marginBottom: 12, fontSize: 12, color: "#fff", fontWeight: 600 }}>
@@ -228,68 +234,53 @@ export default function DashboardPage({
             <div style={{ ...STY.row, marginTop: 7 }}><span style={{ color: bRng, fontSize: 11, fontWeight: 700 }}>{pct}% {t.sp}</span><span style={{ color: bdj - jX >= 0 ? th.gr : th.rd, fontSize: 11 }}>{f(Math.abs(bdj - jX), true)} {bdj - jX >= 0 ? t.lf : t.ex}</span></div>
           </div>
 
-          <div style={{ ...STY.cd, marginBottom: 14 }}>
-            <div style={{ ...STY.row, marginBottom: 12 }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}>{Ico.bank(th.ac)}{t.rates}</div>
-                <div style={{ fontSize: 10, color: th.t2, marginTop: 2 }}>
-                  {t.rSub}
-                  {(() => { try { const rt = localStorage.getItem("oilaV7RatesT"); if (rt) { const d = new Date(rt); const today = new Date().toDateString() === d.toDateString(); return " · " + (today ? (lg === "uz" ? "bugun" : "today") : d.toLocaleDateString("uz-UZ")) + " " + d.toLocaleTimeString("uz-UZ", { hour: "2-digit", minute: "2-digit" }); } } catch (e) {} return ""; })()}
-                </div>
-              </div>
-              <button onClick={fetchRates} style={{ background: "none", border: "1px solid " + th.bor, borderRadius: 9, padding: "4px 10px", cursor: "pointer", fontSize: 11, color: th.t2, display: "flex", alignItems: "center", gap: 4 }}>{Ico.repeat(th.t2)}{lg === "uz" ? "Yangilash" : "Refresh"}</button>
-            </div>
-            {rateL && <div style={{ textAlign: "center", padding: "12px 0", color: th.t2, fontSize: 13 }}>{t.ldd}</div>}
-            {!rateL && rates.length > 0 && (
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                {rates.map(r => {
-                  const flags = { USD: "🇺🇸", EUR: "🇪🇺", RUB: "🇷🇺", GBP: "🇬🇧", CNY: "🇨🇳", KZT: "🇰🇿" };
-                  return (
-                    <div key={r.code} style={{ background: th.surH, borderRadius: 12, padding: "10px 12px", border: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{flags[r.code] || "💱"}</span>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 700, color: th.t1 }}>{r.code}</div>
-                        <div style={{ fontSize: 9, color: th.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.name}</div>
-                      </div>
-                      <div style={{ textAlign: "right", flexShrink: 0 }}>
-                        <div style={{ fontSize: 12, fontWeight: 800, color: th.ac }}>{Number(r.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 })}</div>
-                        <div style={{ fontSize: 9, color: th.t2 }}>so'm</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {bX.length > 0 && (
-            <div style={{ marginBottom: 14 }}>
-              <SL ch={t.exp + " (" + tm() + ")"} th={th} />
-              {KATS.map((k, i) => {
-                const tx = bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-                if (!tx) return null;
-                const lim = oila?.katLimits?.[k.id];
-                const ov = lim && tx > lim;
-                const sp = Array.from({ length: 7 }, (_, si) => { const d = new Date(); d.setDate(d.getDate() - 6 + si); return xar.filter(x => x.kategoriya === k.id && x.sana === d.toISOString().slice(0, 10)).reduce((s, x) => s + Number(x.summa || 0), 0); });
-                return (
-                  <div key={k.id} style={{ ...STY.cd, padding: "10px 13px", display: "flex", alignItems: "center", gap: 10, marginBottom: 7, borderColor: ov ? th.rd + "44" : th.bor }}>
-                    <div style={{ width: 36, height: 36, borderRadius: 10, background: k.c + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><KatIco id={k.id} c={k.c} s={20} /></div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ ...STY.row, marginBottom: 3 }}><span style={{ fontSize: 12, fontWeight: 600, color: th.t1 }}>{KN[lg][i]}</span><span style={{ fontWeight: 700, color: ov ? th.rd : k.c, fontSize: 12 }}>{f(tx, true)}</span></div>
-                      <div style={{ background: th.bg, borderRadius: 4, height: 5 }}><div style={{ width: Math.min(100, (tx / jX) * 100) + "%", height: "100%", background: k.c, borderRadius: 4 }} /></div>
-                      {lim && <div style={{ fontSize: 9, color: ov ? th.rd : th.t2, marginTop: 2 }}>Limit: {f(lim, true)}{ov ? " ⚠" : ""}</div>}
-                    </div>
-                    <Spark data={sp} color={k.c} />
+          {/* ── Qarz mini-kartasi ── */}
+          {(() => {
+            const myQ = qarzlar.filter(q => (!q.uid || q.uid === user?.id) && !q.paid);
+            if (myQ.length === 0) return null;
+            const menga = myQ.filter(q => q.tur === "bergan").reduce((sm, q) => sm + Number(q.summa || 0), 0);
+            const mendan = myQ.filter(q => q.tur === "olgan").reduce((sm, q) => sm + Number(q.summa || 0), 0);
+            const overdue = myQ.some(q => q.qaytSana && q.qaytSana < bugun);
+            return (
+              <button onClick={() => { buzz(8); setScr("qarz"); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px solid " + (overdue ? th.rd + "66" : th.bor), background: overdue ? th.rd + "0d" : th.sur, display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 13, background: (overdue ? th.rd : th.ac) + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{"\ud83d\udcb8"}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>
+                    {lg === "uz" ? "Qarzlar" : "Debts"} ({myQ.length})
+                    {overdue && <span style={{ marginLeft: 6, fontSize: 10, color: th.rd, fontWeight: 800 }}>{"\u26A0\uFE0F"} {lg === "uz" ? "Muddati o'tgan!" : "Overdue!"}</span>}
                   </div>
-                );
-              })}
-            </div>
-          )}
+                  <div style={{ fontSize: 11, marginTop: 3, display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    {menga > 0 && <span style={{ color: th.gr, fontWeight: 700 }}>{lg === "uz" ? "Menga qaytariladi" : "They owe"}: +{f(menga, true)}</span>}
+                    {mendan > 0 && <span style={{ color: th.rd, fontWeight: 700 }}>{lg === "uz" ? "Men qaytaraman" : "I owe"}: -{f(mendan, true)}</span>}
+                  </div>
+                </div>
+                <span style={{ fontSize: 18, color: th.ac, flexShrink: 0 }}>{"\u203A"}</span>
+              </button>
+            );
+          })()}
 
-          <div style={{ ...STY.cd, marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: th.t2, marginBottom: 10, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>{Ico.fire(th.rd)}{t.hm}</div>
-            <Heat xar={xar} ac={th.ac} />
-          </div>
+          {/* ── Maqsad progressi mini-kartasi ── */}
+          {(() => {
+            const activeM = maq.filter(m => !m.paid && m.status !== "completed" && Number(m.maqsad) > 0);
+            if (activeM.length === 0) return null;
+            const top = [...activeM].sort((p, q) => (Number(q.jamg || 0) / Number(q.maqsad)) - (Number(p.jamg || 0) / Number(p.maqsad)))[0];
+            const mp = Math.min(100, Math.round(Number(top.jamg || 0) / Number(top.maqsad) * 100));
+            return (
+              <button onClick={() => { buzz(8); setScr("maqsad"); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 13, background: th.ac + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{"\ud83c\udfaf"}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{top.ism}{activeM.length > 1 ? " +" + (activeM.length - 1) : ""}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: th.ac, flexShrink: 0, marginLeft: 8 }}>{mp}%</span>
+                  </div>
+                  <div style={{ height: 7, background: th.bg, borderRadius: 4, overflow: "hidden" }}><div style={{ height: "100%", width: mp + "%", background: "linear-gradient(90deg," + th.ac + "," + th.ac2 + ")", borderRadius: 4, transition: "width .5s" }}/></div>
+                  <div style={{ fontSize: 10, color: th.t2, marginTop: 4 }}>{f(Number(top.jamg || 0), true)} / {f(Number(top.maqsad), true)}</div>
+                </div>
+                <span style={{ fontSize: 18, color: th.ac, flexShrink: 0 }}>{"\u203A"}</span>
+              </button>
+            );
+          })()}
+
 
           {maq.length === 0 && (
             <button onClick={() => { buzz(8); setScr("maqsad"); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px dashed " + th.ac + "55", background: th.ac + "08", display: "flex", alignItems: "center", gap: 12 }}>
@@ -302,40 +293,70 @@ export default function DashboardPage({
           {hasKids && (() => {
             const pendingVaz = vazifalar.filter(v => v.status === "done");
             const activeVaz = vazifalar.filter(v => v.status === "pending");
-            if (pendingVaz.length === 0 && activeVaz.length === 0) {
-              return (
-                <button onClick={() => { buzz(8); setShowAddVazifa(true); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px dashed #f59e0b55", background: "#f59e0b08", display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 12, background: "#f59e0b18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📋</div>
-                  <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Farzandga vazifa bering" : "Assign task to child"}</div><div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Bolalar uchun topshiriqlar yarating" : "Create tasks for kids"}</div></div>
-                  <span style={{ fontSize: 18, color: "#f59e0b" }}>›</span>
-                </button>
-              );
-            }
             return (
-              <div style={{ ...STY.cd, marginBottom: 14 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}>
-                    📋 {lg === "uz" ? "Farzand vazifalari" : "Child tasks"}
-                    {pendingVaz.length > 0 && <span style={{ background: "#f59e0b", color: "#fff", borderRadius: 20, fontSize: 10, fontWeight: 800, padding: "1px 7px" }}>{pendingVaz.length}</span>}
-                  </div>
-                  <button onClick={() => { buzz(8); setShowAddVazifa(true); }} style={{ background: th.ac + "18", border: "none", borderRadius: 8, padding: "5px 10px", color: th.ac, fontSize: 11, fontWeight: 700, cursor: "pointer" }}>+ {lg === "uz" ? "Yangi" : "New"}</button>
+              <button onClick={() => { buzz(8); setScr("vazifa"); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1px solid " + (pendingVaz.length > 0 ? "#f59e0b66" : th.bor), background: pendingVaz.length > 0 ? "#f59e0b0d" : th.sur, display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 13, background: "#f59e0b18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, position: "relative" }}>
+                  {"\ud83d\udccb"}
+                  {pendingVaz.length > 0 && <span style={{ position: "absolute", top: -5, right: -5, background: "#f59e0b", color: "#fff", borderRadius: 20, fontSize: 10, fontWeight: 800, padding: "1px 6px" }}>{pendingVaz.length}</span>}
                 </div>
-                {pendingVaz.length > 0 && (
-                  <div style={{ background: "#f59e0b11", border: "1px solid #f59e0b33", borderRadius: 10, padding: "8px 12px", marginBottom: 8 }}>
-                    <div style={{ fontSize: 12, color: "#92400e", fontWeight: 700, marginBottom: 6 }}>⏳ {lg === "uz" ? "Tasdiqlash kutilmoqda" : "Awaiting approval"} ({pendingVaz.length})</div>
-                    {pendingVaz.slice(0, 2).map(v => (
-                      <div key={v.id} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                        <span style={{ fontSize: 18 }}>{v.emoji || "📋"}</span>
-                        <span style={{ flex: 1, fontSize: 12, color: th.t1, fontWeight: 600 }}>{v.title}</span>
-                        <button onClick={() => vazifaApprove(v.id)} style={{ background: "#22c55e", border: "none", borderRadius: 8, padding: "4px 10px", color: "#fff", fontSize: 11, fontWeight: 700, cursor: "pointer" }}>✓ OK</button>
-                      </div>
-                    ))}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Farzandga vazifa" : "Kids' tasks"}</div>
+                  <div style={{ fontSize: 11, color: pendingVaz.length > 0 ? "#f59e0b" : th.t2, marginTop: 2, fontWeight: pendingVaz.length > 0 ? 700 : 400 }}>
+                    {pendingVaz.length > 0
+                      ? "\u23F3 " + pendingVaz.length + (lg === "uz" ? " ta tasdiqlash kutilmoqda" : " awaiting approval")
+                      : activeVaz.length > 0
+                        ? activeVaz.length + (lg === "uz" ? " ta faol vazifa" : " active tasks")
+                        : (lg === "uz" ? "Topshiriq bering, mukofot belgilang" : "Assign tasks with rewards")}
                   </div>
-                )}
-                {activeVaz.length > 0 && <div style={{ fontSize: 12, color: th.t2 }}>{activeVaz.length} {lg === "uz" ? "ta faol vazifa" : "active tasks"}</div>}
-              </div>
+                </div>
+                <span style={{ fontSize: 18, color: th.ac, flexShrink: 0 }}>{"\u203A"}</span>
+              </button>
             );
           })()}
+
+          })()}
+
+          {/* ── Valyuta kurslari (ixcham, ochib-yopiladigan) ── */}
+          <div style={{ ...STY.cd, marginBottom: 14, padding: "12px 14px" }}>
+            <div onClick={() => { setShowRates(v => !v); if (!showRates && rates.length === 0) fetchRates(); }} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              {Ico.bank(th.ac)}
+              <span style={{ fontSize: 13, fontWeight: 700, color: th.t1, flexShrink: 0 }}>{t.rates}</span>
+              <span style={{ flex: 1, fontSize: 11, color: th.t2, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {(() => {
+                  const usd = rates.find(r => r.code === "USD");
+                  const rub = rates.find(r => r.code === "RUB");
+                  if (!usd && !rub) return lg === "uz" ? "ko'rish" : "view";
+                  return (usd ? "USD " + Number(usd.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 }) : "") + (usd && rub ? " \u00b7 " : "") + (rub ? "RUB " + Number(rub.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 2 }) : "");
+                })()}
+              </span>
+              <span style={{ fontSize: 10, color: th.t2, transform: showRates ? "rotate(180deg)" : "none", transition: "transform .2s", flexShrink: 0 }}>{"\u25BC"}</span>
+            </div>
+            {showRates && (
+              <div style={{ marginTop: 12 }}>
+                {rateL && <div style={{ textAlign: "center", padding: "10px 0", color: th.t2, fontSize: 13 }}>{t.ldd}</div>}
+                {!rateL && rates.length > 0 && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                    {rates.map(r => {
+                      const flags = { USD: "\ud83c\uddfa\ud83c\uddf8", EUR: "\ud83c\uddea\ud83c\uddfa", RUB: "\ud83c\uddf7\ud83c\uddfa", GBP: "\ud83c\uddec\ud83c\udde7", CNY: "\ud83c\udde8\ud83c\uddf3", KZT: "\ud83c\uddf0\ud83c\uddff" };
+                      return (
+                        <div key={r.code} style={{ background: th.surH, borderRadius: 12, padding: "9px 11px", border: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 17, flexShrink: 0 }}>{flags[r.code] || "\ud83d\udcb1"}</span>
+                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 11, fontWeight: 700, color: th.t1 }}>{r.code}</div></div>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: th.ac, flexShrink: 0 }}>{Number(r.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 })}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                <button onClick={fetchRates} style={{ marginTop: 10, width: "100%", background: "none", border: "1px solid " + th.bor, borderRadius: 9, padding: "7px 0", cursor: "pointer", fontSize: 11, color: th.t2, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>{Ico.repeat(th.t2)}{lg === "uz" ? "Yangilash" : "Refresh"}</button>
+              </div>
+            )}
+          </div>
+
+          <div style={{ ...STY.cd, marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: th.t2, marginBottom: 10, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>{Ico.fire(th.rd)}{t.hm}</div>
+            <Heat xar={xar} ac={th.ac} />
+          </div>
 
           <SL ch={lg === "uz" ? "Oxirgi operatsiyalar" : "Recent transactions"} th={th} />
           {xar.filter(x => x.uid === user?.id).length === 0 && dar.filter(d => d.uid === user?.id).length === 0 ? (
