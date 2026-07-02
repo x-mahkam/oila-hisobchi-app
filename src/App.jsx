@@ -73,6 +73,17 @@ export default function App() {
     if (scr === "qarz" && user?.id) debts.refreshQarzReqs(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scr]);
+
+  // Vazifalar sinxronizatsiyasi: vazifa sahifasi yoki bola bosh sahifasi ochilganda
+  // (ota-ona bergan vazifa bola qurilmasida darhol ko'rinishi uchun)
+  useEffect(() => {
+    if (!user?.oilaId) return;
+    if (scr === "vazifa" || (scr === "bosh" && isKid)) {
+      db.g("vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifalar(v); }).catch(() => {});
+      db.g("kidbal_" + user.oilaId).then(k => { if (k && typeof k === "object") setKidBalances(k); }).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scr]);
   const { markNotifRead, markAllRead, clearNotifs, unreadCount } = useNotifications();
   const { waterGarden } = useGarden();
   const { showPremModal, setShowPremModal, activatePremium } = usePremium();
@@ -1169,8 +1180,31 @@ export default function App() {
             <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18, lineHeight: 1.5 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pulni qo'shing" : "Add money from relatives"}</div>
             <label style={STY.lb}>{lg === "uz" ? "Summa" : "Amount"}</label>
             <input style={{ ...STY.ip, fontSize: 22, fontWeight: 800, textAlign: "center" }} type="number" value={giftSum} onChange={e => setGiftSum(e.target.value)} placeholder="0" />
-            <label style={STY.lb}>{lg === "uz" ? "Kimdan? (ixtiyoriy)" : "From whom? (optional)"}</label>
-            <input style={STY.ip} value={giftFrom} onChange={e => setGiftFrom(e.target.value)} placeholder={lg === "uz" ? "Masalan: Buvi" : "e.g. Grandma"} />
+            <label style={STY.lb}>{lg === "uz" ? "Kimdan?" : "From whom?"}</label>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
+              {[
+                ["\ud83d\udc74", lg === "uz" ? "Bobo" : "Grandpa"],
+                ["\ud83d\udc75", lg === "uz" ? "Buvi" : "Grandma"],
+                ["\ud83d\udc68", lg === "uz" ? "Ota" : "Dad"],
+                ["\ud83d\udc69", lg === "uz" ? "Ona" : "Mom"],
+                ["\ud83e\uddd4", lg === "uz" ? "Tog'a" : "Uncle (m)"],
+                ["\ud83d\udc68\u200d\ud83e\uddb1", lg === "uz" ? "Amaki" : "Uncle (p)"],
+                ["\ud83d\udc69\u200d\ud83e\uddb0", lg === "uz" ? "Amma" : "Aunt (p)"],
+                ["\ud83d\udc71\u200d\u2640\ufe0f", lg === "uz" ? "Xola" : "Aunt (m)"],
+                ["\ud83d\udc66", lg === "uz" ? "Aka" : "Brother"],
+                ["\ud83d\udc67", lg === "uz" ? "Opa" : "Sister"],
+                ["\ud83e\udd1d", lg === "uz" ? "Mehmon" : "Guest"],
+                ["\ud83c\udf81", lg === "uz" ? "Boshqa" : "Other"],
+              ].map(([em, nm]) => {
+                const active = giftFrom === nm;
+                return (
+                  <button key={nm} onClick={() => setGiftFrom(nm)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, background: active ? th.ac + "1c" : th.surH, border: "2px solid " + (active ? th.ac : th.bor), borderRadius: 12, padding: "9px 2px 7px", cursor: "pointer", minHeight: 62 }}>
+                    <span style={{ fontSize: 22, lineHeight: 1 }}>{em}</span>
+                    <span style={{ fontSize: 9.5, fontWeight: 700, color: active ? th.ac : th.t2, textAlign: "center" }}>{nm}</span>
+                  </button>
+                );
+              })}
+            </div>
             <button onClick={addGiftMoney} style={{ ...STY.bt(), marginTop: 6, marginBottom: 0 }}>{lg === "uz" ? "Qo'shish" : "Add"}</button>
           </div>
         </div>
