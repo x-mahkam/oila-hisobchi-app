@@ -81,13 +81,65 @@ export default function App() {
     if (!(scr === "vazifa" || (scr === "bosh" && isKid))) return;
     const loadVaz = () => {
       db.g("vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifalar(v); }).catch(() => {});
-      db.g("kidbal_" + user.oilaId).then(k => { if (k && typeof k === "object") setKidBalances(k); }).catch(() => {});
+      db.g("kidbal_" + user.oilaId).then(k => {
+        if (!k || typeof k !== "object") return;
+        // Bola: dublikat (eski) yozuv id'laridagi pul o'z akkauntiga jamlanadi
+        if (isKid) {
+          const nmx = x => (x || "").trim().toLowerCase();
+          const twins = azolar.filter(a => a.rol === "kid" && a.id !== user.id &&
+            ((a.login && user.login && a.login === user.login) || (a.ism && user.ism && nmx(a.ism) === nmx(user.ism))));
+          let moved = 0;
+          twins.forEach(t => { if (k[t.id]) { moved += Number(k[t.id]) || 0; delete k[t.id]; } });
+          if (moved > 0) { k[user.id] = (k[user.id] || 0) + moved; db.s("kidbal_" + user.oilaId, k).catch(() => {}); }
+        }
+        setKidBalances(k);
+      }).catch(() => {});
     };
     loadVaz();
     const iv = setInterval(loadVaz, 20000); // har 20 soniyada avtomatik yangilanadi
     return () => clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scr, user?.oilaId]);
+
+  // Dublikat bola akkauntlarini tozalash (oila boshi uchun): login xaritasidagi
+  // HAQIQIY akkaunt qoladi, qolganlari o'chiriladi, pullari haqiqiysiga jamlanadi
+  const cleanupKidDuplicates = async () => {
+    if (!isBosh) return;
+    try {
+      const nmx = x => (x || "").trim().toLowerCase();
+      const kidsAll = azolar.filter(a => a.rol === "kid");
+      const groups = {};
+      kidsAll.forEach(k => { const key = nmx(k.login || k.ism); (groups[key] = groups[key] || []).push(k); });
+      const kb = { ...(kidBalances || {}) };
+      const removeIds = [];
+      for (const key of Object.keys(groups)) {
+        const group = groups[key];
+        if (group.length < 2) continue;
+        let realId = null;
+        for (const g of group) {
+          if (g.login) {
+            try { const uid = await db.gFresh("kidlogin_" + g.login); if (uid && group.find(x => x.id === uid)) { realId = uid; break; } } catch (e) {}
+          }
+        }
+        if (!realId) realId = group.sort((a, b) => String(b.id).localeCompare(String(a.id)))[0].id;
+        for (const g of group) {
+          if (g.id === realId) continue;
+          removeIds.push(g.id);
+          if (kb[g.id]) { kb[realId] = (Number(kb[realId]) || 0) + (Number(kb[g.id]) || 0); delete kb[g.id]; }
+          try { await db.s("user_" + g.id, null); } catch (e) {}
+        }
+      }
+      if (!removeIds.length) return ok$(lg === "uz" ? "Dublikat topilmadi — hammasi toza ✅" : "No duplicates found ✅");
+      const ids = (oila.azolarIds || oila.azolar || []).filter(id => !removeIds.includes(id));
+      const o2 = { ...oila, azolarIds: ids };
+      if (oila.id) await db.s("oila_" + oila.id, o2);
+      await db.s("fam_" + user.oilaId, { ...o2, azolar: ids });
+      await db.s("kidbal_" + user.oilaId, kb);
+      setOila(o2); setKidBalances(kb);
+      setAzolar(azolar.filter(a => !removeIds.includes(a.id)));
+      ok$(lg === "uz" ? "✅ " + removeIds.length + " ta eski bola yozuvi o'chirildi, pullar jamlandi!" : "✅ Cleaned " + removeIds.length + " duplicates");
+    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
+  };
 
   // Qo'lda yangilash (Vazifalar sahifasidagi tugma uchun)
   const refreshVazifalar = async () => {
@@ -1298,7 +1350,7 @@ export default function App() {
         {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} fetchRates={fetchRates} rateL={rateL} setShowGift={setShowGift} setShowBilim={setShowBilim} setShowAddVazifa={setShowAddVazifa} />}
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} />}
-        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} refreshVazifalar={refreshVazifalar} />}
+        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
