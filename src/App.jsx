@@ -118,6 +118,7 @@ export default function App() {
   const [notifEnabled, setNotifEnabled] = useState(() => { try { return localStorage.getItem("oilaV7Notif") === "1"; } catch { return false; } });
   const [notifTime,    setNotifTime]    = useState(() => { try { return localStorage.getItem("oilaV7NotifT") || "20:00"; } catch { return "20:00"; } });
   const [verifyTilxat, setVerifyTilxat] = useState(null);
+  const [tilxatView, setTilxatView] = useState(null); // APK/WebView uchun ichki tilxat oynasi
 
   // Goals local state
   const [editMq,   setEditMq]   = useState(null);
@@ -752,14 +753,14 @@ export default function App() {
         <button class="btn" onclick="window.print()">${lg === "uz" ? "PDF saqlash / Chop etish" : "Save PDF / Print"}</button>
       </body></html>`;
 
-      const w = window.open("", "_blank");
-      if (w && w.document) {
-        w.document.write(html); w.document.close();
-        ok$(lg === "uz" ? "Tilxat tayyor!" : "Receipt ready!");
-      } else {
-        // WebView/APK: yangi oyna ochilmasa — fayl sifatida yuklab berish
-        const okk = downloadFile(html, "Tilxat_" + hujjatRaqami + ".html", "text/html;charset=utf-8;");
-        ok$(okk ? (lg === "uz" ? "Tilxat yuklab olindi!" : "Receipt downloaded!") : (lg === "uz" ? "Tilxat yaratishda xato" : "Receipt error"), okk ? "ok" : "err");
+      let opened = false;
+      try {
+        const w = window.open("", "_blank");
+        if (w && w.document) { w.document.write(html); w.document.close(); opened = true; ok$(lg === "uz" ? "Tilxat tayyor!" : "Receipt ready!"); }
+      } catch (e2) {}
+      if (!opened) {
+        // WebView/APK: yangi oyna ochilmaydi — ilova ichida ko'rsatamiz
+        setTilxatView({ html, num: hujjatRaqami });
       }
     } catch (e) { console.error("tilxat:", e); ok$(lg === "uz" ? "Tilxat yaratishda xato" : "Error", "err"); }
   };
@@ -1084,8 +1085,20 @@ export default function App() {
           </div>
         </div>
       )}
-      {debts.qarzDonePrompt && <QarzDonePrompt q={debts.qarzDonePrompt} th={th} STY={STY} lg={lg} f={f} onAddDaromad={debts.addQarzAsDaromad} onAddXarajat={debts.addQarzAsXarajat} onClose={() => debts.setQarzDonePrompt(null)} />}
       {debts.partialQarz && <PartialQarzModal q={debts.partialQarz} partialSum={debts.partialSum} setPartialSum={debts.setPartialSum} th={th} STY={STY} lg={lg} f={f} t={t} onConfirm={debts.applyPartial} onClose={() => { debts.setPartialQarz(null); debts.setPartialSum(""); }} />}
+      {tilxatView && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,.75)", zIndex: 1200, display: "flex", flexDirection: "column" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 14px", background: th.sur, borderBottom: "1px solid " + th.bor, flexShrink: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: th.t1 }}>{"\ud83d\udcc4"} Tilxat {tilxatView.num}</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={() => { try { const fr = document.getElementById("tilxatFrame"); fr && fr.contentWindow && fr.contentWindow.print(); } catch (e) { const okk = downloadFile(tilxatView.html, "Tilxat_" + tilxatView.num + ".html", "text/html;charset=utf-8;"); ok$(okk ? (lg === "uz" ? "Yuklab olindi!" : "Downloaded!") : "Xato", okk ? "ok" : "err"); } }} style={{ background: th.ac, border: "none", borderRadius: 9, padding: "8px 14px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{lg === "uz" ? "PDF / Chop etish" : "PDF / Print"}</button>
+              <button onClick={() => { const okk = downloadFile(tilxatView.html, "Tilxat_" + tilxatView.num + ".html", "text/html;charset=utf-8;"); ok$(okk ? (lg === "uz" ? "Yuklab olindi!" : "Downloaded!") : "Xato", okk ? "ok" : "err"); }} style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: 9, padding: "8px 12px", color: th.t1, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{lg === "uz" ? "Yuklab olish" : "Download"}</button>
+              <button onClick={() => setTilxatView(null)} style={{ background: th.rd + "22", border: "1px solid " + th.rd + "55", borderRadius: 9, padding: "8px 12px", color: th.rd, cursor: "pointer", fontWeight: 800, fontSize: 12 }}>{"\u2715"}</button>
+            </div>
+          </div>
+          <iframe id="tilxatFrame" title="Tilxat" srcDoc={tilxatView.html} style={{ flex: 1, width: "100%", border: "none", background: "#fff" }} />
+        </div>
+      )}
       {debts.inviteQarz && <InviteQarzModal inviteQarz={debts.inviteQarz} th={th} lg={lg} user={user} qarzTur={debts.qarzTur} qarzKim={debts.qarzKim} qarzSum={debts.qarzSum} qarzlar={qarzlar} setQarzlar={setQarzlar} ok$={ok$} t={t} f={f} onClose={() => debts.setInviteQarz(null)} />}
       {maqsadConfirmNotif && <MaqsadConfirmModal info={maqsadConfirmNotif} th={th} lg={lg} f={f} STY={STY} onBought={confirmMaqBought} onCancel={cancelMaqReturn} />}
 
