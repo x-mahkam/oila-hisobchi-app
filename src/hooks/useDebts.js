@@ -322,10 +322,21 @@ export function useDebts() {
 
   // Qarzni o'chirish
   const delQarz = useCallback(async (id) => {
-    const upd = (await freshQarz()).filter(q => !(q.id === id && (!q.uid || q.uid === user.id)));
+    const list = await freshQarz();
+    const q = list.find(x => x.id === id && (!x.uid || x.uid === user.id));
+    // Bog'langan va tasdiqlangan qarz TO'LIQ YOPILMAGUNCHA o'chirib bo'lmaydi
+    if (q && q.linked && q.linkStatus === "accepted" && !q.paid) {
+      return ok$(
+        lg === "uz"
+          ? "❌ Bu qarz ikki tomon tasdiqlagan. Faqat to'liq qaytarilib yopilgandan keyin o'chirish mumkin!"
+          : "❌ Confirmed debt can only be deleted after it is fully closed!",
+        "err"
+      );
+    }
+    const upd = list.filter(x => !(x.id === id && (!x.uid || x.uid === user.id)));
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
-  }, [qarzlar, user]);
+  }, [qarzlar, user, ok$, lg]);
 
   // Eslatma yuborish
   const sendQarzReminder = useCallback(async (q) => {
