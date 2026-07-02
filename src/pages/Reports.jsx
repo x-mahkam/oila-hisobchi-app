@@ -411,6 +411,15 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
   }, [filteredX, filteredD, type, lg]);
 
+  // Donut uchun: 6 tadan ko'p bo'lsa, qolganlari "Boshqalar"ga jamlanadi —
+  // shunda donut va yon ro'yxat DOIM 100% ga mos keladi
+  const donutCats = useMemo(() => {
+    if (catData.length <= 6) return catData;
+    const top = catData.slice(0, 5);
+    const rest = catData.slice(5).reduce((sm, c) => sm + c.sum, 0);
+    return [...top, { id: "__rest", name: lg === "uz" ? "Boshqalar" : "Others", color: "#94A3B8", icon: "📦", sum: rest }];
+  }, [catData, lg]);
+
   // Sanalar bo'yicha xarajatlar (slide 1 uchun)
   const dateData = useMemo(() => {
     const map = {};
@@ -502,7 +511,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       </svg>
     );
     let cursor = -Math.PI/2;
-    const segs = data.slice(0,6).map((cat, i) => {
+    const segs = data.map((cat, i) => {
       const angle = (cat.sum / total) * 2 * Math.PI - gap;
       const sa = cursor + gap/2, ea = cursor + gap/2 + angle;
       cursor += angle + gap;
@@ -670,13 +679,13 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         {slideIdx === 1 && (
           <div style={{ height:SLIDE_H, padding:"0 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
-              <DonutEl size={140} highlightIdx={hovCat}/>
+              <DonutEl size={140} highlightIdx={hovCat} data={donutCats} total={totalX}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
-                {hovCat !== null && catData[hovCat]
+                {hovCat !== null && donutCats[hovCat]
                   ? <>
-                      <div style={{ fontSize:18 }}>{catData[hovCat].icon}</div>
-                      <div style={{ fontSize:11, fontWeight:900, color:catData[hovCat].color }}>
-                        {totalX>0?Math.round(catData[hovCat].sum/totalX*100):0}%
+                      <div style={{ fontSize:18 }}>{donutCats[hovCat].icon}</div>
+                      <div style={{ fontSize:11, fontWeight:900, color:donutCats[hovCat].color }}>
+                        {totalX>0?Math.round(donutCats[hovCat].sum/totalX*100):0}%
                       </div>
                     </>
                   : <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
@@ -688,7 +697,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:7 }}>
               {catData.length === 0
                 ? <div style={{ fontSize:12, color:th.t3 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data"}</div>
-                : catData.slice(0,5).map((cat, i) => (
+                : donutCats.map((cat, i) => (
                     <div key={cat.id} style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer" }}
                       onMouseEnter={() => setHovCat(i)} onMouseLeave={() => setHovCat(null)}
                       onTouchStart={() => setHovCat(i)} onTouchEnd={() => setHovCat(null)}>
@@ -700,15 +709,6 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
                     </div>
                   ))
               }
-              {catData.length > 5 && (
-                <div style={{ display:"flex", alignItems:"center", gap:7 }}>
-                  <div style={{ width:14, height:14, borderRadius:"50%", background:th.t3+"22", border:"2px solid "+th.t3, flexShrink:0 }}/>
-                  <span style={{ flex:1, fontSize:12, color:th.t2, fontWeight:600 }}>{lg==="uz"?"Boshqa":"Other"}</span>
-                  <span style={{ fontSize:12, fontWeight:700, color:th.t3, flexShrink:0 }}>
-                    {totalX>0?(catData.slice(5).reduce((s,c)=>s+c.sum,0)/totalX*100).toFixed(2):0}%
-                  </span>
-                </div>
-              )}
             </div>
           </div>
         )}
