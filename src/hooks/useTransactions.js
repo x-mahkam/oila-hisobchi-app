@@ -16,6 +16,13 @@ export function useTransactions() {
     const key = "x_" + user.oilaId + "_" + user.id;
 
     if (forMember && mode === "give") {
+      // Balans tekshiruvi — minusga tushmaslik
+      const gD = dar.filter(d => d.uid === user.id || !d.uid).reduce((s, d) => s + Number(d.summa || 0), 0);
+      const gX = xar.filter(x => x.uid === user.id || !x.uid).reduce((s, x) => s + Number(x.summa || 0), 0);
+      if (gD - gX < sum) {
+        ok$(lg === "uz" ? "❌ Balans yetarli emas! Balans: " + f(Math.max(0, gD - gX), true) : "❌ Insufficient balance!", "err");
+        return;
+      }
       // Pul berish — a'zoga so'rov
       const req = {
         id: Date.now(), fromUid: user.id, fromIsm: user.ism,
@@ -55,8 +62,8 @@ export function useTransactions() {
     };
 
     // Balans tekshiruvi — manusga tushsa bloklash
-    const myDar = dar.filter(d => d.uid === user.id).reduce((s, d) => s + Number(d.summa || 0), 0);
-    const myXar = xar.filter(x => x.uid === user.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+    const myDar = dar.filter(d => d.uid === user.id || !d.uid).reduce((s, d) => s + Number(d.summa || 0), 0);
+    const myXar = xar.filter(x => x.uid === user.id || !x.uid).reduce((s, x) => s + Number(x.summa || 0), 0);
     const currentBal = myDar - myXar;
     if (sum > currentBal) {
       ok$(lg === "uz"
