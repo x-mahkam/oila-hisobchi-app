@@ -405,7 +405,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const currentStage = STAGES[Math.min(Math.max(mainStage, 0), STAGES.length - 1)];
 
   return (
-    <div style={{ height:"100dvh", background:"linear-gradient(180deg,#0ea5e9 0%,#38bdf8 25%,#7dd3fc 45%,#86efac 60%,#22c55e 75%,#15803d 100%)", position:"relative", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif", overflow:"hidden" }}>
+    <div style={{ height:"100dvh", background:"linear-gradient(180deg,#1ea2f0 0%,#4dc4ff 22%,#8fe0ff 40%,#bff2c8 58%,#5fd66a 74%,#2fae4a 100%)", position:"relative", display:"flex", flexDirection:"column", fontFamily:"'Segoe UI',system-ui,sans-serif", overflow:"hidden" }}>
 
       {/* ── CSS ── */}
       <style>{`
@@ -420,7 +420,16 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         @keyframes digBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
         @keyframes birdFly{0%{transform:translateX(-20px)}100%{transform:translateX(120vw)}}
         @keyframes leafFall{0%{transform:rotate(0deg) translateY(0)}100%{transform:rotate(360deg) translateY(60px);opacity:0}}
+        @keyframes glowPulse{0%,100%{filter:drop-shadow(0 0 10px rgba(255,255,255,0.5))}50%{filter:drop-shadow(0 0 20px rgba(255,255,255,0.85))}}
       `}</style>
+
+      {/* ── Fon tepaliklari ── */}
+      <svg style={{ position:"absolute", bottom:"36%", left:0, width:"100%", height:120, zIndex:1, opacity:0.55, pointerEvents:"none" }} viewBox="0 0 400 100" preserveAspectRatio="none">
+        <path d="M0,80 Q80,20 180,55 Q280,90 400,40 L400,100 L0,100 Z" fill="#3fc95a" />
+      </svg>
+      <svg style={{ position:"absolute", bottom:"30%", left:0, width:"100%", height:100, zIndex:2, opacity:0.7, pointerEvents:"none" }} viewBox="0 0 400 100" preserveAspectRatio="none">
+        <path d="M0,60 Q100,100 220,50 Q320,15 400,60 L400,100 L0,100 Z" fill="#2fae4a" />
+      </svg>
 
       {/* ── Motivatsion xabar ── */}
       {msg && (
@@ -441,9 +450,9 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: "50%", background: "rgba(255,255,255,0.3)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.3)", letterSpacing: 0.5 }}>
-            🌿 {L("Baraka Bog'i", "Сад Бараки")}
+        <div style={{ textAlign: "center", background: "linear-gradient(135deg,rgba(255,255,255,0.35),rgba(255,255,255,0.1))", borderRadius: 30, padding: "6px 18px", backdropFilter: "blur(6px)", border: "1.5px solid rgba(255,255,255,0.5)" }}>
+          <div style={{ fontSize: 18, fontWeight: 900, color: "#fff", textShadow: "0 2px 12px rgba(0,0,0,0.35)", letterSpacing: 0.5, display:"flex", alignItems:"center", gap:6 }}>
+            <span style={{ animation:"glowPulse 2.5s ease-in-out infinite", display:"inline-block" }}>🌿</span> {L("Baraka Bog'i", "Сад Бараки")}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
@@ -459,17 +468,17 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
       {/* ── Counter'lar ── */}
       <div style={{ display: "flex", justifyContent: "center", gap: 8, padding: "4px 18px 0", zIndex: 20, position: "relative", flexWrap: "wrap" }}>
         {[
-          { ico: "🪙", val: coins,    label: L("Baraka Coin", "Монет"),    color: "#fbbf24" },
-          { ico: "⚡", val: energy,   label: L("Energiya",    "Энергия"),  color: "#a78bfa", onClick: suns.length > 0 ? collectSuns : null, badge: suns.length > 0 ? suns.length : null },
-          { ico: "💎", val: crystals, label: L("Kristal",     "Кристаллов"),color: "#67e8f9" },
+          { ico: "🪙", val: coins,    label: L("Baraka Coin", "Монет"),    color: "#fff7e0", bg: "linear-gradient(135deg,#ffcf4d,#f59e0b)", border: "#fff3b0" },
+          { ico: "⚡", val: energy,   label: L("Energiya",    "Энергия"),  color: "#f5f0ff", bg: "linear-gradient(135deg,#c084fc,#7c3aed)", border: "#e9d5ff", onClick: suns.length > 0 ? collectSuns : null, badge: suns.length > 0 ? suns.length : null },
+          { ico: "💎", val: crystals, label: L("Kristal",     "Кристаллов"),color: "#f0feff", bg: "linear-gradient(135deg,#67e8f9,#0891b2)", border: "#cffafe" },
         ].map((c, i) => (
-          <div key={i} onClick={c.onClick} style={{ background: "rgba(0,0,0,0.35)", borderRadius: 30, padding: "6px 14px", display: "flex", alignItems: "center", gap: 6, cursor: c.onClick ? "pointer" : "default", backdropFilter: "blur(6px)", border: `1.5px solid ${c.color}44`, position: "relative" }}>
-            <span style={{ fontSize: 16 }}>{c.ico}</span>
+          <div key={i} onClick={c.onClick} style={{ background: c.bg, borderRadius: 30, padding: "7px 16px", display: "flex", alignItems: "center", gap: 6, cursor: c.onClick ? "pointer" : "default", boxShadow: "0 4px 14px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.4)", border: `1.5px solid ${c.border}`, position: "relative" }}>
+            <span style={{ fontSize: 17, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.25))" }}>{c.ico}</span>
             <div>
-              <div style={{ fontSize: 14, fontWeight: 800, color: c.color, lineHeight: 1 }}>{c.val.toLocaleString()}</div>
-              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.6)", lineHeight: 1 }}>{c.label}</div>
+              <div style={{ fontSize: 14, fontWeight: 800, color: c.color, lineHeight: 1, textShadow: "0 1px 3px rgba(0,0,0,0.3)" }}>{c.val.toLocaleString()}</div>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.85)", lineHeight: 1, marginTop:2 }}>{c.label}</div>
             </div>
-            {c.badge && <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", fontSize: 9, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{c.badge}</div>}
+            {c.badge && <div style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: "50%", background: "#ef4444", fontSize: 9, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", border:"1.5px solid #fff" }}>{c.badge}</div>}
           </div>
         ))}
       </div>
@@ -516,7 +525,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         </div>
 
         {/* ── Yashil zamin ── */}
-        <div style={{ background: "linear-gradient(180deg,#16a34a 0%,#14532d 100%)", width: "100%", borderRadius: "40px 40px 0 0", padding: "16px 14px 24px", position: "relative", zIndex: 9, flexShrink: 0 }}>
+        <div style={{ background: "linear-gradient(180deg,#4ade80 0%,#22c55e 35%,#15803d 100%)", width: "100%", borderRadius: "40px 40px 0 0", padding: "16px 14px 24px", position: "relative", zIndex: 9, flexShrink: 0, boxShadow: "0 -8px 24px rgba(0,0,0,0.15)" }}>
 
           {/* Daraxt bosqichi nomi */}
           <div style={{ textAlign: "center", marginBottom: 16 }}>
@@ -526,10 +535,10 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
             {/* Progress bar */}
             {mainStage >= 0 && mainStage < STAGES.length - 1 && (
               <div style={{ marginTop: 8 }}>
-                <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: 30, height: 8, overflow: "hidden", margin: "0 20px" }}>
-                  <div style={{ width: `${Math.min(100, ((mainPlot?.waterCount || 0) / STAGES[mainStage].waterNeeded) * 100)}%`, height: "100%", background: "linear-gradient(90deg,#fbbf24,#f59e0b)", borderRadius: 30, transition: "width .5s" }} />
+                <div style={{ background: "rgba(0,0,0,0.25)", borderRadius: 30, height: 12, overflow: "hidden", margin: "0 20px", border: "1.5px solid rgba(255,255,255,0.3)", boxShadow: "inset 0 2px 4px rgba(0,0,0,0.3)" }}>
+                  <div style={{ width: `${Math.min(100, ((mainPlot?.waterCount || 0) / STAGES[mainStage].waterNeeded) * 100)}%`, height: "100%", background: "linear-gradient(90deg,#38bdf8,#0ea5e9)", borderRadius: 30, transition: "width .5s", boxShadow: "inset 0 1px 2px rgba(255,255,255,0.6), 0 0 10px rgba(56,189,248,0.6)" }} />
                 </div>
-                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", textShadow: "0 1px 3px rgba(0,0,0,0.4)", marginTop: 6, background: "rgba(0,0,0,0.2)", borderRadius: 20, display: "inline-block", padding: "3px 12px" }}>
                   💧 {mainPlot?.waterCount || 0}/{STAGES[mainStage]?.waterNeeded} → {L(STAGES[mainStage + 1]?.name, STAGES[mainStage + 1]?.nameRu)}
                 </div>
               </div>
@@ -544,7 +553,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
               const isDigging = digAnim?.plotId === plot.id;
               return (
                 <div key={plot.id} onClick={() => { if (!isUnlocked) setShowUnlock(plot.id); else if (plot.stage < 0) setShowPlant(plot.id); else if (plot.harvestReady) handleHarvest(plot.id); }}
-                  style={{ flex: 1, height: 70, borderRadius: 40, background: isUnlocked ? "#2d6a1e" : "#7a5038", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `3px solid ${isUnlocked ? "#4ade80" : "#5c3a1e"}`, cursor: "pointer", transition: "all .2s", boxShadow: "inset 0 3px 10px rgba(0,0,0,0.3)" }}>
+                  style={{ flex: 1, aspectRatio: "1", borderRadius: "50%", background: isUnlocked ? "radial-gradient(circle at 35% 30%,#8b5e2f,#6b3f1a 70%)" : "radial-gradient(circle at 35% 30%,#a97c4f,#6b4423 70%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", border: `4px solid ${isUnlocked ? "#4ade80" : "#9a6a3a"}`, cursor: "pointer", transition: "all .2s", boxShadow: `inset 0 4px 10px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.25), 0 0 0 3px ${isUnlocked ? "rgba(74,222,128,0.25)" : "rgba(0,0,0,0.1)"}` }}>
                   {isDigging
                     ? <span style={{ fontSize: 26, animation: "digBounce 0.4s ease infinite" }}>⛏️</span>
                     : isUnlocked
