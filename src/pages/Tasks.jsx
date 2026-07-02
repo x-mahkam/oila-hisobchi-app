@@ -1,9 +1,31 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { f } from "../utils/formatters.js";
 
-const EMOJIS = ["📚","🧹","🍽️","🛒","🌱","🐕","🚴","🎨","🏃","⚽","🎹","🧺"];
+// Tayyor vazifalar to'plami — 4 ustunli grid uchun
+const VAZIFA_PRESETS = [
+  { id: "kitob",    e: "📚", uz: "Kitob o'qish",           en: "Reading" },
+  { id: "xona",     e: "🧹", uz: "Xonani yig'ishtirish",   en: "Clean room" },
+  { id: "idish",    e: "🍽️", uz: "Idish yuvish",     en: "Wash dishes" },
+  { id: "dokon",    e: "🛒", uz: "Do'kondan xarid",        en: "Grocery run" },
+  { id: "gul",      e: "🌱", uz: "Gullarni sug'orish",     en: "Water plants" },
+  { id: "axlat",    e: "🚮", uz: "Axlatni chiqarish",      en: "Take out trash" },
+  { id: "orin",     e: "🛏️", uz: "O'rinni yig'ish",  en: "Make the bed" },
+  { id: "darslik",  e: "📝", uz: "Uy vazifasini bajarish", en: "Do homework" },
+  { id: "kir",      e: "🧺", uz: "Kir yuvishga yordam",    en: "Laundry help" },
+  { id: "ovqat",    e: "🍳", uz: "Ovqatga yordam",         en: "Help cooking" },
+  { id: "sport",    e: "🚴", uz: "Sport qilish",           en: "Exercise" },
+  { id: "musiqa",   e: "🎹", uz: "Musiqa mashqi",          en: "Music practice" },
+  { id: "oyinchoq", e: "🧸", uz: "O'yinchoqlarni yig'ish", en: "Tidy toys" },
+  { id: "hayvon",   e: "🐕", uz: "Hayvonga qarash",        en: "Pet care" },
+  { id: "deraza",   e: "🪟", uz: "Deraza artish",          en: "Clean windows" },
+  { id: "soz",      e: "🧠", uz: "Yangi so'z yodlash",     en: "Learn new words" },
+  { id: "buvi",     e: "🤲", uz: "Kattalarga yordam",      en: "Help elders" },
+  { id: "rasm",     e: "🎨", uz: "Rasm chizish",           en: "Drawing" },
+  { id: "sayr",     e: "🏃", uz: "Toza havoda sayr",       en: "Outdoor walk" },
+  { id: "boshqa",   e: "✨",     uz: "Boshqa",                 en: "Other" },
+];
 
 export default function TasksPage({
   user, azolar, vazifalar, kidBalances,
@@ -16,6 +38,8 @@ export default function TasksPage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const kids = azolar.filter(a => a.rol === "kid");
+  const [selPreset, setSelPreset] = useState(null);
+  useEffect(() => { if (showAddVazifa) { setSelPreset(null); if (kids.length === 1) setVAssignee(kids[0].id); } }, [showAddVazifa]); // eslint-disable-line
 
   return (
     <div>
@@ -25,30 +49,75 @@ export default function TasksPage({
         <div style={{ flex:1, fontSize:16, fontWeight:800, color:th.t1 }}>{"\ud83d\udccb"} {lg==="uz"?"Farzand vazifalari":"Kids' tasks"}</div>
       </div>
 
-      {/* ── Vazifa qo'shish modali ── */}
+      {/* ── Vazifa qo'shish oynasi ── */}
       {showAddVazifa && !isKid && (
-        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.7)", zIndex:1000, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => setShowAddVazifa(false)}>
-          <div style={{ background:th.bg, borderRadius:"24px 24px 0 0", maxWidth:480, width:"100%", padding:"24px 20px 36px", maxHeight:"90vh", overflowY:"auto" }} onClick={e => e.stopPropagation()}>
-            <div style={{ width:40, height:4, borderRadius:2, background:th.bor, margin:"0 auto 20px" }}/>
-            <div style={{ fontSize:18, fontWeight:800, color:th.t1, marginBottom:20, textAlign:"center" }}>📋 {lg==="uz"?"Yangi vazifa berish":"Add new task"}</div>
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,.7)", zIndex:1000, display:"flex", alignItems:"flex-end", justifyContent:"center" }} onClick={() => { setShowAddVazifa(false); setSelPreset(null); }}>
+          <div style={{ background:th.bg, borderRadius:"24px 24px 0 0", maxWidth:480, width:"100%", padding:"22px 18px 34px", maxHeight:"92vh", overflowY:"auto" }} onClick={e => e.stopPropagation()}>
+            <div style={{ width:40, height:4, borderRadius:2, background:th.bor, margin:"0 auto 18px" }}/>
+            <div style={{ fontSize:18, fontWeight:800, color:th.t1, marginBottom:16, textAlign:"center" }}>{"\ud83d\udccb"} {lg==="uz"?"Yangi vazifa berish":"Add new task"}</div>
+
+            {/* Kim uchun */}
             <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Kim uchun?":"For whom?"}</label>
             {kids.length === 0
-              ? <div style={{ background:th.am+"15", border:"1px solid "+th.am+"44", borderRadius:12, padding:"12px 14px", marginBottom:14, fontSize:12, color:th.am }}>⚠️ {lg==="uz"?"Avval bola akkaunti yarating (Profil → Bola akkaunti qo'shish)":"Create a kid account first"}</div>
+              ? <div style={{ background:th.am+"15", border:"1px solid "+th.am+"44", borderRadius:12, padding:"12px 14px", marginBottom:14, fontSize:12, color:th.am }}>{"\u26A0\uFE0F"} {lg==="uz"?"Avval bola akkaunti yarating (Profil \u2192 Bola akkaunti qo'shish)":"Create a kid account first"}</div>
               : <div style={{ display:"flex", gap:8, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
                   {kids.map(k => (
-                    <button key={k.id} onClick={() => setVAssignee(k.id)} style={{ flexShrink:0, background:vAssignee===k.id?th.ac+"18":th.surH, border:"2px solid "+(vAssignee===k.id?th.ac:th.bor), borderRadius:14, padding:"10px 16px", cursor:"pointer", color:vAssignee===k.id?th.ac:th.t2, fontWeight:700, fontSize:13 }}>👶 {k.ism}</button>
+                    <button key={k.id} onClick={() => setVAssignee(k.id)} style={{ flexShrink:0, background:vAssignee===k.id?th.ac+"18":th.surH, border:"2px solid "+(vAssignee===k.id?th.ac:th.bor), borderRadius:14, padding:"10px 16px", cursor:"pointer", color:vAssignee===k.id?th.ac:th.t2, fontWeight:700, fontSize:13 }}>{"\ud83d\udc76"} {k.ism}</button>
                   ))}
                 </div>
             }
-            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Emoji":"Emoji"}</label>
-            <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
-              {EMOJIS.map(e => <button key={e} onClick={() => setVEmoji(e)} style={{ width:42, height:42, borderRadius:11, border:"2px solid "+(vEmoji===e?th.ac:th.bor), background:vEmoji===e?th.ac+"18":"transparent", fontSize:22, cursor:"pointer" }}>{e}</button>)}
+
+            {/* Vazifa tanlash — 4 ustunli grid */}
+            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifani tanlang":"Choose a task"}</label>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, marginBottom:14 }}>
+              {VAZIFA_PRESETS.map(p => {
+                const active = selPreset === p.id;
+                return (
+                  <button key={p.id} onClick={() => {
+                    setSelPreset(p.id); setVEmoji(p.e);
+                    if (p.id === "boshqa") setVTitle("");
+                    else setVTitle(lg === "uz" ? p.uz : p.en);
+                  }} style={{
+                    display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"flex-start", gap:5,
+                    background: active ? th.ac+"1c" : th.surH,
+                    border:"2px solid "+(active ? th.ac : th.bor),
+                    borderRadius:13, padding:"10px 4px 8px", cursor:"pointer", minHeight:74,
+                  }}>
+                    <span style={{ fontSize:24, lineHeight:1 }}>{p.e}</span>
+                    <span style={{ fontSize:9.5, fontWeight:700, color: active ? th.ac : th.t2, textAlign:"center", lineHeight:1.25 }}>{lg==="uz"?p.uz:p.en}</span>
+                  </button>
+                );
+              })}
             </div>
-            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa nomi":"Task title"}</label>
-            <input style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:14 }} value={vTitle} onChange={e => setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Xonani yig'ishtirish":"e.g. Clean the room"} />
-            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Mukofot (so'm)":"Reward (UZS)"}</label>
-            <input type="number" style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:18, fontWeight:800, textAlign:"center", outline:"none", boxSizing:"border-box", marginBottom:20 }} value={vReward} onChange={e => setVReward(e.target.value)} placeholder="0" />
-            <button onClick={addVazifa} style={{ width:"100%", background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:14, padding:"15px", color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer" }}>{lg==="uz"?"Vazifa berish 🎯":"Assign task 🎯"}</button>
+
+            {/* "Boshqa" tanlansa — nom yoziladi; aks holda nom avtomatik */}
+            {selPreset === "boshqa" && (
+              <>
+                <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa nomi":"Task title"}</label>
+                <input style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:14 }} value={vTitle} onChange={e => setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Velosipedni tozalash":"e.g. Clean the bike"} autoFocus />
+              </>
+            )}
+            {selPreset && selPreset !== "boshqa" && (
+              <div style={{ display:"flex", alignItems:"center", gap:8, background:th.ac+"0f", border:"1px solid "+th.ac+"33", borderRadius:12, padding:"10px 14px", marginBottom:14 }}>
+                <span style={{ fontSize:18 }}>{vEmoji}</span>
+                <span style={{ fontSize:13, fontWeight:700, color:th.t1, flex:1 }}>{vTitle}</span>
+                <span style={{ fontSize:11, color:th.gr, fontWeight:700 }}>{"\u2713"}</span>
+              </div>
+            )}
+
+            {/* Mukofot summasi */}
+            {selPreset && (
+              <>
+                <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Mukofot (so'm)":"Reward (UZS)"}</label>
+                <input type="number" inputMode="numeric" style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:20, fontWeight:800, textAlign:"center", outline:"none", boxSizing:"border-box", marginBottom:10 }} value={vReward} onChange={e => setVReward(e.target.value)} placeholder="0" />
+                <div style={{ display:"flex", gap:7, marginBottom:18 }}>
+                  {[5000, 10000, 20000, 50000].map(sm => (
+                    <button key={sm} onClick={() => setVReward(String(sm))} style={{ flex:1, background: String(vReward)===String(sm) ? th.ac+"22" : th.surH, border:"1.5px solid "+(String(vReward)===String(sm) ? th.ac : th.bor), borderRadius:10, padding:"8px 0", cursor:"pointer", fontSize:11, fontWeight:700, color: String(vReward)===String(sm) ? th.ac : th.t2 }}>{f(sm, true)}</button>
+                  ))}
+                </div>
+                <button onClick={addVazifa} style={{ width:"100%", background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:14, padding:"15px", color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer" }}>{lg==="uz"?"Vazifa berish \ud83c\udfaf":"Assign task \ud83c\udfaf"}</button>
+              </>
+            )}
           </div>
         </div>
       )}
