@@ -668,66 +668,100 @@ export default function App() {
     setAdminLoad(false);
   };
 
-  // ── Tilxat ────────────────────────────────────────────────
+  // ── TILXAT (RASPISKA) PDF — faqat ikki tomon tasdiqlagan qarzlar uchun ──
   const generateTilxat = (q) => {
-    if (!q.linked || q.linkStatus !== "accepted") { ok$(lg === "uz" ? "Tilxat faqat ikki tomon tasdiqlagan qarzlar uchun" : "Receipt only for confirmed debts", "err"); return; }
+    if (!q.linked || q.linkStatus !== "accepted") {
+      ok$(lg === "uz" ? "Tilxat faqat ikki tomon tasdiqlagan qarzlar uchun" : "Receipt only for mutually confirmed debts", "err");
+      return;
+    }
     try {
-      const isLent = q.tur === "bergan";
-      const beruvchi = isLent ? (user.ism || "") : q.kim;      // qarz beruvchi
-      const oluvchi  = isLent ? q.kim : (user.ism || "");      // qarz oluvchi
-      const berTel   = isLent ? (user.tel || "\u2014") : (q.linkedTel || "\u2014");
-      const olTel    = isLent ? (q.linkedTel || "\u2014") : (user.tel || "\u2014");
-      const asl = Number(q.asl || (Number(q.summa) + Number(q.paidPart || 0)));
-      const qoldiq = Number(q.summa);
-      const soz = sonSoz(asl);
-      const raqam = "T-" + String(q.id).slice(-8);
-      const bugun = new Date().toLocaleDateString("uz-UZ");
-      const row = (l, v) => "<tr><td class='l'>" + l + "</td><td class='v'>" + v + "</td></tr>";
-      const H = "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Tilxat " + raqam + "</title><style>" +
-        "*{box-sizing:border-box}body{font-family:Georgia,'Times New Roman',serif;max-width:640px;margin:0 auto;padding:34px 28px;color:#1f2937;font-size:14px;line-height:1.65}" +
-        ".brd{border:2.5px solid #6366f1;border-radius:14px;padding:30px 28px;position:relative}" +
-        "h1{text-align:center;color:#6366f1;letter-spacing:6px;font-size:26px;margin:0 0 4px}" +
-        ".num{text-align:center;color:#6b7280;font-size:12px;margin-bottom:22px}" +
-        "table{width:100%;border-collapse:collapse;margin:14px 0}" +
-        "td{padding:7px 4px;border-bottom:1px dashed #d1d5db;vertical-align:top}" +
-        ".l{color:#6b7280;width:42%;font-size:12px}.v{font-weight:700}" +
-        ".sum{background:#eef2ff;border:1.5px solid #6366f155;border-radius:10px;padding:13px 16px;margin:16px 0;text-align:center}" +
-        ".sum .d{font-size:22px;font-weight:800;color:#6366f1}.sum .w{font-size:12px;color:#4b5563;font-style:italic;margin-top:3px}" +
-        ".st{display:inline-block;background:#10b98118;color:#059669;border:1.5px solid #10b98155;border-radius:8px;padding:3px 12px;font-weight:700;font-size:12px}" +
-        ".sig{display:flex;gap:24px;margin-top:30px}.sig>div{flex:1;text-align:center}.sig .ln{border-top:1.5px solid #9ca3af;margin-top:38px;padding-top:6px;font-size:11px;color:#6b7280}" +
-        ".foot{margin-top:26px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:10px;color:#9ca3af;text-align:center;line-height:1.5}" +
-        ".btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#6366f1;color:#fff;border:none;padding:13px 32px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.4)}" +
-        "@media print{.btn{display:none}body{padding:12px}}</style></head><body><div class='brd'>" +
-        "<h1>TILXAT</h1><div class='num'>\u2116 " + raqam + " \u00B7 " + bugun + "</div>" +
-        "<table>" +
-        row("Qarz beruvchi:", beruvchi + " <span style='color:#6b7280;font-weight:400;font-size:11px'>(" + berTel + ")</span>") +
-        row("Qarz oluvchi:", oluvchi + " <span style='color:#6b7280;font-weight:400;font-size:11px'>(" + olTel + ")</span>") +
-        row("Qarz berilgan sana:", q.sana || "\u2014") +
-        row("Qaytarish muddati:", q.qaytSana || "\u2014") +
-        (q.izoh ? row("Izoh:", q.izoh) : "") +
-        (q.paidPart > 0 ? row("Qisman qaytarilgan:", Number(q.paidPart).toLocaleString("uz-UZ") + " so'm") + row("Qoldiq:", qoldiq.toLocaleString("uz-UZ") + " so'm") : "") +
-        row("Holati:", "<span class='st'>" + (q.paid ? "\u2713 TO'LIQ QAYTARILGAN" : "\u2713 IKKI TOMON TASDIQLAGAN") + "</span>") +
-        "</table>" +
-        "<div class='sum'><div class='d'>" + asl.toLocaleString("uz-UZ") + " so'm</div><div class='w'>(" + soz + " so'm)</div></div>" +
-        "<p style='font-size:12.5px;color:#374151'>Ushbu tilxat <b>" + beruvchi + "</b> tomonidan <b>" + oluvchi + "</b>ga yuqorida ko'rsatilgan miqdorda qarz berilganligini tasdiqlaydi. Qarz ikkala tomon tomonidan <b>Oila Hisobchi</b> ilovasida elektron tarzda tasdiqlangan.</p>" +
-        "<div class='sig'><div><div class='ln'>Qarz beruvchi imzosi</div></div><div><div class='ln'>Qarz oluvchi imzosi</div></div></div>" +
-        "<div class='foot'>Oila Hisobchi ilovasi tomonidan yaratilgan \u00B7 " + bugun + "<br/>Hujjat raqami: " + raqam + "</div>" +
-        "</div><button class='btn' onclick='window.print()'>PDF saqlash / Chop etish</button></body></html>";
+      // Tomonlar: tur="olgan" — men qarzdor, kim=kreditor; tur="bergan" — men kreditor, kim=qarzdor
+      const menQarzdor = q.tur === "olgan";
+      const qarzdor = menQarzdor ? (user.ism || "") : q.kim;
+      const kreditor = menQarzdor ? q.kim : (user.ism || "");
+      const qarzdorTel = menQarzdor ? (user.tel || "") : q.linkedTel;
+      const kreditorTel = menQarzdor ? q.linkedTel : (user.tel || "");
+      const summaSom = Number(q.asl || (Number(q.summa) + Number(q.paidPart || 0)));
+      const sanaStr = q.sana || td();
+      const qaytStr = q.qaytSana || (lg === "uz" ? "kelishuv bo'yicha" : "as agreed");
+
+      const summaRaqam = fmtN(summaSom, val, false);
+      const summaSoz = lg === "uz" ? sonSoz(summaSom) : "";
+      const summaText = summaRaqam + (summaSoz ? " (" + summaSoz + " so'm)" : "");
+      const hujjatRaqami = "OH-" + String(q.id).slice(-8);
+      // QR → ilovaning tekshiruv havolasi (skanerlaganda tasdiq sahifasi ochiladi)
+      const tilxatJson = JSON.stringify({ id: q.id, q: qarzdor, k: kreditor, s: summaSom, d: sanaStr, r: qaytStr, n: hujjatRaqami });
+      const verifyUrl = window.location.origin + "/?tilxat=" + encodeURIComponent(tilxatJson);
+      const verifyQR = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&ecc=L&data=" + encodeURIComponent(verifyUrl);
+
+      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tilxat ${hujjatRaqami}</title><style>
+        @page{size:A4;margin:2cm}
+        body{font-family:'Times New Roman',serif;color:#1a1a1a;line-height:1.8;font-size:14px}
+        .head{text-align:center;margin-bottom:30px;border-bottom:2px solid #333;padding-bottom:16px}
+        .title{font-size:22px;font-weight:bold;letter-spacing:1px;margin-bottom:6px}
+        .sub{font-size:12px;color:#666}
+        .body{text-align:justify;margin:24px 0}
+        .body p{margin:14px 0}
+        .field{font-weight:bold;text-decoration:underline}
+        .sum{font-size:16px;font-weight:bold;color:#000;background:#f5f5f5;padding:2px 8px}
+        .sign{margin-top:48px;display:flex;justify-content:space-between}
+        .sign-box{width:45%;text-align:center}
+        .sign-line{border-top:1px solid #333;margin-top:40px;padding-top:6px;font-size:12px}
+        .foot{margin-top:40px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:12px}
+        .doc-num{text-align:right;font-size:11px;color:#666;margin-bottom:8px}
+        .clause{margin:12px 0;text-align:justify}
+        .num{display:inline-block;width:22px;font-weight:bold}
+        .verify-box{margin-top:24px;display:flex;align-items:center;gap:16px;padding:14px 16px;border:2px solid #4f46e5;border-radius:10px;background:#4f46e506}
+        .verify-box img{width:90px;height:90px}
+        .legal{margin-top:18px;font-size:11px;color:#444;line-height:1.6;background:#fafafa;border-left:3px solid #4f46e5;padding:10px 14px}
+        .btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#4f46e5;color:#fff;border:none;padding:13px 32px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,.4)}
+        @media print{.btn{display:none}}
+      </style></head><body>
+        <div class="doc-num">${lg === "uz" ? "Hujjat \u2116" : lg === "ru" ? "\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u2116" : "Document \u2116"} ${hujjatRaqami}</div>
+        <div class="head">
+          <div class="title">${lg === "uz" ? "TILXAT" : lg === "ru" ? "\u0420\u0410\u0421\u041f\u0418\u0421\u041a\u0410" : "RECEIPT"}</div>
+          <div class="sub">${lg === "uz" ? "pul qarzi olinganligi to'g'risida" : lg === "ru" ? "\u043e \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u0438 \u0434\u0435\u043d\u0435\u0436\u043d\u043e\u0433\u043e \u0437\u0430\u0439\u043c\u0430" : "of a monetary loan"}</div>
+        </div>
+        <div class="body">
+          <p>${sanaStr}</p>
+          <div class="clause"><span class="num">1.</span>${lg === "uz" ? "Men" : lg === "ru" ? "\u042f" : "I"}, <span class="field">${qarzdor}</span>${qarzdorTel ? ", tel: " + qarzdorTel : ""} (${lg === "uz" ? "bundan keyin \u2014 Qarzdor" : lg === "ru" ? "\u0434\u0430\u043b\u0435\u0435 \u2014 \u0414\u043e\u043b\u0436\u043d\u0438\u043a" : "hereinafter \u2014 Debtor"}), ${lg === "uz" ? "o'z ixtiyorim bilan, quyidagi shaxsdan" : lg === "ru" ? "\u0434\u043e\u0431\u0440\u043e\u0432\u043e\u043b\u044c\u043d\u043e \u043f\u043e\u043b\u0443\u0447\u0438\u043b(\u0430) \u043e\u0442" : "voluntarily received from"} <span class="field">${kreditor}</span>${kreditorTel ? ", tel: " + kreditorTel : ""} (${lg === "uz" ? "bundan keyin \u2014 Kreditor" : lg === "ru" ? "\u0434\u0430\u043b\u0435\u0435 \u2014 \u041a\u0440\u0435\u0434\u0438\u0442\u043e\u0440" : "hereinafter \u2014 Creditor"}) ${lg === "uz" ? "naqd pul mablag'ini qarz sifatida oldim" : lg === "ru" ? "\u0434\u0435\u043d\u0435\u0436\u043d\u044b\u0435 \u0441\u0440\u0435\u0434\u0441\u0442\u0432\u0430 \u0432 \u0434\u043e\u043b\u0433" : "a monetary loan"}:</div>
+          <p style="text-align:center"><span class="sum">${summaText}</span></p>
+          <div class="clause"><span class="num">2.</span>${lg === "uz" ? "Yuqoridagi summani" : lg === "ru" ? "\u0423\u043a\u0430\u0437\u0430\u043d\u043d\u0443\u044e \u0441\u0443\u043c\u043c\u0443 \u043e\u0431\u044f\u0437\u0443\u044e\u0441\u044c \u0432\u0435\u0440\u043d\u0443\u0442\u044c \u0434\u043e" : "I undertake to repay the above amount by"} <span class="field">${qaytStr}</span> ${lg === "uz" ? "sanasigacha to'liq qaytarishni zimmamga olaman." : ""}</div>
+          <div class="clause"><span class="num">3.</span>${lg === "uz" ? "Mazkur tilxat ikki tomonning erkin xohish-irodasi asosida tuzildi. Tomonlar hujjat mazmuni va oqibatlarini to'liq anglaydilar." : lg === "ru" ? "\u0420\u0430\u0441\u043f\u0438\u0441\u043a\u0430 \u0441\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0430 \u043f\u043e \u0434\u043e\u0431\u0440\u043e\u0439 \u0432\u043e\u043b\u0435 \u043e\u0431\u0435\u0438\u0445 \u0441\u0442\u043e\u0440\u043e\u043d." : "Made by free will of both parties."}</div>
+          <div class="clause"><span class="num">4.</span>${lg === "uz" ? "Nizo kelib chiqqan taqdirda, tomonlar uni muzokara yo'li bilan, kelisha olmagan holda esa O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etadilar." : lg === "ru" ? "\u0421\u043f\u043e\u0440\u044b \u0440\u0435\u0448\u0430\u044e\u0442\u0441\u044f \u043f\u0435\u0440\u0435\u0433\u043e\u0432\u043e\u0440\u0430\u043c\u0438 \u0438\u043b\u0438 \u0432 \u0441\u0443\u0434\u0435." : "Disputes resolved by negotiation or court."}</div>
+          ${q.paidPart > 0 ? '<div class="clause"><span class="num">5.</span>' + (lg === "uz" ? "Qisman qaytarilgan: <b>" + Number(q.paidPart).toLocaleString("uz-UZ") + " so'm</b>. Qoldiq: <b>" + Number(q.summa).toLocaleString("uz-UZ") + " so'm</b>." : "Partially repaid: " + Number(q.paidPart).toLocaleString() + ". Remaining: " + Number(q.summa).toLocaleString() + ".") + "</div>" : ""}
+        </div>
+        <div class="sign">
+          <div class="sign-box"><div class="sign-line">${lg === "uz" ? "Qarzdor" : lg === "ru" ? "\u0414\u043e\u043b\u0436\u043d\u0438\u043a" : "Debtor"}<br>${qarzdor}<br>${lg === "uz" ? "(imzo)" : lg === "ru" ? "(\u043f\u043e\u0434\u043f\u0438\u0441\u044c)" : "(signature)"}</div></div>
+          <div class="sign-box"><div class="sign-line">${lg === "uz" ? "Kreditor" : lg === "ru" ? "\u041a\u0440\u0435\u0434\u0438\u0442\u043e\u0440" : "Creditor"}<br>${kreditor}<br>${lg === "uz" ? "(imzo)" : lg === "ru" ? "(\u043f\u043e\u0434\u043f\u0438\u0441\u044c)" : "(signature)"}</div></div>
+        </div>
+        <div class="verify-box">
+          <img src="${verifyQR}" alt="QR"/>
+          <div>
+            <div style="font-size:13px;font-weight:bold;color:#4f46e5">\ud83d\udd12 ${lg === "uz" ? "Elektron tasdiq" : lg === "ru" ? "\u042d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u043e\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435" : "Electronic confirmation"}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${lg === "uz" ? "Ushbu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. QR kod hujjat haqiqiyligini bildiradi." : lg === "ru" ? "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u043e\u0431\u0435\u0438\u043c\u0438 \u0441\u0442\u043e\u0440\u043e\u043d\u0430\u043c\u0438. QR \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u0435\u0442 \u043f\u043e\u0434\u043b\u0438\u043d\u043d\u043e\u0441\u0442\u044c." : "Confirmed by both parties. QR verifies authenticity."}</div>
+            <div style="font-size:10px;color:#888;margin-top:4px">${lg === "uz" ? "Hujjat raqami" : "Doc"}: ${hujjatRaqami} \u00b7 ID: ${q.id}</div>
+          </div>
+        </div>
+        <div class="legal">
+          <b>${lg === "uz" ? "Huquqiy eslatma:" : lg === "ru" ? "\u041f\u0440\u0430\u0432\u043e\u0432\u0430\u044f \u0441\u043f\u0440\u0430\u0432\u043a\u0430:" : "Legal note:"}</b> ${lg === "uz" ? "Mazkur tilxat O'zbekiston Respublikasi Fuqarolik kodeksining qarz shartnomasiga oid normalariga muvofiq tuzilgan va tomonlar o'rtasidagi kelishuvni qayd etuvchi yozma dalil hisoblanadi. To'liq yuridik kuchga ega bo'lishi uchun notarial tasdiqlash yoki E-IMZO tavsiya etiladi. Aniq holatlar bo'yicha malakali yuristga murojaat qiling." : lg === "ru" ? "\u0420\u0430\u0441\u043f\u0438\u0441\u043a\u0430 \u0441\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0430 \u0441\u043e\u0433\u043b\u0430\u0441\u043d\u043e \u043d\u043e\u0440\u043c\u0430\u043c \u0413\u041a \u043e \u0437\u0430\u0439\u043c\u0435. \u0414\u043b\u044f \u043f\u043e\u043b\u043d\u043e\u0439 \u0441\u0438\u043b\u044b \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u0442\u0441\u044f \u043d\u043e\u0442\u0430\u0440\u0438\u0443\u0441 \u0438\u043b\u0438 \u042d\u0426\u041f." : "Drawn up per civil-law loan provisions. For full force, notarization or e-signature is recommended."}
+        </div>
+        <div class="foot">
+          ${lg === "uz" ? "Oila Hisobchi ilovasi tomonidan yaratilgan" : lg === "ru" ? "\u0421\u043e\u0437\u0434\u0430\u043d\u043e \u0432 Oila Hisobchi" : "Generated by Oila Hisobchi"} \u00b7 ${new Date().toLocaleDateString("uz-UZ")}
+        </div>
+        <button class="btn" onclick="window.print()">${lg === "uz" ? "PDF saqlash / Chop etish" : "Save PDF / Print"}</button>
+      </body></html>`;
+
       const w = window.open("", "_blank");
       if (w && w.document) {
-        w.document.write(H); w.document.close();
+        w.document.write(html); w.document.close();
         ok$(lg === "uz" ? "Tilxat tayyor!" : "Receipt ready!");
       } else {
-        // WebView/APK: yangi oyna ochilmasa \u2014 fayl sifatida yuklab berish
-        const blob = new Blob([H], { type: "text/html;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url; a.download = "tilxat_" + raqam + ".html";
-        document.body.appendChild(a); a.click();
-        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 800);
-        ok$(lg === "uz" ? "Tilxat yuklab olindi!" : "Receipt downloaded!");
+        // WebView/APK: yangi oyna ochilmasa — fayl sifatida yuklab berish
+        const okk = downloadFile(html, "Tilxat_" + hujjatRaqami + ".html", "text/html;charset=utf-8;");
+        ok$(okk ? (lg === "uz" ? "Tilxat yuklab olindi!" : "Receipt downloaded!") : (lg === "uz" ? "Tilxat yaratishda xato" : "Receipt error"), okk ? "ok" : "err");
       }
-    } catch (e) { console.error("tilxat:", e); ok$(lg === "uz" ? "Tilxat yaratishda xato" : "Receipt error", "err"); }
+    } catch (e) { console.error("tilxat:", e); ok$(lg === "uz" ? "Tilxat yaratishda xato" : "Error", "err"); }
   };
 
   // ── Notification handlers ────────────────────────────────
@@ -889,6 +923,32 @@ export default function App() {
 
 
   if (boot) return <div style={{ ...makeS(th).pg, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>{Ico.wallet(th.ac)}</div>;
+
+  // ── TILXAT TEKSHIRUV SAHIFASI (QR skanerlaganda) ──────────
+  if (verifyTilxat) {
+    const v = verifyTilxat;
+    return (
+      <div style={{ ...STY.pg, minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px 20px" }}>
+        <div style={{ background: th.sur, borderRadius: 24, padding: "30px 24px", maxWidth: 420, width: "100%", border: "1px solid " + th.bor, boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "linear-gradient(135deg,#10b981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 42, margin: "0 auto 14px", boxShadow: "0 12px 36px #10b98155", color: "#fff" }}>{"\u2713"}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: th.t1 }}>{lg === "uz" ? "Hujjat tasdiqlandi" : lg === "ru" ? "\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d" : "Document verified"}</div>
+            <div style={{ fontSize: 12, color: th.gr, fontWeight: 600, marginTop: 4 }}>{"\ud83d\udd12"} {lg === "uz" ? "Oila Hisobchi rasmiy tilxati" : "Official Oila Hisobchi receipt"}</div>
+          </div>
+          <div style={{ background: th.bg, borderRadius: 16, padding: "18px", marginBottom: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Hujjat raqami" : "Document \u2116"}</span><span style={{ fontSize: 12, fontWeight: 700, color: th.ac, fontFamily: "monospace" }}>{v.n}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Qarzdor" : "Debtor"}</span><span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{v.q}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Kreditor" : "Creditor"}</span><span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{v.k}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Summa" : "Amount"}</span><span style={{ fontSize: 15, fontWeight: 800, color: th.gr }}>{f(Number(v.s), true)}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid " + th.bor }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Berilgan sana" : "Date"}</span><span style={{ fontSize: 13, fontWeight: 600, color: th.t1 }}>{v.d}</span></div>
+            <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}><span style={{ fontSize: 12, color: th.t2 }}>{lg === "uz" ? "Qaytarish" : "Return by"}</span><span style={{ fontSize: 13, fontWeight: 600, color: th.t1 }}>{v.r}</span></div>
+          </div>
+          <div style={{ fontSize: 11, color: th.t2, textAlign: "center", lineHeight: 1.6, marginBottom: 18, background: th.ac + "0d", borderRadius: 10, padding: "10px 12px" }}>{lg === "uz" ? "Bu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. Ma'lumotlar QR kod orqali tekshirildi." : "Confirmed by both parties in the app. Verified via QR."}</div>
+          <button onClick={() => { setVerifyTilxat(null); try { window.history.replaceState({}, "", window.location.pathname); } catch (e) {} }} style={{ ...STY.bt(), marginBottom: 0 }}>{lg === "uz" ? "Ilovaga o'tish" : lg === "ru" ? "\u041e\u0442\u043a\u0440\u044b\u0442\u044c \u043f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u0435" : "Open app"}</button>
+        </div>
+      </div>
+    );
+  }
   if (onbStep >= 0 && onbStep < ONB_SLIDES.length) return <OnboardingPage th={th} lg={lg} setLg={setLg} dark={dark} onbStep={onbStep} setOnbStep={setOnbStep} />;
   if (scr === "login") return (
     <LoginPage th={th} STY={STY} lg={lg} setLg={setLg} dark={dark} setDark={setDark}
