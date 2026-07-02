@@ -15,7 +15,7 @@ export const KATS = [
   {id:"konil",    c:"#ec4899"},
   {id:"talim",    c:"#06b6d4"},
   {id:"hadya",    c:"#f43f5e"},
-  {id:"boshqa",   c:"#64748b"},
+  {id:"boshqa",   c:"#94A3B8"},
 ];
 
 export const KN = {
@@ -29,7 +29,7 @@ export const DARS = [
   {id:"qoshimcha",c:"#f59e0b"},
   {id:"biznes",   c:"#3b82f6"},
   {id:"sovga",    c:"#8b5cf6"},
-  {id:"boshqa",   c:"#64748b"},
+  {id:"boshqa",   c:"#94A3B8"},
 ];
 
 export const DN = {
