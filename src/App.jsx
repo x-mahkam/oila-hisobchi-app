@@ -908,11 +908,13 @@ export default function App() {
       })();
 
       // Diagramma ma'lumotlari
-      const katData = KATS.map((k, i) => ({ name: KN[lg][i], color: k.c, sum: pX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum);
+      const katData = KATS.map((k, i) => ({ name: KN[lg][i], color: k.c, sum: pX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) }))
+        .concat([{ name: lg === "uz" ? "Qarz berildi" : "Loan given", color: "#F97316", sum: pX.filter(x => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) }])
+        .filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum);
       const MEMC = ["#22C55E", "#3B82F6", "#A855F7", "#F97316", "#F5B731", "#EC4899", "#06B6D4"];
       const secondDonut = (sc === "family" && canSeeReport && azolar.length > 1)
         ? { title: lg === "uz" ? "Oila a'zolari ulushi" : "Members share", html: donutSVG(azolar.map((a, i) => ({ name: a.ism || "?", color: MEMC[i % MEMC.length], sum: pX.filter(x => x.uid === a.id || (!x.uid && a.id === user?.id)).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum), lg === "uz" ? "Oila jami" : "Total") }
-        : { title: lg === "uz" ? "Daromad turlari" : "Income types", html: donutSVG(DARS.map((d, i) => ({ name: DN[lg]?.[i] || d.id, color: d.c, sum: pD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum), lg === "uz" ? "Daromad" : "Income") };
+        : { title: lg === "uz" ? "Daromad turlari" : "Income types", html: donutSVG(DARS.map((d, i) => ({ name: DN[lg]?.[i] || d.id, color: d.c, sum: pD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).concat([{ name: lg === "uz" ? "Qarz olindi" : "Loan received", color: "#14B8A6", sum: pD.filter(x => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) }]).filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum), lg === "uz" ? "Daromad" : "Income") };
 
       const katRows = KATS.map((k, i) => { const tot = pX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0); if (!tot) return ""; const pct2 = jX2 > 0 ? Math.round(tot / jX2 * 100) : 0; return "<tr><td>" + KN[lg][i] + "</td><td style='text-align:right'>" + tot.toLocaleString() + " so'm</td><td style='text-align:center'>" + pct2 + "%</td></tr>"; }).join("");
       const xRows = pX.slice(0, 40).map(x => "<tr><td>" + x.sana + "</td><td>" + KN[lg][KATS.findIndex(k => k.id === x.kategoriya)] + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right'>" + Number(x.summa).toLocaleString() + "</td><td>" + gN(x.uid) + "</td></tr>").join("");
