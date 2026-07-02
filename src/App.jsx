@@ -682,6 +682,15 @@ export default function App() {
 
   // ── Accept/Reject xReqs ───────────────────────────────────
   const acceptXReq = async (req) => {
+    // Xarajat so'rovi: qabul qilishdan OLDIN balans tekshiruvi (minusga tushmaslik)
+    if (req.kind !== "income") {
+      const chkD = dar.filter(i => i.uid === user.id || !i.uid).reduce((s, i) => s + Number(i.summa || 0), 0);
+      const chkX = xar.filter(i => i.uid === user.id || !i.uid).reduce((s, i) => s + Number(i.summa || 0), 0);
+      if (chkD - chkX < Number(req.summa)) {
+        ok$(lg === "uz" ? "❌ Balans yetarli emas! Balans: " + f(Math.max(0, chkD - chkX), true) : "❌ Insufficient balance!", "err");
+        return;
+      }
+    }
     const newReqs = xReqs.filter(r => r.id !== req.id);
     setXReqs(newReqs); await db.s("xreq_" + user.id, newReqs);
     if (req.kind === "income") {
