@@ -182,21 +182,6 @@ export default function ReportsPage({
         );
       })()}
 
-      {canSeeReport && azolar.length > 1 && (
-        <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", paddingBottom: 4 }}>
-          {[{ id: "all", ism: t.all }, ...azolar].map(a => (
-            <button key={a.id} onClick={() => setHisFil(a.id)} style={STY.ch(hisFil === a.id, th.ac)}>{a.ism}</button>
-          ))}
-        </div>
-      )}
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 9, marginBottom: 14 }}>
-        <SC label={t.inc} value={f(fjD, true)} color={th.gr} th={th} />
-        <SC label={t.exp} value={f(fjX, true)} color={th.rd} th={th} />
-        <SC label={t.bud} value={f(bdj, true)} color={th.ac} th={th} />
-        <SC label={t.bal} value={(fb < 0 ? "-" : "") + f(Math.abs(fb), true)} color={fb >= 0 ? th.gr : th.rd} th={th} />
-      </div>
-
       {hisFil === "all" && canSeeReport && azolar.length > 1 && (() => {
         const memStats = azolar.map(a => {
           const ax = bX.filter(x => x.uid === a.id).reduce((s, x) => s + Number(x.summa || 0), 0);
@@ -285,6 +270,9 @@ function fmtLocalR(d) {
 const HAFTA_KUN = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba → Yakshanba
 const DAR_EMOJI = { oylik:"💼", qoshimcha:"⚡", biznes:"🏢", sovga:"🎁", boshqa:"💰" };
 const SLIDE_H = 232; // barcha slaydlar bir xil balandlik
+const OY_QISQA = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
+const fmtRangeUz = (s) => { const d = new Date(s); return d.getDate() + " " + OY_QISQA[d.getMonth()] + " " + d.getFullYear(); };
+const DATE_COLORS = ["#10b981","#f59e0b","#3b82f6","#a855f7","#ec4899","#06b6d4"];
 
 // ═══════════════════════════════════════════════════════════════
 // ReportVisualBlock — 4 slide swipeable chart
@@ -297,6 +285,11 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
   // ── Davr tanlash state ─────────────────────────────────
   const [type,     setType]    = useState("xarajat"); // xarajat | daromad
+  const [typeMenu, setTypeMenu] = useState(false);     // tur tanlash dropdown
+  const [customRange, setCustomRange] = useState(null); // {from, to} — maxsus davr
+  const [showRangePicker, setShowRangePicker] = useState(false);
+  const [rFrom, setRFrom] = useState("");
+  const [rTo,   setRTo]   = useState("");
   const [scope,    setScope]   = useState("mine");   // mine | family
   const [period,   setPeriod]  = useState("oy");     // hafta | oy | yil
   const [slideIdx, setSlideIdx] = useState(0);       // 0=donut+dates, 1=donut+cats, 2=line, 3=oila a'zolari
@@ -361,6 +354,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   const filteredX = useMemo(() => {
     return srcX.filter(x => {
       if (!x.sana) return false;
+      if (customRange) return x.sana >= customRange.from && x.sana <= customRange.to;
       const key = selectedOpt.key;
       if (period === "oy")    return x.sana.startsWith(key);
       if (period === "yil")   return x.sana.startsWith(key.substring(0, 4));
@@ -372,11 +366,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       }
       return false;
     });
-  }, [srcX, selectedOpt, period]);
+  }, [srcX, selectedOpt, period, customRange]);
 
   const filteredD = useMemo(() => {
     return srcD.filter(d => {
       if (!d.sana) return false;
+      if (customRange) return d.sana >= customRange.from && d.sana <= customRange.to;
       const key = selectedOpt.key;
       if (period === "oy")    return d.sana.startsWith(key);
       if (period === "yil")   return d.sana.startsWith(key.substring(0, 4));
@@ -388,7 +383,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       }
       return false;
     });
-  }, [srcD, selectedOpt, period]);
+  }, [srcD, selectedOpt, period, customRange]);
 
   // Tanlangan tur (xarajat/daromad) bo'yicha joriy ma'lumot
   const curr = type === "xarajat" ? filteredX : filteredD;
@@ -396,14 +391,24 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
   // Kategoriyalar (xarajat) yoki daromad turlari
   const catData = useMemo(() => {
-    if (type === "xarajat") return KATS.map((k, i) => {
-      const sum = filteredX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-      return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💳", sum };
-    }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
-    return DARS.map((d, i) => {
+    if (type === "xarajat") {
+      const base = KATS.map((k, i) => {
+        const sum = filteredX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
+        return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💳", sum };
+      });
+      // Qarz berish xarajatlari — yorqin rang bilan (qoraytirilmaydi)
+      const qzX = filteredX.filter(x => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
+      if (qzX > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz berildi" : "Loan given", color: "#F97316", icon: "🤝", sum: qzX });
+      return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
+    }
+    const base = DARS.map((d, i) => {
       const sum = filteredD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0);
       return { id: d.id, name: DN[lg]?.[i] || d.id, color: d.c, icon: DAR_EMOJI[d.id] || "💰", sum };
-    }).filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
+    });
+    // Qarz olish daromadlari — yorqin rang bilan
+    const qzD = filteredD.filter(x => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
+    if (qzD > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz olindi" : "Loan received", color: "#14B8A6", icon: "🤝", sum: qzD });
+    return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
   }, [filteredX, filteredD, type, lg]);
 
   // Sanalar bo'yicha xarajatlar (slide 1 uchun)
@@ -416,7 +421,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     return Object.entries(map)
       .sort((a, b) => b[0].localeCompare(a[0]))
       .slice(0, 6)
-      .map(([sana, sum]) => ({ sana, sum }));
+      .map(([sana, sum], i) => ({ sana, id: sana, sum, color: DATE_COLORS[i % DATE_COLORS.length] }));
   }, [curr]);
 
   // Line chart ma'lumotlari (slide 3 uchun)
@@ -474,7 +479,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   const [hovMem, setHovMem] = useState(null);
 
   // ── Swipe ────────────────────────────────────────────────
-  const maxSlide = (scope === "family" && canSeeReport) ? 3 : 2;
+  const maxSlide = customRange ? 1 : ((scope === "family" && canSeeReport) ? 3 : 2);
   const touchStart = useRef(null);
   const onTouchStart = e => { touchStart.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
@@ -536,21 +541,27 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   return (
     <div style={{ marginBottom: 18 }}>
 
-      {/* ── Xarajat / Daromad toggle ── */}
-      <div style={{ display:"flex", background:th.surH, borderRadius:12, padding:3, marginBottom:12, gap:3, border:"1.5px solid "+th.bor }}>
-        {[["xarajat","💸 "+(lg==="uz"?"Xarajat":"Expenses")], ["daromad","💰 "+(lg==="uz"?"Daromad":"Income")]].map(([key, label]) => {
-          const active = type === key;
-          const ac = key === "xarajat" ? th.rd : th.gr;
-          return (
-            <button key={key} onClick={() => { setType(key); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{
-              flex:1, padding:"9px 0", borderRadius:9, cursor:"pointer",
-              fontWeight:700, fontSize:13, transition:"all .2s",
-              border:"1.5px solid "+(active ? ac : (th.dark ? "#4B5563" : th.bor)),
-              background: active ? ac+"28" : (th.dark ? "#374151" : "transparent"),
-              color: active ? ac : (th.dark ? "#D1D5DB" : th.t2),
-            }}>{label}</button>
-          );
-        })}
+      {/* ── Sarlavha: tur (dropdown) + kalendar ── */}
+      <div style={{ position:"relative", display:"flex", alignItems:"center", marginBottom:12 }}>
+        {customRange
+          ? <button onClick={() => { setCustomRange(null); setSlideIdx(0); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, color:th.t1, cursor:"pointer", fontSize:16, fontWeight:800, flexShrink:0 }}>{"\u2190"}</button>
+          : <div style={{ width:38, flexShrink:0 }}/>}
+        <div style={{ flex:1, display:"flex", justifyContent:"center" }}>
+          <button onClick={() => setTypeMenu(v => !v)} style={{ display:"flex", alignItems:"center", gap:6, background:"transparent", border:"none", cursor:"pointer", fontSize:16, fontWeight:800, color:th.t1, padding:"8px 10px" }}>
+            {type==="xarajat" ? (lg==="uz"?"Xarajatlar":"Expenses") : (lg==="uz"?"Daromadlar":"Income")}
+            <span style={{ fontSize:10, color:th.t2, transform: typeMenu ? "rotate(180deg)" : "none", transition:"transform .2s", display:"inline-block" }}>{"\u25BC"}</span>
+          </button>
+        </div>
+        <button onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3.5" width="14" height="12" rx="2.5" stroke={th.t1} strokeWidth="1.4"/><path d="M2 7.5h14M6 2v3M12 2v3" stroke={th.t1} strokeWidth="1.4" strokeLinecap="round"/></svg>
+        </button>
+        {typeMenu && (
+          <div style={{ position:"absolute", top:44, left:"50%", transform:"translateX(-50%)", background:th.sur, border:"1px solid "+th.bor, borderRadius:14, padding:6, zIndex:60, boxShadow:"0 12px 32px rgba(0,0,0,.4)", minWidth:190 }}>
+            {[["xarajat","💸 "+(lg==="uz"?"Xarajatlar":"Expenses")], ["daromad","💰 "+(lg==="uz"?"Daromadlar":"Income")]].map(([key, label]) => (
+              <button key={key} onClick={() => { setType(key); setTypeMenu(false); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{ display:"block", width:"100%", textAlign:"left", padding:"11px 14px", background: type===key ? th.ac+"22" : "transparent", border:"none", borderRadius:10, cursor:"pointer", fontSize:14, fontWeight:700, color: type===key ? th.ac : th.t1 }}>{label}{type===key ? " \u2713" : ""}</button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ── Scope toggle ── */}
@@ -566,7 +577,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         ))}
       </div>
 
-      {/* ── Davr (Hafta/Oy/Yil) ── */}
+      {/* ── Davr (Hafta/Oy/Yil) — maxsus davr tanlanganda yashirinadi ── */}
+      {!customRange && (
       <div style={{ display:"flex", gap:6, marginBottom:12 }}>
         {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => (
           <button key={key} onClick={() => setPeriod(key)} style={{
@@ -578,8 +590,10 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           }}>{label}</button>
         ))}
       </div>
+      )}
 
       {/* ── Davr variantlari (scroll) ── */}
+      {!customRange && (
       <div ref={scrollRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:10, marginBottom:4, scrollbarWidth:"none" }}>
         <style>{`.scrollhide::-webkit-scrollbar{display:none}`}</style>
         {opts.map((opt, i) => (
@@ -596,6 +610,16 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           </button>
         ))}
       </div>
+      )}
+
+      {/* ── Tanlangan davr ko'rsatkichi ── */}
+      {customRange && (
+        <button onClick={() => { setRFrom(customRange.from); setRTo(customRange.to); setShowRangePicker(true); }} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", background:"transparent", border:"none", cursor:"pointer", padding:"2px 0 12px", fontSize:14, fontWeight:800, color:th.t1 }}>
+          {fmtRangeUz(customRange.from)}<span style={{ fontSize:9, color:th.t2 }}>{"\u25BC"}</span>
+          <span style={{ color:th.t2, fontWeight:400 }}>~</span>
+          {fmtRangeUz(customRange.to)}<span style={{ fontSize:9, color:th.t2 }}>{"\u25BC"}</span>
+        </button>
+      )}
 
       {/* ── Slide'lar (swipeable) ── */}
       <div
@@ -607,7 +631,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         {slideIdx === 0 && (
           <div style={{ height:SLIDE_H, padding:"0 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
-              <DonutEl size={140} highlightIdx={null}/>
+              <DonutEl size={140} highlightIdx={null} data={dateData} total={dateData.reduce((sm, d) => sm + d.sum, 0)}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
                   {totalX > 0 ? "+" + fmtN(totalX) : lg==="uz"?"Ma'lumot\nyoq":"No data"}
@@ -618,7 +642,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
               {dateData.length === 0
                 ? <div style={{ fontSize:12, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data this period"}</div>
                 : dateData.slice(0,5).map((d, i) => {
-                    const col = catData[i % catData.length]?.color || th.ac;
+                    const col = d.color || th.ac;
                     return (
                       <div key={d.sana} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
                         <div style={{ width:18, height:18, borderRadius:"50%", background:col+"22", border:"2px solid "+col, flexShrink:0 }}/>
@@ -690,7 +714,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         )}
 
         {/* Slide 2: Line chart */}
-        {slideIdx === 2 && (
+        {slideIdx === 2 && !customRange && (
           <div style={{ height:SLIDE_H, padding:"14px 16px 6px", display:"flex", flexDirection:"column" }}>
             <div style={{ display:"flex", gap:18, marginBottom:6 }}>
               <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Jami:":"Total:"} <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
@@ -705,7 +729,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         )}
 
         {/* Slide 3: Oila a'zolari ulushi — faqat "Oilamning" tanlanganda */}
-        {slideIdx === 3 && scope === "family" && canSeeReport && (
+        {slideIdx === 3 && !customRange && scope === "family" && canSeeReport && (
           <div style={{ height:SLIDE_H, padding:"0 16px", display:"flex", alignItems:"center", gap:12 }}>
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={hovMem} data={members} total={memTotal}/>
@@ -753,6 +777,33 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           ))}
         </div>
       </div>
+
+      {/* ── Davr tanlash modali ── */}
+      {showRangePicker && (
+        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,.65)", zIndex:1100, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }} onClick={() => setShowRangePicker(false)}>
+          <div style={{ background:th.sur, borderRadius:22, padding:"24px 20px", width:"100%", maxWidth:380, border:"1px solid "+th.bor }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize:16, fontWeight:800, color:th.t1, marginBottom:18, textAlign:"center" }}>{lg==="uz"?"Davrni tanlang":"Select period"}</div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 4px", borderBottom:"1px solid "+th.bor }}>
+              <span style={{ fontSize:13, fontWeight:700, color:th.t1 }}>{lg==="uz"?"Boshlanish sanasi":"Start date"}</span>
+              <input type="date" value={rFrom} onChange={e => setRFrom(e.target.value)} style={{ background:th.surH, border:"1px solid "+th.bor, borderRadius:9, padding:"8px 10px", color:th.t1, fontSize:13, fontWeight:600, colorScheme: th.dark ? "dark" : "light" }}/>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 4px", marginBottom:20 }}>
+              <span style={{ fontSize:13, fontWeight:700, color:th.t1 }}>{lg==="uz"?"Tugash sanasi":"End date"}</span>
+              <input type="date" value={rTo} onChange={e => setRTo(e.target.value)} style={{ background:th.surH, border:"1px solid "+th.bor, borderRadius:9, padding:"8px 10px", color:th.t1, fontSize:13, fontWeight:600, colorScheme: th.dark ? "dark" : "light" }}/>
+            </div>
+            <div style={{ display:"flex", gap:10 }}>
+              <button onClick={() => setShowRangePicker(false)} style={{ flex:1, background:th.surH, border:"1px solid "+th.bor, borderRadius:12, padding:"12px 0", color:th.t1, cursor:"pointer", fontWeight:700, fontSize:14 }}>{lg==="uz"?"Bekor qilish":"Cancel"}</button>
+              <button onClick={() => {
+                if (!rFrom || !rTo) return;
+                const a2 = rFrom <= rTo ? rFrom : rTo;
+                const b2 = rFrom <= rTo ? rTo : rFrom;
+                setCustomRange({ from: a2, to: b2 });
+                setShowRangePicker(false); setSlideIdx(0); setHovCat(null); setHovMem(null);
+              }} style={{ flex:1, background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:12, padding:"12px 0", color:"#fff", cursor:"pointer", fontWeight:700, fontSize:14 }}>{lg==="uz"?"Tasdiqlash":"Confirm"}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Kategoriya breakdown ro'yxati ── */}
       {catData.length > 0 && (

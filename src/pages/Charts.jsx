@@ -256,14 +256,22 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
 
   // ── Kategoriyalar ──────────────────────────────────────────
   const cats=useMemo(()=>{
-    if(type==="xarajat") return KATS.map((k,i)=>({
-      id:k.id,name:KN[lg]?.[i]||k.id,color:k.c,icon:KAT_EMOJI[k.id]||"💳",
-      sum:filtX.filter(x=>x.kategoriya===k.id).reduce((s,x)=>s+Number(x.summa||0),0)
-    })).filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
-    return DARS.map((d,i)=>({
+    if(type==="xarajat"){
+      const base=KATS.map((k,i)=>({
+        id:k.id,name:KN[lg]?.[i]||k.id,color:k.c,icon:KAT_EMOJI[k.id]||"💳",
+        sum:filtX.filter(x=>x.kategoriya===k.id).reduce((s,x)=>s+Number(x.summa||0),0)
+      }));
+      const qzX=filtX.filter(x=>x.kategoriya==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
+      if(qzX>0) base.push({id:"qarz",name:lg==="uz"?"Qarz berildi":"Loan given",color:"#F97316",icon:"🤝",sum:qzX});
+      return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
+    }
+    const base=DARS.map((d,i)=>({
       id:d.id,name:DN[lg]?.[i]||d.id,color:d.c,icon:DAR_EMOJI[d.id]||"💰",
       sum:filtD.filter(x=>x.tur===d.id).reduce((s,x)=>s+Number(x.summa||0),0)
-    })).filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
+    }));
+    const qzD=filtD.filter(x=>x.tur==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
+    if(qzD>0) base.push({id:"qarz",name:lg==="uz"?"Qarz olindi":"Loan received",color:"#14B8A6",icon:"🤝",sum:qzD});
+    return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
   },[filtX,filtD,type,lg]);
 
   // ── A'zolar ulushi (slide 3) ───────────────────────────────
