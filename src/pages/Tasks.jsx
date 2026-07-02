@@ -48,9 +48,21 @@ export default function TasksPage({
     if (!user?.oilaId) return;
     setVSyncing(true);
     try {
-      const v = await db.g("vazifa_" + user.oilaId);
+      let v = await db.g("vazifa_" + user.oilaId);
+      let kb = await db.g("kidbal_" + user.oilaId);
+      // Bola: ota-onaning oilaId'si farq qilsa (eski migratsiya) — o'sha kalitdan ham o'qiladi
+      if (isKid && user.parentId) {
+        try {
+          const pu = await db.g("user_" + user.parentId);
+          if (pu?.oilaId && pu.oilaId !== user.oilaId) {
+            const v2 = await db.g("vazifa_" + pu.oilaId);
+            if (Array.isArray(v2)) v = [...v2, ...((Array.isArray(v) ? v : []).filter(x => !v2.find(y => y.id === x.id)))];
+            const kb2 = await db.g("kidbal_" + pu.oilaId);
+            if (kb2 && typeof kb2 === "object") kb = { ...(kb || {}), ...kb2 };
+          }
+        } catch (e3) {}
+      }
       if (Array.isArray(v)) setVazifalar(v);
-      const kb = await db.g("kidbal_" + user.oilaId);
       if (kb && typeof kb === "object") setKidBalances(kb);
     } catch (e) { console.error("vazifa sync:", e); }
     setVSyncing(false);
@@ -188,6 +200,17 @@ export default function TasksPage({
       {/* ── Vazifalar ro'yxati ── */}
       {(() => {
         const myTasks = isKid ? vazifalar.filter(v=>v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)) : vazifalar;
+        if (isKid && myTasks.length === 0 && vazifalar.length > 0) return (
+          <div style={{textAlign:"center",padding:"30px 20px",color:th.t2}}>
+            <div style={{fontSize:40,marginBottom:10}}>{"\ud83d\udd0d"}</div>
+            <div style={{fontSize:14,fontWeight:700,color:th.t1,marginBottom:6}}>{lg==="uz"?"Vazifalar bor, lekin sizga biriktirilmagan":"Tasks exist but not assigned to you"}</div>
+            <div style={{fontSize:12,color:th.t2,lineHeight:1.6}}>
+              {lg==="uz"?"Ro'yxatdagi vazifalar kimga berilgan:":"Assigned to:"}
+              {vazifalar.slice(0,3).map(v => <div key={v.id} style={{marginTop:4}}>{v.emoji||"\ud83d\udccb"} {v.title} {"\u2192"} <b style={{color:th.am}}>{v.assignedName || v.assignedTo}</b></div>)}
+              <div style={{marginTop:10, fontSize:11}}>{lg==="uz"?"Sizning hisobingiz:":"Your account:"} <b style={{color:th.ac}}>{user.ism}</b> ({user.login || user.id})</div>
+            </div>
+          </div>
+        );
         if (myTasks.length === 0) return (
           <div style={{textAlign:"center",padding:"40px 20px",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center"}}>
             <div style={{width:80,height:80,borderRadius:"50%",background:th.ac+"11",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:14}}>🎯</div>
