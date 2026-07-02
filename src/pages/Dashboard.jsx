@@ -314,8 +314,6 @@ export default function DashboardPage({
             );
           })()}
 
-          })()}
-
           {/* ── Valyuta kurslari (ixcham, ochib-yopiladigan) ── */}
           <div style={{ ...STY.cd, marginBottom: 14, padding: "12px 14px" }}>
             <div onClick={() => { setShowRates(v => !v); if (!showRates && rates.length === 0) fetchRates(); }} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
@@ -353,10 +351,32 @@ export default function DashboardPage({
             )}
           </div>
 
-          <div style={{ ...STY.cd, marginBottom: 14 }}>
-            <div style={{ fontSize: 11, color: th.t2, marginBottom: 10, fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>{Ico.fire(th.rd)}{t.hm}</div>
-            <Heat xar={xar} ac={th.ac} />
-          </div>
+          {/* ── Faollik — ixcham (30 kun bitta qator + streak) ── */}
+          {(() => {
+            const days30 = Array.from({ length: 30 }, (_, i) => {
+              const d = new Date(); d.setDate(d.getDate() - 29 + i);
+              const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+              return xar.filter(x => (x.uid === user?.id || !x.uid) && x.sana === key).reduce((sm, x) => sm + Number(x.summa || 0), 0);
+            });
+            const mx30 = Math.max(...days30, 1);
+            let streak = 0; for (let i = days30.length - 1; i >= 0 && days30[i] > 0; i--) streak++;
+            return (
+              <div style={{ ...STY.cd, marginBottom: 14, padding: "11px 14px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 9 }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: th.t1, flex: 1 }}>{lg === "uz" ? "Faollik" : "Activity"} <span style={{ color: th.t2, fontWeight: 400, fontSize: 10 }}>(30 {lg === "uz" ? "kun" : "days"})</span></span>
+                  {streak > 1 && <span style={{ fontSize: 10, fontWeight: 800, color: "#f59e0b", background: "#f59e0b18", borderRadius: 8, padding: "2px 8px" }}>{"\ud83d\udd25"} {streak} {lg === "uz" ? "kun ketma-ket" : "day streak"}</span>}
+                </div>
+                <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 22 }}>
+                  {days30.map((v, i) => {
+                    const lvl = v === 0 ? 0 : v < mx30 * 0.34 ? 1 : v < mx30 * 0.67 ? 2 : 3;
+                    const hgt = [5, 10, 16, 22][lvl];
+                    const col = lvl === 0 ? th.bor : lvl === 1 ? th.ac + "55" : lvl === 2 ? th.ac + "99" : th.ac;
+                    return <div key={i} style={{ flex: 1, height: hgt, borderRadius: 2, background: col, outline: i === 29 ? "1.5px solid " + th.ac2 : "none" }}/>;
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           <SL ch={lg === "uz" ? "Oxirgi operatsiyalar" : "Recent transactions"} th={th} />
           {xar.filter(x => x.uid === user?.id).length === 0 && dar.filter(d => d.uid === user?.id).length === 0 ? (
@@ -368,7 +388,7 @@ export default function DashboardPage({
             </div>
           ) : (
             [...xar.filter(x => x.uid === user?.id).slice(0, 8).map(x => ({ ...x, tp: "x" })), ...dar.filter(d => d.uid === user?.id).slice(0, 5).map(d => ({ ...d, tp: "d" }))]
-              .sort((a, b) => b.id - a.id).slice(0, 12)
+              .sort((a, b) => b.id - a.id).slice(0, 3)
               .map(item => <TxRow key={item.tp + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)
           )}
         </div>
