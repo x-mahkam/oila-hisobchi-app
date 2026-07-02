@@ -63,9 +63,14 @@ export default function GoalsPage({
       )}
 
       {(() => {
-        const filteredMaq = isKid ? maq
+        // Ko'rinish huquqlari:
+        // - Bola: faqat O'ZINING orzulari + oila bilan ulashilgan (shared) maqsadlar
+        // - Katta "Mening": o'ziniki (uid'siz eski yozuvlar ham o'ziniki)
+        // - Katta "Oila": boshqalarning ULASHILGAN maqsadlari + bolalar orzulari
+        const filteredMaq = isKid
+          ? maq.filter(m => m.uid === user.id || m.shared === true)
           : maqTab === "mine" ? maq.filter(m => m.uid === user.id || !m.uid)
-          : maq.filter(m => m.uid && m.uid !== user.id);
+          : maq.filter(m => m.uid && m.uid !== user.id && (m.shared === true || String(m.uid).startsWith("kid")));
 
         if (filteredMaq.length === 0 && !addM) {
           return (
@@ -138,28 +143,43 @@ function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
   const [mN, setMN] = useState("");
   const [mS, setMS] = useState("");
   const [mR, setMR] = useState(th.gr);
+  const [mShared, setMShared] = useState(false);
 
   const submit = async () => {
-    await addMq({ ism: mN, maqsad: mS, rang: mR });
-    setMN(""); setMS(""); setMR(th.gr); setAddM(false);
+    await addMq({ ism: mN, maqsad: mS, rang: mR, shared: isKid ? true : mShared });
+    setMN(""); setMS(""); setMR(th.gr); setMShared(false); setAddM(false);
   };
 
   return (
     <div style={{ ...STY.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: th.ac, marginBottom: 13 }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
       <label style={STY.lb}>{lg === "uz" ? "Tayyor maqsadlar" : "Quick presets"}</label>
-      <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 8, marginBottom: 12 }}>
-        {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((p, i) => (
-          <button key={i} onClick={() => { setMN(p[lg] || p.uz); setMR(p.rang); }} style={{ flexShrink: 0, background: mN === (p[lg] || p.uz) ? p.rang + "18" : th.bg, border: "1.5px solid " + (mN === (p[lg] || p.uz) ? p.rang : th.bor), borderRadius: 12, padding: "10px 12px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 78 }}>
-            <span style={{ fontSize: 24 }}>{p.emoji}</span>
-            <span style={{ fontSize: 10, color: mN === (p[lg] || p.uz) ? p.rang : th.t2, fontWeight: 600, textAlign: "center", lineHeight: 1.2 }}>{p[lg] || p.uz}</span>
-          </button>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
+        {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((p, i) => {
+          const active = mN === (p[lg] || p.uz);
+          return (
+            <button key={i} onClick={() => { setMN(p[lg] || p.uz); setMR(p.rang); }} style={{ background: active ? p.rang + "1c" : th.bg, border: "2px solid " + (active ? p.rang : th.bor), borderRadius: 13, padding: "10px 4px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 5, minHeight: 72 }}>
+              <span style={{ fontSize: 24, lineHeight: 1 }}>{p.emoji}</span>
+              <span style={{ fontSize: 9.5, color: active ? p.rang : th.t2, fontWeight: 700, textAlign: "center", lineHeight: 1.25 }}>{p[lg] || p.uz}</span>
+            </button>
+          );
+        })}
       </div>
       <label style={STY.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
       <input style={STY.ip} value={mN} onChange={e => setMN(e.target.value)} placeholder={lg === "uz" ? "Yoki o'zingiz yozing..." : "Or write your own..."} />
       <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
       <MoneyInput style={STY.ip} value={mS} onChange={setMS} placeholder="5 000 000" th={th} />
+      {!isKid && (
+        <button onClick={() => setMShared(v => !v)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: mShared ? th.ac + "12" : th.bg, border: "1.5px solid " + (mShared ? th.ac : th.bor), borderRadius: 13, padding: "12px 14px", cursor: "pointer", marginBottom: 13, textAlign: "left" }}>
+          <span style={{ fontSize: 18 }}>{"\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67"}</span>
+          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: mShared ? th.ac : th.t1 }}>{lg === "uz" ? "Oila bilan ulashish" : "Share with family"}
+            <span style={{ display: "block", fontSize: 10, color: th.t2, fontWeight: 400, marginTop: 2 }}>{lg === "uz" ? "Yoqilmasa \u2014 maqsadni faqat o'zingiz ko'rasiz" : "If off \u2014 only you can see this goal"}</span>
+          </span>
+          <span style={{ width: 40, height: 22, borderRadius: 12, background: mShared ? th.ac : th.bor, position: "relative", flexShrink: 0, transition: "background .2s" }}>
+            <span style={{ position: "absolute", top: 2, left: mShared ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left .2s" }}/>
+          </span>
+        </button>
+      )}
       {mS && Number(mS) > 0 && (
         <div style={{ background: "linear-gradient(135deg," + th.ac + "11," + th.ac2 + "08)", border: "1px solid " + th.ac + "33", borderRadius: 13, padding: "13px 15px", marginBottom: 13 }}>
           <div style={{ fontSize: 11, color: th.ac, fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>💡 {lg === "uz" ? "Avtomatik hisob" : "Auto calculation"}</div>

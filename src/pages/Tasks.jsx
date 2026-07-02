@@ -27,8 +27,11 @@ const VAZIFA_PRESETS = [
   { id: "boshqa",   e: "✨",     uz: "Boshqa",                 en: "Other" },
 ];
 
+import { db } from "../firebase.js";
+
 export default function TasksPage({
   user, azolar, vazifalar, kidBalances,
+  setVazifalar, setKidBalances,
   lg, isKid, th, t,
   buzz, setScr,
   showAddVazifa, setShowAddVazifa,
@@ -39,6 +42,20 @@ export default function TasksPage({
   const STY = useMemo(() => makeS(th), [th]);
   const kids = azolar.filter(a => a.rol === "kid");
   const [selPreset, setSelPreset] = useState(null);
+  const [vSyncing, setVSyncing] = useState(false);
+  // Sahifa ochilganda vazifalar va cho'ntak balanslari bazadan qayta yuklanadi
+  const reloadVazifa = async () => {
+    if (!user?.oilaId) return;
+    setVSyncing(true);
+    try {
+      const v = await db.g("vazifa_" + user.oilaId);
+      if (Array.isArray(v)) setVazifalar(v);
+      const kb = await db.g("kidbal_" + user.oilaId);
+      if (kb && typeof kb === "object") setKidBalances(kb);
+    } catch (e) { console.error("vazifa sync:", e); }
+    setVSyncing(false);
+  };
+  useEffect(() => { reloadVazifa(); }, [user?.oilaId]); // eslint-disable-line
   useEffect(() => { if (showAddVazifa) { setSelPreset(null); if (kids.length === 1) setVAssignee(kids[0].id); } }, [showAddVazifa]); // eslint-disable-line
 
   return (
@@ -47,6 +64,7 @@ export default function TasksPage({
       <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
         <button onClick={() => { buzz(8); setScr("bosh"); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, color:th.t1, cursor:"pointer", fontSize:16, fontWeight:800, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>{"\u2190"}</button>
         <div style={{ flex:1, fontSize:16, fontWeight:800, color:th.t1 }}>{"\ud83d\udccb"} {lg==="uz"?"Farzand vazifalari":"Kids' tasks"}</div>
+        <button onClick={() => { buzz(6); reloadVazifa(); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, color:th.t1, cursor:"pointer", fontSize:15, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", opacity: vSyncing ? 0.5 : 1 }}>{"\ud83d\udd04"}</button>
       </div>
 
       {/* ── Vazifa qo'shish oynasi ── */}
@@ -132,7 +150,7 @@ export default function TasksPage({
           <div style={{position:"relative"}}>
             <div style={{fontSize:13,color:"rgba(255,255,255,0.9)",marginBottom:4}}>{lg==="uz"?"Mening cho'ntak pulim":"My pocket money"}</div>
             <div style={{fontSize:32,fontWeight:800,color:"#fff",marginBottom:6}}>{f(kidBalances[user.id]||0,true)}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {vazifalar.filter(v=>v.assignedTo===user.id&&v.status==="approved").length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"}</div>
+            <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {vazifalar.filter(v=>(v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login))&&v.status==="approved").length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"}</div>
           </div>
         </div>
       )}
@@ -149,7 +167,7 @@ export default function TasksPage({
         <div style={{...STY.cd, marginBottom:16, background:"linear-gradient(135deg,#8b5cf60a,"+th.sur+")", border:"1px solid #8b5cf622"}}>
           <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>🏆 {lg==="uz"?"Bolalar reytingi":"Kids leaderboard"}</div>
           {kids.map((k, i) => {
-            const done = vazifalar.filter(v=>v.assignedTo===k.id&&v.status==="approved").length;
+            const done = vazifalar.filter(v=>(v.assignedTo===k.id||(v.assignedLogin&&k.login&&v.assignedLogin===k.login))&&v.status==="approved").length;
             const bal = kidBalances[k.id]||0;
             const medals = ["🥇","🥈","🥉"];
             return (
@@ -169,7 +187,7 @@ export default function TasksPage({
 
       {/* ── Vazifalar ro'yxati ── */}
       {(() => {
-        const myTasks = isKid ? vazifalar.filter(v=>v.assignedTo===user.id) : vazifalar;
+        const myTasks = isKid ? vazifalar.filter(v=>v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)) : vazifalar;
         if (myTasks.length === 0) return (
           <div style={{textAlign:"center",padding:"40px 20px",color:th.t2,display:"flex",flexDirection:"column",alignItems:"center"}}>
             <div style={{width:80,height:80,borderRadius:"50%",background:th.ac+"11",display:"flex",alignItems:"center",justifyContent:"center",fontSize:40,marginBottom:14}}>🎯</div>

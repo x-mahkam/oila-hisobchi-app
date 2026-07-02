@@ -123,7 +123,7 @@ export default function DashboardPage({
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 18 }}>
             {(() => {
-              const myV = vazifalar.filter(v => v.assignedTo === user.id);
+              const myV = vazifalar.filter(v => v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login));
               const done = myV.filter(v => v.status === "approved").length;
               const pend = myV.filter(v => v.status === "pending" || v.status === "done").length;
               const ball = done * 10;
@@ -143,7 +143,7 @@ export default function DashboardPage({
 
           <SL ch={lg === "uz" ? "Bajarish kerak" : "To do"} th={th} />
           {(() => {
-            const active = vazifalar.filter(v => v.assignedTo === user.id && (v.status === "pending" || v.status === "done"));
+            const active = vazifalar.filter(v => (v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login)) && (v.status === "pending" || v.status === "done"));
             if (active.length === 0) {
               return (
                 <div style={{ textAlign: "center", padding: "30px 20px", color: th.t2 }}>
