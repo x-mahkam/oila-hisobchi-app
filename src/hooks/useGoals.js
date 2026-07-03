@@ -16,7 +16,16 @@ export function useGoals() {
     if (!ism?.trim() || !maqsad || Number(maqsad) <= 0) {
       return ok$(lg==="uz"?"Barcha maydonlarni to'ldiring":"Fill all fields", "err");
     }
-    if (!isPremium && maq.length >= 3) return; // show premium
+    // Chegara: faqat O'Z maqsadlari sanaladi (butun oila emas!) va xabar ko'rsatiladi
+    const myGoals = maq.filter(m => m.uid === user.id).length;
+    if (!isPremium && myGoals >= 3) {
+      return ok$(
+        lg === "uz"
+          ? "⚠️ Bepul rejada 3 tagacha maqsad. Yangi qo'shish uchun eskisini yoping yoki Premium oling."
+          : "⚠️ Free plan: up to 3 goals.",
+        "err"
+      );
+    }
 
     const u = [...maq, {
       id:Date.now(), ism:ism.trim(), maqsad:Number(maqsad),
@@ -64,6 +73,13 @@ export function useGoals() {
       kb[user.id] = myPocket - summa;
       await db.s("kidbal_" + user.oilaId, kb);
       setKidBalances(kb);
+      // Sarflar daftari: "bugun sarflandi" ko'rsatkichi uchun
+      try {
+        const led = (await db.g("kidledger_" + user.id)) || [];
+        const d = new Date();
+        const sana = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        await db.s("kidledger_" + user.id, [{ id: Date.now(), tur: "spend", summa, sana, izoh: "goal" }, ...led].slice(0, 200));
+      } catch {}
     }
 
     const tgtGoal = maq.find(m=>m.id===tupId);

@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { db } from "../firebase.js";
 import { td, nt, f } from "../utils/formatters.js";
 import { useApp } from "../context/AppContext.jsx";
+import { publishKidScore } from "../utils/kidsBoard.js";
 
 export function useFamily() {
   const { user, oila, azolar, setAzolar, setOila,
@@ -66,6 +67,19 @@ export function useFamily() {
     kb[kidId] = (kb[kidId] || 0) + v.reward;
     await db.s("kidbal_" + user.oilaId, kb);
     setKidBalances(kb);
+
+    // Global bolalar liderbordiga ball yozish (10 ball/vazifa + topilgan so'm ma'lumoti)
+    try {
+      const kidObj = cand.find(a => a.id === kidId) || cand[0];
+      await publishKidScore({
+        kidId,
+        ism: (kidObj?.ism || v.assignedName || "?"),
+        oilaId: user.oilaId,
+        deltaPts: 10,
+        deltaTask: 1,
+        deltaEarn: Number(v.reward) || 0,
+      });
+    } catch {}
 
     // Ota/ona balansidan ayirish
     const xItem = {
