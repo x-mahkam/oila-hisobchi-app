@@ -12,6 +12,7 @@ export default function GoalsPage({
   tupId, setTupId, tupS, setTupS,
   editMq, setEditMq, editMqN, setEditMqN, editMqS, setEditMqS,
   addMq, tupMq, delMq, saveEditMq,
+  parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad,
 }) {
   const STY = useMemo(() => makeS(th), [th]);
 
@@ -84,7 +85,7 @@ export default function GoalsPage({
         return filteredMaq.map(m => {
           const p = Math.round(m.jamg / m.maqsad * 100);
           return (
-            <div key={m.id} style={{ ...STY.cd, marginBottom: 10 }}>
+            <div key={m.id} style={{ ...STY.cd, marginBottom: 10, border: m.status === "waiting_parent" ? "1.5px solid #f59e0b66" : m.status === "parent_confirmed" ? "1.5px solid #22c55e66" : (STY.cd.border || "1px solid " + th.bor) }}>
               <div style={{ ...STY.row, alignItems: "flex-start", marginBottom: 10 }}>
                 <div>
                   <div style={{ fontWeight: 700, fontSize: 15, color: th.t1 }}>{m.ism}</div>
@@ -121,8 +122,38 @@ export default function GoalsPage({
                       {m.completedAt && <span style={{ fontSize: 11, color: m.rang, fontWeight: 700, background: m.rang + "15", borderRadius: 8, padding: "3px 8px" }}>🏆 {lg === "uz" ? "Erishilgan" : "Achieved"}: {m.completedAt?.slice(0, 10)}</span>}
                     </div>
                   )}
-                  {m.status === "waiting_parent" && <div style={{ fontSize: 12, color: "#f59e0b", fontWeight: 600, marginTop: 4 }}>⏳ {lg === "uz" ? "Ota-ona tasdiqlashi kutilmoqda" : "Waiting for parent"}</div>}
-                  {m.status === "parent_confirmed" && <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginTop: 4 }}>✅ {lg === "uz" ? "Ota-ona tasdiqladi! Siz ham tasdiqlang" : "Parent confirmed! Confirm yours too"}</div>}
+                  {/* ── BOLA: pul yig'ildi, ota olib berishini kutmoqda ── */}
+                  {m.status === "waiting_parent" && isKid && m.uid === user.id && (
+                    <div style={{ background: "#f59e0b12", border: "1px solid #f59e0b44", borderRadius: 11, padding: "10px 12px", marginTop: 8, fontSize: 12, color: "#f59e0b", fontWeight: 600, lineHeight: 1.5 }}>
+                      {"\u23F3"} {lg === "uz" ? "Oila boshingizga xabar yuborildi — orzuingizni amalga oshirishi kutilmoqda" : "Family head notified — waiting to fulfill"}
+                      {m.parentLater && <div style={{ marginTop: 5, color: th.t2, fontWeight: 400 }}>{"\u23F0"} {lg === "uz" ? "Ota-onangiz keyinroq olib berishini aytdi" : "Parent will buy it later"}</div>}
+                    </div>
+                  )}
+                  {/* ── OTA-ONA: pul yig'ildi, olib berish kerak ── */}
+                  {m.status === "waiting_parent" && !isKid && m.uid !== user.id && (
+                    <div style={{ background: "#f59e0b12", border: "1px solid #f59e0b44", borderRadius: 11, padding: "11px 12px", marginTop: 8 }}>
+                      <div style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700, marginBottom: 9, lineHeight: 1.5 }}>{"\ud83c\udfaf"} {(gN ? gN(m.uid) : "") + " "}{lg === "uz" ? "bu orzu uchun pul yig'ib bo'ldi! Olib bering." : "saved up for this dream!"}</div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => parentBoughtMaqsad && parentBoughtMaqsad(m)} style={{ flex: 2, background: "#22c55e", border: "none", borderRadius: 10, padding: "10px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\ud83c\udf81"} {lg === "uz" ? "Olib berdim" : "Bought it"}</button>
+                        {!m.parentLater && <button onClick={() => parentLaterMaqsad && parentLaterMaqsad(m)} style={{ flex: 2, background: th.surH, border: "1px solid " + th.bor, borderRadius: 10, padding: "10px", color: th.t1, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\u23F0"} {lg === "uz" ? "Keyinroq" : "Later"}</button>}
+                      </div>
+                      {m.parentLater && <div style={{ fontSize: 10, color: th.t2, marginTop: 7 }}>{"\u23F0"} {lg === "uz" ? "\"Keyinroq\" deb belgilangan — farzandingiz kutmoqda" : "Marked as later"}</div>}
+                    </div>
+                  )}
+                  {/* ── BOLA: ota "olib berdim" dedi — tasdiqlash yoki rad etish ── */}
+                  {m.status === "parent_confirmed" && isKid && m.uid === user.id && (
+                    <div style={{ background: "#22c55e12", border: "1px solid #22c55e44", borderRadius: 11, padding: "11px 12px", marginTop: 8 }}>
+                      <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 700, marginBottom: 9, lineHeight: 1.5 }}>{"\ud83c\udf81"} {lg === "uz" ? "Ota-onangiz orzuingni amalga oshirdim dedi. Rostdan oldingizmi?" : "Parent says it's bought. Did you receive it?"}</div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button onClick={() => kidAcceptMaqsad && kidAcceptMaqsad(m)} style={{ flex: 2, background: "#22c55e", border: "none", borderRadius: 10, padding: "10px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\u2705"} {lg === "uz" ? "Ha, oldim!" : "Yes, got it!"}</button>
+                        <button onClick={() => kidRejectMaqsad && kidRejectMaqsad(m)} style={{ flex: 2, background: th.rd + "15", border: "1px solid " + th.rd + "44", borderRadius: 10, padding: "10px", color: th.rd, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\u274C"} {lg === "uz" ? "Hali olganim yo'q" : "Not yet"}</button>
+                      </div>
+                    </div>
+                  )}
+                  {/* ── OTA-ONA: bola tasdig'i kutilmoqda ── */}
+                  {m.status === "parent_confirmed" && !isKid && m.uid !== user.id && (
+                    <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginTop: 6 }}>{"\u23F3"} {lg === "uz" ? "Farzandingiz tasdig'i kutilmoqda" : "Waiting for child confirmation"}</div>
+                  )}
                 </div>
               ) : (
                 <div style={{ ...STY.row }}>

@@ -259,6 +259,23 @@ export default function DashboardPage({
             );
           })()}
 
+          {/* ── Farzand orzusi: pul yig'ildi — olib berish kutilmoqda (doimiy banner) ── */}
+          {(() => {
+            const waitG = maq.filter(m => m.status === "waiting_parent" && m.uid && m.uid !== user?.id);
+            if (waitG.length === 0) return null;
+            const g0 = waitG[0];
+            return (
+              <button onClick={() => { buzz(8); setScr("maqsad"); }} style={{ ...STY.cd, width: "100%", marginBottom: 14, cursor: "pointer", textAlign: "left", border: "1.5px solid #f59e0b66", background: "#f59e0b0d", display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 13, background: "#f59e0b1c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{"\ud83c\udfaf"}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b" }}>{gN(g0.uid)} {lg === "uz" ? "orzusi uchun pul yig'ib bo'ldi!" : "saved up for a dream!"}{waitG.length > 1 ? " (+" + (waitG.length - 1) + ")" : ""}</div>
+                  <div style={{ fontSize: 11, color: th.t2, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"\u201C"}{g0.ism}{"\u201D"} — {lg === "uz" ? "olib berish kutilmoqda" : "waiting to fulfill"}</div>
+                </div>
+                <span style={{ fontSize: 18, color: "#f59e0b", flexShrink: 0 }}>{"\u203A"}</span>
+              </button>
+            );
+          })()}
+
           {/* ── Maqsad progressi mini-kartasi ── */}
           {(() => {
             const activeM = maq.filter(m => !m.paid && m.status !== "completed" && Number(m.maqsad) > 0);
