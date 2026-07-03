@@ -109,12 +109,15 @@ const SunSprite = ({ size = 58 }) => (
 );
 
 // ── Bulut ──
-const Cloud = ({ w = 90, o = 0.95 }) => (
-  <svg width={w} height={w * 0.45} viewBox="0 0 100 45" style={{ display: "block" }}>
-    <g fill="#ffffff" opacity={o}>
-      <ellipse cx="28" cy="30" rx="22" ry="13" />
-      <ellipse cx="52" cy="22" rx="20" ry="15" />
-      <ellipse cx="74" cy="30" rx="20" ry="12" />
+const Cloud = ({ w = 90, o = 1 }) => (
+  <svg width={w} height={w * 0.52} viewBox="0 0 100 52" style={{ display: "block" }}>
+    <g opacity={o}>
+      {/* Pastki soya qatlami */}
+      <path d="M14 44 Q 6 44 6 37 Q 6 30 14 29 Q 15 18 27 17 Q 31 6 45 7 Q 58 3 65 13 Q 78 11 82 21 Q 94 22 94 33 Q 94 43 84 44 Z" fill="#cfe6fb" />
+      {/* Asosiy oq tanа — tekis tagli, dumaloq puflar */}
+      <path d="M14 42 Q 6 42 6 35 Q 6 28 14 27 Q 15 16 27 15 Q 31 4 45 5 Q 58 1 65 11 Q 78 9 82 19 Q 94 20 94 31 Q 94 41 84 42 Z" fill="#ffffff" />
+      {/* Yumshoq ichki hajm */}
+      <path d="M20 27 Q 22 17 33 16 Q 38 8 49 9 Q 60 6 66 15" fill="none" stroke="#f2f8ff" strokeWidth="5" strokeLinecap="round" opacity="0.9" />
     </g>
   </svg>
 );
@@ -229,6 +232,15 @@ const GiftSVG = ({ size = 20 }) => (
 // ────────────────────────────────────────────────────────────
 //  O'SIMLIK BOSQICHLARI (yangilangan, gradientli SVG)
 // ────────────────────────────────────────────────────────────
+// ── Daraxt shox-barg bo'lagi: alohida ajralib turadigan barg to'plami ──
+const Lobe = ({ cx, cy, rx, ry }) => (
+  <g>
+    <ellipse cx={cx} cy={cy + 2.6} rx={rx} ry={ry} fill="#2b8a31" />
+    <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#bgLeaf)" stroke="#2f9e3d" strokeWidth="1.3" />
+    <ellipse cx={cx - rx * 0.34} cy={cy - ry * 0.42} rx={rx * 0.3} ry={ry * 0.24} fill="#d9ffce" opacity="0.8" />
+  </g>
+);
+
 const PlantSVG = ({ stage, size = 120, animated = true }) => {
   const style = animated ? { animation: "sway 4s ease-in-out infinite", transformOrigin: "50% 100%", display: "block" } : { display: "block" };
   const leaf = "url(#bgLeaf)", leafD = "url(#bgLeafDark)", trunk = "url(#bgTrunk)";
@@ -252,28 +264,22 @@ const PlantSVG = ({ stage, size = 120, animated = true }) => {
     // 2: yosh daraxt
     <svg key="s2" style={style} width={size} height={size} viewBox="0 0 100 100">
       <path d="M47 98 L47 52 Q47 46 53 46 L53 98 Z" fill={trunk} />
-      <ellipse cx="50" cy="38" rx="30" ry="24" fill={leafD} />
-      <ellipse cx="38" cy="30" rx="18" ry="15" fill={leaf} />
-      <ellipse cx="62" cy="32" rx="16" ry="13" fill={leaf} />
-      <ellipse cx="50" cy="20" rx="14" ry="11" fill={leaf} />
-      <ellipse cx="35" cy="22" rx="5" ry="3.4" fill="#d6ffca" opacity="0.8" />
+      <Lobe cx={50} cy={40} rx={27} ry={16} />
+      <Lobe cx={50} cy={22} rx={18} ry={13} />
     </svg>,
     // 3: katta daraxt
     <svg key="s3" style={style} width={size} height={size * 1.18} viewBox="0 0 100 118">
       <path d="M45 116 L45 60 Q 40 50 30 46 L34 42 Q44 48 47 54 Q48 44 44 34 L50 32 Q53 44 52 54 Q56 47 66 43 L69 48 Q58 52 55 60 L55 116 Z" fill={trunk} />
-      <ellipse cx="50" cy="40" rx="40" ry="30" fill={leafD} />
-      <ellipse cx="32" cy="32" rx="21" ry="17" fill={leaf} />
-      <ellipse cx="66" cy="33" rx="19" ry="16" fill={leaf} />
-      <ellipse cx="50" cy="18" rx="18" ry="14" fill={leaf} />
-      <ellipse cx="28" cy="24" rx="6" ry="4" fill="#d6ffca" opacity="0.8" />
+      <Lobe cx={31} cy={41} rx={22} ry={15} />
+      <Lobe cx={69} cy={41} rx={20} ry={14} />
+      <Lobe cx={50} cy={22} rx={23} ry={16} />
     </svg>,
     // 4: gullagan
     <svg key="s4" style={style} width={size} height={size * 1.18} viewBox="0 0 100 118">
       <path d="M45 116 L45 60 Q 40 50 30 46 L34 42 Q44 48 47 54 Q48 44 44 34 L50 32 Q53 44 52 54 Q56 47 66 43 L69 48 Q58 52 55 60 L55 116 Z" fill={trunk} />
-      <ellipse cx="50" cy="40" rx="40" ry="30" fill={leafD} />
-      <ellipse cx="32" cy="32" rx="21" ry="17" fill={leaf} />
-      <ellipse cx="66" cy="33" rx="19" ry="16" fill={leaf} />
-      <ellipse cx="50" cy="18" rx="18" ry="14" fill={leaf} />
+      <Lobe cx={31} cy={41} rx={22} ry={15} />
+      <Lobe cx={69} cy={41} rx={20} ry={14} />
+      <Lobe cx={50} cy={22} rx={23} ry={16} />
       {[[28,34],[44,20],[62,16],[74,32],[64,48],[36,50],[50,10]].map(([x,y],i)=>(
         <g key={i}>
           {[0,72,144,216,288].map(a=><ellipse key={a} cx={x} cy={y-3.2} rx="2.6" ry="3.6" fill={i%2?"#fbcfe8":"#f9a8d4"} transform={`rotate(${a} ${x} ${y})`} />)}
@@ -284,10 +290,9 @@ const PlantSVG = ({ stage, size = 120, animated = true }) => {
     // 5: mevali
     <svg key="s5" style={style} width={size} height={size * 1.18} viewBox="0 0 100 118">
       <path d="M45 116 L45 60 Q 40 50 30 46 L34 42 Q44 48 47 54 Q48 44 44 34 L50 32 Q53 44 52 54 Q56 47 66 43 L69 48 Q58 52 55 60 L55 116 Z" fill={trunk} />
-      <ellipse cx="50" cy="40" rx="40" ry="30" fill={leafD} />
-      <ellipse cx="32" cy="32" rx="21" ry="17" fill={leaf} />
-      <ellipse cx="66" cy="33" rx="19" ry="16" fill={leaf} />
-      <ellipse cx="50" cy="18" rx="18" ry="14" fill={leaf} />
+      <Lobe cx={31} cy={41} rx={22} ry={15} />
+      <Lobe cx={69} cy={41} rx={20} ry={14} />
+      <Lobe cx={50} cy={22} rx={23} ry={16} />
       {[[30,36],[48,22],[66,20],[74,36],[62,50],[38,52],[50,10]].map(([x,y],i)=>(
         <g key={i}>
           <circle cx={x} cy={y} r="5.4" fill={i%2?"#f97316":"#ef4444"} />
@@ -299,10 +304,9 @@ const PlantSVG = ({ stage, size = 120, animated = true }) => {
     // 6: baraka daraxti (oltin)
     <svg key="s6" style={style} width={size} height={size * 1.26} viewBox="0 0 100 126">
       <path d="M44 124 L44 64 Q 38 52 27 48 L31 43 Q43 50 46 57 Q47 46 43 35 L50 33 Q53 46 52 57 Q57 49 68 45 L71 50 Q59 55 56 64 L56 124 Z" fill={trunk} />
-      <ellipse cx="50" cy="42" rx="43" ry="33" fill={leafD} />
-      <ellipse cx="31" cy="33" rx="22" ry="18" fill={leaf} />
-      <ellipse cx="68" cy="34" rx="20" ry="17" fill={leaf} />
-      <ellipse cx="50" cy="16" rx="19" ry="15" fill={leaf} />
+      <Lobe cx={29} cy={43} rx={24} ry={17} />
+      <Lobe cx={71} cy={43} rx={22} ry={16} />
+      <Lobe cx={50} cy={19} rx={25} ry={17} />
       {[[28,38],[46,22],[64,18],[75,34],[65,52],[34,54],[50,8]].map(([x,y],i)=>(
         <g key={i}>
           <circle cx={x} cy={y} r="5.6" fill="url(#bgCoin)" stroke="#e28f13" strokeWidth="1" />
@@ -364,6 +368,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const [growAnim, setGrowAnim]     = useState(null);
   const [dailyDone, setDailyDone]   = useState(false);
   const [msg, setMsg]               = useState(null);
+  const [sunNote, setSunNote]       = useState(null); // pishmagan quyoshga bosilganda
+  const sunNoteRef = useRef(null);
   const [now, setNow]               = useState(Date.now());
 
   const timerRef = useRef(null);
@@ -628,6 +634,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         @keyframes msgSlide{0%{transform:translate(-50%,-20px);opacity:0}12%,88%{transform:translate(-50%,0);opacity:1}100%{transform:translate(-50%,-20px);opacity:0}}
         @keyframes digBounce{0%,100%{transform:translate(-50%,-50%) translateY(0) rotate(-8deg)}50%{transform:translate(-50%,-50%) translateY(-9px) rotate(10deg)}}
         @keyframes giftBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+        @keyframes noteFade{0%{opacity:0;transform:translateY(6px)}10%,80%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-6px)}}
         @keyframes rayShift{0%,100%{opacity:.35}50%{opacity:.6}}
       `}</style>
 
@@ -705,9 +712,14 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           const rem = Math.max(0, Math.ceil((SUN_CYCLE - (now - (p.lastSunAt || 0))) / 1000));
           const ready = rem <= 0;
           return (
-            <div key={p.id} onClick={() => ready ? collectSun(p.id) : showMsg(L("Vaqt hali tugamadi, iltimos sabr qiling", "Время ещё не вышло, подождите"), "⏳", 2000)} style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
-              {!ready && (
+            <div key={p.id} onClick={() => { if (ready) { collectSun(p.id); } else { setSunNote(p.id); clearTimeout(sunNoteRef.current); sunNoteRef.current = setTimeout(() => setSunNote(null), 3000); } }} style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
+              {!ready && sunNote !== p.id && (
                 <div style={{ background: "rgba(90,130,175,.72)", borderRadius: 14, padding: "3px 10px", fontSize: 12, fontWeight: 700, color: "#fff", backdropFilter: "blur(4px)" }}>{fTime(rem)}</div>
+              )}
+              {sunNote === p.id && (
+                <div style={{ maxWidth: 150, textAlign: "center", fontSize: 12, fontWeight: 800, color: "#fff", lineHeight: 1.35, textShadow: "0 1px 3px rgba(20,60,110,.85), 0 0 10px rgba(20,60,110,.6)", animation: "noteFade 3s ease forwards", pointerEvents: "none" }}>
+                  {L("Vaqt hali tugamadi, iltimos sabr qiling", "Время ещё не вышло, подождите")}
+                </div>
               )}
               <div style={{ animation: ready ? "sunPulse 2s ease-in-out infinite, sunGlow 2s ease-in-out infinite" : "none", opacity: ready ? 1 : 0.88, transform: ready ? "none" : "scale(.86)" }}>
                 <SunSprite size={52} />

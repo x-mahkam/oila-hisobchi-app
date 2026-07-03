@@ -143,33 +143,24 @@ export default function App() {
   };
 
   // ── OVOZ BILAN KIRITISH (eski versiyadan tiklandi) ──
-  // Kirill → lotin normalizatsiya (ovoz tanish ko'pincha kirillda qaytaradi)
-  const uzNorm = (t) => {
-    const map = { "\u0430":"a","\u0431":"b","\u0432":"v","\u0433":"g","\u0434":"d","\u0435":"e","\u0451":"yo","\u0436":"j","\u0437":"z","\u0438":"i","\u0439":"y","\u043a":"k","\u043b":"l","\u043c":"m","\u043d":"n","\u043e":"o","\u043f":"p","\u0440":"r","\u0441":"s","\u0442":"t","\u0443":"u","\u0444":"f","\u0445":"x","\u0446":"ts","\u0447":"ch","\u0448":"sh","\u0449":"sh","\u044a":"","\u044c":"","\u044d":"e","\u044e":"yu","\u044f":"ya","\u045e":"o'","\u049b":"q","\u0493":"g'","\u04b3":"h" };
-    return (t || "").toLowerCase()
-      .replace(/[\u0400-\u04FF]/g, ch => map[ch] !== undefined ? map[ch] : ch)
-      .replace(/[\u2018\u2019\u02BB\u02BC`\u00B4]/g, "'");
-  };
   const parseVoice = (text) => {
     if (!text) return null;
-    const low = uzNorm(text);
+    const low = text.toLowerCase();
     let summa = 0;
-    const mingMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming|mln emas)?\s*(ming|tisyacha|k\b)/) || low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming)/);
-    const milMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(million|mln|millon)/);
+    const mingMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming|tisyacha|\u0442\u044b\u0441\u044f\u0447|k)/);
+    const milMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(million|mln|\u043c\u043b\u043d|millon)/);
     const plainMatch = low.match(/([0-9]{3,})/);
     if (milMatch) { summa = Math.round(parseFloat(milMatch[1].replace(",", ".")) * 1000000); }
     else if (mingMatch) { summa = Math.round(parseFloat(mingMatch[1].replace(",", ".")) * 1000); }
     else if (plainMatch) { summa = parseInt(plainMatch[1]); }
-    // Har bir bo'limga taalluqli boy lug'at — ANIQROQ bo'limlar oldin tekshiriladi
     const katKeys = {
-      sog: ["dori", "dorixona", "apteka", "shifokor", "doktor", "vrach", "kasalxona", "poliklinika", "klinika", "shifoxona", "tibbiyot", "med", "ukol", "analiz", "tahlil topshir", "vitamin", "tish", "stomatolog", "ko'z tekshir", "operatsiya", "davolan", "retsept", "sog'liq", "sog'lik", "salomatlik", "bemor", "kasal"],
-      transport: ["taksi", "taxi", "yandex", "benzin", "yoqilg'i", "gaz quydir", "metan", "propan", "zapravka", "avtobus", "metro", "tramvay", "poyezd", "bilet", "aviabilet", "parkovka", "moyka", "mashina yuvish", "avto", "mashinaga", "yo'l haqi", "yo'lkira", "transport"],
-      kommunal: ["kommunal", "svet", "elektr", "gaz to'lov", "gaz puli", "suv puli", "suv to'lov", "internet", "wifi", "vay fay", "telefon to'lov", "aloqa", "obuna", "kvartplata", "chiqindi", "ijara", "kvartira puli", "arenda"],
-      talim: ["kitob", "o'qish", "kurs", "ta'lim", "talim", "maktab", "universitet", "institut", "repetitor", "dars", "o'quv", "daftar", "qalam", "kanselyariya", "kontrakt", "shartnoma puli", "bog'cha"],
-      kiyim: ["kiyim", "ko'ylak", "kuylak", "shim", "futbolka", "kurtka", "palto", "poyabzal", "tufli", "etik", "krossovka", "kross", "sumka", "sharf", "qalpoq", "paypoq", "libos"],
-      hadya: ["sovg'a", "sovga", "hadya", "tuhfa", "to'y", "tuy", "tug'ilgan kun", "tugilgan kun", "bayramga", "gul oldim", "guldasta"],
-      konil: ["kino", "teatr", "konsert", "o'yin", "uyin", "sayohat", "sayohatga", "dam olish", "park", "bouling", "bilyard", "restoranda dam", "ko'ngilochar", "kongilochar", "atraksion", "pikn"],
-      oziq: ["ovqat", "ovkat", "oziq", "yegulik", "tushlik", "nonushta", "kechki", "restoran", "kafe", "kofe", "choy", "non", "sut", "gosht", "go'sht", "guruch", "un oldim", "yog'", "shakar", "tuxum", "meva", "sabzavot", "kartoshka", "piyoz", "bozor", "bozordan", "do'kon", "dukon", "magazin", "market", "supermarket", "produkt", "somsa", "osh", "palov", "lag'mon", "shashlik", "ichimlik", "food"],
+      oziq: ["ovqat", "ovkat", "yeg", "tushlik", "nonushta", "kechki", "restoran", "kafe", "kofe", "choy", "non", "sut", "gosht", "go'sht", "meva", "sabzavot", "bozor", "produkt", "food", "oziq", "ovqatlanish"],
+      transport: ["transport", "taksi", "taxi", "yo'l", "benzin", "yoqilg'i", "avtobus", "metro", "mashina", "fuel", "gas"],
+      kommunal: ["kommunal", "svet", "gaz", "suv", "elektr", "internet", "telefon to'lov", "utility"],
+      sog: ["dori", "dorixona", "shifokor", "kasalxona", "apteka", "sog'liq", "tibbiyot", "health", "medicine", "klinika"],
+      kiyim: ["kiyim", "ko'ylak", "poyabzal", "kross", "clothes", "kiyinish"],
+      konil: ["kino", "o'yin", "sayohat", "dam", "konsert", "entertainment", "kongilochar", "ko'ngil"],
+      talim: ["kitob", "o'qish", "kurs", "ta'lim", "maktab", "universitet", "study", "education", "dars"],
       boshqa: ["boshqa", "other"],
     };
     let kat = "boshqa";
@@ -464,10 +455,7 @@ export default function App() {
   const myBal = myD - myX;
   const bdj   = oila?.budjet || 2000000;
   const bal   = jD - jX;
-  // Budjet foizi HAQIQIY iste'mol bo'yicha: qarz berish va jamg'armaga o'tkazish
-  // xarajat emas, pulning shakli o'zgarishi — budjetga kirmaydi
-  const jXReal = bX.filter(x => x.kategoriya !== "qarz" && x.kategoriya !== "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
-  const pct   = Math.min(100, Math.round((jXReal / bdj) * 100));
+  const pct   = Math.min(100, Math.round((jX / bdj) * 100));
   const bRng  = pct >= 90 ? th.rd : pct >= 70 ? th.am : th.gr;
 
   const srchR = useMemo(() => {
@@ -1320,13 +1308,9 @@ export default function App() {
       if (bal2 >= 0) tips.push("✅ " + L("Bu oy balansingiz ijobiy: +" + f(bal2, true) + ". Barakali boring!", "Positive balance: +" + f(bal2, true)));
       else tips.push("⚠️ " + L("Bu oy xarajat daromaddan " + f(-bal2, true) + " ko'p.", "Expenses exceed income by " + f(-bal2, true)));
     }
-    // Haqiqiy iste'mol: qarz berish va jamg'arma budjet foiziga kirmaydi
-    const realX = mX.filter(x => x.kategoriya !== "qarz" && x.kategoriya !== "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
-    const nonCons = totX - realX;
-    const bpct = budget > 0 ? Math.round(realX / budget * 100) : 0;
-    if (bpct >= 100) tips.push("🔴 " + L("Budjet " + bpct + "% ishlatildi — belgilangan " + f(budget, true) + " budjetdan " + f(realX - budget, true) + " oshib ketdingiz. Budjetni Profil bo'limida moslashtirishingiz mumkin.", "Budget used " + bpct + "%!"));
-    else if (bpct >= 80) tips.push("🟡 " + L("Budjetning " + bpct + "% sarflandi (" + f(realX, true) + " / " + f(budget, true) + "). Ehtiyot bo'ling!", "Used " + bpct + "%."));
-    if (nonCons > 0) tips.push("📦 " + L("Bundan tashqari " + f(nonCons, true) + " qarz berish va jamg'armaga yo'naltirildi — bu iste'mol emas, budjet foiziga kirmaydi.", "Plus " + f(nonCons, true) + " went to loans/savings (not counted in budget)."));
+    const bpct = budget > 0 ? Math.round(totX / budget * 100) : 0;
+    if (bpct >= 100) tips.push("🔴 " + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
+    else if (bpct >= 80) tips.push("🟡 " + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
     else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push("👍 " + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
     const katTotals = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
     if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push("📊 " + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
@@ -1624,7 +1608,7 @@ export default function App() {
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
-        {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
+        {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
