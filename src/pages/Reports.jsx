@@ -7,7 +7,7 @@ import { tm } from "../utils/formatters.js";
 
 export default function ReportsPage({
   user, azolar, qarzlar, maq,
-  th, t, f, lg, scr, setScr, isPremium, isAdmin,
+  th, t, f, lg, scr, isPremium, isAdmin,
   bX, bD, jX, jD, bdj, canSeeReport, xar, dar,
   hisFil, setHisFil,
   exportLoading, exportExcel, exportPDF,
@@ -101,10 +101,7 @@ export default function ReportsPage({
   if (scr === "maslahat") {
     return (
       <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
-          <button onClick={() => setScr("hisobot")} style={{ width: 38, height: 38, borderRadius: 11, background: th.surH, border: "1px solid " + th.bor, color: th.t1, cursor: "pointer", fontSize: 16, fontWeight: 800, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{"\u2190"}</button>
-          <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{"\ud83e\udd16"} {t.aa}</div>
-        </div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 18, color: th.t1 }}>{t.aa}</div>
         {advL ? (
           <div style={{ textAlign: "center", padding: "64px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>{Ico.brain(th.ac)}<div style={{ color: th.t2 }}>{t.an}</div></div>
         ) : adv && (
@@ -143,30 +140,43 @@ export default function ReportsPage({
 
       {/* Moliyaviy sog'liq skor */}
       {(() => {
-        // Joriy oy bo'sh bo'lsa — oxirgi 30 kun bo'yicha hisoblanadi
-        let hX = jX, hD = jD, hSrc = bX, hFb = false;
-        if (jX === 0 && jD === 0) {
+       try {
+        // Xavfsiz manbalar: prop kelmasa ham sahifa qulamaydi
+        const sXar = Array.isArray(xar) ? xar : [];
+        const sDar = Array.isArray(dar) ? dar : [];
+        const sMaq = Array.isArray(maq) ? maq : [];
+        const sQarz = Array.isArray(qarzlar) ? qarzlar : [];
+        const sBdj = Number(bdj) || 0;
+        // Joriy oy bo'sh bo'lsa — oxirgi 30 kun, u ham bo'sh bo'lsa — butun davr
+        let hX = Number(jX) || 0, hD = Number(jD) || 0, hSrc = Array.isArray(bX) ? bX : [], hFb = false;
+        if (hX === 0 && hD === 0) {
           const cut = new Date(Date.now() - 30 * 86400000);
           const cs = `${cut.getFullYear()}-${String(cut.getMonth()+1).padStart(2,"0")}-${String(cut.getDate()).padStart(2,"0")}`;
-          hSrc = (xar || []).filter(x => x.sana && x.sana >= cs);
+          hSrc = sXar.filter(x => x.sana && x.sana >= cs);
           hX = hSrc.reduce((s, x) => s + Number(x.summa || 0), 0);
-          hD = (dar || []).filter(d => d.sana && d.sana >= cs).reduce((s, d) => s + Number(d.summa || 0), 0);
+          hD = sDar.filter(d => d.sana && d.sana >= cs).reduce((s, d) => s + Number(d.summa || 0), 0);
+          hFb = true;
+        }
+        if (hX === 0 && hD === 0 && (sXar.length > 0 || sDar.length > 0)) {
+          hSrc = sXar;
+          hX = sXar.reduce((s, x) => s + Number(x.summa || 0), 0);
+          hD = sDar.reduce((s, d) => s + Number(d.summa || 0), 0);
           hFb = true;
         }
         let score = 50;
         const checks = [];
         if (hD >= hX) { score += 20; checks.push({ ok: true, t: lg === "uz" ? "Daromad xarajatdan ko'p" : "Income exceeds expenses" }); }
         else { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Xarajat daromaddan ko'p" : "Expenses exceed income" }); }
-        if (hX <= bdj) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Budjetdan chiqmagansiz" : "Within budget" }); }
-        else { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Budjetdan oshib ketdingiz" : "Over budget" }); }
+        if (sBdj > 0 && hX <= sBdj) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Budjetdan chiqmagansiz" : "Within budget" }); }
+        else if (sBdj > 0) { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Budjetdan oshib ketdingiz" : "Over budget" }); }
         const savePct = hD > 0 ? (hD - hX) / hD * 100 : 0;
         if (savePct >= 20) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Yaxshi jamg'arma (20%+)" : "Good savings (20%+)" }); }
         else if (savePct > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Ozgina jamg'arma bor" : "Some savings" }); }
         else { checks.push({ ok: false, t: lg === "uz" ? "Jamg'arma yo'q" : "No savings" }); }
         const topKat = KATS.map((k, i) => ({ nom: KN[lg][i], sum: hSrc.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).sort((a, b) => b.sum - a.sum)[0];
         if (topKat && hX > 0 && topKat.sum / hX > 0.5) { score -= 5; checks.push({ ok: false, t: topKat.nom + " " + (lg === "uz" ? "xarajati yuqori" : "spending high") }); }
-        if (maq.length > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Moliyaviy maqsadingiz bor" : "You have goals" }); }
-        const activeDebt = qarzlar.filter(q => !q.paid && q.tur === "olgan").reduce((s, q) => s + q.summa, 0);
+        if (sMaq.length > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Moliyaviy maqsadingiz bor" : "You have goals" }); }
+        const activeDebt = sQarz.filter(q => !q.paid && q.tur === "olgan").reduce((s, q) => s + Number(q.summa || 0), 0);
         if (activeDebt > 0 && hD > 0 && activeDebt > hD) { score -= 10; checks.push({ ok: false, t: lg === "uz" ? "Qarzingiz daromaddan ko'p" : "Debt exceeds income" }); }
         score = Math.max(0, Math.min(100, Math.round(score)));
         const sColor = score >= 75 ? th.gr : score >= 50 ? th.am : th.rd;
@@ -199,6 +209,7 @@ export default function ReportsPage({
             </div>
           </div>
         );
+       } catch (e) { console.error("health widget:", e); return null; }
       })()}
 
       {hisFil === "all" && canSeeReport && azolar.length > 1 && (() => {

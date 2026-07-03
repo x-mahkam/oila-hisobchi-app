@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, SL, TxRow } from "../components/common/index.jsx";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, QUICK_ADD } from "../utils/constants.js";
 import { tm } from "../utils/formatters.js";
 import { db } from "../firebase.js";
+import KidsGames from "../components/KidsGames.jsx";
 
 export default function DashboardPage({
   user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
@@ -21,6 +22,15 @@ export default function DashboardPage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const [quickItem, setQuickItem] = useState(null);
+  const [showGames, setShowGames] = useState(false);
+  // Bola: sovg'a tarixi va sarflar daftari (bo'lib ko'rsatish uchun)
+  const [kidGifts, setKidGifts] = useState([]);
+  const [kidLedger, setKidLedger] = useState([]);
+  useEffect(() => {
+    if (!isKid || !user?.id) return;
+    db.g("kidgift_" + user.id).then(h => { if (Array.isArray(h)) setKidGifts(h); }).catch(() => {});
+    db.g("kidledger_" + user.id).then(h => { if (Array.isArray(h)) setKidLedger(h); }).catch(() => {});
+  }, [isKid, user?.id]);
   const [showRates, setShowRates] = useState(false);
   const bugun = (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; })();
   const bugunX = xar.filter(x => (x.uid === user?.id || !x.uid) && x.sana === bugun).reduce((sm, x) => sm + Number(x.summa || 0), 0);
@@ -100,6 +110,34 @@ export default function DashboardPage({
               <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 16 }}>{user?.ism} 👋</div>
               <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>{lg === "uz" ? "Mening cho'ntak pulim" : "My pocket money"}</div>
               <div style={{ fontSize: 34, fontWeight: 800, color: "#fff" }}>{f(kidBalances[user.id] || 0, true)}</div>
+              {(() => {
+                const isMine = v => v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase());
+                const taskAll = (vazifalar || []).filter(v => isMine(v) && v.status === "approved").reduce((s, v) => s + Number(v.reward || 0), 0);
+                const giftAll = kidGifts.reduce((s, g) => s + Number(g.summa || 0), 0);
+                const taskToday = (vazifalar || []).filter(v => isMine(v) && v.status === "approved" && v.paidSana === bugun).reduce((s, v) => s + Number(v.reward || 0), 0);
+                const giftToday = kidGifts.filter(g => g.sana === bugun).reduce((s, g) => s + Number(g.summa || 0), 0);
+                const spentToday = kidLedger.filter(l => l.tur === "spend" && l.sana === bugun).reduce((s, l) => s + Number(l.summa || 0), 0);
+                return (
+                  <>
+                    {/* Cho'ntak puli manbalari: sovg'a / vazifa (ma'lumot uchun) */}
+                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: 12, padding: "8px 10px" }}>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)" }}>🎁 {lg === "uz" ? "Sovg'adan topilgan" : "From gifts"}</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginTop: 2 }}>{f(giftAll, true)}</div>
+                      </div>
+                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: 12, padding: "8px 10px" }}>
+                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)" }}>🎯 {lg === "uz" ? "Vazifadan topilgan" : "From tasks"}</div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginTop: 2 }}>{f(taskAll, true)}</div>
+                      </div>
+                    </div>
+                    {/* Bugungi harakat: topildi / sarflandi */}
+                    <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 11.5, color: "rgba(255,255,255,0.92)", fontWeight: 700 }}>
+                      <span>📈 {lg === "uz" ? "Bugun topildi:" : "Earned today:"} +{f(taskToday + giftToday, true)}</span>
+                      <span>📉 {lg === "uz" ? "Bugun sarflandi:" : "Spent today:"} −{f(spentToday, true)}</span>
+                    </div>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
@@ -111,6 +149,18 @@ export default function DashboardPage({
             </div>
             <span style={{ fontSize: 18, color: th.gr }}>+</span>
           </button>
+
+          {/* ── O'yinlar markazi ── */}
+          <button onClick={() => { buzz(10); setShowGames(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#8b5cf6,#6366f1)", border: "none", borderRadius: 18, padding: "15px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 18, position: "relative", overflow: "hidden", boxShadow: "0 6px 18px #8b5cf633" }}>
+            <div style={{ position: "absolute", right: -4, top: "50%", transform: "translateY(-50%) rotate(-10deg)", fontSize: 46, opacity: 0.35 }}>🎮</div>
+            <div style={{ width: 44, height: 44, borderRadius: 13, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🎮</div>
+            <div style={{ flex: 1, textAlign: "left" }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "O'yinlar" : "Games"}</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,.85)", marginTop: 2 }}>{lg === "uz" ? "O'ynab bilim ol va liderbordda ball to'pla!" : "Play, learn and earn points!"}</div>
+            </div>
+            <span style={{ fontSize: 18, color: "#fff" }}>▶</span>
+          </button>
+          {showGames && <KidsGames user={user} lg={lg} addStar={addStar} onClose={() => setShowGames(false)} />}
 
           <button onClick={() => { buzz(10); setShowBilim(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#1e40af15,#3b82f608)", border: "1.5px solid #3b82f644", borderRadius: 16, padding: "13px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
             <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#1e40af,#3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📚</div>
@@ -404,8 +454,8 @@ export default function DashboardPage({
               <button onClick={() => setScr("qoshish")} style={{ ...STY.bt(), width: "auto", padding: "12px 28px", marginBottom: 0, display: "flex", alignItems: "center", gap: 8 }}>{Ico.add("#fff")}{lg === "uz" ? "Xarajat qo'shish" : "Add expense"}</button>
             </div>
           ) : (
-            [...xar.filter(x => x.uid === user?.id).slice(0, 8).map(x => ({ ...x, tp: "x" })), ...dar.filter(d => d.uid === user?.id).slice(0, 5).map(d => ({ ...d, tp: "d" }))]
-              .sort((a, b) => b.id - a.id).slice(0, 3)
+            [...xar.filter(x => x.uid === user?.id).slice(0, 12).map(x => ({ ...x, tp: "x" })), ...dar.filter(d => d.uid === user?.id).slice(0, 8).map(d => ({ ...d, tp: "d" }))]
+              .sort((a, b) => b.id - a.id).slice(0, 6)
               .map(item => <TxRow key={item.tp + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)
           )}
         </div>

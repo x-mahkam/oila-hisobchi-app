@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { f } from "../utils/formatters.js";
+import KidsLeaderboard from "../components/KidsLeaderboard.jsx";
 
 // Tayyor vazifalar to'plami — 4 ustunli grid uchun
 const VAZIFA_PRESETS = [
@@ -172,7 +173,11 @@ export default function TasksPage({
           <div style={{position:"relative"}}>
             <div style={{fontSize:13,color:"rgba(255,255,255,0.9)",marginBottom:4}}>{lg==="uz"?"Mening cho'ntak pulim":"My pocket money"}</div>
             <div style={{fontSize:32,fontWeight:800,color:"#fff",marginBottom:6}}>{f(kidBalances[user.id]||0,true)}</div>
-            <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {vazifalar.filter(v=>(v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)||(v.assignedName&&user.ism&&v.assignedName.trim().toLowerCase()===user.ism.trim().toLowerCase()))&&v.status==="approved").length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"}</div>
+            {(() => {
+              const myDone = vazifalar.filter(v=>(v.assignedTo===user.id||(v.assignedLogin&&user.login&&v.assignedLogin===user.login)||(v.assignedName&&user.ism&&v.assignedName.trim().toLowerCase()===user.ism.trim().toLowerCase()))&&v.status==="approved");
+              const myTaskEarn = myDone.reduce((sm, v) => sm + Number(v.reward || 0), 0);
+              return <div style={{fontSize:12,color:"rgba(255,255,255,0.85)"}}>🏆 {myDone.length} {lg==="uz"?"ta vazifa bajarildi":"tasks done"} · 🎯 {lg==="uz"?"vazifadan":"from tasks"}: {f(myTaskEarn,true)}</div>;
+            })()}
           </div>
         </div>
       )}
@@ -200,7 +205,9 @@ export default function TasksPage({
         <div style={{...STY.cd, marginBottom:16, background:"linear-gradient(135deg,#8b5cf60a,"+th.sur+")", border:"1px solid #8b5cf622"}}>
           <div style={{fontSize:13,fontWeight:700,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>🏆 {lg==="uz"?"Bolalar reytingi":"Kids leaderboard"}</div>
           {kids.map((k, i) => {
-            const done = vazifalar.filter(v=>(v.assignedTo===k.id||(v.assignedLogin&&k.login&&v.assignedLogin===k.login)||(v.assignedName&&k.ism&&v.assignedName.trim().toLowerCase()===k.ism.trim().toLowerCase()))&&v.status==="approved").length;
+            const doneList = vazifalar.filter(v=>(v.assignedTo===k.id||(v.assignedLogin&&k.login&&v.assignedLogin===k.login)||(v.assignedName&&k.ism&&v.assignedName.trim().toLowerCase()===k.ism.trim().toLowerCase()))&&v.status==="approved");
+            const done = doneList.length;
+            const taskEarn = doneList.reduce((sm, v) => sm + Number(v.reward || 0), 0);
             const nmb = x => (x || "").trim().toLowerCase();
             const balIds = azolar.filter(a => a.rol === "kid" && ((a.login && k.login && a.login === k.login) || (a.ism && k.ism && nmb(a.ism) === nmb(k.ism)))).map(a => a.id);
             const bal = (balIds.length ? balIds : [k.id]).reduce((sm, id) => sm + (kidBalances[id] || 0), 0);
@@ -211,7 +218,8 @@ export default function TasksPage({
                 <div style={{width:38,height:38,borderRadius:"50%",background:"linear-gradient(135deg,#f59e0b,#ec4899)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:18,flexShrink:0}}>👶</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontSize:14,fontWeight:700,color:th.t1}}>{k.ism}</div>
-                  <div style={{fontSize:11,color:th.t2}}>🏆 {done} {lg==="uz"?"vazifa":"tasks"} · 💰 {f(bal,true)}</div>
+                  <div style={{fontSize:11,color:th.t2}}>🏆 {done} {lg==="uz"?"vazifa":"tasks"} · 🎯 {lg==="uz"?"vazifadan":"from tasks"}: <b style={{color:th.gr}}>{f(taskEarn,true)}</b></div>
+                  <div style={{fontSize:10.5,color:th.t2,marginTop:1}}>💰 {lg==="uz"?"Cho'ntakda":"Pocket"}: {f(bal,true)}</div>
                 </div>
                 <div style={{textAlign:"right"}}><div style={{fontSize:16,fontWeight:800,color:"#8b5cf6"}}>{done*10}</div><div style={{fontSize:9,color:th.t2}}>{lg==="uz"?"ball":"pts"}</div></div>
               </div>
@@ -219,6 +227,9 @@ export default function TasksPage({
           })}
         </div>
       )}
+
+      {/* ── Global liderbord: ilovadagi barcha bolalar (Haftalik/Oylik/Butun davr) ── */}
+      <KidsLeaderboard th={th} lg={lg} user={user} />
 
       {/* ── Vazifalar ro'yxati ── */}
       {(() => {
