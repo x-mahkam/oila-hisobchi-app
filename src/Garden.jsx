@@ -26,8 +26,18 @@ const STAGES = [
 
 const WATER_COOLDOWN = 2 * 60 * 60;        // 2 soat
 const HARVEST_COINS  = [0, 10, 25, 50, 100, 200, 500];
-const SUN_INTERVAL   = 30 * 60 * 1000;     // 30 daqiqa
-const SUN_LIFETIME   = 3 * 60 * 60 * 1000; // quyosh 3 soat turadi
+const SUN_CYCLE      = 3 * 60 * 60 * 1000; // har o'simlik quyoshi 3 soatda pishadi
+const SPEEDUP_COST   = 100;                // 100 Coin = -30 daqiqa
+const SUN_ENERGY     = 15;                 // bitta quyosh = +15 energiya
+
+// Quyoshlarning osmondagi joylashuvi (har uchastka uchun)
+const SUN_POS = [
+  { x: 50, y: 30 },
+  { x: 23, y: 66 },
+  { x: 77, y: 62 },
+  { x: 13, y: 26 },
+  { x: 87, y: 24 },
+];
 
 // ────────────────────────────────────────────────────────────
 //  UMUMIY SVG GRADIENTLAR (bir marta hujjatga qo'yiladi)
@@ -193,6 +203,19 @@ const LockSVG = ({ size = 30 }) => (
   </svg>
 );
 
+// ── Raketa (tezlashtirish) ──
+const RocketSVG = ({ size = 34 }) => (
+  <svg width={size} height={size} viewBox="0 0 34 34">
+    <path d="M13 26 Q 11 30 8 31 Q 9 27 10 25 Z" fill="#f59e0b" />
+    <path d="M14 25 Q 13 31 15 33 Q 17 30 16.5 26 Z" fill="#ef4444" />
+    <path d="M17 3 Q 24 8 24 17 L 24 24 L 10 24 L 10 17 Q 10 8 17 3 Z" fill="#f8fafc" stroke="#d3dbe4" strokeWidth="0.8" />
+    <path d="M10 18 L 5 24 L 10 24 Z" fill="#ef4444" />
+    <path d="M24 18 L 29 24 L 24 24 Z" fill="#ef4444" />
+    <circle cx="17" cy="14" r="3.6" fill="#7dd3fc" stroke="#38bdf8" strokeWidth="1.2" />
+    <path d="M17 3 Q 21 6 22.5 10 L 11.5 10 Q 13 6 17 3 Z" fill="#ef4444" />
+  </svg>
+);
+
 // ── Sovg'a qutisi ──
 const GiftSVG = ({ size = 20 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24">
@@ -332,7 +355,6 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const [selected, setSelected]     = useState(0);
   const [waterTimer, setWaterTimer] = useState(0);
   const [waterReady, setWaterReady] = useState(true);
-  const [suns, setSuns]             = useState([]);
   const [showInfo, setShowInfo]     = useState(false);
   const [showUnlock, setShowUnlock] = useState(null);
   const [showPlant, setShowPlant]   = useState(null);
@@ -342,7 +364,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const [growAnim, setGrowAnim]     = useState(null);
   const [dailyDone, setDailyDone]   = useState(false);
   const [msg, setMsg]               = useState(null);
-  const [, setNow]                  = useState(Date.now());
+  const [now, setNow]               = useState(Date.now());
 
   const timerRef = useRef(null);
   const msgRef   = useRef(null);
@@ -371,7 +393,14 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         db.g("baraka_crystals_" + oilaId),
         db.g("baraka_daily_" + oilaId),
       ]);
-      if (g?.plots) setPlots(g.plots);
+      if (g?.plots) {
+        // Ekilgan, lekin quyosh sikli boshlanmagan uchastkalarni tuzatish
+        const fixed = g.plots.map(p => (p.stage >= 0 && !p.lastSunAt) ? { ...p, lastSunAt: Date.now() } : p);
+        setPlots(fixed);
+        if (fixed.some((p, i) => p.lastSunAt !== g.plots[i].lastSunAt)) {
+          db.s("baraka_garden_" + oilaId, { plots: fixed, lastWatered: g.lastWatered ?? null, updatedAt: Date.now() }).catch(() => {});
+        }
+      }
       if (c != null) setCoins(c);
       if (e != null) setEnergy(e);
       if (cr != null) setCrystals(cr);
@@ -400,7 +429,6 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setNow(Date.now());
-      setSuns(prev => prev.filter(s => Date.now() - s.at < SUN_LIFETIME));
       setWaterTimer(prev => {
         if (prev <= 1) { setWaterReady(true); return 0; }
         return prev - 1;
@@ -408,31 +436,6 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     }, 1000);
     return () => clearInterval(timerRef.current);
   }, []);
-
-  // ── Quyosh hosil bo'lishi ──
-  useEffect(() => {
-    const iv = setInterval(() => {
-      setPlots(prev => {
-        let changed = false;
-        const next = prev.map(p => {
-          if (p.stage < 2) return p;
-          if (Date.now() - (p.lastSunAt || 0) >= SUN_INTERVAL) {
-            changed = true;
-            const sunId = Date.now() + Math.random();
-            setSuns(s => [...s.slice(-7), { id: sunId, at: Date.now(), x: 12 + Math.random() * 62, y: 8 + Math.random() * 55 }]);
-            return { ...p, lastSunAt: Date.now() };
-          }
-          return p;
-        });
-        if (changed) {
-          saveGarden(next, undefined, undefined, undefined, null);
-          showMsg(L("☀️ Baraka energiyasi paydo bo'ldi!", "☀️ Появилась энергия!"), "☀️");
-        }
-        return changed ? next : prev;
-      });
-    }, 60 * 1000);
-    return () => clearInterval(iv);
-  }, [oilaId]);
 
   const fTime = s => {
     const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
@@ -488,7 +491,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     const newCoins = coins + earned;
     const newCrystals = crystals + 1;
     const newPlots = plots.map(p => p.id === plotId
-      ? { ...p, stage: 0, waterCount: 0, harvestReady: false, lastSunAt: 0 }
+      ? { ...p, stage: 0, waterCount: 0, harvestReady: false, lastSunAt: Date.now() }
       : p);
     setCoins(newCoins);
     setCrystals(newCrystals);
@@ -525,7 +528,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     }
     setDigAnim(null);
     const newPlots = plots.map(p => p.id === plotId
-      ? { ...p, stage: 0, waterCount: 0, harvestReady: false, lastSunAt: 0 }
+      ? { ...p, stage: 0, waterCount: 0, harvestReady: false, lastSunAt: Date.now() }
       : p);
     setPlots(newPlots);
     setSelected(plotId);
@@ -551,24 +554,31 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     ]);
   };
 
-  // ── Bitta quyoshni yig'ish ──
-  const collectSun = async (id, x, y) => {
-    setSuns(prev => prev.filter(s => s.id !== id));
-    const newEnergy = energy + 15;
+  // ── Pishgan quyoshni yig'ish (har uchastka 3 soatda bitta) ──
+  const collectSun = async (plotId) => {
+    const plot = plots.find(p => p.id === plotId);
+    if (!plot || plot.stage < 0) return;
+    if (Date.now() - (plot.lastSunAt || 0) < SUN_CYCLE) return; // hali pishmagan
+    const newEnergy = energy + SUN_ENERGY;
+    const newPlots = plots.map(p => p.id === plotId ? { ...p, lastSunAt: Date.now() } : p);
     setEnergy(newEnergy);
-    spawnCoin(15, x, y, "☀️");
-    showMsg(L("☀️ +15 Baraka Energiya!", "☀️ +15 Энергии!"), "☀️");
-    await saveGarden(plots, undefined, newEnergy, undefined, null);
+    setPlots(newPlots);
+    const pos = SUN_POS[plotId] || SUN_POS[0];
+    spawnCoin(SUN_ENERGY, pos.x, 30, "☀️");
+    showMsg(L(`☀️ +${SUN_ENERGY} Baraka Energiya!`, `☀️ +${SUN_ENERGY} Энергии!`), "☀️");
+    await saveGarden(newPlots, undefined, newEnergy, undefined, null);
   };
 
-  // ── Tezlashtirish ──
+  // ── Tezlashtirish: 100 Coin = −30 daqiqa ──
   const handleSpeedUp = async () => {
-    if (energy < 100) { showMsg(L("❌ 100 energiya kerak", "❌ Нужно 100 энергии"), "⚡"); return; }
-    const newEnergy = energy - 100;
-    setEnergy(newEnergy);
+    if (waterReady) return;
+    if (coins < SPEEDUP_COST) { showMsg(L(`❌ ${SPEEDUP_COST} Coin kerak`, `❌ Нужно ${SPEEDUP_COST} монет`), "🪙"); return; }
+    const newCoins = coins - SPEEDUP_COST;
+    setCoins(newCoins);
     setWaterTimer(prev => Math.max(0, prev - 30 * 60));
+    spawnCoin(-SPEEDUP_COST, 50, 78, "🪙");
     showMsg(L("🚀 30 daqiqa tejaldi!", "🚀 −30 минут!"), "🚀");
-    await saveGarden(plots, undefined, newEnergy, undefined, null);
+    await saveGarden(plots, newCoins, undefined, undefined, null);
   };
 
   // ── Uchastka bosilganda ──
@@ -645,19 +655,20 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
       </div>
 
       {/* ── Sarlavha ── */}
-      <div style={{ textAlign: "center", fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: 0.3, textShadow: "0 2px 10px rgba(30,90,160,.35)", zIndex: 20, flexShrink: 0, marginTop: -4 }}>
+      <div style={{ textAlign: "center", fontSize: 19, fontWeight: 700, color: "#fff", letterSpacing: 0.3, textShadow: "0 2px 10px rgba(30,90,160,.35)", zIndex: 20, flexShrink: 0, marginTop: -2 }}>
         {L("Baraka bog'i", "Сад Бараки")}
       </div>
 
-      {/* ── Hisoblagich pill'lar (rasmda bo'lgani kabi) ── */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, marginTop: 10, zIndex: 20, flexShrink: 0 }}>
+      {/* ── Hisoblagich quvurlari: ichi to'lib boradi ── */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, marginTop: 8, zIndex: 20, flexShrink: 0 }}>
         {[
-          { icon: <GemSVG size={19} />, val: crystals, key: "gem" },
-          { icon: <SunSprite size={22} />, val: energy, key: "sun" },
+          { icon: <GemSVG size={15} />, val: crystals, fill: Math.min(100, crystals * 10), fillBg: "linear-gradient(90deg,#f472b6,#db2777)", key: "gem" },
+          { icon: <SunSprite size={18} />, val: energy, fill: Math.min(100, energy), fillBg: "linear-gradient(90deg,#ffe14d,#f59e0b)", key: "sun" },
         ].map(c => (
-          <div key={c.key} style={{ width: "min(62%, 250px)", background: "linear-gradient(180deg,#2e6d74,#265d64)", borderRadius: 26, padding: "6px 10px", display: "flex", alignItems: "center", gap: 10, boxShadow: "0 3px 10px rgba(20,60,90,.28), inset 0 1px 0 rgba(255,255,255,.12)" }}>
-            <div style={{ width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,.14)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{c.icon}</div>
-            <span style={{ fontSize: 17, fontWeight: 800, color: "#fff" }}>{c.val.toLocaleString()}</span>
+          <div key={c.key} style={{ width: "min(56%, 220px)", height: 30, background: "linear-gradient(180deg,#2e6d74,#265d64)", borderRadius: 20, display: "flex", alignItems: "center", gap: 8, boxShadow: "0 3px 10px rgba(20,60,90,.28), inset 0 1px 0 rgba(255,255,255,.12)", position: "relative", overflow: "hidden", paddingLeft: 3 }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${c.fill}%`, background: c.fillBg, opacity: 0.38, borderRadius: 20, transition: "width .6s ease" }} />
+            <div style={{ width: 24, height: 24, borderRadius: "50%", background: "rgba(255,255,255,.16)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>{c.icon}</div>
+            <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", position: "relative" }}>{c.val.toLocaleString()}</span>
           </div>
         ))}
       </div>
@@ -681,12 +692,18 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         <div style={{ position: "absolute", right: "8%", top: "8%", animation: "cloudDrift 16s ease-in-out infinite reverse" }}><Cloud w={100} /></div>
         <div style={{ position: "absolute", right: "34%", top: "48%", animation: "cloudDrift 20s ease-in-out infinite" }}><Cloud w={52} o={0.85} /></div>
 
-        {suns.map(s => {
-          const rem = Math.max(0, Math.floor((SUN_LIFETIME - (Date.now() - s.at)) / 1000));
+        {plots.filter(p => p.stage >= 0).map(p => {
+          const pos = SUN_POS[p.id] || SUN_POS[0];
+          const rem = Math.max(0, Math.ceil((SUN_CYCLE - (now - (p.lastSunAt || 0))) / 1000));
+          const ready = rem <= 0;
           return (
-            <div key={s.id} onClick={() => collectSun(s.id, s.x, 40)} style={{ position: "absolute", left: s.x + "%", top: s.y + "%", transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
-              <div style={{ background: "rgba(90,130,175,.72)", borderRadius: 14, padding: "3px 10px", fontSize: 12, fontWeight: 700, color: "#fff", backdropFilter: "blur(4px)" }}>{fTime(rem)}</div>
-              <div style={{ animation: "sunPulse 2.4s ease-in-out infinite, sunGlow 2.4s ease-in-out infinite" }}><SunSprite size={54} /></div>
+            <div key={p.id} onClick={() => ready && collectSun(p.id)} style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: ready ? "pointer" : "default", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
+              {!ready && (
+                <div style={{ background: "rgba(90,130,175,.72)", borderRadius: 14, padding: "3px 10px", fontSize: 12, fontWeight: 700, color: "#fff", backdropFilter: "blur(4px)" }}>{fTime(rem)}</div>
+              )}
+              <div style={{ animation: ready ? "sunPulse 2s ease-in-out infinite, sunGlow 2s ease-in-out infinite" : "none", opacity: ready ? 1 : 0.88, transform: ready ? "none" : "scale(.86)" }}>
+                <SunSprite size={52} />
+              </div>
             </div>
           );
         })}
@@ -751,10 +768,21 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           <div style={{ background: "rgba(20,70,60,.66)", borderRadius: 14, padding: "2px 16px", fontSize: 13.5, fontWeight: 800, color: "#eafff2", backdropFilter: "blur(4px)" }}>{coins.toLocaleString()}</div>
         </div>
 
+        {/* ── Markaziy tezlashtirish (100 Coin = −30 daqiqa) ── */}
+        {!waterReady && selStage >= 0 && !selPlot?.harvestReady && (
+          <div onClick={handleSpeedUp} style={{ position: "absolute", left: "50%", bottom: "max(16px, env(safe-area-inset-bottom))", transform: "translateX(-50%)", zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 4, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+            <div style={{ animation: "giftBounce 1.8s ease-in-out infinite" }}><RocketSVG size={38} /></div>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              <CoinSVG size={18} />
+              <span style={{ fontSize: 14, fontWeight: 800, color: "#fff", textShadow: "0 1px 4px rgba(0,0,0,.35)" }}>− {SPEEDUP_COST}</span>
+            </div>
+            <div style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b)", borderRadius: 16, padding: "5px 16px", fontSize: 13, fontWeight: 800, color: "#fff", boxShadow: "0 3px 10px rgba(217,119,6,.4)" }}>
+              {L("Tezlatish", "Ускорить")}
+            </div>
+          </div>
+        )}
+
         <div style={{ position: "absolute", right: 16, bottom: "max(14px, env(safe-area-inset-bottom))", zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
-          {!waterReady && energy >= 100 && (
-            <button onClick={handleSpeedUp} style={{ background: "rgba(20,50,80,.6)", border: "none", borderRadius: 12, padding: "4px 10px", color: "#e9d5ff", fontSize: 11.5, fontWeight: 800, cursor: "pointer", backdropFilter: "blur(4px)" }}>⚡ −100</button>
-          )}
           <button onClick={() => {
               if (selStage < 0) { setShowPlant(selected); return; }
               if (selPlot?.harvestReady) { handleHarvest(selected); return; }
@@ -837,9 +865,10 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
               ["👨‍👩‍👧", L("Oila a'zosi qo'shish", "Добавить участника"), "+15🪙"],
               ["📅", L("7 kun ketma-ket",    "7 дней подряд"),        "+25🪙"],
               ["🎁", L("Kunlik sovg'a",      "Ежедневный бонус"),     "+50🪙"],
-              ["☀️", L("Quyosh yig'ish",     "Собрать солнце"),       "+15⚡"],
+              ["☀️", L("Quyosh yig'ish (3 soatda pishadi)", "Собрать солнце (зреет 3 часа)"), "+15⚡"],
+              ["🚀", L("Tezlatish (−30 daqiqa)", "Ускорить (−30 минут)"), "−100🪙"],
             ].map(([ico, txt, val], i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < 9 ? `1px solid ${dark ? "#243652" : "#f3f4f6"}` : "none" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 0", borderBottom: i < 10 ? `1px solid ${dark ? "#243652" : "#f3f4f6"}` : "none" }}>
                 <span style={{ fontSize: 19, width: 28, textAlign: "center" }}>{ico}</span>
                 <span style={{ flex: 1, fontSize: 13, color: dark ? "#cbd5e1" : "#444" }}>{txt}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: "#f59e0b", background: dark ? "#3a2a08" : "#fef3c7", borderRadius: 10, padding: "3px 10px" }}>{val}</span>
@@ -850,7 +879,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
               {PLOTS.slice(1).map(p => <span key={p.id}>🔒 {p.unlockCost.toLocaleString()}🪙<br /></span>)}
               <br /><b>{L("O'sish bosqichlari:", "Стадии роста:")}</b><br />
               {STAGES.map(s => `${s.emoji} ${L(s.name, s.nameRu)}`).join(" → ")}
-              <br /><br /><b>💡 {L("Maslahat:", "Совет:")}</b> {L("O'sayotgan uchastkani tanlab, o'ng pastdagi choynak bilan sug'oring. Osmondagi quyoshlarni bosib energiya yig'ing!", "Выберите участок и поливайте лейкой. Собирайте солнышки в небе!")}
+              <br /><br /><b>💡 {L("Maslahat:", "Совет:")}</b> {L("Har bir ekilgan o'simlik 3 soatda bitta quyosh chiqaradi — pishganda bosib yig'ing. Sug'orish taymerini 100 Coin evaziga 30 daqiqaga tezlatish mumkin!", "Каждое растение даёт солнце раз в 3 часа. Таймер полива можно ускорить на 30 минут за 100 монет!")}
             </div>
             <button onClick={() => setShowInfo(false)} style={{ width: "100%", marginTop: 16, padding: 15, background: "linear-gradient(180deg,#4ade80,#15803d)", border: "none", borderRadius: 16, color: "#fff", fontWeight: 800, fontSize: 16, cursor: "pointer" }}>OK</button>
           </div>
