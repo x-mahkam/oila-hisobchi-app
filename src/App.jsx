@@ -81,6 +81,7 @@ export default function App() {
     if (!(scr === "vazifa" || (scr === "bosh" && isKid))) return;
     const loadVaz = () => {
       db.g("vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifalar(v); }).catch(() => {});
+      if (isKid) db.g("notif_" + user.id).then(n => { if (Array.isArray(n)) setNotifs(n); }).catch(() => {});
       db.g("kidbal_" + user.oilaId).then(k => {
         if (!k || typeof k !== "object") return;
         // Bola: dublikat (eski) yozuv id'laridagi pul o'z akkauntiga jamlanadi
@@ -159,6 +160,13 @@ export default function App() {
 
   // ── Local UI state ───────────────────────────────────────
   const [showNotifs,   setShowNotifs]   = useState(false);
+  // Panel ochilganda bildirishnomalar bazadan yangilanadi (bola tasdiq xabarini darhol ko'rsin)
+  useEffect(() => {
+    if (showNotifs && user?.id) {
+      db.g("notif_" + user.id).then(n => { if (Array.isArray(n)) setNotifs(n); }).catch(() => {});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showNotifs]);
   const [showS,        setShowS]        = useState(false);
   const [srch,         setSrch]         = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
@@ -638,8 +646,61 @@ export default function App() {
       setNotifs(myN); await db.s("notif_" + user.id, myN);
       fireConfetti(); buzz(30);
       ok$(lg === "uz" ? "🎉 Barakalla! Orzuingiz amalga oshdi!" : "🎉 Congratulations!");
-    } catch {}
+    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
   };
+  // ── Orzu oqimi: karta ichidagi tugmalar (bildirishnomaga bog'liq emas) ──
+  const notifyTo = async (uid, type, title, text, extra = {}) => {
+    try {
+      const cur = (await db.g("notif_" + uid)) || [];
+      await db.s("notif_" + uid, [{ id: Date.now() + Math.random(), type, title, text, sana: new Date().toISOString(), read: false, ...extra }, ...cur].slice(0, 100));
+    } catch (e) {}
+  };
+  const boshIdOf = () => oila?.boshId || azolar.find(a => a.rol === "bosh")?.id;
+
+  // Ota: "Olib berdim" — bola tasdig'iga o'tadi
+  const parentBoughtMaqsad = async (goal) => {
+    const u = maq.map(m => m.id === goal.id ? { ...m, status: "parent_confirmed", parentConfirmedAt: new Date().toISOString(), parentLater: false } : m);
+    await db.s("maq_" + user.oilaId, u); setMaq(u);
+    await notifyTo(goal.uid, "maqsad_kid_confirm",
+      lg === "uz" ? "🎁 Ota/onang orzuingni amalga oshirdi!" : "🎁 Parent fulfilled your dream!",
+      "'" + (goal.ism || "") + "' " + (lg === "uz" ? "sotib olindi! Maqsad bo'limida tasdiqlang" : "was bought! Confirm in Goals"),
+      { maqsadId: goal.id, maqsadIsm: goal.ism, status: "pending" });
+    fireConfetti(); buzz(20);
+    ok$(lg === "uz" ? "✅ Farzandingizga xabar yuborildi — u tasdiqlaydi" : "✅ Sent to child for confirmation");
+  };
+
+  // Ota: "Keyinroq olib beraman"
+  const parentLaterMaqsad = async (goal) => {
+    const u = maq.map(m => m.id === goal.id ? { ...m, parentLater: true, parentLaterAt: new Date().toISOString() } : m);
+    await db.s("maq_" + user.oilaId, u); setMaq(u);
+    await notifyTo(goal.uid, "yangilik",
+      lg === "uz" ? "⏰ Orzuing esda!" : "⏰ Dream noted!",
+      (lg === "uz" ? "Ota-onangiz '" : "Parent will buy '") + (goal.ism || "") + (lg === "uz" ? "'ni keyinroq olib berishini aytdi" : "' later"));
+    ok$(lg === "uz" ? "Farzandingizga xabar berildi ⏰" : "Child notified ⏰");
+  };
+
+  // Bola: "Ha, oldim!" — orzu yopiladi
+  const kidAcceptMaqsad = async (goal) => {
+    const u = maq.map(m => m.id === goal.id ? { ...m, status: "completed", paid: true, completedAt: new Date().toISOString() } : m);
+    await db.s("maq_" + user.oilaId, u); setMaq(u);
+    const b = boshIdOf();
+    if (b) await notifyTo(b, "yangilik", lg === "uz" ? "🎉 Orzu amalga oshdi!" : "🎉 Dream fulfilled!",
+      (user.ism || "") + " '" + (goal.ism || "") + "' " + (lg === "uz" ? "orzusini tasdiqladi. Rahmat!" : "confirmed."));
+    fireConfetti(); buzz(30);
+    ok$(lg === "uz" ? "🎉 Barakalla! Orzuingiz amalga oshdi!" : "🎉 Congratulations!");
+  };
+
+  // Bola: "Hali olganim yo'q" — holat otaga qaytadi
+  const kidRejectMaqsad = async (goal) => {
+    const u = maq.map(m => m.id === goal.id ? { ...m, status: "waiting_parent", parentConfirmedAt: null } : m);
+    await db.s("maq_" + user.oilaId, u); setMaq(u);
+    const b = boshIdOf();
+    if (b) await notifyTo(b, "maqsad_confirm", lg === "uz" ? "⚠️ Farzandingiz hali olmaganini aytdi" : "⚠️ Child says not received",
+      (user.ism || "") + " '" + (goal.ism || "") + "' " + (lg === "uz" ? "hali qo'liga tegmaganini bildirdi. Iltimos, olib bering." : "not received yet."),
+      { maqsadId: goal.id, kidId: user.id, kidIsm: user.ism, maqsadIsm: goal.ism, summa: goal.maqsad, status: "pending" });
+    ok$(lg === "uz" ? "Ota-onangizga xabar yuborildi" : "Parent notified", "warn");
+  };
+
   const confirmMaqBought = async (info) => {
     const u = maq.map(m => m.id === info.maqsadId ? { ...m, status: "completed", paid: true, completedAt: td() } : m);
     await db.s("maq_" + user.oilaId, u); setMaq(u);
@@ -1349,7 +1410,7 @@ export default function App() {
       <div style={{ padding: "14px 16px 100px" }}>
         {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} fetchRates={fetchRates} rateL={rateL} setShowGift={setShowGift} setShowBilim={setShowBilim} setShowAddVazifa={setShowAddVazifa} />}
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
-        {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} />}
+        {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
