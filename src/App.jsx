@@ -142,6 +142,164 @@ export default function App() {
     } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
   };
 
+  // ── OVOZ BILAN KIRITISH (eski versiyadan tiklandi) ──
+  const parseVoice = (text) => {
+    if (!text) return null;
+    const low = text.toLowerCase();
+    let summa = 0;
+    const mingMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming|tisyacha|\u0442\u044b\u0441\u044f\u0447|k)/);
+    const milMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(million|mln|\u043c\u043b\u043d|millon)/);
+    const plainMatch = low.match(/([0-9]{3,})/);
+    if (milMatch) { summa = Math.round(parseFloat(milMatch[1].replace(",", ".")) * 1000000); }
+    else if (mingMatch) { summa = Math.round(parseFloat(mingMatch[1].replace(",", ".")) * 1000); }
+    else if (plainMatch) { summa = parseInt(plainMatch[1]); }
+    const katKeys = {
+      oziq: ["ovqat", "ovkat", "yeg", "tushlik", "nonushta", "kechki", "restoran", "kafe", "kofe", "choy", "non", "sut", "gosht", "go'sht", "meva", "sabzavot", "bozor", "produkt", "food", "oziq", "ovqatlanish"],
+      transport: ["transport", "taksi", "taxi", "yo'l", "benzin", "yoqilg'i", "avtobus", "metro", "mashina", "fuel", "gas"],
+      kommunal: ["kommunal", "svet", "gaz", "suv", "elektr", "internet", "telefon to'lov", "utility"],
+      sog: ["dori", "dorixona", "shifokor", "kasalxona", "apteka", "sog'liq", "tibbiyot", "health", "medicine", "klinika"],
+      kiyim: ["kiyim", "ko'ylak", "poyabzal", "kross", "clothes", "kiyinish"],
+      konil: ["kino", "o'yin", "sayohat", "dam", "konsert", "entertainment", "kongilochar", "ko'ngil"],
+      talim: ["kitob", "o'qish", "kurs", "ta'lim", "maktab", "universitet", "study", "education", "dars"],
+      boshqa: ["boshqa", "other"],
+    };
+    let kat = "boshqa";
+    for (const [k, words] of Object.entries(katKeys)) {
+      if (words.some(w => low.includes(w))) { kat = k; break; }
+    }
+    if (summa <= 0) return null;
+    return { summa, kat, text };
+  };
+  const startVoice = () => {
+    if (!isPremium) { setShowPremModal(true); return; }
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { setShowVoice(true); setVoiceText(""); setVoiceParsed(null); ok$(lg === "uz" ? "Brauzer ovozni qo'llamaydi. Qo'lda yozing." : "Voice not supported.", "warn"); return; }
+    setShowVoice(true); setVoiceText(""); setVoiceParsed(null); setVoiceOn(true);
+    try {
+      const rec = new SR();
+      rec.lang = lg === "uz" ? "uz-UZ" : "en-US";
+      rec.interimResults = true; rec.continuous = false;
+      rec.onresult = (e) => {
+        let txt = "";
+        for (let i = 0; i < e.results.length; i++) { txt += e.results[i][0].transcript; }
+        setVoiceText(txt);
+        const parsed = parseVoice(txt);
+        if (parsed) setVoiceParsed(parsed);
+      };
+      rec.onerror = (e) => { setVoiceOn(false); if (e.error === "not-allowed" || e.error === "permission-denied") { ok$(lg === "uz" ? "Mikrofon ruxsati berilmadi." : "Mic denied.", "warn"); } };
+      rec.onend = () => { setVoiceOn(false); };
+      voiceRecRef.current = rec;
+      rec.start();
+    } catch (e) { setVoiceOn(false); ok$(lg === "uz" ? "Xatolik. Qo'lda yozing." : "Error.", "warn"); }
+  };
+  const stopVoice = () => {
+    if (voiceRecRef.current) { try { voiceRecRef.current.stop(); } catch (e) {} }
+    setVoiceOn(false);
+  };
+  const applyVoice = async () => {
+    const parsed = voiceParsed || parseVoice(voiceText);
+    if (!parsed) { return ok$(lg === "uz" ? "Summa topilmadi. Masalan: 'transportga 20 ming'" : "No amount found.", "err"); }
+    const item = { id: Date.now(), kategoriya: parsed.kat, summa: parsed.summa, izoh: parsed.text.slice(0, 50), sana: td(), vaqt: nt(), repeat: false };
+    const key = "x_" + user.oilaId + "_" + user.id;
+    await db.s(key, [item, ...((await db.g(key)) || [])]);
+    setXar([{ ...item, uid: user.id }, ...xar]);
+    setShowVoice(false); setVoiceText(""); setVoiceParsed(null);
+    ok$(lg === "uz" ? "Qo'shildi: " + f(parsed.summa, true) + " — " + KN[lg][KATS.findIndex(k => k.id === parsed.kat)] : "Added: " + f(parsed.summa, true));
+  };
+
+  // ── CHEK QR SKANERI (eski versiyadan tiklandi) ──
+  const stopScanner = () => {
+    if (scanRafRef.current) { cancelAnimationFrame(scanRafRef.current); scanRafRef.current = null; }
+    if (scanStreamRef.current) { scanStreamRef.current.getTracks().forEach(tr => tr.stop()); scanStreamRef.current = null; }
+    setShowScanner(false); setScanMsg("");
+  };
+  const openWithPrefill = (summa, sana, izoh) => {
+    setScanPrefill({ summa, sana: sana || td(), izoh: izoh || "" });
+    setAddModalTab("xarajat"); setAddStep("form"); setAddKat("boshqa");
+    setShowAddModal(true);
+  };
+  const startScanner = async () => {
+    if (!isPremium) { setShowPremModal(true); return; }
+    setShowScanner(true); setScanMsg(lg === "uz" ? "Kamera ochilmoqda..." : "Opening camera...");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      scanStreamRef.current = stream;
+      if (scanVideoRef.current) { scanVideoRef.current.srcObject = stream; await scanVideoRef.current.play(); }
+      setScanMsg(lg === "uz" ? "QR kodni ramkaga joylang" : "Point QR into frame");
+      if ("BarcodeDetector" in window) {
+        const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
+        const scan = async () => {
+          if (!scanVideoRef.current || !scanStreamRef.current) return;
+          try {
+            const codes = await detector.detect(scanVideoRef.current);
+            if (codes && codes.length > 0) {
+              const raw = codes[0].rawValue;
+              stopScanner();
+              const isUrl = /^https?:\/\//i.test(raw);
+              let sana = "";
+              const tmm = raw.match(/[?&]t=(\d{8})/i);
+              if (tmm) { const d = tmm[1]; sana = d.slice(0, 4) + "-" + d.slice(4, 6) + "-" + d.slice(6, 8); }
+              const rm = raw.match(/[?&]r=(\d+)/i);
+              const izoh = rm ? (lg === "uz" ? "Chek #" : "Receipt #") + rm[1] : "";
+              // 1) URL i= parametri (tiyinda)
+              const im = raw.match(/[?&]i=([0-9]+)/i);
+              if (im) {
+                const v = Math.round(parseInt(im[1], 10) / 100);
+                if (v > 0) { openWithPrefill(v, sana, izoh); ok$("\u2713 " + f(v, true) + (lg === "uz" ? " — tekshiring va saqlang" : " — verify & save")); return; }
+              }
+              if (isUrl) {
+                ok$(lg === "uz" ? "Chek yuklanmoqda..." : "Loading receipt...");
+                try {
+                  const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(raw);
+                  const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+                  const data = await resp.json();
+                  const html = data.contents || "";
+                  let summa = 0;
+                  const jamiRgx = /[Jj]ami[^<]{0,60}?([\d][\d\s.,]*[\d])/;
+                  const jm = html.replace(/<[^>]+>/g, " ").match(jamiRgx);
+                  if (jm) {
+                    const numStr = jm[1].replace(/\s/g, "").replace(/,(\d{2})$/, "").replace(/\.(\d{2})$/, "").replace(/[,.\s]/g, "");
+                    const v = parseInt(numStr, 10);
+                    if (v >= 100 && v <= 999999999) { summa = v; }
+                  }
+                  if (summa > 0) { openWithPrefill(summa, sana, izoh); ok$("\u2713 " + f(summa, true) + (lg === "uz" ? " — tekshiring va saqlang" : " — verify & save")); }
+                  else { openWithPrefill("", sana, izoh); ok$(lg === "uz" ? "Summa topilmadi, qo'lda kiriting" : "Amount not found", "warn"); }
+                } catch (err) { openWithPrefill("", sana, izoh); ok$(lg === "uz" ? "Chek yuklanmadi, qo'lda kiriting" : "Load failed", "warn"); }
+              } else {
+                const jm = raw.match(/[Jj]ami[^\n]{0,60}?([\d][\d\s.,]*[\d])/);
+                if (jm) {
+                  const numStr = jm[1].replace(/\s/g, "").replace(/,(\d{2})$/, "").replace(/\.(\d{2})$/, "").replace(/[,.\s]/g, "");
+                  const v = parseInt(numStr, 10);
+                  if (v >= 100 && v <= 999999999) { openWithPrefill(v, sana, izoh); ok$("\u2713 " + f(v, true)); return; }
+                }
+                openWithPrefill("", sana, izoh);
+                ok$(lg === "uz" ? "Summa topilmadi, qo'lda kiriting" : "Amount not found", "warn");
+              }
+              return;
+            }
+          } catch (e) {}
+          scanRafRef.current = requestAnimationFrame(scan);
+        };
+        scanRafRef.current = requestAnimationFrame(scan);
+      } else { setScanMsg(lg === "uz" ? "Brauzer QR skanerini qo'llamaydi." : "QR scanner not supported."); }
+    } catch (e) {
+      const isDenied = (e.name === "NotAllowedError" || (e.message || "").indexOf("denied") >= 0 || (e.message || "").indexOf("Permission") >= 0);
+      if (isDenied) { setScanMsg(lg === "uz" ? "Kamera ruxsati berilmadi. Sozlamalardan ruxsat bering." : "Camera denied."); }
+      else { setScanMsg((lg === "uz" ? "Kamera ochilmadi. Qo'lda kiriting." : "Camera unavailable.") + " (" + (e.name || "") + ")"); }
+    }
+  };
+
+  // Maqsadlar sinxronizatsiyasi: bola pul yig'ib bo'lganda ota bannerni DARHOL ko'rsin
+  useEffect(() => {
+    if (!user?.oilaId) return;
+    if (!(scr === "maqsad" || scr === "bosh")) return;
+    const lm = () => { db.g("maq_" + user.oilaId).then(m => { if (Array.isArray(m)) setMaq(m); }).catch(() => {}); };
+    lm();
+    const iv = setInterval(lm, 20000);
+    return () => clearInterval(iv);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scr, user?.oilaId]);
+
   // Qo'lda yangilash (Vazifalar sahifasidagi tugma uchun)
   const refreshVazifalar = async () => {
     if (!user?.oilaId) return;
@@ -168,6 +326,21 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNotifs]);
   const [showS,        setShowS]        = useState(false);
+  // ── Ovoz bilan kiritish ──
+  const [showVoice, setShowVoice] = useState(false);
+  const [voiceOn, setVoiceOn] = useState(false);
+  const [voiceText, setVoiceText] = useState("");
+  const [voiceParsed, setVoiceParsed] = useState(null);
+  const voiceRecRef = useRef(null);
+  // ── Chek QR skaneri ──
+  const [showScanner, setShowScanner] = useState(false);
+  const [scanMsg, setScanMsg] = useState("");
+  const [scanPrefill, setScanPrefill] = useState(null);
+  const scanVideoRef = useRef(null);
+  const scanStreamRef = useRef(null);
+  const scanRafRef = useRef(null);
+  // Boshqa sahifaga o'tilganda qidiruv yopiladi
+  useEffect(() => { setShowS(false); setSrch(""); /* eslint-disable-next-line */ }, [scr]);
   const [srch,         setSrch]         = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [addModalTab,  setAddModalTab]  = useState("xarajat");
@@ -1162,8 +1335,25 @@ export default function App() {
       L("Moliyaviy xavfsizlik yostig'i: kamida 3 oylik xarajatga teng zaxira fondi yarating.", "Build a 3-month emergency fund."),
     ];
     tips.push("💡 " + genTips[new Date().getDate() % genTips.length]);
+    // Motivatsion iqtibos — har kuni yangi
+    const MOTIV = [
+      L("Boylik bir kunda yig'ilmaydi — lekin har kungi to'g'ri qaror sizni unga yaqinlashtiradi. Siz to'g'ri yo'ldasiz!", "Wealth is built one good decision at a time."),
+      L("Pulni boshqarayotgan odam — kelajagini boshqarayotgan odam. Davom eting!", "Manage your money, manage your future."),
+      L("Bugungi kichik tejamkorlik — ertangi katta imkoniyat. Har bir so'm ishlasin!", "Small savings today, big opportunities tomorrow."),
+      L("Eng yaxshi sarmoya — o'z moliyaviy intizomingizga qilingan sarmoya. Barakalla!", "Discipline is the best investment."),
+      L("Maqsadi bor odam yo'ldan adashmaydi. Maqsadlaringizga sodiq qoling!", "A person with a goal never gets lost."),
+      L("Daromad qancha bo'lishidan qat'i nazar, uni hisoblab yurgan oila hech qachon kam bo'lmaydi.", "A family that counts never lacks."),
+      L("Sabr va izchillik — moliyaviy erkinlikning ikki qanoti. Siz uchyapsiz!", "Patience and consistency are the wings of financial freedom."),
+      L("Har hisobot — bir qadam oldinga. O'zingizni tahlil qilayotganingiz allaqachon g'alaba!", "Every report is a step forward."),
+    ];
+    tips.push("🌟 " + MOTIV[new Date().getDate() % MOTIV.length]);
+    // Shaxsiy motivatsion salomlashuv
+    const salom = totX === 0 && totD === 0 ? ""
+      : bal2 >= 0
+        ? L("🏆 Barakalla, " + (user?.ism || "do'stim") + "! Siz moliyangizni nazoratda tutyapsiz — bu ko'pchilikning qo'lidan kelmaydi. Keling, tahlilni ko'ramiz:", "🏆 Great job, " + (user?.ism || "") + "!")
+        : L("💪 " + (user?.ism || "Do'stim") + ", tashvishlanmang — har bir katta yutuq kichik qadamdan boshlanadi. Bu oy tahlili sizga yo'l ko'rsatadi:", "💪 Don't worry, every big win starts small.");
     if (totX === 0 && totD === 0) setAdv(L("Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!", "No data yet. Add expenses and income."));
-    else setAdv(L("📈 " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n"));
+    else setAdv(salom + "\n\n" + L("📈 " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n"));
     setTimeout(() => setAdvL(false), 400);
   };
 
@@ -1403,7 +1593,12 @@ export default function App() {
             </button>
           </div>
         </div>
-        {showS && <input autoFocus style={{ ...STY.ip, marginBottom: 0, marginTop: 8 }} value={srch} onChange={e => setSrch(e.target.value)} placeholder={t.sch} />}
+        {showS && (
+          <div style={{ position: "relative", marginTop: 8 }}>
+            <input autoFocus style={{ ...STY.ip, marginBottom: 0, paddingRight: 40 }} value={srch} onChange={e => setSrch(e.target.value)} placeholder={t.sch} />
+            <button onClick={() => { setShowS(false); setSrch(""); }} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", width: 26, height: 26, borderRadius: "50%", background: th.surH, border: "1px solid " + th.bor, color: th.t2, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>{"\u2715"}</button>
+          </div>
+        )}
       </div>
 
       {/* Pages */}
@@ -1417,8 +1612,59 @@ export default function App() {
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
+      {/* ── Ovoz bilan kiritish oynasi ── */}
+      {showVoice && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,.85)", zIndex: 1000, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "24px" }}>
+        <button onClick={() => { stopVoice(); setShowVoice(false); }} style={{ position: "absolute", top: 20, right: 20, background: "rgba(255,255,255,.15)", border: "none", borderRadius: "50%", width: 40, height: 40, color: "#fff", fontSize: 22, cursor: "pointer" }}>{"\u00d7"}</button>
+        <div style={{ fontSize: 18, fontWeight: 700, color: "#fff", marginBottom: 8 }}>{lg === "uz" ? "Ovoz bilan kiritish" : "Voice input"}</div>
+        <div style={{ fontSize: 13, color: "rgba(255,255,255,.6)", marginBottom: 36, textAlign: "center", maxWidth: 300 }}>{lg === "uz" ? "Masalan: \"Transportga 20 ming ishlatdim\"" : "E.g. \"Spent 20000 on transport\""}</div>
+        <button onClick={voiceOn ? stopVoice : startVoice} style={{ width: 110, height: 110, borderRadius: "50%", background: voiceOn ? "linear-gradient(135deg,#ef4444,#dc2626)" : "linear-gradient(135deg,#8b5cf6,#6366f1)", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 30, boxShadow: voiceOn ? "0 0 0 12px rgba(239,68,68,.2),0 0 0 24px rgba(239,68,68,.1)" : "0 8px 30px rgba(139,92,246,.5)", transition: "all .3s" }}>
+          <svg width="44" height="44" viewBox="0 0 24 24" fill="none"><rect x="9" y="3" width="6" height="11" rx="3" fill="#fff"/><path d="M5 11a7 7 0 0014 0M12 18v3M8 21h8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>
+        </button>
+        <div style={{ fontSize: 14, color: voiceOn ? "#ef4444" : "rgba(255,255,255,.7)", fontWeight: 600, marginBottom: 24 }}>{voiceOn ? (lg === "uz" ? "Tinglayapman..." : "Listening...") : (lg === "uz" ? "Bosing va gapiring" : "Tap and speak")}</div>
+        {voiceText && <div style={{ background: "rgba(255,255,255,.1)", borderRadius: 16, padding: "16px 20px", marginBottom: 20, maxWidth: 340, width: "100%" }}>
+          <div style={{ fontSize: 11, color: "rgba(255,255,255,.5)", marginBottom: 6, textTransform: "uppercase", letterSpacing: 1 }}>{lg === "uz" ? "Eshitildi" : "Heard"}</div>
+          <div style={{ fontSize: 15, color: "#fff", lineHeight: 1.5 }}>{voiceText}</div>
+        </div>}
+        {voiceParsed && <div style={{ background: "linear-gradient(135deg,#10b98122,#05966911)", border: "1.5px solid #10b98155", borderRadius: 16, padding: "16px 20px", marginBottom: 24, maxWidth: 340, width: "100%" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,.6)" }}>{lg === "uz" ? "Summa" : "Amount"}</span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#10b981" }}>{f(voiceParsed.summa, true)}</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 12, color: "rgba(255,255,255,.6)" }}>{lg === "uz" ? "Kategoriya" : "Category"}</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{KN[lg][KATS.findIndex(k => k.id === voiceParsed.kat)]}</span>
+          </div>
+        </div>}
+        {(voiceText && !voiceOn) && <div style={{ display: "flex", gap: 10, maxWidth: 340, width: "100%" }}>
+          <button onClick={() => { setVoiceText(""); setVoiceParsed(null); startVoice(); }} style={{ flex: 1, background: "rgba(255,255,255,.15)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{lg === "uz" ? "Qayta" : "Retry"}</button>
+          <button onClick={applyVoice} disabled={!voiceParsed} style={{ flex: 2, background: voiceParsed ? "linear-gradient(135deg,#10b981,#059669)" : "rgba(255,255,255,.1)", border: "none", borderRadius: 14, padding: "14px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: voiceParsed ? "pointer" : "not-allowed", opacity: voiceParsed ? 1 : .5 }}>{lg === "uz" ? "Qo'shish" : "Add"}</button>
+        </div>}
+      </div>}
+
+      {/* ── Chek QR skaneri oynasi ── */}
+      {showScanner && <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "#000", zIndex: 1000, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "16px 18px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "rgba(0,0,0,.6)", position: "relative", zIndex: 2 }}>
+          <div style={{ color: "#fff", fontSize: 16, fontWeight: 700 }}>{lg === "uz" ? "Chek skaneri" : "Receipt scanner"}</div>
+          <button onClick={stopScanner} style={{ background: "rgba(255,255,255,.2)", border: "none", borderRadius: "50%", width: 36, height: 36, color: "#fff", fontSize: 20, cursor: "pointer" }}>{"\u00d7"}</button>
+        </div>
+        <div style={{ flex: 1, position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <video ref={scanVideoRef} playsInline muted style={{ width: "100%", height: "100%", objectFit: "cover", position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}/>
+          <div style={{ position: "relative", zIndex: 2, width: 240, height: 240, border: "3px solid " + th.ac, borderRadius: 24, boxShadow: "0 0 0 9999px rgba(0,0,0,.5)" }}>
+            <div style={{ position: "absolute", top: -3, left: -3, width: 40, height: 40, borderTop: "5px solid #fff", borderLeft: "5px solid #fff", borderRadius: "24px 0 0 0" }}/>
+            <div style={{ position: "absolute", top: -3, right: -3, width: 40, height: 40, borderTop: "5px solid #fff", borderRight: "5px solid #fff", borderRadius: "0 24px 0 0" }}/>
+            <div style={{ position: "absolute", bottom: -3, left: -3, width: 40, height: 40, borderBottom: "5px solid #fff", borderLeft: "5px solid #fff", borderRadius: "0 0 0 24px" }}/>
+            <div style={{ position: "absolute", bottom: -3, right: -3, width: 40, height: 40, borderBottom: "5px solid #fff", borderRight: "5px solid #fff", borderRadius: "0 0 24px 0" }}/>
+          </div>
+        </div>
+        <div style={{ padding: "20px 24px 40px", background: "rgba(0,0,0,.6)", textAlign: "center" }}>
+          <div style={{ color: "#fff", fontSize: 14, marginBottom: 6 }}>{scanMsg}</div>
+          <div style={{ color: "rgba(255,255,255,.6)", fontSize: 12, marginBottom: 16 }}>{lg === "uz" ? "Chekdagi QR kodni ramka ichiga joylang" : "Point the receipt QR into the frame"}</div>
+          <button onClick={stopScanner} style={{ background: "rgba(255,255,255,.15)", border: "1.5px solid rgba(255,255,255,.4)", borderRadius: 12, padding: "12px 24px", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>{lg === "uz" ? "Qo'lda kiritish" : "Enter manually"}</button>
+        </div>
+      </div>}
+
       {/* AddTransactionModal */}
-      {showAddModal && <AddTransactionModal th={th} STY={STY} lg={lg} t={t} f={f} ok$={ok$} buzz={buzz} user={user} oila={oila} azolar={azolar} xar={xar} dar={dar} addX={addX} addD={addD} addModalTab={addModalTab} setAddModalTab={setAddModalTab} addStep={addStep} setAddStep={setAddStep} addKat={addKat} setAddKat={setAddKat} isPremium={isPremium} setShowPremModal={setShowPremModal} onClose={() => setShowAddModal(false)} />}
+      {showAddModal && <AddTransactionModal th={th} STY={STY} lg={lg} t={t} f={f} ok$={ok$} buzz={buzz} user={user} oila={oila} azolar={azolar} xar={xar} dar={dar} addX={addX} addD={addD} addModalTab={addModalTab} setAddModalTab={setAddModalTab} addStep={addStep} setAddStep={setAddStep} addKat={addKat} setAddKat={setAddKat} isPremium={isPremium} setShowPremModal={setShowPremModal} prefill={scanPrefill} onVoice={startVoice} onScan={startScanner} onClose={() => { setShowAddModal(false); setScanPrefill(null); }} />}
 
       {/* Bottom Nav */}
       <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} />
