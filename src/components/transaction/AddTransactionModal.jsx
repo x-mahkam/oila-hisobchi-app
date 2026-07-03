@@ -12,6 +12,7 @@ export default function AddTransactionModal({
   addStep, setAddStep,
   addKat, setAddKat,
   isPremium, setShowPremModal,
+  prefill, onVoice, onScan,
   onClose,
 }) {
   const tab = addModalTab;
@@ -22,9 +23,9 @@ export default function AddTransactionModal({
   const setKat = setAddKat;
   const isKid = user?.rol === "kid";
 
-  const [fS, setFS] = useState("");
-  const [fIz, setFIz] = useState("");
-  const [fSn, setFSn] = useState(td());
+  const [fS, setFS] = useState(prefill?.summa ? String(prefill.summa) : "");
+  const [fIz, setFIz] = useState(prefill?.izoh || "");
+  const [fSn, setFSn] = useState(prefill?.sana || td());
   const [fRp, setFRp] = useState(false);
   const [xForMember, setXForMember] = useState("");
 
@@ -74,6 +75,13 @@ export default function AddTransactionModal({
       {/* Content */}
       <div style={{ flex: 1, overflowY: "auto", background: th.bg }}>
         {/* KATEGORIYA TANLASH (xarajat) */}
+        {/* ── Ovoz va Chek skaneri ── */}
+        {step === "kat" && tab === "xarajat" && !isKid && (onVoice || onScan) && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {onVoice && <button onClick={() => { onClose(); onVoice(); }} style={{ flex: 1, background: "linear-gradient(135deg,#8b5cf620,#6366f115)", border: "1.5px solid #8b5cf655", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#a78bfa", fontWeight: 700, fontSize: 12.5 }}>{"\ud83c\udfa4"} {lg === "uz" ? "Ovoz bilan" : "Voice"}</button>}
+            {onScan && <button onClick={() => { onClose(); onScan(); }} style={{ flex: 1, background: "linear-gradient(135deg,#10b98120,#05966915)", border: "1.5px solid #10b98155", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#34d399", fontWeight: 700, fontSize: 12.5 }}>{"\ud83d\udcf7"} {lg === "uz" ? "Chek skaneri" : "Scan receipt"}</button>}
+          </div>
+        )}
         {step === "kat" && tab === "xarajat" && !isKid && (
           <div style={{ padding: "14px 16px" }}>
             <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 10, letterSpacing: 0.5 }}>{lg === "uz" ? "KATEGORIYA TANLANG" : "SELECT CATEGORY"}</div>
