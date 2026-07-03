@@ -7,7 +7,7 @@ import { tm } from "../utils/formatters.js";
 
 export default function ReportsPage({
   user, azolar, qarzlar, maq,
-  th, t, f, lg, scr, isPremium, isAdmin,
+  th, t, f, lg, scr, setScr, isPremium, isAdmin,
   bX, bD, jX, jD, bdj, canSeeReport, xar, dar,
   hisFil, setHisFil,
   exportLoading, exportExcel, exportPDF,
@@ -101,7 +101,10 @@ export default function ReportsPage({
   if (scr === "maslahat") {
     return (
       <div>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 18, color: th.t1 }}>{t.aa}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 18 }}>
+          <button onClick={() => setScr("hisobot")} style={{ width: 38, height: 38, borderRadius: 11, background: th.surH, border: "1px solid " + th.bor, color: th.t1, cursor: "pointer", fontSize: 16, fontWeight: 800, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>{"\u2190"}</button>
+          <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{"\ud83e\udd16"} {t.aa}</div>
+        </div>
         {advL ? (
           <div style={{ textAlign: "center", padding: "64px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>{Ico.brain(th.ac)}<div style={{ color: th.t2 }}>{t.an}</div></div>
         ) : adv && (
