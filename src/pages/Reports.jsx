@@ -140,25 +140,41 @@ export default function ReportsPage({
 
       {/* Moliyaviy sog'liq skor */}
       {(() => {
+        // Joriy oy bo'sh bo'lsa — oxirgi 30 kun bo'yicha hisoblanadi
+        let hX = jX, hD = jD, hSrc = bX, hFb = false;
+        if (jX === 0 && jD === 0) {
+          const cut = new Date(Date.now() - 30 * 86400000);
+          const cs = `${cut.getFullYear()}-${String(cut.getMonth()+1).padStart(2,"0")}-${String(cut.getDate()).padStart(2,"0")}`;
+          hSrc = (xar || []).filter(x => x.sana && x.sana >= cs);
+          hX = hSrc.reduce((s, x) => s + Number(x.summa || 0), 0);
+          hD = (dar || []).filter(d => d.sana && d.sana >= cs).reduce((s, d) => s + Number(d.summa || 0), 0);
+          hFb = true;
+        }
         let score = 50;
         const checks = [];
-        if (jD >= jX) { score += 20; checks.push({ ok: true, t: lg === "uz" ? "Daromad xarajatdan ko'p" : "Income exceeds expenses" }); }
+        if (hD >= hX) { score += 20; checks.push({ ok: true, t: lg === "uz" ? "Daromad xarajatdan ko'p" : "Income exceeds expenses" }); }
         else { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Xarajat daromaddan ko'p" : "Expenses exceed income" }); }
-        if (jX <= bdj) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Budjetdan chiqmagansiz" : "Within budget" }); }
+        if (hX <= bdj) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Budjetdan chiqmagansiz" : "Within budget" }); }
         else { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Budjetdan oshib ketdingiz" : "Over budget" }); }
-        const savePct = jD > 0 ? (jD - jX) / jD * 100 : 0;
+        const savePct = hD > 0 ? (hD - hX) / hD * 100 : 0;
         if (savePct >= 20) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Yaxshi jamg'arma (20%+)" : "Good savings (20%+)" }); }
         else if (savePct > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Ozgina jamg'arma bor" : "Some savings" }); }
         else { checks.push({ ok: false, t: lg === "uz" ? "Jamg'arma yo'q" : "No savings" }); }
-        const topKat = KATS.map((k, i) => ({ nom: KN[lg][i], sum: bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).sort((a, b) => b.sum - a.sum)[0];
-        if (topKat && jX > 0 && topKat.sum / jX > 0.5) { score -= 5; checks.push({ ok: false, t: topKat.nom + " " + (lg === "uz" ? "xarajati yuqori" : "spending high") }); }
+        const topKat = KATS.map((k, i) => ({ nom: KN[lg][i], sum: hSrc.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).sort((a, b) => b.sum - a.sum)[0];
+        if (topKat && hX > 0 && topKat.sum / hX > 0.5) { score -= 5; checks.push({ ok: false, t: topKat.nom + " " + (lg === "uz" ? "xarajati yuqori" : "spending high") }); }
         if (maq.length > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Moliyaviy maqsadingiz bor" : "You have goals" }); }
         const activeDebt = qarzlar.filter(q => !q.paid && q.tur === "olgan").reduce((s, q) => s + q.summa, 0);
-        if (activeDebt > 0 && jD > 0 && activeDebt > jD) { score -= 10; checks.push({ ok: false, t: lg === "uz" ? "Qarzingiz daromaddan ko'p" : "Debt exceeds income" }); }
+        if (activeDebt > 0 && hD > 0 && activeDebt > hD) { score -= 10; checks.push({ ok: false, t: lg === "uz" ? "Qarzingiz daromaddan ko'p" : "Debt exceeds income" }); }
         score = Math.max(0, Math.min(100, Math.round(score)));
         const sColor = score >= 75 ? th.gr : score >= 50 ? th.am : th.rd;
         const sLabel = score >= 75 ? (lg === "uz" ? "Zo'r!" : "Excellent!") : score >= 50 ? (lg === "uz" ? "Yaxshi" : "Good") : (lg === "uz" ? "Yaxshilash kerak" : "Needs work");
-        if (jX === 0 && jD === 0) return null;
+        if (hX === 0 && hD === 0) return (
+          <div style={{ ...STY.cd, marginBottom: 14, textAlign: "center", padding: "18px" }}>
+            <div style={{ fontSize: 26, marginBottom: 6 }}>{"\ud83e\ude7a"}</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}</div>
+            <div style={{ fontSize: 11, color: th.t2, marginTop: 4 }}>{lg === "uz" ? "Hisoblash uchun xarajat va daromad kiriting" : "Add expenses and income to calculate"}</div>
+          </div>
+        );
         return (
           <div style={{ ...STY.cd, marginBottom: 14 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
@@ -167,7 +183,7 @@ export default function ReportsPage({
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 22, fontWeight: 800, color: sColor }}>{score}</span><span style={{ fontSize: 9, color: th.t2 }}>/100</span></div>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}</div>
+                <div style={{ fontSize: 11, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}{hFb ? (lg === "uz" ? " (oxirgi 30 kun)" : " (last 30d)") : ""}</div>
                 <div style={{ fontSize: 18, fontWeight: 800, color: sColor }}>{sLabel}</div>
               </div>
             </div>
