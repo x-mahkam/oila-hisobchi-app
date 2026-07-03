@@ -368,11 +368,12 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
 
   const timerRef = useRef(null);
   const msgRef   = useRef(null);
+  const lastWateredRef = useRef(0); // sug'orish vaqti — barcha qurilmalarda sinxron
 
-  const showMsg = (text, icon = "🌿") => {
-    setMsg({ text, icon });
+  const showMsg = (text, icon = "🌿", dur = 3000) => {
+    setMsg({ text, icon, dur });
     clearTimeout(msgRef.current);
-    msgRef.current = setTimeout(() => setMsg(null), 3000);
+    msgRef.current = setTimeout(() => setMsg(null), dur);
   };
 
   const spawnCoin = (amount, x = 50, y = 50, icon = "🪙") => {
@@ -405,6 +406,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
       if (e != null) setEnergy(e);
       if (cr != null) setCrystals(cr);
       if (g?.lastWatered) {
+        lastWateredRef.current = g.lastWatered;
         const elapsed = Math.floor((Date.now() - g.lastWatered) / 1000);
         const rem = WATER_COOLDOWN - elapsed;
         if (rem > 0) { setWaterTimer(rem); setWaterReady(false); }
@@ -415,10 +417,12 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     } catch (e) { console.error("Garden load:", e); }
   };
 
+  // lastWatered: undefined = joriy qiymatni saqlab qolish (hech qachon o'chirmaydi)
   const saveGarden = async (newPlots, newCoins, newEnergy, newCrystals, lastWatered) => {
     if (!oilaId) return;
+    if (lastWatered !== undefined) lastWateredRef.current = lastWatered;
     try {
-      await db.s("baraka_garden_" + oilaId, { plots: newPlots, lastWatered: lastWatered ?? null, updatedAt: Date.now() });
+      await db.s("baraka_garden_" + oilaId, { plots: newPlots, lastWatered: lastWateredRef.current || null, updatedAt: Date.now() });
       if (newCoins    !== undefined) await db.s("baraka_coins_" + oilaId, newCoins);
       if (newEnergy   !== undefined) await db.s("baraka_energy_" + oilaId, newEnergy);
       if (newCrystals !== undefined) await db.s("baraka_crystals_" + oilaId, newCrystals);
@@ -498,7 +502,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     setPlots(newPlots);
     spawnCoin(earned, 50, 50);
     showMsg(L(`🎉 Hosil yig'ildi! +${earned} Coin, +1 kristal`, `🎉 Урожай! +${earned} монет, +1💎`), "🎉");
-    await saveGarden(newPlots, newCoins, undefined, newCrystals, null);
+    await saveGarden(newPlots, newCoins, undefined, newCrystals);
   };
 
   // ── Uchastka ochish ──
@@ -516,7 +520,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     setPlots(newPlots);
     setShowUnlock(null);
     showMsg(L("🎊 Yangi uchastka ochildi!", "🎊 Новый участок открыт!"), "🎊");
-    await saveGarden(newPlots, newCoins, undefined, undefined, null);
+    await saveGarden(newPlots, newCoins, undefined, undefined);
   };
 
   // ── Ekish ──
@@ -533,7 +537,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     setPlots(newPlots);
     setSelected(plotId);
     showMsg(L("🌰 Urug' ekildi! Sug'orishni boshlang", "🌰 Семя посажено!"), "🌰");
-    await saveGarden(newPlots, undefined, undefined, undefined, null);
+    await saveGarden(newPlots, undefined, undefined, undefined);
   };
 
   // ── Kunlik sovg'a ──
@@ -550,7 +554,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     showMsg(L(`🎁 Kunlik sovg'a! +${bonus} Coin, +20⚡`, `🎁 Бонус! +${bonus} монет`), "🎁");
     await Promise.all([
       db.s("baraka_daily_" + oilaId, { date: today, coins: bonus }),
-      saveGarden(plots, newCoins, newEnergy, undefined, null),
+      saveGarden(plots, newCoins, newEnergy, undefined),
     ]);
   };
 
@@ -566,19 +570,23 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
     const pos = SUN_POS[plotId] || SUN_POS[0];
     spawnCoin(SUN_ENERGY, pos.x, 30, "☀️");
     showMsg(L(`☀️ +${SUN_ENERGY} Baraka Energiya!`, `☀️ +${SUN_ENERGY} Энергии!`), "☀️");
-    await saveGarden(newPlots, undefined, newEnergy, undefined, null);
+    await saveGarden(newPlots, undefined, newEnergy, undefined);
   };
 
-  // ── Tezlashtirish: 100 Coin = −30 daqiqa ──
+  // ── Tezlashtirish: 100 Coin = −30 daqiqa (barcha qurilmalarga saqlanadi) ──
   const handleSpeedUp = async () => {
     if (waterReady) return;
     if (coins < SPEEDUP_COST) { showMsg(L(`❌ ${SPEEDUP_COST} Coin kerak`, `❌ Нужно ${SPEEDUP_COST} монет`), "🪙"); return; }
     const newCoins = coins - SPEEDUP_COST;
+    // lastWatered ni 30 daqiqa orqaga suramiz — qolgan vaqt hamma qurilmada birdek kamayadi
+    const newLW = Math.max(0, (lastWateredRef.current || Date.now()) - 30 * 60 * 1000);
+    const remaining = Math.max(0, WATER_COOLDOWN - Math.floor((Date.now() - newLW) / 1000));
     setCoins(newCoins);
-    setWaterTimer(prev => Math.max(0, prev - 30 * 60));
+    setWaterTimer(remaining);
+    if (remaining <= 0) setWaterReady(true);
     spawnCoin(-SPEEDUP_COST, 50, 78, "🪙");
     showMsg(L("🚀 30 daqiqa tejaldi!", "🚀 −30 минут!"), "🚀");
-    await saveGarden(plots, newCoins, undefined, undefined, null);
+    await saveGarden(plots, newCoins, undefined, undefined, newLW);
   };
 
   // ── Uchastka bosilganda ──
@@ -595,11 +603,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
 
   // ── Uchastkalar joylashuvi (rasmda bo'lgani kabi) ──
   const PLOT_POS = [
-    { left: "50%", top: "13%", w: "min(46%, 190px)", z: 5 },  // asosiy — markazda
-    { left: "26%", top: "47%", w: "min(40%, 165px)", z: 6 },  // pastki chap
-    { left: "75%", top: "47%", w: "min(40%, 165px)", z: 6 },  // pastki o'ng
-    { left: "35%", top: "72%", w: "min(30%, 122px)", z: 7 },  // eng past chap
-    { left: "65%", top: "72%", w: "min(30%, 122px)", z: 7 },  // eng past o'ng
+    { left: "50%", top: "11%", w: "min(46%, 190px)", z: 5 },  // asosiy — markazda
+    { left: "26%", top: "41%", w: "min(40%, 165px)", z: 6 },  // pastki chap
+    { left: "75%", top: "41%", w: "min(40%, 165px)", z: 6 },  // pastki o'ng
+    { left: "35%", top: "64%", w: "min(30%, 122px)", z: 7 },  // eng past chap
+    { left: "65%", top: "64%", w: "min(30%, 122px)", z: 7 },  // eng past o'ng
   ];
 
   const plotScale = [1, 0.8, 0.8, 0.62, 0.62];
@@ -629,7 +637,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
 
       {/* ── Motivatsion xabar ── */}
       {msg && (
-        <div style={{ position: "absolute", top: 64, left: "50%", background: "rgba(15,40,70,.78)", color: "#fff", borderRadius: 24, padding: "9px 20px", fontSize: 13.5, fontWeight: 700, zIndex: 90, whiteSpace: "nowrap", animation: "msgSlide 3s ease forwards", backdropFilter: "blur(8px)", boxShadow: "0 6px 18px rgba(0,0,0,.25)" }}>
+        <div style={{ position: "absolute", top: 64, left: "50%", background: "rgba(15,40,70,.78)", color: "#fff", borderRadius: 24, padding: "9px 20px", fontSize: 13.5, fontWeight: 700, zIndex: 90, whiteSpace: "nowrap", animation: `msgSlide ${(msg.dur || 3000) / 1000}s ease forwards`, backdropFilter: "blur(8px)", boxShadow: "0 6px 18px rgba(0,0,0,.25)" }}>
           {msg.icon} {msg.text}
         </div>
       )}
@@ -697,7 +705,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           const rem = Math.max(0, Math.ceil((SUN_CYCLE - (now - (p.lastSunAt || 0))) / 1000));
           const ready = rem <= 0;
           return (
-            <div key={p.id} onClick={() => ready && collectSun(p.id)} style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: ready ? "pointer" : "default", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
+            <div key={p.id} onClick={() => ready ? collectSun(p.id) : showMsg(L("Vaqt hali tugamadi, iltimos sabr qiling", "Время ещё не вышло, подождите"), "⏳", 2000)} style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
               {!ready && (
                 <div style={{ background: "rgba(90,130,175,.72)", borderRadius: 14, padding: "3px 10px", fontSize: 12, fontWeight: 700, color: "#fff", backdropFilter: "blur(4px)" }}>{fTime(rem)}</div>
               )}
