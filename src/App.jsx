@@ -464,7 +464,10 @@ export default function App() {
   const myBal = myD - myX;
   const bdj   = oila?.budjet || 2000000;
   const bal   = jD - jX;
-  const pct   = Math.min(100, Math.round((jX / bdj) * 100));
+  // Budjet foizi HAQIQIY iste'mol bo'yicha: qarz berish va jamg'armaga o'tkazish
+  // xarajat emas, pulning shakli o'zgarishi — budjetga kirmaydi
+  const jXReal = bX.filter(x => x.kategoriya !== "qarz" && x.kategoriya !== "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
+  const pct   = Math.min(100, Math.round((jXReal / bdj) * 100));
   const bRng  = pct >= 90 ? th.rd : pct >= 70 ? th.am : th.gr;
 
   const srchR = useMemo(() => {
@@ -1317,9 +1320,13 @@ export default function App() {
       if (bal2 >= 0) tips.push("✅ " + L("Bu oy balansingiz ijobiy: +" + f(bal2, true) + ". Barakali boring!", "Positive balance: +" + f(bal2, true)));
       else tips.push("⚠️ " + L("Bu oy xarajat daromaddan " + f(-bal2, true) + " ko'p.", "Expenses exceed income by " + f(-bal2, true)));
     }
-    const bpct = budget > 0 ? Math.round(totX / budget * 100) : 0;
-    if (bpct >= 100) tips.push("🔴 " + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
-    else if (bpct >= 80) tips.push("🟡 " + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
+    // Haqiqiy iste'mol: qarz berish va jamg'arma budjet foiziga kirmaydi
+    const realX = mX.filter(x => x.kategoriya !== "qarz" && x.kategoriya !== "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
+    const nonCons = totX - realX;
+    const bpct = budget > 0 ? Math.round(realX / budget * 100) : 0;
+    if (bpct >= 100) tips.push("🔴 " + L("Budjet " + bpct + "% ishlatildi — belgilangan " + f(budget, true) + " budjetdan " + f(realX - budget, true) + " oshib ketdingiz. Budjetni Profil bo'limida moslashtirishingiz mumkin.", "Budget used " + bpct + "%!"));
+    else if (bpct >= 80) tips.push("🟡 " + L("Budjetning " + bpct + "% sarflandi (" + f(realX, true) + " / " + f(budget, true) + "). Ehtiyot bo'ling!", "Used " + bpct + "%."));
+    if (nonCons > 0) tips.push("📦 " + L("Bundan tashqari " + f(nonCons, true) + " qarz berish va jamg'armaga yo'naltirildi — bu iste'mol emas, budjet foiziga kirmaydi.", "Plus " + f(nonCons, true) + " went to loans/savings (not counted in budget)."));
     else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push("👍 " + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
     const katTotals = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
     if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push("📊 " + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
