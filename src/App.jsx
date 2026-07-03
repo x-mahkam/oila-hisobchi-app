@@ -143,24 +143,33 @@ export default function App() {
   };
 
   // ── OVOZ BILAN KIRITISH (eski versiyadan tiklandi) ──
+  // Kirill → lotin normalizatsiya (ovoz tanish ko'pincha kirillda qaytaradi)
+  const uzNorm = (t) => {
+    const map = { "\u0430":"a","\u0431":"b","\u0432":"v","\u0433":"g","\u0434":"d","\u0435":"e","\u0451":"yo","\u0436":"j","\u0437":"z","\u0438":"i","\u0439":"y","\u043a":"k","\u043b":"l","\u043c":"m","\u043d":"n","\u043e":"o","\u043f":"p","\u0440":"r","\u0441":"s","\u0442":"t","\u0443":"u","\u0444":"f","\u0445":"x","\u0446":"ts","\u0447":"ch","\u0448":"sh","\u0449":"sh","\u044a":"","\u044c":"","\u044d":"e","\u044e":"yu","\u044f":"ya","\u045e":"o'","\u049b":"q","\u0493":"g'","\u04b3":"h" };
+    return (t || "").toLowerCase()
+      .replace(/[\u0400-\u04FF]/g, ch => map[ch] !== undefined ? map[ch] : ch)
+      .replace(/[\u2018\u2019\u02BB\u02BC`\u00B4]/g, "'");
+  };
   const parseVoice = (text) => {
     if (!text) return null;
-    const low = text.toLowerCase();
+    const low = uzNorm(text);
     let summa = 0;
-    const mingMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming|tisyacha|\u0442\u044b\u0441\u044f\u0447|k)/);
-    const milMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(million|mln|\u043c\u043b\u043d|millon)/);
+    const mingMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming|mln emas)?\s*(ming|tisyacha|k\b)/) || low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming)/);
+    const milMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(million|mln|millon)/);
     const plainMatch = low.match(/([0-9]{3,})/);
     if (milMatch) { summa = Math.round(parseFloat(milMatch[1].replace(",", ".")) * 1000000); }
     else if (mingMatch) { summa = Math.round(parseFloat(mingMatch[1].replace(",", ".")) * 1000); }
     else if (plainMatch) { summa = parseInt(plainMatch[1]); }
+    // Har bir bo'limga taalluqli boy lug'at — ANIQROQ bo'limlar oldin tekshiriladi
     const katKeys = {
-      oziq: ["ovqat", "ovkat", "yeg", "tushlik", "nonushta", "kechki", "restoran", "kafe", "kofe", "choy", "non", "sut", "gosht", "go'sht", "meva", "sabzavot", "bozor", "produkt", "food", "oziq", "ovqatlanish"],
-      transport: ["transport", "taksi", "taxi", "yo'l", "benzin", "yoqilg'i", "avtobus", "metro", "mashina", "fuel", "gas"],
-      kommunal: ["kommunal", "svet", "gaz", "suv", "elektr", "internet", "telefon to'lov", "utility"],
-      sog: ["dori", "dorixona", "shifokor", "kasalxona", "apteka", "sog'liq", "tibbiyot", "health", "medicine", "klinika"],
-      kiyim: ["kiyim", "ko'ylak", "poyabzal", "kross", "clothes", "kiyinish"],
-      konil: ["kino", "o'yin", "sayohat", "dam", "konsert", "entertainment", "kongilochar", "ko'ngil"],
-      talim: ["kitob", "o'qish", "kurs", "ta'lim", "maktab", "universitet", "study", "education", "dars"],
+      sog: ["dori", "dorixona", "apteka", "shifokor", "doktor", "vrach", "kasalxona", "poliklinika", "klinika", "shifoxona", "tibbiyot", "med", "ukol", "analiz", "tahlil topshir", "vitamin", "tish", "stomatolog", "ko'z tekshir", "operatsiya", "davolan", "retsept", "sog'liq", "sog'lik", "salomatlik", "bemor", "kasal"],
+      transport: ["taksi", "taxi", "yandex", "benzin", "yoqilg'i", "gaz quydir", "metan", "propan", "zapravka", "avtobus", "metro", "tramvay", "poyezd", "bilet", "aviabilet", "parkovka", "moyka", "mashina yuvish", "avto", "mashinaga", "yo'l haqi", "yo'lkira", "transport"],
+      kommunal: ["kommunal", "svet", "elektr", "gaz to'lov", "gaz puli", "suv puli", "suv to'lov", "internet", "wifi", "vay fay", "telefon to'lov", "aloqa", "obuna", "kvartplata", "chiqindi", "ijara", "kvartira puli", "arenda"],
+      talim: ["kitob", "o'qish", "kurs", "ta'lim", "talim", "maktab", "universitet", "institut", "repetitor", "dars", "o'quv", "daftar", "qalam", "kanselyariya", "kontrakt", "shartnoma puli", "bog'cha"],
+      kiyim: ["kiyim", "ko'ylak", "kuylak", "shim", "futbolka", "kurtka", "palto", "poyabzal", "tufli", "etik", "krossovka", "kross", "sumka", "sharf", "qalpoq", "paypoq", "libos"],
+      hadya: ["sovg'a", "sovga", "hadya", "tuhfa", "to'y", "tuy", "tug'ilgan kun", "tugilgan kun", "bayramga", "gul oldim", "guldasta"],
+      konil: ["kino", "teatr", "konsert", "o'yin", "uyin", "sayohat", "sayohatga", "dam olish", "park", "bouling", "bilyard", "restoranda dam", "ko'ngilochar", "kongilochar", "atraksion", "pikn"],
+      oziq: ["ovqat", "ovkat", "oziq", "yegulik", "tushlik", "nonushta", "kechki", "restoran", "kafe", "kofe", "choy", "non", "sut", "gosht", "go'sht", "guruch", "un oldim", "yog'", "shakar", "tuxum", "meva", "sabzavot", "kartoshka", "piyoz", "bozor", "bozordan", "do'kon", "dukon", "magazin", "market", "supermarket", "produkt", "somsa", "osh", "palov", "lag'mon", "shashlik", "ichimlik", "food"],
       boshqa: ["boshqa", "other"],
     };
     let kat = "boshqa";
