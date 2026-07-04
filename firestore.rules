@@ -26,7 +26,7 @@ service cloud.firestore {
     // Admin — Firebase Auth UID bo'yicha (telefon emas). Konsolda tahrirlang.
     function isAdmin() {
       return signedIn() && uid() in [
-      "7utmWOc2hpTVXNd2cH03Aec1aqs2"
+      "3LvZNuvfbIRBkGTybUy56nGDDyI2"
       ];
     }
 
