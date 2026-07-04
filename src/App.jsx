@@ -336,6 +336,7 @@ export default function App() {
   const [voiceText, setVoiceText] = useState("");
   const [voiceParsed, setVoiceParsed] = useState(null);
   const voiceRecRef = useRef(null);
+  const authBusyRef = useRef(false);  // ro'yxatdan o'tish/kirish davomida onChange'ni to'xtatadi
   // ── Chek QR skaneri ──
   const [showScanner, setShowScanner] = useState(false);
   const [scanMsg, setScanMsg] = useState("");
@@ -526,6 +527,9 @@ export default function App() {
         } catch (e) { localStorage.removeItem("oilaV7GooglePending"); console.error("Google redirect:", e); }
 
         auth.onChange(async (fbUser) => {
+          // Ro'yxatdan o'tish/kirish jarayoni ketayotgan bo'lsa — aralashmaymiz.
+          // doAuth() o'zi to'g'ri user'ni o'rnatadi va ma'lumot yuklaydi.
+          if (authBusyRef.current) return;
           if (fbUser) {
             let uid = null;
             try { const s = localStorage.getItem("oilaV7"); if (s) uid = JSON.parse(s).uid; } catch {}
@@ -609,6 +613,7 @@ export default function App() {
   };
 
   const doAuth = async () => {
+    authBusyRef.current = true;  // onChange'ni to'xtatib turamiz (jarayon tugagach o'chiramiz)
     try {
       // BOLA KIRISHI (login + parol, telefonsiz)
       if (kidLoginMode) {
@@ -772,6 +777,8 @@ export default function App() {
     } catch (err) {
       console.error("AUTH ERROR:", err);
       ok$((lg === "uz" ? "Xatolik: " : "Error: ") + (err.code || err.message || "Firebase ulanmadi."), "err");
+    } finally {
+      authBusyRef.current = false;  // jarayon tugadi — onChange yana ishlaydi
     }
   };
 
