@@ -31,14 +31,12 @@ export const qmail = {
     try { await db.s(key(tel, id), null, { c: chan(tel) }); } catch {}
   },
 
-  // O'z pochtamizni o'qish: yangi qi_ hujjatlar + eski qreq_ blob (migratsiya)
+  // O'z pochtamizni o'qish: yangi qi_ hujjatlar
+  // (eski qreq_ blob o'qish olib tashlandi — yangi Rules uni baribir rad etadi)
   async list(tel) {
     if (!tel) return [];
     const items = await db.q(chan(tel));
-    let legacy = [];
-    try { legacy = (await db.g("qreq_" + tel)) || []; } catch {}
-    const seen = new Set(items.map(i => String(i.id)));
-    return [...items, ...legacy.filter(l => !seen.has(String(l.id)))];
+    return items;
   },
 
   // ── JAVOBLARNI QO'LLASH (yuboruvchi tomonda) ──
