@@ -42,8 +42,8 @@ import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
-import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, ADMIN_TEL, TL } from "./utils/constants.js";
-import { db, auth }          from "./firebase.js";
+import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, ADMIN_TEL, ADMIN_UIDS, TL } from "./utils/constants.js";
+import { db, auth, setOwnerCtx } from "./firebase.js";
 
 export default function App() {
   const {
@@ -75,6 +75,10 @@ export default function App() {
   }, [scr]);
 
   // Vazifalar sinxronizatsiyasi: vazifa sahifasi, bola bosh sahifasi yoki login tugagach
+  // XAVFSIZLIK: joriy foydalanuvchi kontekstini firebase qatlamiga uzatamiz.
+  // db.s har yozuvda shu asosda _u/_o yorlig'ini qo'yadi (rules tekshiruvi uchun).
+  useEffect(() => { setOwnerCtx(user?.id || null, user?.oilaId || null); }, [user?.id, user?.oilaId]);
+
   // (ota-ona bergan vazifa bola qurilmasida darhol ko'rinishi uchun)
   useEffect(() => {
     if (!user?.oilaId) return;
@@ -440,7 +444,8 @@ export default function App() {
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh";
   const hasKids = azolar.some(a => a.rol === "kid");
-  const isAdmin = normTel(user?.tel) === ADMIN_TEL;
+  const isAdmin = (ADMIN_UIDS.length > 0 && ADMIN_UIDS.includes(auth.current()?.uid))
+    || (ADMIN_UIDS.length === 0 && normTel(user?.tel) === ADMIN_TEL);
   const canSeeReport = isBosh || (oila?.reportAccess || []).includes(user?.id);
 
   const gN = useCallback(uid => azolar.find(a => a.id === uid)?.ism || "?", [azolar]);
@@ -508,6 +513,7 @@ export default function App() {
               const displayName = gUser.displayName || gUser.email?.split("@")[0] || "Foydalanuvchi";
               const email = (gUser.email || "").toLowerCase();
               const famId = "fam_" + uid + "_" + Date.now();
+              setOwnerCtx(uid, famId);  // xavfsizlik: yozuvlardan oldin kontekst
               u = { id: uid, oilaId: famId, ism: displayName, email, tel: "", photo: gUser.photoURL || null, rol: "bosh", val: "uzs", lg: "uz", dark: false, registeredAt: new Date().toISOString(), loginMethod: "google" };
               await db.s("user_" + uid, u);
               await db.s("fam_" + famId, { id: famId, nomi: displayName + " oilasi", boshId: uid, azolar: [uid], yaratilgan: new Date().toISOString() });
@@ -581,6 +587,7 @@ export default function App() {
       const displayName = gUser.displayName || gUser.email?.split("@")[0] || "Foydalanuvchi";
       const email = (gUser.email || "").toLowerCase();
       const famId = "fam_" + uid + "_" + Date.now();
+      setOwnerCtx(uid, famId);
       u = { id: uid, oilaId: famId, ism: displayName, email, tel: "", photo: gUser.photoURL || null, rol: "bosh", val: "uzs", lg, dark, registeredAt: new Date().toISOString(), loginMethod: "google" };
       await db.s("user_" + uid, u);
       await db.s("fam_" + famId, { id: famId, nomi: displayName + (lg === "uz" ? " oilasi" : " family"), boshId: uid, azolar: [uid], yaratilgan: new Date().toISOString() });
@@ -611,9 +618,20 @@ export default function App() {
         if (!kidUid) return ok$(lg === "uz" ? "Login topilmadi. Ota-onangdan so'ra." : "Login not found", "err");
         buzz(15);
         try { await auth.loginAnon(); } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
+        // XAVFSIZLIK: sessiya-da'vosi. Parol xeshi Firestore Rules ichida
+        // bazadagi xesh bilan SERVER tomonda solishtiriladi — noto'g'ri parol
+        // bilan bu yozuv rad etiladi va bola ma'lumotlariga kirish ochilmaydi.
         const ku = await db.g("user_" + kidUid);
         if (!ku || ku.rol !== "kid") return ok$(lg === "uz" ? "Login topilmadi" : "Not found", "err");
         if (await hp(fPw) !== ku.ph) { try { await auth.logout(); } catch (e) {} return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err"); }
+        try {
+          const anonUid = auth.current()?.uid;
+          setOwnerCtx(kidUid, ku.oilaId || null);  // xavfsizlik: bola konteksti (yozuvlardan oldin)
+          await db.s("ksess_" + anonUid, { kid: kidUid, oila: ku.oilaId || null, ph: await hp(fPw) });
+        } catch (e) {
+          try { await auth.logout(); } catch (e2) {}
+          return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
+        }
         // O'z-o'zini davolash: bola oilaId'si ota-onaning JORIY oilasi bilan moslanadi
         // (eski migratsiyadan keyin farq qilib qolgan bo'lsa, vazifa/balans boshqa kalitga tushardi)
         try {
@@ -641,6 +659,7 @@ export default function App() {
         if (join) {
           if (!fKd.trim()) return ok$(t.fa, "err");
           const o = await db.g("oila_" + fKd.trim()); if (!o) return ok$(t.ffe, "err");
+          setOwnerCtx(uid, fKd.trim());  // qo'shilayotgan oila konteksti
           if ((o.azolarIds || []).length >= 2 && !o.premium) {
             return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
           }
@@ -649,16 +668,16 @@ export default function App() {
           await db.s("user_" + uid, nu); if (fEm.trim()) await db.s("em_" + fEm.toLowerCase(), uid);
           if (n9) { await db.s("tel9_" + n9, uid); await db.s("tel_" + tel, uid); await db.s("tphone_" + n9, fEm.trim().toLowerCase()); }
           if (fRefCode.trim()) {
-            const refUid = fRefCode.trim(); const refUser = await db.g("user_" + refUid);
-            if (refUser && refUid !== uid) {
-              const refList = (await db.g("refs_" + refUid)) || [];
-              if (!refList.find(r => r.uid === uid)) {
-                refList.push({ uid, ism: fIsm.trim(), sana: new Date().toISOString() });
-                await db.s("refs_" + refUid, refList);
+            const refUid = fRefCode.trim();
+            if (refUid && refUid !== uid) {
+              // XAVFSIZLIK: begona profil o'qilmaydi — referal alohida hujjat,
+              // mavjud bo'lmagan kod bo'lsa Rules yozuvni o'zi rad etadi.
+              try {
+                await db.s("refi_" + refUid + "_" + uid, { uid, ism: fIsm.trim(), sana: new Date().toISOString() }, { c: "ref_" + refUid });
                 const rn = { id: Date.now() + Math.random(), type: "yangilik", title: lg === "uz" ? "Yangi taklif! 🎉" : "New referral!", body: (fIsm.trim()) + " " + (lg === "uz" ? "sizning havolangiz orqali qo'shildi" : "joined via your link"), sana: new Date().toISOString(), read: false };
                 const rc = (await db.g("notif_" + refUid)) || [];
                 await db.s("notif_" + refUid, [rn, ...rc].slice(0, 100));
-              }
+              } catch (eRef) {}
             }
           }
           await db.s("x_" + fKd.trim() + "_" + uid, []); await db.s("d_" + fKd.trim() + "_" + uid, []);
@@ -668,22 +687,23 @@ export default function App() {
         } else {
           if (!fON.trim()) return ok$(t.fa, "err");
           const oid = "o" + Date.now();
+          setOwnerCtx(uid, oid);
           const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
           const nu = { id: uid, ism: fIsm.trim(), email: fEm.trim().toLowerCase(), tel, ph, oilaId: oid, rol: "bosh", rel: "bosh", photo: null };
           const no_ = { id: oid, nomi: fON.trim(), boshId: uid, azolarIds: [uid], budjet: 2000000, katLimits: {} };
           await db.s("user_" + uid, nu); if (fEm.trim()) await db.s("em_" + fEm.toLowerCase(), uid);
           if (n9) { await db.s("tel9_" + n9, uid); await db.s("tel_" + tel, uid); await db.s("tphone_" + n9, fEm.trim().toLowerCase()); }
           if (fRefCode.trim()) {
-            const refUid = fRefCode.trim(); const refUser = await db.g("user_" + refUid);
-            if (refUser && refUid !== uid) {
-              const refList = (await db.g("refs_" + refUid)) || [];
-              if (!refList.find(r => r.uid === uid)) {
-                refList.push({ uid, ism: fIsm.trim(), sana: new Date().toISOString() });
-                await db.s("refs_" + refUid, refList);
+            const refUid = fRefCode.trim();
+            if (refUid && refUid !== uid) {
+              // XAVFSIZLIK: begona profil o'qilmaydi — referal alohida hujjat,
+              // mavjud bo'lmagan kod bo'lsa Rules yozuvni o'zi rad etadi.
+              try {
+                await db.s("refi_" + refUid + "_" + uid, { uid, ism: fIsm.trim(), sana: new Date().toISOString() }, { c: "ref_" + refUid });
                 const rn = { id: Date.now() + Math.random(), type: "yangilik", title: lg === "uz" ? "Yangi taklif! 🎉" : "New referral!", body: (fIsm.trim()) + " " + (lg === "uz" ? "sizning havolangiz orqali qo'shildi" : "joined via your link"), sana: new Date().toISOString(), read: false };
                 const rc = (await db.g("notif_" + refUid)) || [];
                 await db.s("notif_" + refUid, [rn, ...rc].slice(0, 100));
-              }
+              } catch (eRef) {}
             }
           }
           await db.s("oila_" + oid, no_); await db.s("x_" + oid + "_" + uid, []); await db.s("d_" + oid + "_" + uid, []);
@@ -701,6 +721,11 @@ export default function App() {
               if (await hp(fPw) !== ku.ph) return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
               buzz(15);
               try { await auth.loginAnon(); } catch (e) {}
+              setOwnerCtx(kidUid, ku.oilaId || null);  // xavfsizlik: bola konteksti
+              try {
+                const anonUid2 = auth.current()?.uid;
+                if (anonUid2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: ku.oilaId || null, ph: await hp(fPw) });
+              } catch (e) {}
               try {
                 if (ku.parentId) {
                   const pu = await db.g("user_" + ku.parentId);
@@ -967,8 +992,8 @@ export default function App() {
     setFbSending(true);
     try {
       const fb = { id: Date.now(), uid: user?.id || "anon", ism: user?.ism || "", type: fbType, rating: fbRating, text: fbText.trim(), sana: new Date().toISOString() };
-      const all = (await db.g("feedback_all")) || [];
-      await db.s("feedback_all", [fb, ...all].slice(0, 500));
+      // XAVFSIZLIK: umumiy blobga emas — alohida, faqat-yaratiladigan hujjatga
+      await db.s("fb_" + fb.id + "_" + (user?.id || "anon"), fb, { c: "fb" });
       setFbRating(0); setFbText(""); setFbType("taklif");
       ok$(lg === "uz" ? "Rahmat! Fikringiz yuborildi." : "Thank you!");
     } catch { ok$(lg === "uz" ? "Xatolik" : "Error", "err"); }
@@ -990,7 +1015,9 @@ export default function App() {
       let totX = 0, totD = 0, xCount = 0, dCount = 0;
       all.forEach(d => { if (d.id.includes("_x_") && Array.isArray(d.v)) { d.v.forEach(x => { totX += Number(x.summa || 0); xCount++; }); } if (d.id.includes("_d_") && Array.isArray(d.v)) { d.v.forEach(x => { totD += Number(x.summa || 0); dCount++; }); } });
       const fbDoc = all.find(d => d.id === "oilaV7_feedback_all");
-      const feedbacks = (fbDoc && Array.isArray(fbDoc.v)) ? fbDoc.v : [];
+      const fbLegacy = (fbDoc && Array.isArray(fbDoc.v)) ? fbDoc.v : [];
+      const fbNew = all.filter(d => d.c === "fb" && d.v).map(d => d.v);
+      const feedbacks = [...fbNew, ...fbLegacy].sort((a, b) => (b.id || 0) - (a.id || 0));
       const avgRating = feedbacks.filter(f => f.rating > 0).length ? Math.round(feedbacks.filter(f => f.rating > 0).reduce((s, f) => s + f.rating, 0) / feedbacks.filter(f => f.rating > 0).length * 10) / 10 : 0;
       setAdminStats({ totalUsers: users.length, totalOilas: oilas.length, todayU, weekU, monthU, totX, totD, xCount, dCount, premOilas: oilas.filter(o => (o.v || {}).premium).length, avgPerOila: oilas.length ? Math.round(users.length / oilas.length * 10) / 10 : 0, docCount: all.length, feedbacks: feedbacks.slice(0, 50), fbCount: feedbacks.length, avgRating });
     } catch (e) { console.error(e); ok$("Xato: " + e.message, "err"); }
