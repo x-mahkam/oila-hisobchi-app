@@ -41,6 +41,13 @@ service cloud.firestore {
             : 'NONE');
     }
 
+    // Hujjat docId'sida mening oilaId'im bormi? (masalan maq_<oila>, x_<oila>_<uid>)
+    //  Bu get()-ning ichma-ich .v.oilaId muammosini chetlab o'tuvchi bardoshli usul:
+    //  docId ichida "_<myOila>" ketma-ketligi bo'lsa — mening oilamniki.
+    function docHasMyOila(id) {
+      return myOila() != 'NONE' && id.matches('.*_' + myOila() + '(_.*)?');
+    }
+
     // Login-qidiruv hujjatlari (kirishdan oldin ochiq bo'lishi shart).
     function isLookup(id) {
       return id.matches('oilaV7_(tphone|em|tel|tel9|kidlogin)_.*');
@@ -83,16 +90,18 @@ service cloud.firestore {
                   || (signedIn() && isMine())
                   || (signedIn() && mineByUser(resource))
                   || (signedIn() && mineByOila(resource))
+                  || (signedIn() && docHasMyOila(docId))
                   || (signedIn() && myChannel(resource));
 
-      allow create: if signedIn() && (isMine() || isLookup(docId) || writeOk());
+      allow create: if signedIn() && (isMine() || isLookup(docId) || writeOk() || docHasMyOila(docId));
 
       allow update: if signedIn() && (
                        isMine() || isLookup(docId)
                        || (writeOk() && (mineByUser(resource) || mineByOila(resource)))
+                       || docHasMyOila(docId)
                     );
 
-      allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || myChannel(resource));
+      allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || docHasMyOila(docId) || myChannel(resource));
     }
 
     match /{document=**} { allow read, write: if false; }
