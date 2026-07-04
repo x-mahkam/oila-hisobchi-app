@@ -19,14 +19,26 @@ service cloud.firestore {
     function uid()      { return request.auth.uid; }
     function DB()       { return 'oilaV7_'; }
 
+    // user_<uid> hujjatining butun data'si (mavjud bo'lsa).
+    function userData() {
+      return get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data;
+    }
+    function sessData() {
+      return get(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid())).data;
+    }
+    function hasUser() {
+      return exists(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid()));
+    }
+    function hasSess() {
+      return exists(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid()));
+    }
     // Mening oilaId'im: user_<uid>.v.oilaId (bo'lsa) yoki ksess_<uid>.oila (bola).
     function myOila() {
-      return
-        exists(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid()))
-          ? get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.oilaId
-        : (exists(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid()))
-              ? get(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid())).data.oila
-              : 'NONE');
+      return hasUser()
+        ? (('v' in userData()) && ('oilaId' in userData().v) ? userData().v.oilaId : 'NONE')
+        : (hasSess()
+            ? (('oila' in sessData()) ? sessData().oila : 'NONE')
+            : 'NONE');
     }
 
     // Login-qidiruv hujjatlari (kirishdan oldin ochiq bo'lishi shart).
@@ -52,9 +64,8 @@ service cloud.firestore {
     // Qarz-pochta (qmail): qi_<toTel>_<id>, `c: "qreq_<toTel>"`.
     //  Yuboruvchi yozadi (writeOk), qabul qiluvchi o'z kanalini o'qiydi.
     function myTel() {
-      return exists(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid()))
-        ? get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.tel
-        : 'NONE';
+      return hasUser() && ('v' in userData()) && ('tel' in userData().v)
+        ? userData().v.tel : 'NONE';
     }
     function myChannel(res) {
       return res != null && ('c' in res.data) && res.data.c == ('qreq_' + myTel());
