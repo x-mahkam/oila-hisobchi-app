@@ -359,6 +359,9 @@ export default function App() {
   const [pTab,         setPTab]         = useState("main");
   const [edN,          setEdN]          = useState(false);
   const [newN,         setNewN]         = useState("");
+  const [edT,          setEdT]          = useState(false);
+  const [newT,         setNewT]         = useState("");
+  const [askTel,       setAskTel]       = useState(false);
   const [fBj,          setFBj]          = useState("2000000");
   const [fKL,          setFKL]          = useState({});
   const [fbRating,     setFbRating]     = useState(0);
@@ -509,6 +512,15 @@ export default function App() {
             const gUser = result.user;
             localStorage.removeItem("oilaV7GooglePending");
             let u = await db.g("user_" + gUser.uid);
+            const pendingJoinR = (localStorage.getItem("oilaV7GoogleJoin") || "").trim();
+            localStorage.removeItem("oilaV7GoogleJoin");
+            if (!u && pendingJoinR) {
+              // Join rejimi (redirect orqali): kodi bo'yicha mavjud oilaga qo'shamiz
+              u = await googleJoinFamily(gUser, pendingJoinR);
+              if (!u) { setBoot(false); return; }
+              localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
+              setUser(u); await loadFam(u); setScr("bosh"); if (!u.tel) setAskTel(true); setBoot(false); return;
+            }
             if (!u) {
               const uid = gUser.uid;
               const displayName = gUser.displayName || gUser.email?.split("@")[0] || "Foydalanuvchi";
@@ -522,7 +534,7 @@ export default function App() {
               if (email) await db.s("em_" + email, uid);
             }
             localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
-            setUser(u); await loadFam(u); setScr("bosh"); setBoot(false); return;
+            setUser(u); await loadFam(u); setScr("bosh"); if (!u.tel) setAskTel(true); setBoot(false); return;
           }
           localStorage.removeItem("oilaV7GooglePending");
         } catch (e) { localStorage.removeItem("oilaV7GooglePending"); console.error("Google redirect:", e); }
@@ -585,8 +597,47 @@ export default function App() {
     catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error", "err"); }
   };
 
+  // Google orqali oilaga qo'shilish (yangi foydalanuvchi + oila kodi).
+  // Muvaffaqiyatda user obyektini, xatoda null qaytaradi (xabar ko'rsatib bo'lingan).
+  const googleJoinFamily = async (gUser, code) => {
+    const uid = gUser.uid;
+    const displayName = gUser.displayName || gUser.email?.split("@")[0] || "Foydalanuvchi";
+    const email = (gUser.email || "").toLowerCase();
+    setOwnerCtx(uid, code);
+    let o = await db.g("oila_" + code);
+    if (!o) o = await db.g("fam_" + code);
+    if (!o) {
+      setOwnerCtx(null, null); try { await auth.logout(); } catch (e) {}
+      ok$(lg === "uz" ? "Oila kodi topilmadi: " + code : "Family code not found: " + code, "err");
+      return null;
+    }
+    if ((o.azolarIds || o.azolar || []).length >= 2 && !o.premium) {
+      setOwnerCtx(null, null); try { await auth.logout(); } catch (e) {}
+      ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
+      return null;
+    }
+    const nu = { id: uid, ism: displayName, email, tel: "", ph: null, photo: gUser.photoURL || null, oilaId: code, rol: "azo", rel: "boshqa", registeredAt: new Date().toISOString(), loginMethod: "google" };
+    await db.s("user_" + uid, nu); if (email) await db.s("em_" + email, uid);
+    await db.s("x_" + code + "_" + uid, []); await db.s("d_" + code + "_" + uid, []);
+    const mIds = [...new Set([...(o.azolarIds || o.azolar || []), uid])];
+    o.azolarIds = mIds; o.azolar = mIds; if (!o.id) o.id = code;
+    await db.s("oila_" + code, o); await db.s("fam_" + code, o);
+    return nu;
+  };
+
   const handleGoogleUser = async (gUser) => {
     let u = await db.g("user_" + gUser.uid);
+    const pendingJoin = (localStorage.getItem("oilaV7GoogleJoin") || "").trim();
+    localStorage.removeItem("oilaV7GoogleJoin");
+    if (!u && pendingJoin) {
+      // Join rejimi: yangi oila ochmaymiz — kodi bo'yicha mavjud oilaga qo'shamiz.
+      u = await googleJoinFamily(gUser, pendingJoin);
+      if (!u) return;
+      localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
+      setUser(u); await loadFam(u); setScr("bosh"); setAskTel(true);
+      ok$(t.jf2);
+      return;
+    }
     if (!u) {
       const uid = gUser.uid;
       const displayName = gUser.displayName || gUser.email?.split("@")[0] || "Foydalanuvchi";
@@ -600,14 +651,18 @@ export default function App() {
       if (email) await db.s("em_" + email, uid);
     }
     localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
-    setUser(u); await loadFam(u); setScr("bosh");
+    setUser(u); await loadFam(u); setScr("bosh"); if (!u.tel) setAskTel(true);
     ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + u.ism + " 👋");
   };
   const doGoogleLogin = async () => {
     try {
+      // Join rejimi + kod bor: redirect bo'lsa ham yo'qolmasligi uchun saqlaymiz
+      if (join && fKd.trim()) localStorage.setItem("oilaV7GoogleJoin", fKd.trim());
+      else localStorage.removeItem("oilaV7GoogleJoin");
       const res = await auth.googleLogin();
       if (res?.user) await handleGoogleUser(res.user);
     } catch (e) {
+      localStorage.removeItem("oilaV7GoogleJoin");
       if (e.code !== "auth/popup-closed-by-user") {
         ok$((lg === "uz" ? "Google bilan kirishda xato: " : "Google sign-in error: ") + (e.message || e.code), "err");
       }
@@ -816,6 +871,26 @@ export default function App() {
     setAzolar(azolar.map(a => a.id === user.id ? { ...a, photo: null } : a));
     ok$(t.ua);
   };
+  // Telefon qo'shish/o'zgartirish: user.tel + qidiruv hujjatlari (tel9_/tel_/tphone_)
+  const saveTel = async (rawTel) => {
+    const raw = (rawTel || "").trim();
+    if (!raw) return ok$(lg === "uz" ? "Telefon raqamni kiriting" : "Enter phone number", "err");
+    const tel = raw.replace(/[^0-9+]/g, "");
+    const n9 = normTel(raw);
+    if (!n9 || n9.length < 7) return ok$(lg === "uz" ? "Telefon raqam noto'g'ri" : "Invalid phone number", "err");
+    try {
+      const owner = await db.gFresh("tel9_" + n9);
+      if (owner && owner !== user.id) return ok$(lg === "uz" ? "Bu raqam boshqa akkauntga bog'langan" : "Number linked to another account", "err");
+    } catch (e) {}
+    const u2 = { ...user, tel };
+    await db.s("user_" + user.id, u2);
+    await db.s("tel9_" + n9, user.id); await db.s("tel_" + tel, user.id);
+    if (user.email) await db.s("tphone_" + n9, user.email);
+    setUser(u2); setAzolar(azolar.map(a => a.id === user.id ? { ...a, tel } : a));
+    setAskTel(false); setEdT(false); setNewT("");
+    ok$(lg === "uz" ? "Telefon raqam saqlandi ✓" : "Phone saved ✓");
+  };
+
   const updName = async () => {
     if (!newN.trim()) return;
     const u2 = { ...user, ism: newN.trim() };
@@ -1469,6 +1544,18 @@ export default function App() {
       {confetti && <Confetti th={th} />}
       {showNotifs && <NotifPanel notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
+      {askTel && user && (
+        <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(0,0,0,0.62)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div style={{ background: th.sur, borderRadius: 22, padding: "26px 22px", maxWidth: 380, width: "100%", border: "1px solid " + th.bor, boxShadow: "0 20px 60px rgba(0,0,0,.3)" }}>
+            <div style={{ fontSize: 34, textAlign: "center", marginBottom: 10 }}>📱</div>
+            <div style={{ fontSize: 17, fontWeight: 800, color: th.t1, textAlign: "center", marginBottom: 8 }}>{lg === "uz" ? "Telefon raqamingizni kiriting" : "Enter your phone number"}</div>
+            <div style={{ fontSize: 12.5, color: th.t2, textAlign: "center", lineHeight: 1.5, marginBottom: 16 }}>{lg === "uz" ? "Qarz taklifi olish va oiladoshlar sizni raqam orqali topishi uchun kerak. Keyinroq Profil bo'limida ham qo'shishingiz mumkin." : "Needed for debt requests and so family can find you by number. You can also add it later in Profile."}</div>
+            <input style={{ width: "100%", background: th.surH, border: "1.5px solid " + th.bor, borderRadius: 13, padding: "12px 14px", color: th.t1, fontSize: 15, outline: "none", boxSizing: "border-box", marginBottom: 12 }} value={newT} onChange={e => setNewT(e.target.value)} placeholder="+998 90 123 45 67" inputMode="tel" autoFocus />
+            <button onClick={() => saveTel(newT)} style={{ width: "100%", background: th.ac, border: "none", borderRadius: 13, padding: "13px 0", color: "#fff", fontWeight: 800, fontSize: 14, cursor: "pointer", marginBottom: 8 }}>{lg === "uz" ? "Saqlash" : "Save"}</button>
+            <button onClick={() => { setAskTel(false); setNewT(""); }} style={{ width: "100%", background: "transparent", border: "none", padding: "8px 0", color: th.t2, fontWeight: 600, fontSize: 12.5, cursor: "pointer" }}>{lg === "uz" ? "Keyinroq" : "Later"}</button>
+          </div>
+        </div>
+      )}
       {showBilim && (
         <div style={{ position: "fixed", inset: 0, background: th.bg, zIndex: 1500, overflowY: "auto" }}>
           <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
@@ -1642,7 +1729,7 @@ export default function App() {
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
-        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
+        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
       {/* ── Ovoz bilan kiritish oynasi ── */}
