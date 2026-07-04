@@ -88,7 +88,7 @@ service cloud.firestore {
     //  oila mavjudligini va a'zolar limitini bilishi kerak. O'qish — kirgan
     //  har kimga ochiq (maxfiy moliyaviy tafsilot yo'q: faqat nomi/limit).
     //  YOZISH esa himoyalangan (quyida writeOk/docHasMyOila orqali).
-    function isOilaDoc(id) { return id.matches('oilaV7_oila_.*'); }
+    function isOilaDoc(id) { return id.matches('oilaV7_(oila|fam)_.*'); }
 
     match /appdata/{docId} {
 
