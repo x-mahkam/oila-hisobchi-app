@@ -517,7 +517,8 @@ export default function App() {
               setOwnerCtx(uid, famId);  // xavfsizlik: yozuvlardan oldin kontekst
               u = { id: uid, oilaId: famId, ism: displayName, email, tel: "", photo: gUser.photoURL || null, rol: "bosh", val: "uzs", lg: "uz", dark: false, registeredAt: new Date().toISOString(), loginMethod: "google" };
               await db.s("user_" + uid, u);
-              await db.s("fam_" + famId, { id: famId, nomi: displayName + " oilasi", boshId: uid, azolar: [uid], yaratilgan: new Date().toISOString() });
+              const gFam = { id: famId, nomi: displayName + " oilasi", boshId: uid, azolar: [uid], azolarIds: [uid], budjet: 2000000, katLimits: {}, yaratilgan: new Date().toISOString() };
+              await db.s("fam_" + famId, gFam); await db.s("oila_" + famId, gFam);
               if (email) await db.s("em_" + email, uid);
             }
             localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
@@ -594,7 +595,8 @@ export default function App() {
       setOwnerCtx(uid, famId);
       u = { id: uid, oilaId: famId, ism: displayName, email, tel: "", photo: gUser.photoURL || null, rol: "bosh", val: "uzs", lg, dark, registeredAt: new Date().toISOString(), loginMethod: "google" };
       await db.s("user_" + uid, u);
-      await db.s("fam_" + famId, { id: famId, nomi: displayName + (lg === "uz" ? " oilasi" : " family"), boshId: uid, azolar: [uid], yaratilgan: new Date().toISOString() });
+      const gFam = { id: famId, nomi: displayName + (lg === "uz" ? " oilasi" : " family"), boshId: uid, azolar: [uid], azolarIds: [uid], budjet: 2000000, katLimits: {}, yaratilgan: new Date().toISOString() };
+      await db.s("fam_" + famId, gFam); await db.s("oila_" + famId, gFam);
       if (email) await db.s("em_" + email, uid);
     }
     localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
@@ -672,10 +674,14 @@ export default function App() {
         if (join) {
           // Endi kirilgan — oila konteksti bilan oila_ hujjatini o'qiy olamiz.
           setOwnerCtx(uid, fKd.trim());  // qo'shilayotgan oila konteksti
-          const o = await db.g("oila_" + fKd.trim());
+          const fid = fKd.trim();
+          // Oila hujjati ikki xil kalitda bo'lishi mumkin:
+          //   oila_<id> (email orqali ochilgan) yoki fam_<id> (Google orqali ochilgan).
+          let o = await db.g("oila_" + fid);
+          if (!o) o = await db.g("fam_" + fid);
           // Oila topilmasa yoki to'lgan bo'lsa — chala akkauntni o'chirib, to'xtaymiz.
           if (!o) { await auth.deleteCurrentUser(); setOwnerCtx(null, null); return ok$(t.ffe, "err"); }
-          if ((o.azolarIds || []).length >= 2 && !o.premium) {
+          if ((o.azolarIds || o.azolar || []).length >= 2 && !o.premium) {
             await auth.deleteCurrentUser(); setOwnerCtx(null, null);
             return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
           }
@@ -697,7 +703,10 @@ export default function App() {
             }
           }
           await db.s("x_" + fKd.trim() + "_" + uid, []); await db.s("d_" + fKd.trim() + "_" + uid, []);
-          o.azolarIds = [...(o.azolarIds || []), uid]; await db.s("oila_" + o.id, o);
+          const mIds = [...new Set([...(o.azolarIds || o.azolar || []), uid])];
+          o.azolarIds = mIds; o.azolar = mIds; if (!o.id) o.id = fid;
+          // Ikkala kalitga ham yozamiz — bundan keyin doim sinxron bo'ladi
+          await db.s("oila_" + fid, o); await db.s("fam_" + fid, o);
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
           localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); await loadFam(nu); setScr("bosh"); ok$(t.jf2); addStar(15, lg === "uz" ? "Oila azosi qoshildi" : "Family member added");
         } else {
@@ -721,7 +730,7 @@ export default function App() {
               } catch (eRef) {}
             }
           }
-          await db.s("oila_" + oid, no_); await db.s("x_" + oid + "_" + uid, []); await db.s("d_" + oid + "_" + uid, []);
+          await db.s("oila_" + oid, no_); await db.s("fam_" + oid, { ...no_, azolar: no_.azolarIds }); await db.s("x_" + oid + "_" + uid, []); await db.s("d_" + oid + "_" + uid, []);
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
           localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); setOila(no_); setAzolar([nu]); setXar([]); setDar([]); setMaq([]); setScr("bosh"); ok$(t.fc3);
         }
@@ -817,7 +826,7 @@ export default function App() {
   const saveBj = async () => {
     const v = Number(fBj); if (!v || v <= 0) return ok$(t.ec, "err");
     const u = { ...oila, budjet: v, katLimits: fKL };
-    await db.s("oila_" + oila.id, u); setOila(u); ok$(t.sa);
+    await db.s("oila_" + oila.id, u); await db.s("fam_" + oila.id, u); setOila(u); ok$(t.sa);
   };
   const saveProfile = updName;
 
@@ -826,7 +835,7 @@ export default function App() {
     const cur = oila.reportAccess || [];
     const upd = cur.includes(memberId) ? cur.filter(x => x !== memberId) : [...cur, memberId];
     const o2 = { ...oila, reportAccess: upd };
-    await db.s("oila_" + oila.id, o2); setOila(o2);
+    await db.s("oila_" + oila.id, o2); await db.s("fam_" + oila.id, o2); setOila(o2);
     ok$(lg === "uz" ? "Ruxsat yangilandi" : "Access updated");
   };
 
