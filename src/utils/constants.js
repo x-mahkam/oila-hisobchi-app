@@ -157,13 +157,10 @@ export const RELATIONS = [
   {id:"boshqa",  emoji:"👤", uz:"Boshqa",        ru:"Другое",        en:"Other"},
 ];
 
-export const ADMIN_TEL = "937414866";
-// XAVFSIZLIK: admin Firebase Auth UID'lari. Rules ham, klient ham SHUNI tekshiradi.
-// (Telefon raqami emas — u soxtalashtirilishi mumkin. UID Firebase Auth'dan keladi.)
-// Admin sifatida kirgan hisobingiz UID'sini shu ro'yxatga qo'shing:
-export const ADMIN_UIDS = [
-  "3LvZNuvfbIRBkGTybUy56nGDDyI2"
-];
+// XAVFSIZLIK: admin endi ILOVA ICHIDA yo'q. Admin statistikasi alohida,
+// mustaqil admin-sayt orqali ko'riladi (faqat Firestore Rules'dagi admin
+// UID'ga ruxsat). Oddiy foydalanuvchi ilovasida admin mantiqi saqlanmaydi.
+// (Eski ADMIN_TEL olib tashlandi — telefon soxtalashtirilishi mumkin edi.)
 
 export const FAQS = {
   uz:[
