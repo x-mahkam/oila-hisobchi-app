@@ -42,17 +42,6 @@ export default function ProfilePage({
             <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: th.rd, fontWeight: 700, fontSize: 14 }}>{Ico.door(th.rd)}{t.lo}</button>
           </div>
 
-          {isAdmin && (
-            <button onClick={loadAdminStats} style={{ width: "100%", background: "linear-gradient(135deg,#1e293b,#0f172a)", border: "1px solid #f43f5e44", borderRadius: 14, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-              <span style={{ fontSize: 24 }}>🛠️</span>
-              <div style={{ flex: 1, textAlign: "left" }}>
-                <div style={{ fontSize: 14, fontWeight: 700, color: "#fff" }}>{lg === "uz" ? "Admin Panel" : "Admin Panel"}</div>
-                <div style={{ fontSize: 11, color: "#94a3b8" }}>{lg === "uz" ? "Ilova statistikasi (faqat siz)" : "App statistics (you only)"}</div>
-              </div>
-              <span style={{ fontSize: 18, color: "#64748b" }}>›</span>
-            </button>
-          )}
-
           <div style={{ background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", borderRadius: 20, padding: "20px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
             <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
             <div style={{ position: "relative" }}>
