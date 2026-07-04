@@ -3,6 +3,7 @@ import { MoneyInput } from "../components/common/index.jsx";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { GOAL_PRESETS, KID_GOAL_PRESETS } from "../utils/constants.js";
+import WeddingCalc from "../components/WeddingCalc.jsx";
 
 export default function GoalsPage({
   user, maq, isKid,
@@ -13,11 +14,27 @@ export default function GoalsPage({
   editMq, setEditMq, editMqN, setEditMqN, editMqS, setEditMqS,
   addMq, tupMq, delMq, saveEditMq,
   parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad,
+  ok$,
 }) {
   const STY = useMemo(() => makeS(th), [th]);
+  const [showToy, setShowToy] = useState(false);
 
   return (
     <div>
+      {showToy && <WeddingCalc user={user} lg={lg} th={th} addMq={addMq} ok$={ok$} onClose={() => setShowToy(false)} />}
+
+      {/* ── To'y kalkulyatori kirish kartasi ── */}
+      {!isKid && (
+        <button onClick={() => setShowToy(true)} style={{ width: "100%", background: "linear-gradient(135deg,#ec4899,#a855f7)", border: "none", borderRadius: 18, padding: "15px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 14, position: "relative", overflow: "hidden", boxShadow: "0 6px 18px #ec489933", fontFamily: "inherit" }}>
+          <div style={{ position: "absolute", right: -4, top: "50%", transform: "translateY(-50%) rotate(-10deg)", fontSize: 46, opacity: 0.3 }}>💍</div>
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>💒</div>
+          <div style={{ flex: 1, textAlign: "left" }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "To'y kalkulyatori" : "Свадебный калькулятор"}</div>
+            <div style={{ fontSize: 11, color: "rgba(255,255,255,.88)", marginTop: 2 }}>{lg === "uz" ? "Marosimlar smetasi, mehmon kalkulyatori, jamg'arish rejasi" : "Смета, гости, план накоплений"}</div>
+          </div>
+          <span style={{ fontSize: 18, color: "#fff" }}>›</span>
+        </button>
+      )}
       <div style={{ ...STY.row, marginBottom: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 700, color: th.t1 }}>{isKid ? (lg === "uz" ? "🌟 Orzularim" : "🌟 My dreams") : t.goal}</div>
         {maqTab === "mine" && <button onClick={() => setAddM(v => !v)} style={{ background: th.ac, border: "none", borderRadius: 10, padding: "7px 14px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 4px 12px " + th.ac + "44" }}>{Ico.add("#fff")}</button>}
