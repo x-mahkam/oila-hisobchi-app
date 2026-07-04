@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { db, auth } from "../firebase.js";
+import { qmail } from "../utils/qmail.js";
 import { td, nt, hp } from "../utils/formatters.js";
 import { useApp } from "../context/AppContext.jsx";
 
@@ -40,10 +41,9 @@ export function useAuth() {
       setDar(allDar);
 
       // Umumiy oila ma'lumotlari
-      const [maqR, qarzR, qreqR, xreqR, notifR, vazR, kidbR] = await Promise.all([
+      const [maqR, qarzR, xreqR, notifR, vazR, kidbR] = await Promise.all([
         db.g("maq_" + oilaId),
         db.g("qarz_" + oilaId),
-        db.g("qreq_" + (u.tel || "")),
         db.g("xreq_" + u.id),
         db.g("notif_" + u.id),
         db.g("vazifa_" + oilaId),
@@ -52,7 +52,12 @@ export function useAuth() {
 
       setMaq(maqR || []);
       setQarzlar(qarzR || []);
-      setQarzReqs(qreqR || []);
+      // XAVFSIZLIK: qarz pochtasi endi hujjat-boshiga (qi_). Javob xabarlari
+      // (tasdiq/rad/to'lov natijasi) shu yerda O'Z hujjatlarimizga qo'llanadi.
+      try {
+        const pending = await qmail.load(u, { setQarzlar, setXar, setDar }, "uz");
+        setQarzReqs(pending);
+      } catch { setQarzReqs([]); }
       setXReqs(xreqR || []);
       setNotifs(notifR || []);
       setVazifalar(vazR || []);

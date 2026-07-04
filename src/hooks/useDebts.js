@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { db } from "../firebase.js";
+import { qmail } from "../utils/qmail.js";
 import { td, nt, f, normTel, fmtN } from "../utils/formatters.js";
 import { useApp } from "../context/AppContext.jsx";
 
@@ -120,8 +121,8 @@ export function useDebts() {
       toTel: cleanTel, tur: qarzTur, summa: Number(qarzSum),
       izoh: qarzIzoh, sana: qarzSana, qaytSana: qarzQaytSana, status: "pending",
     };
-    const targetReqs = (await db.g("qreq_" + cleanTel)) || [];
-    await db.s("qreq_" + cleanTel, [req, ...targetReqs]);
+    // XAVFSIZLIK: begona pochtani o'qimaymiz — alohida hujjat yaratamiz
+    await qmail.send(cleanTel, req);
 
     const rN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? "Yangi qarz so'rovi" : "New debt request", body: (user.ism || "") + " - " + fmtN(Number(qarzSum), val, true), sana: new Date().toISOString(), read: false };
     const rC = (await db.g("notif_" + targetUid)) || [];
@@ -159,28 +160,15 @@ export function useDebts() {
 
     const newReqs = qarzReqs.filter(r => r.id !== req.id);
     setQarzReqs(newReqs);
-    await db.s("qreq_" + user.tel, newReqs);
+    try { await db.s("qreq_" + user.tel, newReqs); } catch {}
+    await qmail.consume(user.tel, req.id);
 
-    // Sender statusini yangilash + sender balansiga yozuv (IKKALA yo'nalishda ham)
-    const senderUser = await db.g("user_" + req.fromUid);
-    if (senderUser) {
-      // MUHIM: senderUser.id o'rniga req.fromUid — user hujjatida id maydoni
-      // bo'lmasa ham to'g'ri ishlashi uchun (KUTILMOQDA qolib ketish xatosi shu edi)
-      const sOila = senderUser.oilaId || user.oilaId;
-      const sq = (await db.g("qarz_" + sOila)) || [];
-      await db.s("qarz_" + sOila, sq.map(q =>
-        (q.id === req.id && q.uid !== user.id && (!q.uid || q.uid === req.fromUid || q.uid === senderUser.id)) ? { ...q, linkStatus: "accepted" } : q));
-      if (req.tur === "bergan") {
-        // Sender qarz BERGAN → sender balansidan xarajat (-)
-        const xItem = { id: Date.now() + 2, kategoriya: "qarz", summa: req.summa, izoh: (lg === "uz" ? "Qarz berildi (tasdiqlangan): " : "Loan given: ") + user.ism, sana: req.sana, vaqt: nt(), uid: req.fromUid, repeat: false, fromQarz: req.id };
-        const xk = "x_" + sOila + "_" + req.fromUid;
-        await db.s(xk, [xItem, ...((await db.g(xk)) || [])]);
-      } else {
-        // Sender qarz OLGAN → sender balansiga daromad (+)
-        const dItem = { id: Date.now() + 2, tur: "qarz", summa: req.summa, izoh: (lg === "uz" ? "Qarz olindi (tasdiqlangan): " : "Loan received: ") + user.ism, sana: req.sana, vaqt: nt(), uid: req.fromUid, fromQarz: req.id };
-        const dk = "d_" + sOila + "_" + req.fromUid;
-        await db.s(dk, [dItem, ...((await db.g(dk)) || [])]);
-      }
+    // XAVFSIZLIK: sender OILASINING hujjatlariga yozmaymiz — javob xabari
+    // yuboramiz; sender ilovasi keyingi yuklanishda O'Z hujjatlarini yangilaydi.
+    if (req.fromTel) {
+      await qmail.send(req.fromTel, { id: "ls_" + req.id + "_" + Date.now(), type: "link_status", debtId: req.id, status: "accepted", byIsm: user.ism, byUid: user.id });
+    }
+    {
       // Sender'ga xabar
       const sN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? "✅ Qarz tasdiqlandi" : "Debt confirmed", body: (user.ism || "") + " " + (lg === "uz" ? "qarzni tasdiqladi" : "confirmed the debt") + ": " + fmtN(Number(req.summa), val, true), sana: new Date().toISOString(), read: false };
       const sC = (await db.g("notif_" + req.fromUid)) || [];
@@ -207,11 +195,11 @@ export function useDebts() {
   const rejectQarzReq = useCallback(async (req) => {
     const newReqs = qarzReqs.filter(r => r.id !== req.id);
     setQarzReqs(newReqs);
-    await db.s("qreq_" + user.tel, newReqs);
-    const senderUser = await db.g("user_" + req.fromUid);
-    if (senderUser) {
-      const sq = (await db.g("qarz_" + senderUser.oilaId)) || [];
-      await db.s("qarz_" + senderUser.oilaId, sq.map(q => (q.id === req.id && (!q.uid || q.uid === req.fromUid || q.uid === senderUser.id)) ? { ...q, linkStatus: "rejected" } : q));
+    try { await db.s("qreq_" + user.tel, newReqs); } catch {}
+    await qmail.consume(user.tel, req.id);
+    // XAVFSIZLIK: rad javobi ham xabar orqali — sender o'zi qo'llaydi
+    if (req.fromTel) {
+      await qmail.send(req.fromTel, { id: "ls_" + req.id + "_" + Date.now(), type: "link_status", debtId: req.id, status: "rejected", byIsm: user.ism, byUid: user.id });
     }
     ok$(lg === "uz" ? "Rad etildi" : "Rejected", "warn");
   }, [qarzReqs, user, ok$, lg]);
@@ -236,8 +224,7 @@ export function useDebts() {
         await db.s("qarz_" + user.oilaId, upd);
         setQarzlar(upd);
         const payReq = { id: "pay_" + id + "_" + Date.now(), debtId: id, fromUid: user.id, fromIsm: user.ism, fromTel: user.tel || "", toTel: q.linkedTel, summa: q.summa, paySum: Number(q.summa), partial: false, kim: q.kim, tur: q.tur, sana: td(), type: "payment" };
-        const targetReqs = (await db.g("qreq_" + q.linkedTel)) || [];
-        await db.s("qreq_" + q.linkedTel, [payReq, ...targetReqs]);
+        await qmail.send(q.linkedTel, payReq);
         const rN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? "Qarz qaytarish so'rovi" : "Debt return request", body: (user.ism || "") + " " + (lg === "uz" ? "qarzni qaytardim deyapti" : "says debt is returned") + ": " + fmtN(q.summa, val, true), sana: new Date().toISOString(), read: false };
         const rC = (await db.g("notif_" + targetUid)) || [];
         await db.s("notif_" + targetUid, [rN, ...rC].slice(0, 100));
@@ -290,8 +277,7 @@ export function useDebts() {
         await db.s("qarz_" + user.oilaId, upd);
         setQarzlar(upd);
         const payReq = { id: "pay_" + q.id + "_" + Date.now(), debtId: q.id, fromUid: user.id, fromIsm: user.ism, fromTel: user.tel || "", toTel: q.linkedTel, summa: q.summa, paySum: pay, partial: true, kim: q.kim, tur: q.tur, sana: td(), type: "payment" };
-        const targetReqs = (await db.g("qreq_" + q.linkedTel)) || [];
-        await db.s("qreq_" + q.linkedTel, [payReq, ...targetReqs]);
+        await qmail.send(q.linkedTel, payReq);
         const rN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? "Qisman qaytarish so'rovi" : "Partial return request", body: (user.ism || "") + " " + (lg === "uz" ? "qisman qaytardim deyapti" : "says partially returned") + ": " + fmtN(pay, val, true), sana: new Date().toISOString(), read: false };
         const rC = (await db.g("notif_" + targetUid)) || [];
         await db.s("notif_" + targetUid, [rN, ...rC].slice(0, 100));
@@ -420,49 +406,28 @@ export function useDebts() {
     }
     const newReqs = qarzReqs.filter(r => r.id !== req.id);
     setQarzReqs(newReqs);
-    await db.s("qreq_" + user.tel, newReqs);
-    const fromUser = await db.g("user_" + req.fromUid);
-    if (fromUser) {
-      const fOila = fromUser.oilaId || user.oilaId;
-      const fq = (await db.g("qarz_" + fOila)) || [];
-      await db.s("qarz_" + fOila, fq.map(q =>
-        (q.id === req.debtId && q.uid !== user.id && (!q.uid || q.uid === req.fromUid || q.uid === fromUser.id))
-          ? (closeIt
-              ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed" }
-              : { ...q, summa: Number(q.summa) - paySum, paidPart: (q.paidPart || 0) + paySum, asl: q.asl || Number(q.summa) + (q.paidPart || 0), payStatus: null, payBy: null })
-          : q));
-      const fromDebt = fq.find(q => q.id === req.debtId && q.uid !== user.id && (!q.uid || q.uid === req.fromUid || q.uid === fromUser.id));
-      if (fromDebt && paySum > 0) {
-        // Qaytarish tasdiqlandi → sender balansiga avtomatik teskari yozuv
-        if (fromDebt.tur === "bergan") {
-          // Sender qarz bergan edi, endi qaytarib oldi → daromad (+)
-          const dItem = { id: Date.now() + 3, tur: "qarz", summa: paySum, izoh: (lg === "uz" ? (closeIt ? "Qarz qaytdi: " : "Qarz qisman qaytdi: ") : "Debt returned: ") + fromDebt.kim, sana: td(), vaqt: nt(), uid: req.fromUid, fromQarz: fromDebt.id };
-          const dk = "d_" + fOila + "_" + req.fromUid;
-          await db.s(dk, [dItem, ...((await db.g(dk)) || [])]);
-          if (req.fromUid === user.id) setDar(d => [dItem, ...d]);
-        } else {
-          // Sender qarz olgan edi, endi qaytardi → xarajat (-)
-          const xItem = { id: Date.now() + 3, kategoriya: "qarz", summa: paySum, izoh: (lg === "uz" ? (closeIt ? "Qarz qaytarildi: " : "Qarz qisman qaytarildi: ") : "Debt repaid: ") + fromDebt.kim, sana: td(), vaqt: nt(), uid: req.fromUid, repeat: false, fromQarz: fromDebt.id };
-          const xk = "x_" + fOila + "_" + req.fromUid;
-          await db.s(xk, [xItem, ...((await db.g(xk)) || [])]);
-          if (req.fromUid === user.id) setXar(x => [xItem, ...x]);
-        }
-        const pN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? (closeIt ? "✅ Qarz qaytarishi tasdiqlandi" : "✅ Qisman qaytarish tasdiqlandi") : "Return confirmed", body: (user.ism || "") + ": " + fmtN(paySum, val, true), sana: new Date().toISOString(), read: false };
-        const pC = (await db.g("notif_" + req.fromUid)) || [];
-        await db.s("notif_" + req.fromUid, [pN, ...pC].slice(0, 100));
-      }
+    try { await db.s("qreq_" + user.tel, newReqs); } catch {}
+    await qmail.consume(user.tel, req.id);
+    // XAVFSIZLIK: qarshi tomon hujjatlariga yozmaymiz — natija xabari yuboriladi,
+    // uning ilovasi O'Z qarz_/x_/d_ hujjatlarini keyingi yuklanishda yangilaydi.
+    if (req.fromTel) {
+      await qmail.send(req.fromTel, { id: "pr_" + req.id + "_" + Date.now(), type: "pay_result", debtId: req.debtId, status: "confirmed", paySum, closeIt, byIsm: user.ism });
     }
+    try {
+      const pN = { id: Date.now() + Math.random(), type: "qarz", title: lg === "uz" ? (closeIt ? "✅ Qarz qaytarishi tasdiqlandi" : "✅ Qisman qaytarish tasdiqlandi") : "Return confirmed", body: (user.ism || "") + ": " + fmtN(paySum, val, true), sana: new Date().toISOString(), read: false };
+      const pC = (await db.g("notif_" + req.fromUid)) || [];
+      await db.s("notif_" + req.fromUid, [pN, ...pC].slice(0, 100));
+    } catch {}
     ok$(lg === "uz" ? (closeIt ? "Qaytarish tasdiqlandi! Balansga yozildi." : "Qisman qaytarish tasdiqlandi! Balansga yozildi.") : "Return confirmed!");
   }, [qarzlar, qarzReqs, user, xar, dar, ok$, lg, val]);
 
   const rejectPayReq = useCallback(async (req) => {
     const newReqs = qarzReqs.filter(r => r.id !== req.id);
     setQarzReqs(newReqs);
-    await db.s("qreq_" + user.tel, newReqs);
-    const fromUser = await db.g("user_" + req.fromUid);
-    if (fromUser) {
-      const fq = (await db.g("qarz_" + fromUser.oilaId)) || [];
-      await db.s("qarz_" + fromUser.oilaId, fq.map(q => (q.id === req.debtId && (!q.uid || q.uid === req.fromUid || q.uid === fromUser.id)) ? { ...q, payStatus: null, payBy: null } : q));
+    try { await db.s("qreq_" + user.tel, newReqs); } catch {}
+    await qmail.consume(user.tel, req.id);
+    if (req.fromTel) {
+      await qmail.send(req.fromTel, { id: "pr_" + req.id + "_" + Date.now(), type: "pay_result", debtId: req.debtId, status: "rejected", paySum: 0, closeIt: false, byIsm: user.ism });
     }
     ok$(lg === "uz" ? "Qaytarish rad etildi" : "Return rejected", "warn");
   }, [qarzReqs, user, ok$, lg]);
@@ -472,7 +437,10 @@ export function useDebts() {
   const refreshQarzReqs = useCallback(async (silent) => {
     if (!user?.id) return;
     try {
-      if (user.tel) setQarzReqs((await db.g("qreq_" + user.tel)) || []);
+      if (user.tel) {
+        const pending = await qmail.load(user, { setQarzlar, setXar, setDar }, lg);
+        setQarzReqs(pending);
+      }
       setQarzlar((await db.g("qarz_" + user.oilaId)) || []);
       setNotifs((await db.g("notif_" + user.id)) || []);
       // Balans sinxronizatsiyasi: barcha a'zolarning xarajat/daromadlari
