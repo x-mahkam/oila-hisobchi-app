@@ -52,8 +52,8 @@ service cloud.firestore {
     //  - _u yorlig'i mening auth uid'imga tengmi (shaxsiy yozuvlar)
     function ownedByMe(res) {
       return signedIn() && res != null && (
-        (res.data._o != null && res.data._o == myOila()) ||
-        (res.data._u != null && res.data._u == uid())
+        (('_o' in res.data) && res.data._o != null && res.data._o == myOila()) ||
+        (('_u' in res.data) && res.data._u != null && res.data._u == uid())
       );
     }
 
@@ -62,8 +62,11 @@ service cloud.firestore {
     //  - _o bo'lsa, u mening oilam bo'lishi shart
     function writeTagsValid() {
       return signedIn()
+        && ('_u' in request.resource.data)
         && request.resource.data._u == uid()
-        && (!('_o' in request.resource.data) || request.resource.data._o == myOila());
+        && (!('_o' in request.resource.data)
+            || request.resource.data._o == null
+            || request.resource.data._o == myOila());
     }
 
     // ── Maxsus hujjat turlari ───────────────────────────────────────
@@ -96,6 +99,22 @@ service cloud.firestore {
       return id.matches('oilaV7_(kb|fb|refi|qreq)_.*') && writeTagsValid();
     }
 
+    // Qarz-pochta (qmail): qi_<toTel>_<id> hujjatlari `c: "qreq_<toTel>"`
+    //  yorlig'i bilan yoziladi. Yuboruvchi (begona oiladan) yarata oladi,
+    //  qabul qiluvchi FAQAT o'z telefon-kanalini o'qiy/o'chira oladi.
+    //  Foydalanuvchi teli user_<uid>.v.tel da (normallashtirilgan).
+    function myTel() {
+      return hasUserDoc()
+        ? get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.tel
+        : null;
+    }
+    function isQmailDoc(id) { return id.matches('oilaV7_qi_.*'); }
+    // Kanal qiymati "qreq_<tel>" — oxiridagi <tel> mening telimga tugashi kerak.
+    function isMyChannel(res) {
+      return res != null && ('c' in res.data) && myTel() != null
+             && res.data.c == ('qreq_' + myTel());
+    }
+
     // ── ASOSIY QOIDA ────────────────────────────────────────────────
     match /appdata/{docId} {
 
@@ -104,10 +123,13 @@ service cloud.firestore {
                  || isLookup(docId)
                  || isMySession(docId)
                  || isMyUserDoc(docId)
-                 || ownedByMe(resource);
+                 || ownedByMe(resource)
+                 || (isQmailDoc(docId) && isMyChannel(resource));
 
       // RO'YXATLASH (list/query) — har qaytgan hujjat alohida tekshiriladi
-      allow list: if isAdmin() || (signedIn() && ownedByMe(resource));
+      allow list: if isAdmin()
+                 || (signedIn() && ownedByMe(resource))
+                 || (signedIn() && isQmailDoc(docId) && isMyChannel(resource));
 
       // YARATISH / YANGILASH
       //  create: yorliqlar to'g'ri bo'lsa (yangi hujjat mening oilamniki)
@@ -117,6 +139,7 @@ service cloud.firestore {
                  || isMyUserDoc(docId)
                  || isLookupWrite(docId)
                  || isChannelWrite(docId)
+                 || (isQmailDoc(docId) && writeTagsValid())
                  || writeTagsValid();
 
       allow update: if isAdmin()
@@ -126,8 +149,10 @@ service cloud.firestore {
                  || isChannelWrite(docId)
                  || (writeTagsValid() && ownedByMe(resource));
 
-      // O'CHIRISH — faqat admin yoki egasi
-      allow delete: if isAdmin() || (signedIn() && ownedByMe(resource));
+      // O'CHIRISH — admin, egasi, yoki o'z pochtasidagi qmail xabari
+      allow delete: if isAdmin()
+                 || (signedIn() && ownedByMe(resource))
+                 || (signedIn() && isQmailDoc(docId) && isMyChannel(resource));
     }
 
     // Qolgan hamma narsa — YOPIQ
