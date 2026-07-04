@@ -1,18 +1,136 @@
 rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════
+//  OILA HISOBCHI — Firestore Security Rules (metadata-asosli, qattiq)
+//
+//  TAMOYIL: Least Privilege — har kim FAQAT o'z oilasi ma'lumotini
+//  o'qiydi va yozadi. Begonaga NOL ruxsat.
+//
+//  Har hujjat yozilganda mijoz `_o` (oilaId) va `_u` (yozuvchi auth uid)
+//  yorliqlarini qo'shadi (firebase.js → db.s). Rules aynan shu
+//  yorliqlarni tekshiradi. UI'ga umuman ta'sir qilmaydi.
+//
+//  BOLA (anonim): har sessiyada yangi anon-uid oladi. Uning haqiqiy
+//  oilasi `ksess_<anonUid>.oila` da saqlanadi. Rules shu hujjatni
+//  get() bilan o'qib, bolaning qaysi oilaga tegishli ekanini biladi.
+// ═══════════════════════════════════════════════════════════════════
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Kirishdan oldin yoki bola (anonim) uchun kerak bo'lgan hujjatlar.
-    // tphone_, em_, kidlogin_ : login qidirish (maxfiy ma'lumot yo'q)
-    // vazifa_, kidbal_, notif_, user_ : vazifa tizimi (bola anonim ishlatadi)
-    match /appdata/{docId} {
-      allow read: if request.auth != null
-        || docId.matches('oilaV7_tphone_.*')
-        || docId.matches('oilaV7_em_.*')
-        || docId.matches('oilaV7_kidlogin_.*');
-      allow write: if request.auth != null;
+    // ── Umumiy yordamchilar ─────────────────────────────────────────
+    function signedIn() { return request.auth != null; }
+    function uid()      { return request.auth.uid; }
+    function DB()       { return 'oilaV7_'; }
+
+    // Admin — Firebase Auth UID bo'yicha (telefon emas). Konsolda tahrirlang.
+    function isAdmin() {
+      return signedIn() && uid() in [
+        // "SIZNING_ADMIN_FIREBASE_UID"
+      ];
     }
 
+    // Joriy foydalanuvchi qaysi oilaga tegishli?
+    //  1) Oddiy foydalanuvchi: user_<uid>.v.oilaId
+    //  2) Bola (anonim):        ksess_<anonUid>.oila
+    function hasUserDoc() {
+      return exists(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid()));
+    }
+    function hasSess() {
+      return exists(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid()));
+    }
+    function myOila() {
+      return hasUserDoc()
+        ? get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.oilaId
+        : (hasSess()
+            ? get(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid())).data.oila
+            : null);
+    }
+
+    // Men shu hujjatga tegishlimanmi?
+    //  - _o yorlig'i mening oilamga tengmi, YOKI
+    //  - _u yorlig'i mening auth uid'imga tengmi (shaxsiy yozuvlar)
+    function ownedByMe(res) {
+      return signedIn() && res != null && (
+        (res.data._o != null && res.data._o == myOila()) ||
+        (res.data._u != null && res.data._u == uid())
+      );
+    }
+
+    // Yangi yoziladigan hujjat yorlig'i to'g'rimi?
+    //  - _u majburan mening uid'im (boshqa nomdan yoza olmayman)
+    //  - _o bo'lsa, u mening oilam bo'lishi shart
+    function writeTagsValid() {
+      return signedIn()
+        && request.resource.data._u == uid()
+        && (!('_o' in request.resource.data) || request.resource.data._o == myOila());
+    }
+
+    // ── Maxsus hujjat turlari ───────────────────────────────────────
+
+    // Login-qidiruv (kirishdan OLDIN o'qiladi): tphone_/em_/tel_/tel9_/kidlogin_
+    // Maxfiy moliyaviy ma'lumot yo'q; faqat aniq docId bilan get.
+    function isLookup(id) {
+      return id.matches('oilaV7_tphone_.*')
+          || id.matches('oilaV7_em_.*')
+          || id.matches('oilaV7_tel_.*')
+          || id.matches('oilaV7_tel9_.*')
+          || id.matches('oilaV7_kidlogin_.*');
+    }
+    function isLookupWrite(id) {
+      return signedIn() && id.matches('oilaV7_(tphone|em|tel|tel9|kidlogin)_.*');
+    }
+
+    // Bola sessiya hujjati: faqat o'sha anon-uid egasi.
+    function isMySession(id) {
+      return signedIn() && id == (DB() + 'ksess_' + uid());
+    }
+
+    // O'z profili: user_<uid>.
+    function isMyUserDoc(id) {
+      return signedIn() && id == (DB() + 'user_' + uid());
+    }
+
+    // Kanal-asosli ommaviy yozuvlar (kb_/fb_/refi_/qreq_): _u bilan himoyalangan.
+    function isChannelWrite(id) {
+      return id.matches('oilaV7_(kb|fb|refi|qreq)_.*') && writeTagsValid();
+    }
+
+    // ── ASOSIY QOIDA ────────────────────────────────────────────────
+    match /appdata/{docId} {
+
+      // O'QISH — bitta hujjat (get)
+      allow get: if isAdmin()
+                 || isLookup(docId)
+                 || isMySession(docId)
+                 || isMyUserDoc(docId)
+                 || ownedByMe(resource);
+
+      // RO'YXATLASH (list/query) — har qaytgan hujjat alohida tekshiriladi
+      allow list: if isAdmin() || (signedIn() && ownedByMe(resource));
+
+      // YARATISH / YANGILASH
+      //  create: yorliqlar to'g'ri bo'lsa (yangi hujjat mening oilamniki)
+      //  update: hujjat AVVALDAN meniki bo'lishi shart (begonanikini egallab bo'lmaydi)
+      allow create: if isAdmin()
+                 || isMySession(docId)
+                 || isMyUserDoc(docId)
+                 || isLookupWrite(docId)
+                 || isChannelWrite(docId)
+                 || writeTagsValid();
+
+      allow update: if isAdmin()
+                 || isMySession(docId)
+                 || isMyUserDoc(docId)
+                 || isLookupWrite(docId)
+                 || isChannelWrite(docId)
+                 || (writeTagsValid() && ownedByMe(resource));
+
+      // O'CHIRISH — faqat admin yoki egasi
+      allow delete: if isAdmin() || (signedIn() && ownedByMe(resource));
+    }
+
+    // Qolgan hamma narsa — YOPIQ
     match /{document=**} {
       allow read, write: if false;
     }
