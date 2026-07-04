@@ -23,11 +23,13 @@ service cloud.firestore {
     function uid()      { return request.auth.uid; }
     function DB()       { return 'oilaV7_'; }
 
-    // Admin — Firebase Auth UID bo'yicha (telefon emas). Konsolda tahrirlang.
+    // Admin — Firebase Auth UID bo'yicha (telefon emas).
+    // DIQQAT: bo'sh `in []` massiv Firestore rules'da xato berishi mumkin,
+    // shuning uchun admin ro'yxati bo'sh bo'lsa oddiygina `false` qaytaramiz.
+    // Admin qo'shish uchun quyidagi ro'yxatga UID yozing:
+    //   return signedIn() && uid() in ['ADMIN_UID_1', 'ADMIN_UID_2'];
     function isAdmin() {
-      return signedIn() && uid() in [
-      "3LvZNuvfbIRBkGTybUy56nGDDyI2"
-      ];
+      return false;
     }
 
     // Joriy foydalanuvchi qaysi oilaga tegishli?
@@ -39,21 +41,25 @@ service cloud.firestore {
     function hasSess() {
       return exists(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid()));
     }
+    // user_<uid> hujjatidagi oilaId (v.oilaId). exists() tekshirilgandan keyin chaqiriladi.
+    function userOila() {
+      return get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.oilaId;
+    }
+    function sessOila() {
+      return get(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid())).data.oila;
+    }
     function myOila() {
-      return hasUserDoc()
-        ? get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.oilaId
-        : (hasSess()
-            ? get(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid())).data.oila
-            : null);
+      return hasUserDoc() ? userOila() : (hasSess() ? sessOila() : 'NO_OILA');
     }
 
     // Men shu hujjatga tegishlimanmi?
     //  - _o yorlig'i mening oilamga tengmi, YOKI
     //  - _u yorlig'i mening auth uid'imga tengmi (shaxsiy yozuvlar)
+    function knownIdentity() { return hasUserDoc() || hasSess(); }
     function ownedByMe(res) {
       return signedIn() && res != null && (
-        (('_o' in res.data) && res.data._o != null && res.data._o == myOila()) ||
-        (('_u' in res.data) && res.data._u != null && res.data._u == uid())
+        (('_u' in res.data) && res.data._u == uid()) ||
+        (knownIdentity() && ('_o' in res.data) && res.data._o == myOila())
       );
     }
 
@@ -66,7 +72,7 @@ service cloud.firestore {
         && request.resource.data._u == uid()
         && (!('_o' in request.resource.data)
             || request.resource.data._o == null
-            || request.resource.data._o == myOila());
+            || (knownIdentity() && request.resource.data._o == myOila()));
     }
 
     // ── Maxsus hujjat turlari ───────────────────────────────────────
@@ -106,12 +112,12 @@ service cloud.firestore {
     function myTel() {
       return hasUserDoc()
         ? get(/databases/$(database)/documents/appdata/$(DB() + 'user_' + uid())).data.v.tel
-        : null;
+        : 'NO_TEL';
     }
     function isQmailDoc(id) { return id.matches('oilaV7_qi_.*'); }
-    // Kanal qiymati "qreq_<tel>" — oxiridagi <tel> mening telimga tugashi kerak.
+    // Kanal qiymati "qreq_<tel>" — mening telim bilan mos kelishi kerak.
     function isMyChannel(res) {
-      return res != null && ('c' in res.data) && myTel() != null
+      return res != null && hasUserDoc() && ('c' in res.data)
              && res.data.c == ('qreq_' + myTel());
     }
 
