@@ -64,6 +64,14 @@ export const auth = {
   async logout() {
     await signOut(fbAuth);
   },
+  // Chala yaratilgan akkauntni o'chirish (ro'yxatdan o'tish yarim to'xtaganda)
+  async deleteCurrentUser() {
+    try {
+      const u = fbAuth.currentUser;
+      if (u) { await u.delete(); return true; }
+    } catch (e) { try { await signOut(fbAuth); } catch (e2) {} }
+    return false;
+  },
   // Joriy foydalanuvchi
   current() {
     return fbAuth.currentUser;

@@ -650,17 +650,9 @@ export default function App() {
         if (!fEm.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fEm.trim())) return ok$(lg === "uz" ? "To'g'ri email kiriting" : "Enter valid email", "err");
         if (await db.g("tel9_" + normTel(fTel))) return ok$(lg === "uz" ? "Bu telefon allaqachon ro'yxatda" : "Phone already registered", "err");
 
-        // ── DASTLABKI TEKSHIRUVLAR (Firebase akkaunt YARATILISHIDAN OLDIN) ──
-        // Bu chala/bog'lanmagan akkaunt yaratilib qolishining oldini oladi:
-        // avval hamma shart to'g'ri ekaniga ishonch hosil qilamiz, keyin akkaunt.
-        let joinOila = null;
+        // ── DASTLABKI (kirishsiz) tekshiruvlar ──
         if (join) {
           if (!fKd.trim()) return ok$(t.fa, "err");
-          joinOila = await db.g("oila_" + fKd.trim());
-          if (!joinOila) return ok$(t.ffe, "err");
-          if ((joinOila.azolarIds || []).length >= 2 && !joinOila.premium) {
-            return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
-          }
         } else {
           if (!fON.trim()) return ok$(t.fa, "err");
         }
@@ -673,8 +665,15 @@ export default function App() {
         }
         const uid = authUser.uid, ph = await hp(fPw);
         if (join) {
-          const o = joinOila;  // yuqorida tekshirilgan
+          // Endi kirilgan — oila konteksti bilan oila_ hujjatini o'qiy olamiz.
           setOwnerCtx(uid, fKd.trim());  // qo'shilayotgan oila konteksti
+          const o = await db.g("oila_" + fKd.trim());
+          // Oila topilmasa yoki to'lgan bo'lsa — chala akkauntni o'chirib, to'xtaymiz.
+          if (!o) { await auth.deleteCurrentUser(); setOwnerCtx(null, null); return ok$(t.ffe, "err"); }
+          if ((o.azolarIds || []).length >= 2 && !o.premium) {
+            await auth.deleteCurrentUser(); setOwnerCtx(null, null);
+            return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
+          }
           const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
           const nu = { id: uid, ism: fIsm.trim(), email: fEm.trim().toLowerCase(), tel, ph, oilaId: fKd.trim(), rol: "azo", rel: fRel || "boshqa", photo: null };
           await db.s("user_" + uid, nu); if (fEm.trim()) await db.s("em_" + fEm.toLowerCase(), uid);
