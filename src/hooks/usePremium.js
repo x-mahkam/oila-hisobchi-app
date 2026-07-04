@@ -13,8 +13,8 @@ export function usePremium() {
     // Oila obyektiga ham premium belgisi
     if (user?.oilaId && user?.rol === "bosh") {
       try {
-        const o = await db.g("oila_" + user.oilaId);
-        if (o) { o.premium = true; await db.s("oila_" + user.oilaId, o); setOila(o); }
+        const o = await db.g("oila_" + user.oilaId) || await db.g("fam_" + user.oilaId);
+        if (o) { o.premium = true; await db.s("oila_" + user.oilaId, o); await db.s("fam_" + user.oilaId, o); setOila(o); }
       } catch (e) {}
     }
     ok$(lg === "uz" ? "Premium faollashtirildi!" : "Premium activated!");
