@@ -158,6 +158,12 @@ export const RELATIONS = [
 ];
 
 export const ADMIN_TEL = "937414866";
+// XAVFSIZLIK: admin Firebase Auth UID'lari. Rules ham, klient ham SHUNI tekshiradi.
+// (Telefon raqami emas — u soxtalashtirilishi mumkin. UID Firebase Auth'dan keladi.)
+// Admin sifatida kirgan hisobingiz UID'sini shu ro'yxatga qo'shing:
+export const ADMIN_UIDS = [
+  // "SIZNING_ADMIN_FIREBASE_UID"
+];
 
 export const FAQS = {
   uz:[

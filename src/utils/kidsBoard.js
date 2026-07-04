@@ -1,13 +1,13 @@
 // ═══════════════════════════════════════════════════════════
-//  GLOBAL BOLALAR REYTINGI (Liderbord)
-//  Barcha oilalardagi bolalar bitta umumiy doskada.
-//  Ma'lumot: "kids_board" hujjati — { [kidId]: entry } xaritasi.
-//  entry = { ism, oilaId, total, tW: {haftaKey: ball}, tM: {oyKey: ball},
-//            taskCount, taskEarn, upd }
+//  GLOBAL BOLALAR REYTINGI (Liderbord) — XAVFSIZ MODEL
+//  Eski: bitta "kids_board" blob — istalgan foydalanuvchi BUTUN doskani
+//  qayta yozib, boshqalar ballarini o'chira olardi (+ poyga holati).
+//  Yangi: har bola uchun alohida hujjat kb_<kidId> (c:"kb" kanali).
+//  Rules: faqat o'sha bolaning OILASI yoza oladi; o'qish — "kb" kanali
+//  bo'yicha so'rov orqali (autentifikatsiyalangan foydalanuvchilarga).
+//  Poyga ham hal: endi bitta bolaga faqat o'z oilasi yozadi.
 // ═══════════════════════════════════════════════════════════
 import { db } from "../firebase.js";
-
-const BOARD_KEY = "kids_board";
 
 // ISO hafta kaliti: "2026-W27"
 export const weekKey = (d = new Date()) => {
@@ -26,24 +26,28 @@ export const monthKey = (d = new Date()) =>
 // Doskani o'qish → massiv [{id, ...entry}]
 export async function fetchKidsBoard() {
   try {
-    const raw = (await db.g(BOARD_KEY)) || {};
-    if (typeof raw !== "object" || Array.isArray(raw)) return [];
-    return Object.entries(raw).map(([id, e]) => ({ id, ...(e || {}) }));
+    const rows = await db.q("kb");
+    const out = rows.map(r => ({ ...r, id: (r._id || "").replace(/^kb_/, "") || r.id }));
+    // Eski yagona blob (migratsiya davri): faqat o'qiladi, ustunlik yangi hujjatlarda
+    try {
+      const legacy = (await db.g("kids_board")) || {};
+      if (legacy && typeof legacy === "object" && !Array.isArray(legacy)) {
+        const have = new Set(out.map(e => e.id));
+        Object.entries(legacy).forEach(([id, e]) => { if (!have.has(id) && e) out.push({ id, ...e }); });
+      }
+    } catch {}
+    return out;
   } catch (e) {
     console.error("kidsBoard fetch:", e);
     return [];
   }
 }
 
-// Ball qo'shish/yangilash (o'qi → birlashtir → yoz)
-// deltaPts — reyting balli; deltaTask — bajarilgan vazifalar soni;
-// deltaEarn — vazifadan topilgan so'm (ma'lumot uchun)
+// Ball qo'shish/yangilash — FAQAT o'z bolamiz hujjatiga (kb_<kidId>)
 export async function publishKidScore({ kidId, ism, oilaId, deltaPts = 0, deltaTask = 0, deltaEarn = 0 }) {
   if (!kidId) return;
   try {
-    const raw = (await db.g(BOARD_KEY)) || {};
-    const board = (typeof raw === "object" && !Array.isArray(raw)) ? raw : {};
-    const cur = board[kidId] || { total: 0, tW: {}, tM: {}, taskCount: 0, taskEarn: 0 };
+    const cur = (await db.g("kb_" + kidId)) || { total: 0, tW: {}, tM: {}, taskCount: 0, taskEarn: 0 };
     const wk = weekKey(), mk = monthKey();
     const next = {
       ...cur,
@@ -56,12 +60,7 @@ export async function publishKidScore({ kidId, ism, oilaId, deltaPts = 0, deltaT
       taskEarn: (Number(cur.taskEarn) || 0) + deltaEarn,
       upd: Date.now(),
     };
-    // Eski hafta/oy kalitlarini tozalash (hujjat o'smasin)
-    const trim = (obj, keep) => Object.fromEntries(Object.entries(obj || {}).sort((a, b) => b[0].localeCompare(a[0])).slice(0, keep));
-    next.tW = trim(next.tW, 8);
-    next.tM = trim(next.tM, 6);
-    board[kidId] = next;
-    await db.s(BOARD_KEY, board);
+    await db.s("kb_" + kidId, next, { c: "kb" });
   } catch (e) {
     console.error("kidsBoard publish:", e);
   }
