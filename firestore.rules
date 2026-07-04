@@ -84,6 +84,12 @@ service cloud.firestore {
       return res != null && ('c' in res.data) && res.data.c == ('qreq_' + myTel());
     }
 
+    // Oila hujjati (oila_<id>): join qilish uchun kirgan foydalanuvchi
+    //  oila mavjudligini va a'zolar limitini bilishi kerak. O'qish — kirgan
+    //  har kimga ochiq (maxfiy moliyaviy tafsilot yo'q: faqat nomi/limit).
+    //  YOZISH esa himoyalangan (quyida writeOk/docHasMyOila orqali).
+    function isOilaDoc(id) { return id.matches('oilaV7_oila_.*'); }
+
     match /appdata/{docId} {
 
       // O'z profilim va sessiyam — har doim ruxsat.
@@ -93,6 +99,7 @@ service cloud.firestore {
       }
 
       allow read: if isLookup(docId)
+                  || (signedIn() && isOilaDoc(docId))
                   || (signedIn() && isMine())
                   || (signedIn() && mineByUser(resource))
                   || (signedIn() && mineByOila(resource))
