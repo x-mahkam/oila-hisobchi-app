@@ -649,6 +649,22 @@ export default function App() {
         if (!fIsm.trim() || !fTel.trim() || fPw.length < 6) return ok$(lg === "uz" ? "Ism, telefon va parol (6+ belgi) kiriting" : "Enter name, phone and password (6+)", "err");
         if (!fEm.trim() || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fEm.trim())) return ok$(lg === "uz" ? "To'g'ri email kiriting" : "Enter valid email", "err");
         if (await db.g("tel9_" + normTel(fTel))) return ok$(lg === "uz" ? "Bu telefon allaqachon ro'yxatda" : "Phone already registered", "err");
+
+        // ── DASTLABKI TEKSHIRUVLAR (Firebase akkaunt YARATILISHIDAN OLDIN) ──
+        // Bu chala/bog'lanmagan akkaunt yaratilib qolishining oldini oladi:
+        // avval hamma shart to'g'ri ekaniga ishonch hosil qilamiz, keyin akkaunt.
+        let joinOila = null;
+        if (join) {
+          if (!fKd.trim()) return ok$(t.fa, "err");
+          joinOila = await db.g("oila_" + fKd.trim());
+          if (!joinOila) return ok$(t.ffe, "err");
+          if ((joinOila.azolarIds || []).length >= 2 && !joinOila.premium) {
+            return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
+          }
+        } else {
+          if (!fON.trim()) return ok$(t.fa, "err");
+        }
+
         let authUser;
         try { authUser = await auth.register(fEm.trim().toLowerCase(), fPw); }
         catch (e) {
@@ -657,12 +673,8 @@ export default function App() {
         }
         const uid = authUser.uid, ph = await hp(fPw);
         if (join) {
-          if (!fKd.trim()) return ok$(t.fa, "err");
-          const o = await db.g("oila_" + fKd.trim()); if (!o) return ok$(t.ffe, "err");
+          const o = joinOila;  // yuqorida tekshirilgan
           setOwnerCtx(uid, fKd.trim());  // qo'shilayotgan oila konteksti
-          if ((o.azolarIds || []).length >= 2 && !o.premium) {
-            return ok$(lg === "uz" ? "Bu oilada a'zolar limiti to'lgan (2). Oila boshi Premiumga o'tishi kerak." : "Family member limit reached (2). Head needs Premium.", "err");
-          }
           const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
           const nu = { id: uid, ism: fIsm.trim(), email: fEm.trim().toLowerCase(), tel, ph, oilaId: fKd.trim(), rol: "azo", rel: fRel || "boshqa", photo: null };
           await db.s("user_" + uid, nu); if (fEm.trim()) await db.s("em_" + fEm.toLowerCase(), uid);
@@ -685,7 +697,6 @@ export default function App() {
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
           localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); await loadFam(nu); setScr("bosh"); ok$(t.jf2); addStar(15, lg === "uz" ? "Oila azosi qoshildi" : "Family member added");
         } else {
-          if (!fON.trim()) return ok$(t.fa, "err");
           const oid = "o" + Date.now();
           setOwnerCtx(uid, oid);
           const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
