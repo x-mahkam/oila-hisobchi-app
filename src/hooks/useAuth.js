@@ -60,6 +60,10 @@ export function useAuth() {
       } catch { setQarzReqs([]); }
       setXReqs(xreqR || []);
       setNotifs(notifR || []);
+      // O'Z-O'ZINI DAVOLASH: eski notif_ hujjatlarda _o (oila) yorlig'i yo'q —
+      // oiladoshlar unga xabar yoza olmaydi (permissions xatosi). Bir marta
+      // qayta saqlaymiz — db.s joriy kontekstdan _o/_u muhrini bosadi.
+      try { await db.s("notif_" + u.id, notifR || []); } catch {}
       setVazifalar(vazR || []);
       setKidBalances(kidbR || {});
 
