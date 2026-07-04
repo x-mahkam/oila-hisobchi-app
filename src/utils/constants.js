@@ -162,7 +162,7 @@ export const ADMIN_TEL = "937414866";
 // (Telefon raqami emas — u soxtalashtirilishi mumkin. UID Firebase Auth'dan keladi.)
 // Admin sifatida kirgan hisobingiz UID'sini shu ro'yxatga qo'shing:
 export const ADMIN_UIDS = [
-  // "SIZNING_ADMIN_FIREBASE_UID"
+  "7utmWOc2hpTVXNd2cH03Aec1aqs2"
 ];
 
 export const FAQS = {
