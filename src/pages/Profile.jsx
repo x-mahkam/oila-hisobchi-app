@@ -13,6 +13,7 @@ export default function ProfilePage({
   ok$, buzz, addStar,
   pTab, setPTab,
   edN, setEdN, newN, setNewN, updName,
+  edT, setEdT, newT, setNewT, saveTel,
   fBj, setFBj, fKL, setFKL, saveBj,
   faqO, setFaqO,
   pinStep, setPinStep, pinVal, setPinVal, pinCfm, setPinCfm,
@@ -120,6 +121,13 @@ export default function ProfilePage({
             {edN && <div><div style={{ height: 10 }} /><input style={STY.ip} value={newN} onChange={e => setNewN(e.target.value)} placeholder="Ism" autoFocus /><button onClick={updName} style={STY.bt()}>{t.un}</button></div>}
           </div>
           <div style={STY.cd}><div style={{ fontSize: 10, color: th.t2, marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>Email</div><div style={{ fontSize: 15, fontWeight: 600, color: th.t1 }}>{user?.email}</div></div>
+          <div style={STY.cd}>
+            <div style={{ ...STY.row, marginBottom: edT ? 12 : 0 }}>
+              <div><div style={{ fontSize: 10, color: th.t2, marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>{lg === "uz" ? "Telefon" : "Phone"}</div><div style={{ fontSize: 15, fontWeight: 600, color: user?.tel ? th.t1 : th.t2 }}>{user?.tel || (lg === "uz" ? "Kiritilmagan" : "Not set")}</div></div>
+              <button onClick={() => { setEdT(v => !v); setNewT(user?.tel || ""); }} style={{ background: th.ac + "18", border: "1px solid " + th.ac + "44", borderRadius: 9, padding: "6px 12px", color: th.ac, cursor: "pointer", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4 }}>{Ico.edit(th.ac)}{edT ? t.cn : (user?.tel ? t.ep : (lg === "uz" ? "Qo'shish" : "Add"))}</button>
+            </div>
+            {edT && <div><div style={{ height: 10 }} /><input style={STY.ip} value={newT} onChange={e => setNewT(e.target.value)} placeholder="+998 90 123 45 67" inputMode="tel" autoFocus /><button onClick={() => saveTel(newT)} style={STY.bt()}>{lg === "uz" ? "Saqlash" : "Save"}</button></div>}
+          </div>
           <div style={STY.cd}>
             <div style={{ fontSize: 13, fontWeight: 700, color: th.t1, marginBottom: 10 }}>{lg === "uz" ? "Bu oy statistikasi" : "Stats"}</div>
             {[
