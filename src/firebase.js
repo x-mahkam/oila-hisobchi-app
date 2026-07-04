@@ -175,18 +175,10 @@ export const db = {
       return out;
     } catch (e) { console.error("db.q", chan, e); return []; }
   },
-  // ADMIN: barcha hujjatlarni olish (statistika uchun).
-  // XAVFSIZLIK: endi bu so'rov Firestore Rules darajasida faqat ADMIN_UIDS
-  // ro'yxatidagi hisoblarga ruxsat etiladi — oddiy foydalanuvchi chaqirsa
-  // "permission-denied" oladi (klientdagi tekshiruv himoya emas, rules himoya).
-  async all() {
-    try {
-      const snap = await getDocs(collection(fbDB, "appdata"));
-      const out = [];
-      snap.forEach(d => { out.push({ id: d.id, ...d.data() }); });
-      return out;
-    } catch (e) { console.error("db.all", e); return []; }
-  },
+  // db.all() OLIB TASHLANDI: butun bazani o'qish oddiy foydalanuvchi
+  // ilovasida bo'lmasligi kerak. Admin statistikasi alohida admin-sayt
+  // orqali (Firestore Rules'da faqat admin UID'ga ruxsat) olinadi.
+
   // meta.c — hujjatni "kanal"ga bog'laydi (db.q bilan o'qish uchun)
   async s(k, v, meta) {
     try {

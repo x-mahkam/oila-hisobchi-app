@@ -42,7 +42,7 @@ import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
-import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, ADMIN_TEL, ADMIN_UIDS, TL } from "./utils/constants.js";
+import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
 import { db, auth, setOwnerCtx } from "./firebase.js";
 
 export default function App() {
@@ -444,8 +444,8 @@ export default function App() {
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh";
   const hasKids = azolar.some(a => a.rol === "kid");
-  const isAdmin = (ADMIN_UIDS.length > 0 && ADMIN_UIDS.includes(auth.current()?.uid))
-    || (ADMIN_UIDS.length === 0 && normTel(user?.tel) === ADMIN_TEL);
+  // Admin ilova ichida YO'Q — statistika alohida admin-sayt orqali ko'riladi.
+  const isAdmin = false;
   const canSeeReport = isBosh || (oila?.reportAccess || []).includes(user?.id);
 
   const gN = useCallback(uid => azolar.find(a => a.id === uid)?.ism || "?", [azolar]);
@@ -1001,28 +1001,8 @@ export default function App() {
   };
 
   // ── Admin ─────────────────────────────────────────────────
-  const loadAdminStats = async () => {
-    setAdminLoad(true); setScr("admin");
-    try {
-      const all = await db.all();
-      const users  = all.filter(d => d.id.startsWith("oilaV7_user_"));
-      const oilas  = all.filter(d => d.id.startsWith("oilaV7_oila_"));
-      const now = new Date(); const todayStr = now.toISOString().slice(0, 10);
-      const weekAgo = new Date(now - 7 * 864e5).toISOString().slice(0, 10);
-      const monthAgo = new Date(now - 30 * 864e5).toISOString().slice(0, 10);
-      let todayU = 0, weekU = 0, monthU = 0;
-      users.forEach(u => { const v = u.v || {}; const uid = v.id || ""; const ts = parseInt((uid.match(/\d+/) || [])[0] || "0"); if (ts) { const ds = new Date(ts).toISOString().slice(0, 10); if (ds === todayStr) todayU++; if (ds >= weekAgo) weekU++; if (ds >= monthAgo) monthU++; } });
-      let totX = 0, totD = 0, xCount = 0, dCount = 0;
-      all.forEach(d => { if (d.id.includes("_x_") && Array.isArray(d.v)) { d.v.forEach(x => { totX += Number(x.summa || 0); xCount++; }); } if (d.id.includes("_d_") && Array.isArray(d.v)) { d.v.forEach(x => { totD += Number(x.summa || 0); dCount++; }); } });
-      const fbDoc = all.find(d => d.id === "oilaV7_feedback_all");
-      const fbLegacy = (fbDoc && Array.isArray(fbDoc.v)) ? fbDoc.v : [];
-      const fbNew = all.filter(d => d.c === "fb" && d.v).map(d => d.v);
-      const feedbacks = [...fbNew, ...fbLegacy].sort((a, b) => (b.id || 0) - (a.id || 0));
-      const avgRating = feedbacks.filter(f => f.rating > 0).length ? Math.round(feedbacks.filter(f => f.rating > 0).reduce((s, f) => s + f.rating, 0) / feedbacks.filter(f => f.rating > 0).length * 10) / 10 : 0;
-      setAdminStats({ totalUsers: users.length, totalOilas: oilas.length, todayU, weekU, monthU, totX, totD, xCount, dCount, premOilas: oilas.filter(o => (o.v || {}).premium).length, avgPerOila: oilas.length ? Math.round(users.length / oilas.length * 10) / 10 : 0, docCount: all.length, feedbacks: feedbacks.slice(0, 50), fbCount: feedbacks.length, avgRating });
-    } catch (e) { console.error(e); ok$("Xato: " + e.message, "err"); }
-    setAdminLoad(false);
-  };
+  // Admin statistikasi endi ilovada YO'Q — alohida admin-sayt orqali.
+  const loadAdminStats = async () => {};
 
   // ── TILXAT (RASPISKA) PDF — faqat ikki tomon tasdiqlagan qarzlar uchun ──
   const generateTilxat = (q) => {
