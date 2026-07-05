@@ -1,9 +1,30 @@
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { KatIco, DarIco, Av, SL, SC } from "../components/common/index.jsx";
+import { KatIco, DarIco } from "../components/common/index.jsx";
+import {
+  PageHeader, SectionHeader, SubHeader, AppCard, InfoCard, Badge,
+  PrimaryButton, GhostButton, PremiumButton, LinearProgress, Dialog, UIAvatar,
+} from "../components/ui/index.js";
+import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, Z, CHART, OPACITY, MOTION } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, RELATIONS } from "../utils/constants.js";
 import { tm } from "../utils/formatters.js";
+
+// ── Reports-lokal outline SVG ikonkalar (emoji o'rniga, DS 6-qoida) ──
+const RIco = {
+  hand: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="9" rx="1.8" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><circle cx="8" cy="8.5" r="2" stroke={c} strokeWidth="1.1"/></svg>,
+  target: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.2" opacity=".4"/><circle cx="8" cy="8" r="3.8" stroke={c} strokeWidth="1.2" opacity=".7"/><circle cx="8" cy="8" r="1.4" fill={c}/></svg>,
+  box: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M2.5 5L8 2l5.5 3v6L8 14l-5.5-3V5z" fill={c} opacity=".1" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/><path d="M2.5 5L8 8l5.5-3M8 8v6" stroke={c} strokeWidth="1.1"/></svg>,
+  trophy: (c, s=20) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M5 2h6v4a3 3 0 01-6 0V2z" fill={c} opacity=".15" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/><path d="M5 3H2.5c0 2 1 3.5 2.5 3.5M11 3h2.5c0 2-1 3.5-2.5 3.5M8 9v2.5M5.5 13.5h5M8 11.5v2" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  gem: (c, s=20) => <svg width={s} height={s} viewBox="0 0 18 18" fill="none"><path d="M5 2.5h8L16.5 7 9 15.5 1.5 7 5 2.5z" fill={c} opacity=".15" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M1.5 7h15M6.5 7L9 15.5 11.5 7" stroke={c} strokeWidth="1.1"/></svg>,
+  bolt: (c, s=20) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M9 1.5L3 9h4l-1 5.5L12 7H8l1-5.5z" fill={c} opacity=".2" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  medal: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="10" r="4" fill={c} opacity=".15" stroke={c} strokeWidth="1.2"/><path d="M5.5 6.8L3.5 1.5h3L8 4.5l1.5-3h3l-2 5.3" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  lock: (c, s=16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="3" y="7" width="10" height="7" rx="2" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M5.5 7V5a2.5 2.5 0 015 0v2" stroke={c} strokeWidth="1.2"/><circle cx="8" cy="10.5" r="1" fill={c}/></svg>,
+  check: (c, s=14) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  warn: (c, s=14) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 2L1.5 13.5h13L8 2z" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M8 6.5v3.2" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="11.8" r=".8" fill={c}/></svg>,
+  chevD: (c, sz=10, open=false) => <svg width={sz} height={sz} viewBox="0 0 16 16" fill="none" style={{ transform: open ? "rotate(180deg)" : "none", transition: MOTION.trFast("transform"), display: "inline-block" }}><path d="M4 6l4 4 4-4" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  coin: (c, s=16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M8 4.5v7M6 6.2c0-.9.9-1.4 2-1.4s2 .5 2 1.3c0 2-4 1.6-4 3.6 0 .8.9 1.3 2 1.3s2-.5 2-1.4" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+};
 
 export default function ReportsPage({
   user, azolar, qarzlar, maq,
@@ -24,13 +45,13 @@ export default function ReportsPage({
   if (scr === "maslahat") {
     return (
       <div>
-        <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 18, color: th.t1 }}>{t.aa}</div>
+        <PageHeader th={th} title={t.aa} />
         {advL ? (
-          <div style={{ textAlign: "center", padding: "64px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>{Ico.brain(th.ac)}<div style={{ color: th.t2 }}>{t.an}</div></div>
+          <div style={{ textAlign: "center", padding: SPACE.s16 + "px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s3 }}>{Ico.brain(th.ac)}<div style={{ ...TYPE.body, color: th.t2 }}>{t.an}</div></div>
         ) : adv && (
-          <div style={{ ...STY.cd, lineHeight: 1.85, fontSize: 14, color: th.t1, whiteSpace: "pre-wrap" }}>{adv}</div>
+          <AppCard th={th} style={{ lineHeight: 1.85, ...TYPE.body, color: th.t1, whiteSpace: "pre-wrap" }}>{adv}</AppCard>
         )}
-        {!advL && <button onClick={aiAdv} style={{ ...STY.bt(), marginTop: 10, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.repeat(th.ac)}{t.na}</button>}
+        {!advL && <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{t.na}</PrimaryButton>}
       </div>
     );
   }
@@ -45,12 +66,10 @@ export default function ReportsPage({
 
   return (
     <div>
-      <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 14, color: th.t1 }}>{tm()} {t.mr}</div>
+      <PageHeader th={th} title={tm() + " " + t.mr} />
 
       {!canSeeReport && azolar.length > 1 && (
-        <div style={{ background: th.ac + "11", borderRadius: 12, padding: "11px 14px", marginBottom: 14, fontSize: 12, color: th.t2, display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>🔒</span>{lg === "uz" ? "Siz faqat o'z hisobotingizni ko'rasiz. Umumiy oila hisoboti uchun oila boshidan ruxsat so'rang." : "You see only your own report. Ask the head for full access."}
-        </div>
+        <InfoCard th={th} icon={RIco.lock(th.ac)}>{lg === "uz" ? "Siz faqat o'z hisobotingizni ko'rasiz. Umumiy oila hisoboti uchun oila boshidan ruxsat so'rang." : "You see only your own report. Ask the head for full access."}</InfoCard>
       )}
 
       {/* ── YANGI: Vizual chart bloki ── */}
@@ -105,32 +124,32 @@ export default function ReportsPage({
         const sColor = score >= 75 ? th.gr : score >= 50 ? th.am : th.rd;
         const sLabel = score >= 75 ? (lg === "uz" ? "Zo'r!" : "Excellent!") : score >= 50 ? (lg === "uz" ? "Yaxshi" : "Good") : (lg === "uz" ? "Yaxshilash kerak" : "Needs work");
         if (hX === 0 && hD === 0) return (
-          <div style={{ ...STY.cd, marginBottom: 14, textAlign: "center", padding: "18px" }}>
-            <div style={{ fontSize: 26, marginBottom: 6 }}>{"\ud83e\ude7a"}</div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}</div>
-            <div style={{ fontSize: 11, color: th.t2, marginTop: 4 }}>{lg === "uz" ? "Hisoblash uchun xarajat va daromad kiriting" : "Add expenses and income to calculate"}</div>
-          </div>
+          <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s4 + 2 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s1 + 2 }}>{Ico.brain(th.t3)}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s1 }}>{lg === "uz" ? "Hisoblash uchun xarajat va daromad kiriting" : "Add expenses and income to calculate"}</div>
+          </AppCard>
         );
         return (
-          <div style={{ ...STY.cd, marginBottom: 14 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
+          <AppCard th={th}>
+            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s4, marginBottom: SPACE.s3 + 2 }}>
               <div style={{ position: "relative", width: 80, height: 80, flexShrink: 0 }}>
                 <svg width="80" height="80" viewBox="0 0 80 80"><circle cx="40" cy="40" r="34" fill="none" stroke={th.bor} strokeWidth="8" /><circle cx="40" cy="40" r="34" fill="none" stroke={sColor} strokeWidth="8" strokeLinecap="round" strokeDasharray={2 * Math.PI * 34} strokeDashoffset={2 * Math.PI * 34 * (1 - score / 100)} transform="rotate(-90 40 40)" /></svg>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span style={{ fontSize: 22, fontWeight: 800, color: sColor }}>{score}</span><span style={{ fontSize: 9, color: th.t2 }}>/100</span></div>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 2, color: sColor, fontVariantNumeric: "tabular-nums" }}>{score}</span><span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 1, color: th.t2 }}>/100</span></div>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}{hFb ? (lg === "uz" ? " (oxirgi 30 kun)" : " (last 30d)") : ""}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: sColor }}>{sLabel}</div>
+                <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}{hFb ? (lg === "uz" ? " (oxirgi 30 kun)" : " (last 30d)") : ""}</div>
+                <div style={{ ...TYPE.heading, fontSize: TYPE.heading.fontSize + 1, color: sColor }}>{sLabel}</div>
               </div>
             </div>
-            <div style={{ borderTop: "1px solid " + th.bor, paddingTop: 12 }}>
+            <div style={{ borderTop: "1px solid " + th.bor, paddingTop: SPACE.s3 }}>
               {checks.slice(0, 5).map((c, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7, fontSize: 12, color: th.t1 }}>
-                  <span style={{ color: c.ok ? th.gr : th.am, fontSize: 14, fontWeight: 700, flexShrink: 0 }}>{c.ok ? "✓" : "⚠"}</span>{c.t}
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2 - 1, ...TYPE.caption, color: th.t1 }}>
+                  <span style={{ flexShrink: 0, display: "flex" }}>{c.ok ? RIco.check(th.gr) : RIco.warn(th.am)}</span>{c.t}
                 </div>
               ))}
             </div>
-          </div>
+          </AppCard>
         );
        } catch (e) { console.error("health widget:", e); return null; }
       })()}
@@ -146,56 +165,58 @@ export default function ReportsPage({
         const lowSpender = [...memStats].filter(m => m.ax > 0).sort((p, q) => p.ax - q.ax)[0];
         const mostActive = [...memStats].sort((p, q) => q.cnt - p.cnt)[0];
         const awards = [];
-        if (topSaver && topSaver.bal > 0) awards.push({ emoji: "🏆", color: "#f59e0b", titleUz: "Eng ko'p tejagan", titleEn: "Top saver", who: topSaver, val: "+" + f(topSaver.bal, true) });
-        if (lowSpender && mostActive && lowSpender.id !== (topSaver && topSaver.id)) awards.push({ emoji: "💎", color: "#10b981", titleUz: "Eng kam xarajat", titleEn: "Lowest spender", who: lowSpender, val: f(lowSpender.ax, true) });
-        if (mostActive && mostActive.cnt > 0) awards.push({ emoji: "⚡", color: "#6366f1", titleUz: "Eng faol a'zo", titleEn: "Most active", who: mostActive, val: mostActive.cnt + (lg === "uz" ? " yozuv" : " records") });
+        if (topSaver && topSaver.bal > 0) awards.push({ ico: RIco.trophy, color: th.am, titleUz: "Eng ko'p tejagan", titleEn: "Top saver", who: topSaver, val: "+" + f(topSaver.bal, true) });
+        if (lowSpender && mostActive && lowSpender.id !== (topSaver && topSaver.id)) awards.push({ ico: RIco.gem, color: th.gr, titleUz: "Eng kam xarajat", titleEn: "Lowest spender", who: lowSpender, val: f(lowSpender.ax, true) });
+        if (mostActive && mostActive.cnt > 0) awards.push({ ico: RIco.bolt, color: th.ac, titleUz: "Eng faol a'zo", titleEn: "Most active", who: mostActive, val: mostActive.cnt + (lg === "uz" ? " yozuv" : " records") });
         if (awards.length === 0) return null;
         return (
-          <div style={{ ...STY.cd, background: "linear-gradient(135deg,#f59e0b0d,#ec489908)", border: "1.5px solid #f59e0b33", marginBottom: 14, marginTop: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}><span style={{ fontSize: 18 }}>🏅</span><div style={{ fontSize: 14, fontWeight: 800, color: "#f59e0b" }}>{lg === "uz" ? "Oilaviy reyting" : "Family ranking"}</div></div>
-            <div style={{ fontSize: 11, color: th.t2, marginBottom: 14 }}>{tm()} · {lg === "uz" ? "Bu oy yutuqlari" : "This month's achievements"}</div>
+          <AppCard th={th} style={{ background: th.am + ALPHA.faint, border: "1.5px solid " + th.am + ALPHA.med, marginTop: SPACE.s2 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s1 }}>{RIco.medal(th.am)}<div style={{ ...TYPE.body, fontWeight: 800, color: th.am }}>{lg === "uz" ? "Oilaviy reyting" : "Family ranking"}</div></div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s3 + 2 }}>{tm()} · {lg === "uz" ? "Bu oy yutuqlari" : "This month's achievements"}</div>
             {awards.map((aw, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, background: th.sur, borderRadius: 13, padding: "11px 14px", marginBottom: 9, border: "1px solid " + aw.color + "33" }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: aw.color + "18", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{aw.emoji}</div>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.sur, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", marginBottom: SPACE.s2 + 1, border: "1px solid " + aw.color + ALPHA.med }}>
+                <div style={{ width: SPACE.s8 + SPACE.s2 + 2, height: SPACE.s8 + SPACE.s2 + 2, borderRadius: RADIUS.s + 2, background: aw.color + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{aw.ico(aw.color)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 11, color: aw.color, fontWeight: 700, marginBottom: 2 }}>{lg === "uz" ? aw.titleUz : aw.titleEn}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}><Av src={aw.who.photo} name={aw.who.ism} size={20} ac={aw.color} />{aw.who.ism}{aw.who.id === user.id && <span style={{ fontSize: 9, color: aw.color }}>({t.me})</span>}</div>
+                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: aw.color, fontWeight: 700, marginBottom: 2 }}>{lg === "uz" ? aw.titleUz : aw.titleEn}</div>
+                  <div style={{ ...TYPE.body, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}><UIAvatar th={th} src={aw.who.photo} name={aw.who.ism} size={20} />{aw.who.ism}{aw.who.id === user.id && <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 1, color: aw.color }}>({t.me})</span>}</div>
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: aw.color, flexShrink: 0, textAlign: "right" }}>{aw.val}</div>
+                <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 800, color: aw.color, flexShrink: 0, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{aw.val}</div>
               </div>
             ))}
-            <div style={{ fontSize: 10, color: th.t2, textAlign: "center", marginTop: 6, fontStyle: "italic" }}>{lg === "uz" ? "💪 Oilaviy tejamkorlikni rag'batlantiring!" : "💪 Encourage family savings!"}</div>
-          </div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, textAlign: "center", marginTop: SPACE.s1 + 2, fontStyle: "italic" }}>{lg === "uz" ? "Oilaviy tejamkorlikni rag'batlantiring!" : "Encourage family savings!"}</div>
+          </AppCard>
         );
       })()}
 
       {/* Hisobot doirasi: O'zimning / Oilamning */}
-      <div style={{ marginTop: 6, marginBottom: 10 }}>
-        <div style={{ fontSize: 11, color: th.t2, fontWeight: 700, marginBottom: 7, textTransform: "uppercase", letterSpacing: 0.5 }}>{lg === "uz" ? "Hisobotni yuklab olish" : "Download report"}</div>
+      <div style={{ marginTop: SPACE.s1 + 2, marginBottom: SPACE.s2 + 2 }}>
+        <SectionHeader th={th} style={{ margin: "0 0 " + (SPACE.s2 - 1) + "px" }}>{lg === "uz" ? "Hisobotni yuklab olish" : "Download report"}</SectionHeader>
         {canSeeReport && azolar.length > 1 && (
-          <div style={{ display: "flex", background: th.surH, borderRadius: 12, padding: 3, gap: 3, border: "1.5px solid " + th.bor, marginBottom: 10 }}>
+          <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, gap: 3, border: "1.5px solid " + th.bor, marginBottom: SPACE.s2 + 2 }}>
             {[["mine", (lg === "uz" ? "O'zimning" : "Mine")], ["family", (lg === "uz" ? "Oilamning" : "Family")]].map(([key, label]) => (
-              <button key={key} onClick={() => setPdfScope(key)} style={{
-                flex: 1, padding: "9px 0", border: "none", borderRadius: 9, cursor: "pointer",
-                fontWeight: 700, fontSize: 13, transition: "all .2s",
-                background: pdfScope === key ? "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")" : (th.dark ? "#374151" : "transparent"),
-                color: pdfScope === key ? "#fff" : (th.dark ? "#D1D5DB" : th.t2),
-              }}>{key === "mine" ? "\ud83d\udc64 " : "\ud83d\udc65 "}{label}</button>
+              <button key={key} className="ui-press" onClick={() => setPdfScope(key)} style={{
+                flex: 1, padding: (SPACE.s2 + 1) + "px 0", border: "none", borderRadius: RADIUS.s - 1, cursor: "pointer", fontFamily: "inherit",
+                fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
+                background: pdfScope === key ? th.ac : "transparent",
+                color: pdfScope === key ? "#fff" : th.t2,
+              }}>{label}</button>
             ))}
           </div>
         )}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-        <button onClick={exportExcel} disabled={exportLoading} style={{ ...STY.bt("#10b981", "#059669"), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, opacity: exportLoading ? .6 : 1, position: "relative" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 + 2 }}>
+        <button className="ui-press" onClick={exportExcel} disabled={exportLoading} style={{ ...STY.bt(th.gr, th.gr), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2, opacity: exportLoading ? OPACITY.disabled : 1, position: "relative" }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 6l2.5 3L5 12M9 12h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          {exportLoading ? "..." : "Excel"}{!isPremium && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 8, background: "#f59e0b", color: "#fff", borderRadius: 8, padding: "1px 5px", fontWeight: 800 }}>PRO</span>}
+          {exportLoading ? "..." : "Excel"}{!isPremium && <Badge th={th} type="pro" style={{ position: "absolute", top: -SPACE.s1 - 2, right: -SPACE.s1 - 2 }} />}
         </button>
-        <button onClick={() => exportPDF(pdfScope)} style={{ ...STY.bt("#ef4444", "#dc2626"), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <button className="ui-press" onClick={() => exportPDF(pdfScope)} style={{ ...STY.bt(th.rd, th.rd), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2 }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 4h5l3 3v7H5V4z" stroke="white" strokeWidth="1.3" strokeLinejoin="round" /><line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth="1.2" strokeLinecap="round" /></svg>
-          PDF{!isPremium && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 8, background: "#f59e0b", color: "#fff", borderRadius: 8, padding: "1px 5px", fontWeight: 800 }}>PRO</span>}
+          PDF{!isPremium && <Badge th={th} type="pro" style={{ position: "absolute", top: -SPACE.s1 - 2, right: -SPACE.s1 - 2 }} />}
         </button>
       </div>
-      <button onClick={aiAdv} style={{ ...STY.bt(), marginTop: 8, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>{Ico.brain(th.ac)}{t.aa}</button>
+      {isPremium
+        ? <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 }}>{Ico.brain("#fff")}{t.aa}</PrimaryButton>
+        : <PremiumButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 }}>{Ico.brain("#fff")}{t.aa}<Badge th={th} type="pro" icon={null} /></PremiumButton>}
     </div>
   );
 }
@@ -221,19 +242,26 @@ function fmtLocalR(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
 const HAFTA_KUN = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba → Yakshanba
-const DAR_EMOJI = { oylik:"💼", qoshimcha:"⚡", biznes:"🏢", sovga:"🎁", boshqa:"💰" };
 const SLIDE_H = 232; // barcha slaydlar bir xil balandlik
 const OY_QISQA = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
 const fmtRangeUz = (s) => { const d = new Date(s); return d.getDate() + " " + OY_QISQA[d.getMonth()] + " " + d.getFullYear(); };
-const DATE_COLORS = ["#10b981","#f59e0b","#3b82f6","#a855f7","#ec4899","#06b6d4"];
+const DATE_COLORS = CHART; // DS 2.7: yagona tartibli chart palitra
 
 // ═══════════════════════════════════════════════════════════════
 // ReportVisualBlock — 4 slide swipeable chart
 // ═══════════════════════════════════════════════════════════════
 function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, user, azolar, canSeeReport }) {
-  const KAT_EMOJI = {
-    oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊",
-    kommunal:"🏠", konil:"🎬", talim:"📚", hadya:"🎁", qarz:"💸", boshqa:"💳"
+  // Kategoriya ikonkasi: mavjud KatIco/DarIco (professional outline), maxsus idlar uchun RIco
+  const catIco = (id, c, sz=18) => {
+    if (id === "qarz") return RIco.hand(c, sz);
+    if (id === "maqsad") return RIco.target(c, sz);
+    if (id === "__other" || id === "__rest") return RIco.box(c, sz);
+    return <KatIco id={id} c={c} s={sz} />;
+  };
+  const darIco = (id, c, sz=18) => {
+    if (id === "qarz") return RIco.hand(c, sz);
+    if (id === "__other" || id === "__rest") return RIco.box(c, sz);
+    return <DarIco id={id} c={c} s={sz} />;
   };
 
   // ── Davr tanlash state ─────────────────────────────────
@@ -347,31 +375,31 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     if (type === "xarajat") {
       const base = KATS.map((k, i) => {
         const sum = filteredX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-        return { id: k.id, name: KN[lg][i], color: k.c, icon: KAT_EMOJI[k.id] || "💳", sum };
+        return { id: k.id, name: KN[lg][i], color: k.c, sum };
       });
       // Qarz berish xarajatlari — yorqin rang bilan (qoraytirilmaydi)
       const qzX = filteredX.filter(x => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
-      if (qzX > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz berildi" : "Loan given", color: "#F97316", icon: "🤝", sum: qzX });
+      if (qzX > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz berildi" : "Loan given", color: CHART[6], sum: qzX });
       // Maqsadga (jamg'armaga) qo'shilgan pul — alohida segment
       const mqX = filteredX.filter(x => x.kategoriya === "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
-      if (mqX > 0) base.push({ id: "maqsad", name: lg === "uz" ? "Jamg'arma (maqsad)" : "Goal savings", color: "#EAB308", icon: "🎯", sum: mqX });
+      if (mqX > 0) base.push({ id: "maqsad", name: lg === "uz" ? "Jamg'arma (maqsad)" : "Goal savings", color: CHART[2], sum: mqX });
       // Ro'yxatda yo'q har qanday kategoriya ham chetda qolmasin — donut DOIM 100%
       const knownX = new Set([...KATS.map(k => k.id), "qarz", "maqsad"]);
       const otherX = filteredX.filter(x => !knownX.has(x.kategoriya)).reduce((s, x) => s + Number(x.summa || 0), 0);
-      if (otherX > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: "#94A3B8", icon: "📦", sum: otherX });
+      if (otherX > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: CHART[7], sum: otherX });
       return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
     }
     const base = DARS.map((d, i) => {
       const sum = filteredD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0);
-      return { id: d.id, name: DN[lg]?.[i] || d.id, color: d.c, icon: DAR_EMOJI[d.id] || "💰", sum };
+      return { id: d.id, name: DN[lg]?.[i] || d.id, color: d.c, sum };
     });
     // Qarz olish daromadlari — yorqin rang bilan
     const qzD = filteredD.filter(x => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
-    if (qzD > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz olindi" : "Loan received", color: "#14B8A6", icon: "🤝", sum: qzD });
+    if (qzD > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz olindi" : "Loan received", color: CHART[4], sum: qzD });
     // Ro'yxatda yo'q har qanday daromad turi ham chetda qolmasin
     const knownD = new Set([...DARS.map(d => d.id), "qarz"]);
     const otherD = filteredD.filter(x => !knownD.has(x.tur)).reduce((s, x) => s + Number(x.summa || 0), 0);
-    if (otherD > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: "#94A3B8", icon: "📦", sum: otherD });
+    if (otherD > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: CHART[7], sum: otherD });
     return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
   }, [filteredX, filteredD, type, lg]);
 
@@ -381,7 +409,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     if (catData.length <= 6) return catData;
     const top = catData.slice(0, 5);
     const rest = catData.slice(5).reduce((sm, c) => sm + c.sum, 0);
-    return [...top, { id: "__rest", name: lg === "uz" ? "Boshqalar" : "Others", color: "#94A3B8", icon: "📦", sum: rest }];
+    return [...top, { id: "__rest", name: lg === "uz" ? "Boshqalar" : "Others", color: CHART[7], sum: rest }];
   }, [catData, lg]);
 
   // Sanalar bo'yicha xarajatlar (slide 1 uchun)
@@ -439,7 +467,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   const lineAvg = lineData.length ? Math.round(lineData.reduce((s, d) => s + d.sum, 0) / lineData.filter(d=>d.sum>0).length || 0) : 0;
 
   // ── 4-slayd: oila a'zolari xarajat ulushi ─────────────────
-  const MEM_COLORS = ["#22C55E","#3B82F6","#A855F7","#F97316","#F5B731","#EC4899","#06B6D4"];
+  const MEM_COLORS = CHART; // DS 2.7 palitra
   const members = useMemo(() => {
     if (scope !== "family" || !canSeeReport || !(azolar || []).length) return [];
     return azolar.map((a, i) => ({
@@ -517,35 +545,34 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       {/* ── Sarlavha: tur (dropdown) + kalendar ── */}
       <div style={{ position:"relative", display:"flex", alignItems:"center", marginBottom:12 }}>
         {customRange
-          ? <button onClick={() => { setCustomRange(null); setSlideIdx(0); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, color:th.t1, cursor:"pointer", fontSize:16, fontWeight:800, flexShrink:0 }}>{"\u2190"}</button>
-          : <div style={{ width:38, flexShrink:0 }}/>}
+          ? <button className="ui-press" onClick={() => { setCustomRange(null); setSlideIdx(0); }} aria-label="Orqaga" style={{ width: SPACE.s8 + SPACE.s1 + 2, height: SPACE.s8 + SPACE.s1 + 2, borderRadius: RADIUS.s, background: th.surH, border: "1px solid " + th.bor, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke={th.t1} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
+          : <div style={{ width: SPACE.s8 + SPACE.s1 + 2, flexShrink: 0 }}/>}
         <div style={{ flex:1, display:"flex", justifyContent:"center" }}>
-          <button onClick={() => setTypeMenu(v => !v)} style={{ display:"flex", alignItems:"center", gap:6, background:"transparent", border:"none", cursor:"pointer", fontSize:16, fontWeight:800, color:th.t1, padding:"8px 10px" }}>
+          <button className="ui-press" onClick={() => setTypeMenu(v => !v)} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: "transparent", border: "none", cursor: "pointer", ...TYPE.heading, fontSize: TYPE.heading.fontSize - 1, color: th.t1, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px", fontFamily: "inherit" }}>
             {type==="xarajat" ? (lg==="uz"?"Xarajatlar":"Expenses") : (lg==="uz"?"Daromadlar":"Income")}
-            <span style={{ fontSize:10, color:th.t2, transform: typeMenu ? "rotate(180deg)" : "none", transition:"transform .2s", display:"inline-block" }}>{"\u25BC"}</span>
+            {RIco.chevD(th.t2, 12, typeMenu)}
           </button>
         </div>
-        <button onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} style={{ width:38, height:38, borderRadius:11, background:th.surH, border:"1px solid "+th.bor, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="3.5" width="14" height="12" rx="2.5" stroke={th.t1} strokeWidth="1.4"/><path d="M2 7.5h14M6 2v3M12 2v3" stroke={th.t1} strokeWidth="1.4" strokeLinecap="round"/></svg>
+        <button className="ui-press" onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} aria-label={lg==="uz"?"Davr tanlash":"Pick range"} style={{ width: SPACE.s8 + SPACE.s1 + 2, height: SPACE.s8 + SPACE.s1 + 2, borderRadius: RADIUS.s, background: th.surH, border: "1px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          {RIco.cal(th.t1)}
         </button>
         {typeMenu && (
-          <div style={{ position:"absolute", top:44, left:"50%", transform:"translateX(-50%)", background:th.sur, border:"1px solid "+th.bor, borderRadius:14, padding:6, zIndex:60, boxShadow:"0 12px 32px rgba(0,0,0,.4)", minWidth:190 }}>
-            {[["xarajat","💸 "+(lg==="uz"?"Xarajatlar":"Expenses")], ["daromad","💰 "+(lg==="uz"?"Daromadlar":"Income")]].map(([key, label]) => (
-              <button key={key} onClick={() => { setType(key); setTypeMenu(false); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{ display:"block", width:"100%", textAlign:"left", padding:"11px 14px", background: type===key ? th.ac+"22" : "transparent", border:"none", borderRadius:10, cursor:"pointer", fontSize:14, fontWeight:700, color: type===key ? th.ac : th.t1 }}>{label}{type===key ? " \u2713" : ""}</button>
+          <div className="ui-fadeUp" style={{ position: "absolute", top: SPACE.s12 - SPACE.s1, left: "50%", transform: "translateX(-50%)", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s1 + 2, zIndex: Z.dropdown, boxShadow: SHADOW.e2, minWidth: SPACE.s16 * 3 }}>
+            {[["xarajat", lg==="uz"?"Xarajatlar":"Expenses"], ["daromad", lg==="uz"?"Daromadlar":"Income"]].map(([key, label]) => (
+              <button key={key} className="ui-press" onClick={() => { setType(key); setTypeMenu(false); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, width: "100%", textAlign: "left", padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", background: type===key ? th.ac + ALPHA.tint : "transparent", border: "none", borderRadius: RADIUS.s, cursor: "pointer", ...TYPE.body, fontWeight: 700, color: type===key ? th.ac : th.t1, fontFamily: "inherit" }}>{key === "xarajat" ? RIco.hand(type===key ? th.ac : th.t2, 16) : RIco.coin(type===key ? th.ac : th.t2)}<span style={{ flex: 1 }}>{label}</span>{type===key && RIco.check(th.ac)}</button>
             ))}
           </div>
         )}
       </div>
 
       {/* ── Scope toggle ── */}
-      <div style={{ display:"flex", background:th.surH, borderRadius:12, padding:3, marginBottom:12, gap:3 }}>
+      <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, marginBottom: SPACE.s3, gap: 3 }}>
         {[["mine", lg==="uz"?"O'zimning":"Mine"], ["family", lg==="uz"?"Oilamning":"Family"]].map(([key, label]) => (
-          <button key={key} onClick={() => { setScope(key); setSlideIdx(0); }} style={{
-            flex:1, padding:"9px 0", border:"none", borderRadius:9, cursor:"pointer",
-            fontWeight:700, fontSize:13, transition:"all .2s",
-            background: scope===key ? "linear-gradient(135deg,"+th.ac+","+th.ac2+")" : (th.dark ? "#374151" : "transparent"),
-            color: scope===key ? "#fff" : (th.dark ? "#D1D5DB" : th.t3),
-            boxShadow: scope===key ? "0 3px 10px "+th.ac+"44" : "none",
+          <button key={key} className="ui-press" onClick={() => { setScope(key); setSlideIdx(0); }} style={{
+            flex: 1, padding: (SPACE.s2 + 1) + "px 0", border: "none", borderRadius: RADIUS.s - 1, cursor: "pointer", fontFamily: "inherit",
+            fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
+            background: scope===key ? th.ac : "transparent",
+            color: scope===key ? "#fff" : th.t2,
           }}>{label}</button>
         ))}
       </div>
@@ -554,12 +581,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       {!customRange && (
       <div style={{ display:"flex", gap:6, marginBottom:12 }}>
         {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => (
-          <button key={key} onClick={() => setPeriod(key)} style={{
-            flex:1, padding:"9px 0", borderRadius:10, border:"none", cursor:"pointer",
-            fontWeight:700, fontSize:13, transition:"all .2s",
-            background: period===key ? th.ac : (th.dark ? "#374151" : th.sur),
-            color: period===key ? (th.ac==="#f5b731"||th.ac==="#f59e0b"?"#111":"#fff") : (th.dark ? "#D1D5DB" : th.t3),
-            boxShadow: period===key ? "0 3px 10px "+th.ac+"33" : "none",
+          <button key={key} className="ui-press" onClick={() => setPeriod(key)} style={{
+            flex: 1, padding: (SPACE.s2 + 1) + "px 0", borderRadius: RADIUS.s, border: "none", cursor: "pointer", fontFamily: "inherit",
+            fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
+            background: period===key ? th.ac : th.sur,
+            color: period===key ? "#fff" : th.t2,
+            boxShadow: SHADOW.e0,
           }}>{label}</button>
         ))}
       </div>
@@ -570,16 +597,16 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       <div ref={scrollRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:10, marginBottom:4, scrollbarWidth:"none" }}>
         <style>{`.scrollhide::-webkit-scrollbar{display:none}`}</style>
         {opts.map((opt, i) => (
-          <button key={opt.key} onClick={() => setSelIdx(i)} style={{
-            flexShrink:0, padding:"7px 14px", borderRadius:20, border:"none", cursor:"pointer",
-            fontWeight: selIdx===i ? 800 : 500, fontSize:13, transition:"all .2s",
-            background: selIdx===i ? "transparent" : "transparent",
+          <button key={opt.key} className="ui-press" onClick={() => setSelIdx(i)} style={{
+            flexShrink: 0, padding: (SPACE.s2 - 1) + "px " + (SPACE.s3 + 2) + "px", border: "none", cursor: "pointer", fontFamily: "inherit",
+            fontWeight: selIdx===i ? 800 : 500, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("border-color"),
+            background: "transparent",
             color: selIdx===i ? th.t1 : th.t2,
-            borderBottom: selIdx===i ? "2px solid "+th.ac : "2px solid transparent",
+            borderBottom: selIdx===i ? "2px solid " + th.ac : "2px solid transparent",
             borderRadius: 0,
           }}>
             {opt.label}
-            {opt.sub && <span style={{ display:"block", fontSize:10, color:th.t3, fontWeight:400 }}>{opt.sub}</span>}
+            {opt.sub && <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, fontWeight: 400 }}>{opt.sub}</span>}
           </button>
         ))}
       </div>
@@ -587,10 +614,10 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
       {/* ── Tanlangan davr ko'rsatkichi ── */}
       {customRange && (
-        <button onClick={() => { setRFrom(customRange.from); setRTo(customRange.to); setShowRangePicker(true); }} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", background:"transparent", border:"none", cursor:"pointer", padding:"2px 0 12px", fontSize:14, fontWeight:800, color:th.t1 }}>
-          {fmtRangeUz(customRange.from)}<span style={{ fontSize:9, color:th.t2 }}>{"\u25BC"}</span>
-          <span style={{ color:th.t2, fontWeight:400 }}>~</span>
-          {fmtRangeUz(customRange.to)}<span style={{ fontSize:9, color:th.t2 }}>{"\u25BC"}</span>
+        <button className="ui-press" onClick={() => { setRFrom(customRange.from); setRTo(customRange.to); setShowRangePicker(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s2, width: "100%", background: "transparent", border: "none", cursor: "pointer", padding: "2px 0 " + SPACE.s3 + "px", ...TYPE.body, fontWeight: 800, color: th.t1, fontFamily: "inherit" }}>
+          {fmtRangeUz(customRange.from)}{RIco.chevD(th.t2, 9)}
+          <span style={{ color: th.t2, fontWeight: 400 }}>~</span>
+          {fmtRangeUz(customRange.to)}{RIco.chevD(th.t2, 9)}
         </button>
       )}
 
@@ -598,7 +625,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       <div
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        style={{ background:th.sur, borderRadius:20, border:"1px solid "+th.bor, overflow:"hidden", marginBottom:12 }}
+        style={{ background: th.sur, borderRadius: RADIUS.m, border: "1px solid " + th.bor, overflow: "hidden", marginBottom: SPACE.s3 }}
       >
         {/* Slide 0: Donut + sanalar */}
         {slideIdx === 0 && (
@@ -606,21 +633,21 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             <div style={{ flexShrink:0, position:"relative", width:140, height:140 }}>
               <DonutEl size={140} highlightIdx={null} data={dateData} total={dateData.reduce((sm, d) => sm + d.sum, 0)}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
-                <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
+                <div style={{ fontSize: TYPE.caption.fontSize - 1, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
                   {totalX > 0 ? "+" + fmtN(totalX) : lg==="uz"?"Ma'lumot\nyoq":"No data"}
                 </div>
               </div>
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               {dateData.length === 0
-                ? <div style={{ fontSize:12, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data this period"}</div>
+                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data this period"}</div>
                 : dateData.slice(0,5).map((d, i) => {
                     const col = d.color || th.ac;
                     return (
                       <div key={d.sana} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
                         <div style={{ width:18, height:18, borderRadius:"50%", background:col+"22", border:"2px solid "+col, flexShrink:0 }}/>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize:12, color:th.t2 }}>
+                          <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>
                             {(() => {
                               const dt = new Date(d.sana);
                               const months = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
@@ -628,7 +655,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
                             })()}
                           </div>
                         </div>
-                        <div style={{ fontSize:12, fontWeight:700, color:th.t1, textAlign:"right" }}>
+                        <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:700, color:th.t1, textAlign:"right" }}>
                           {d.sum.toLocaleString("uz-UZ")}
                         </div>
                       </div>
@@ -647,12 +674,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 {hovCat !== null && donutCats[hovCat]
                   ? <>
-                      <div style={{ fontSize:18 }}>{donutCats[hovCat].icon}</div>
-                      <div style={{ fontSize:11, fontWeight:900, color:donutCats[hovCat].color }}>
+                      <div style={{ display: "flex" }}>{type === "xarajat" ? catIco(donutCats[hovCat].id, donutCats[hovCat].color) : darIco(donutCats[hovCat].id, donutCats[hovCat].color)}</div>
+                      <div style={{ fontSize: TYPE.caption.fontSize - 1, fontWeight:900, color:donutCats[hovCat].color }}>
                         {totalX>0?Math.round(donutCats[hovCat].sum/totalX*100):0}%
                       </div>
                     </>
-                  : <div style={{ fontSize:11, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
+                  : <div style={{ fontSize: TYPE.caption.fontSize - 1, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
                       {totalX > 0 ? "+" + fmtN(totalX) : "—"}
                     </div>
                 }
@@ -660,14 +687,14 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             </div>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:7 }}>
               {catData.length === 0
-                ? <div style={{ fontSize:12, color:th.t3 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data"}</div>
+                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data"}</div>
                 : donutCats.map((cat, i) => (
                     <div key={cat.id} style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer" }}
                       onMouseEnter={() => setHovCat(i)} onMouseLeave={() => setHovCat(null)}
                       onTouchStart={() => setHovCat(i)} onTouchEnd={() => setHovCat(null)}>
                       <div style={{ width:14, height:14, borderRadius:"50%", background:cat.color+"22", border:"2px solid "+cat.color, flexShrink:0 }}/>
-                      <span style={{ flex:1, fontSize:12, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{cat.name}</span>
-                      <span style={{ fontSize:12, fontWeight:700, color:cat.color, flexShrink:0 }}>
+                      <span style={{ flex:1, fontSize: TYPE.caption.fontSize, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{cat.name}</span>
+                      <span style={{ fontSize: TYPE.caption.fontSize, fontWeight:700, color:cat.color, flexShrink:0 }}>
                         {totalX>0?(cat.sum/totalX*100).toFixed(2):0}%
                       </span>
                     </div>
@@ -681,8 +708,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         {slideIdx === 2 && !customRange && (
           <div style={{ height:SLIDE_H, padding:"14px 16px 6px", display:"flex", flexDirection:"column" }}>
             <div style={{ display:"flex", gap:18, marginBottom:6 }}>
-              <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Jami:":"Total:"} <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
-              <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"O'rtacha:":"Avg:"} <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
+              <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"Jami:":"Total:"} <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
+              <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"O'rtacha:":"Avg:"} <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
             </div>
             <div style={{ flex:1, display:"flex", alignItems:"center", overflow:"hidden" }}>
               <div style={{ width:"100%" }}>
@@ -700,28 +727,28 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 {hovMem !== null && members[hovMem]
                   ? <>
-                      <div style={{ fontSize:10, fontWeight:800, color:members[hovMem].color, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{members[hovMem].ism?.split(" ")[0]}</div>
-                      <div style={{ fontSize:12, fontWeight:900, color:members[hovMem].color }}>{memTotal>0?(members[hovMem].sum/memTotal*100).toFixed(1):0}%</div>
+                      <div style={{ fontSize: TYPE.tiny.fontSize, fontWeight:800, color:members[hovMem].color, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{members[hovMem].ism?.split(" ")[0]}</div>
+                      <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:900, color:members[hovMem].color }}>{memTotal>0?(members[hovMem].sum/memTotal*100).toFixed(1):0}%</div>
                     </>
                   : <>
-                      <div style={{ fontSize:10, fontWeight:700, color:th.t2 }}>{lg==="uz"?"Oila jami":"Family total"}</div>
-                      <div style={{ fontSize:12, fontWeight:900, color:th.t1 }}>{memTotal>0?fmtN(memTotal):"\u2014"}</div>
+                      <div style={{ fontSize: TYPE.tiny.fontSize, fontWeight:700, color:th.t2 }}>{lg==="uz"?"Oila jami":"Family total"}</div>
+                      <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:900, color:th.t1 }}>{memTotal>0?fmtN(memTotal):"\u2014"}</div>
                     </>
                 }
               </div>
             </div>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:8 }}>
               {members.length === 0
-                ? <div style={{ fontSize:12, color:th.t2 }}>{lg==="uz"?"Bu davrda ma'lumot yo'q":"No data this period"}</div>
+                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"Bu davrda ma'lumot yo'q":"No data this period"}</div>
                 : members.slice(0,6).map((m, i) => (
                     <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}
                       onMouseEnter={() => setHovMem(i)} onMouseLeave={() => setHovMem(null)}
                       onTouchStart={() => setHovMem(i)} onTouchEnd={() => setHovMem(null)}>
                       <div style={{ width:15, height:15, borderRadius:"50%", background:m.color+"22", border:"2px solid "+m.color, flexShrink:0 }}/>
-                      <span style={{ flex:1, fontSize:12, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.ism}</span>
+                      <span style={{ flex:1, fontSize: TYPE.caption.fontSize, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.ism}</span>
                       <div style={{ textAlign:"right", flexShrink:0 }}>
-                        <div style={{ fontSize:12, fontWeight:800, color:m.color }}>{memTotal>0?(m.sum/memTotal*100).toFixed(1):0}%</div>
-                        <div style={{ fontSize:9, color:th.t2 }}>{m.sum.toLocaleString("uz-UZ")}</div>
+                        <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:800, color:m.color }}>{memTotal>0?(m.sum/memTotal*100).toFixed(1):0}%</div>
+                        <div style={{ fontSize: TYPE.tiny.fontSize - 1, color:th.t2 }}>{m.sum.toLocaleString("uz-UZ")}</div>
                       </div>
                     </div>
                   ))
@@ -731,12 +758,12 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         )}
 
         {/* Slide dots */}
-        <div style={{ display:"flex", justifyContent:"center", gap:8, padding:"10px 0 14px" }}>
+        <div style={{ display: "flex", justifyContent: "center", gap: SPACE.s2, padding: (SPACE.s2 + 2) + "px 0 " + (SPACE.s3 + 2) + "px" }}>
           {Array.from({ length: maxSlide + 1 }, (_, i) => (
             <div key={i} onClick={() => setSlideIdx(i)} style={{
-              width: slideIdx===i ? 20 : 7, height:7, borderRadius:4,
-              background: slideIdx===i ? th.ac : th.t3+"44",
-              transition:"all .3s", cursor:"pointer",
+              width: slideIdx===i ? SPACE.s4 + SPACE.s1 : SPACE.s2 - 1, height: SPACE.s2 - 1, borderRadius: RADIUS.pill,
+              background: slideIdx===i ? th.ac : th.t3 + ALPHA.strong,
+              transition: MOTION.tr(), cursor: "pointer",
             }}/>
           ))}
         </div>
@@ -744,60 +771,53 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
       {/* ── Davr tanlash modali ── */}
       {showRangePicker && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background:"rgba(0,0,0,.65)", zIndex:1100, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }} onClick={() => setShowRangePicker(false)}>
-          <div style={{ background:th.sur, borderRadius:22, padding:"24px 20px", width:"100%", maxWidth:380, border:"1px solid "+th.bor }} onClick={e => e.stopPropagation()}>
-            <div style={{ fontSize:16, fontWeight:800, color:th.t1, marginBottom:18, textAlign:"center" }}>{lg==="uz"?"Davrni tanlang":"Select period"}</div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 4px", borderBottom:"1px solid "+th.bor }}>
-              <span style={{ fontSize:13, fontWeight:700, color:th.t1 }}>{lg==="uz"?"Boshlanish sanasi":"Start date"}</span>
-              <input type="date" value={rFrom} onChange={e => setRFrom(e.target.value)} style={{ background:th.surH, border:"1px solid "+th.bor, borderRadius:9, padding:"8px 10px", color:th.t1, fontSize:13, fontWeight:600, colorScheme: th.dark ? "dark" : "light" }}/>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"13px 4px", marginBottom:20 }}>
-              <span style={{ fontSize:13, fontWeight:700, color:th.t1 }}>{lg==="uz"?"Tugash sanasi":"End date"}</span>
-              <input type="date" value={rTo} onChange={e => setRTo(e.target.value)} style={{ background:th.surH, border:"1px solid "+th.bor, borderRadius:9, padding:"8px 10px", color:th.t1, fontSize:13, fontWeight:600, colorScheme: th.dark ? "dark" : "light" }}/>
-            </div>
-            <div style={{ display:"flex", gap:10 }}>
-              <button onClick={() => setShowRangePicker(false)} style={{ flex:1, background:th.surH, border:"1px solid "+th.bor, borderRadius:12, padding:"12px 0", color:th.t1, cursor:"pointer", fontWeight:700, fontSize:14 }}>{lg==="uz"?"Bekor qilish":"Cancel"}</button>
-              <button onClick={() => {
-                if (!rFrom || !rTo) return;
-                const a2 = rFrom <= rTo ? rFrom : rTo;
-                const b2 = rFrom <= rTo ? rTo : rFrom;
-                setCustomRange({ from: a2, to: b2 });
-                setShowRangePicker(false); setSlideIdx(0); setHovCat(null); setHovMem(null);
-              }} style={{ flex:1, background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:12, padding:"12px 0", color:"#fff", cursor:"pointer", fontWeight:700, fontSize:14 }}>{lg==="uz"?"Tasdiqlash":"Confirm"}</button>
-            </div>
+        <Dialog th={th} open onClose={() => setShowRangePicker(false)} title={lg==="uz"?"Davrni tanlang":"Select period"}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s1 + "px", borderBottom: "1px solid " + th.bor }}>
+            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{lg==="uz"?"Boshlanish sanasi":"Start date"}</span>
+            <input type="date" value={rFrom} onChange={e => setRFrom(e.target.value)} style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px", color: th.t1, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, fontFamily: "inherit", colorScheme: th.dark ? "dark" : "light" }}/>
           </div>
-        </div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s1 + "px", marginBottom: SPACE.s4 + SPACE.s1 }}>
+            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{lg==="uz"?"Tugash sanasi":"End date"}</span>
+            <input type="date" value={rTo} onChange={e => setRTo(e.target.value)} style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px", color: th.t1, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, fontFamily: "inherit", colorScheme: th.dark ? "dark" : "light" }}/>
+          </div>
+          <div style={{ display: "flex", gap: SPACE.s2 + 2 }}>
+            <GhostButton th={th} onClick={() => setShowRangePicker(false)} style={{ flex: 1 }}>{lg==="uz"?"Bekor qilish":"Cancel"}</GhostButton>
+            <PrimaryButton th={th} onClick={() => {
+              if (!rFrom || !rTo) return;
+              const a2 = rFrom <= rTo ? rFrom : rTo;
+              const b2 = rFrom <= rTo ? rTo : rFrom;
+              setCustomRange({ from: a2, to: b2 });
+              setShowRangePicker(false); setSlideIdx(0); setHovCat(null); setHovMem(null);
+            }} style={{ flex: 1, marginBottom: 0 }}>{lg==="uz"?"Tasdiqlash":"Confirm"}</PrimaryButton>
+          </div>
+        </Dialog>
       )}
 
       {/* ── Kategoriya breakdown ro'yxati ── */}
       {catData.length > 0 && (
-        <div style={{ background:th.sur, borderRadius:20, border:"1px solid "+th.bor, padding:"16px 14px" }}>
-          <div style={{ fontSize:12, fontWeight:700, color:th.t2, marginBottom:14, textTransform:"uppercase", letterSpacing:0.8 }}>
+        <AppCard th={th} style={{ padding: SPACE.s4 + "px " + (SPACE.s3 + 2) + "px", marginBottom: 0 }}>
+          <div style={{ ...TYPE.tiny, fontWeight: 700, letterSpacing: 1.5, color: th.t2, marginBottom: SPACE.s3 + 2 }}>
             {type==="xarajat" ? (lg==="uz"?"Kategoriyalar":"Categories") : (lg==="uz"?"Daromad turlari":"Income types")}
           </div>
           {catData.map((cat, i) => {
             const pct = totalX>0 ? cat.sum/totalX*100 : 0;
             return (
-              <div key={cat.id} style={{ marginBottom:16 }}>
-                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:6 }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:cat.color+"22", display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>
-                    {cat.icon}
+              <div key={cat.id} style={{ marginBottom: SPACE.s4 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, marginBottom: SPACE.s1 + 2 }}>
+                  <div style={{ width: SPACE.s8 + SPACE.s1, height: SPACE.s8 + SPACE.s1, borderRadius: RADIUS.s, background: cat.color + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {type === "xarajat" ? catIco(cat.id, cat.color) : darIco(cat.id, cat.color)}
                   </div>
-                  <span style={{ flex:1, fontSize:14, fontWeight:600, color:th.t1 }}>{cat.name}</span>
-                  <span style={{ fontSize:13, fontWeight:700, color:th.t2, marginRight:8 }}>{pct.toFixed(2)}%</span>
-                  <span style={{ fontSize:14, fontWeight:800, color:th.t1 }}>{cat.sum.toLocaleString("uz-UZ")}</span>
+                  <span style={{ flex: 1, ...TYPE.body, fontWeight: 600, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.name}</span>
+                  <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t2, marginRight: SPACE.s2, fontVariantNumeric: "tabular-nums" }}>{pct.toFixed(2)}%</span>
+                  <span style={{ ...TYPE.body, fontWeight: 800, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{cat.sum.toLocaleString("uz-UZ")}</span>
                 </div>
-                <div style={{ height:5, background:th.bor, borderRadius:3, overflow:"hidden", marginLeft:46 }}>
-                  <div style={{
-                    height:"100%", width:pct+"%",
-                    background:"linear-gradient(90deg,"+cat.color+"66,"+cat.color+")",
-                    borderRadius:3, transition:"width "+(0.5+i*0.06)+"s cubic-bezier(0.34,1.56,0.64,1)",
-                  }}/>
+                <div style={{ marginLeft: SPACE.s12 - 2 }}>
+                  <LinearProgress th={th} value={Math.min(100, pct)} tone={cat.color} height={SPACE.s1 + 1} />
                 </div>
               </div>
             );
           })}
-        </div>
+        </AppCard>
       )}
     </div>
   );
@@ -805,8 +825,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
 // ── Line chart SVG ─────────────────────────────────────────────
 function LineChartSVG({ data, lineMax, th, f }) {
-  // O'q yozuvlari uchun DOIM ochiq rang (dark temada #D1D5DB)
-  const AXIS = th.dark ? "#D1D5DB" : (th.t3 || "#64748b");
+  // O'q yozuvlari uchun token rang (dark temada t2 ochiqroq)
+  const AXIS = th.dark ? th.t2 : th.t3; // token: o'q yozuvlari
   const W = 320, H = 160, padL = 10, padR = 10, padT = 16, padB = 28;
   const iW = W - padL - padR;
   const iH = H - padT - padB;
