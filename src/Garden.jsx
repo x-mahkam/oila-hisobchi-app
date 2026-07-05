@@ -50,6 +50,10 @@ function injectGardenCss() {
 @keyframes gdBird{0%{transform:translateX(-30px);opacity:0}6%{opacity:.9}50%{opacity:.9}94%{opacity:.9}100%{transform:translateX(110vw);opacity:0}}
 @keyframes gdTwinkle{0%,100%{opacity:.35}50%{opacity:1}}
 @keyframes gdLeafBurst{0%{transform:translateY(0) scale(.6) rotate(0);opacity:1}100%{transform:translateY(-58px) scale(1) rotate(140deg);opacity:0}}
+.gd-root{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100vh;height:100dvh;overflow:hidden}
+.gd-scene-full{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden}
+.gd-sky-full{position:relative;flex:1 1 auto;min-height:90px;z-index:10}
+.gd-meadow-full{position:relative;flex:0 0 auto;height:56%;min-height:250px;max-height:520px;z-index:11}
 @media (prefers-reduced-motion:reduce){
   [style*="gdSway"],[style*="gdDrift"],[style*="gdSunPulse"],[style*="gdSunGlow"],
   [style*="gdShimmer"],[style*="gdBounce"],[style*="gdRay"],[style*="gdBird"],
@@ -433,7 +437,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: Z.nav, overflow: "hidden", fontFamily: "inherit", userSelect: "none" }}>
+    <div className="gd-root" style={{ zIndex: Z.nav, background: SKY_GRAD[mode], fontFamily: "inherit", userSelect: "none" }}>
       <GardenDefs />
 
       {/* ── SAHNA: ekranning ~88% ── */}
