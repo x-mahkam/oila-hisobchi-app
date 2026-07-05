@@ -75,7 +75,7 @@ const SecLabel = memo(function SecLabel({ th, children, right }) {
 });
 
 // ── HERO: salomlashish + oila balansi + oy daromad/xarajat + o'zgarish ──
-const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, delta, bugunX }) {
+const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScope, delta, bugunX }) {
   const shown = useCountUp(bal);
   const neg = bal < 0;
   const h = new Date().getHours();
@@ -91,7 +91,7 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, delta, 
         <div style={{ ...TY.name, color: "#fff", marginBottom: SP.l }}>{ism || ""} {"\ud83d\udc4b"}</div>
         {/* 2. Umumiy (oila) balansi */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SP.xs }}>
-          <div style={{ ...TY.cap, color: "rgba(255,255,255,0.72)" }}>{lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)"}</div>
+          <div style={{ ...TY.cap, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
           {bugunX > 0 && <div style={{ ...TY.micro, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: 9, padding: "3px 9px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: SP.s, flexWrap: "wrap", marginBottom: neg ? SP.s : SP.l }}>
@@ -119,7 +119,7 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, delta, 
             <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>-{f(jX, true)}</div>
           </div>
         </div>
-        <div style={{ ...TY.micro, color: "rgba(255,255,255,0.62)", marginTop: SP.s }}>{lg === "uz" ? "Mening balansim" : "My balance"}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>
+        {famScope && <div style={{ ...TY.micro, color: "rgba(255,255,255,0.62)", marginTop: SP.s }}>{lg === "uz" ? "Mening balansim" : "My balance"}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
       </div>
     </div>
   );
@@ -175,7 +175,7 @@ export default function DashboardPage({
   setXar, setDar, setMaq, setKidBalances,
   dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
   th, t, f, ok$, buzz, addStar, fireConfetti,
-  gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng,
+  gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng, canSeeReport,
   srch, srchR, showS,
   delX, acceptXReq, rejectXReq,
   vazifaDone, vazifaApprove,
@@ -201,13 +201,19 @@ export default function DashboardPage({
   const bugunX = useMemo(() => xar.filter(x => (x.uid === user?.id || !x.uid) && x.sana === bugun).reduce((sm, x) => sm + Number(x.summa || 0), 0), [xar, user?.id, bugun]);
 
   // 5. Balans o'zgarishi: o'tgan oy balansi bilan solishtirish (mavjud ma'lumotdan)
+  // Ruxsat: oila balansini faqat bosh va u ruxsat bergan a'zolar ko'radi.
+  // Boshqalarga hero shaxsiy rejimda ishlaydi.
+  const heroBal = canSeeReport ? bal : myBal;
+  const heroD = canSeeReport ? jD : myD;
+  const heroX = canSeeReport ? jX : myX;
   const delta = useMemo(() => {
     const d = new Date(); d.setMonth(d.getMonth() - 1);
     const pm = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    const pD = dar.filter(x => x.sana?.startsWith(pm)).reduce((sm, x) => sm + Number(x.summa || 0), 0);
-    const pX = xar.filter(x => x.sana?.startsWith(pm)).reduce((sm, x) => sm + Number(x.summa || 0), 0);
-    return bal - (pD - pX);
-  }, [xar, dar, bal]);
+    const mine = x => x.uid === user?.id || !x.uid;
+    const pD = dar.filter(x => x.sana?.startsWith(pm) && (canSeeReport || mine(x))).reduce((sm, x) => sm + Number(x.summa || 0), 0);
+    const pX = xar.filter(x => x.sana?.startsWith(pm) && (canSeeReport || mine(x))).reduce((sm, x) => sm + Number(x.summa || 0), 0);
+    return heroBal - (pD - pX);
+  }, [xar, dar, heroBal, canSeeReport, user?.id]);
 
   // 7. Oxirgi tranzaksiyalar (o'zimniki)
   const recentTx = useMemo(() => [
@@ -443,7 +449,7 @@ export default function DashboardPage({
       {!isKid && oila && (
         <div>
           {/* 1-5. Hero: salomlashish, oila balansi, daromad, xarajat, o'zgarish */}
-          <Hero th={th} lg={lg} t={t} f={f} ism={user?.ism} bal={bal} jD={jD} jX={jX} myBal={myBal} delta={delta} bugunX={bugunX} />
+          <Hero th={th} lg={lg} t={t} f={f} ism={user?.ism} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
 
           {/* Byudjet — oy xarajati kontekstini davom ettiradi */}
           <div className="anim-fadeUp" style={{ animationDelay: STAGGER + "ms", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS, padding: SP.l, marginBottom: CARD_GAP }}>
@@ -533,7 +539,7 @@ export default function DashboardPage({
           )}
 
           {/* 11. Oiladagi oxirgi faoliyat */}
-          {famTx.length > 0 && (
+          {canSeeReport && famTx.length > 0 && (
             <div>
               <SecLabel th={th}>{lg === "uz" ? "Oiladagi oxirgi faoliyat" : "Family activity"}</SecLabel>
               {famTx.map(item => <TxRow key={"fam" + item.tp + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)}
