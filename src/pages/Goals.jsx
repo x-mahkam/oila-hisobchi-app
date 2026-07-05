@@ -1,9 +1,121 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, memo } from "react";
 import { MoneyInput } from "../components/common/index.jsx";
+import {
+  PageHeader, SectionHeader, AppCard, Badge, EmptyState,
+  PrimaryButton, GhostButton, IconButton, LinearProgress, Switch,
+} from "../components/ui/index.js";
+import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, CHART, OPACITY } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { GOAL_PRESETS, KID_GOAL_PRESETS } from "../utils/constants.js";
 import WeddingCalc from "../components/WeddingCalc.jsx";
+
+// ── Goals-lokal outline SVG ikonkalar (emoji o'rniga, DS 6) ──
+const GIco = {
+  rings: (c, s=22) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="7.5" cy="12" r="5" stroke={c} strokeWidth="1.6"/><circle cx="12.5" cy="12" r="5" stroke={c} strokeWidth="1.6"/><path d="M7.5 7V4.5M5.5 5.5L7.5 3l2 2.5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  target: (c, s=16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.2" opacity=".4"/><circle cx="8" cy="8" r="3.8" stroke={c} strokeWidth="1.2" opacity=".7"/><circle cx="8" cy="8" r="1.4" fill={c}/></svg>,
+  family: (c, s=15) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="5" r="2.2" stroke={c} strokeWidth="1.2"/><circle cx="11" cy="5.8" r="1.7" stroke={c} strokeWidth="1.2"/><path d="M1.5 13.5c0-2.4 1.8-4 4-4s4 1.6 4 4M9.5 13.5c.2-1.9 1.3-3 2.8-3 1.4 0 2.4 1 2.7 3" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  cal: (c, s=12) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke={c} strokeWidth="1.3"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  bulb: (c, s=13) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 1.5a4.5 4.5 0 00-2.5 8.2c.6.5 1 1 1 1.8h3c0-.8.4-1.3 1-1.8A4.5 4.5 0 008 1.5z" fill={c} opacity=".15" stroke={c} strokeWidth="1.2"/><path d="M6.5 13.5h3M7 15h2" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  trophy: (c, s=12) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M5 2h6v4a3 3 0 01-6 0V2z" fill={c} opacity=".15" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/><path d="M5 3H2.5c0 2 1 3.5 2.5 3.5M11 3h2.5c0 2-1 3.5-2.5 3.5M8 9v2.5M5.5 13.5h5" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  gift: (c, s=13) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="6" width="12" height="8" rx="1.5" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M1.5 4.5h13V7h-13zM8 4.5V14M8 4.5C8 3 6.8 2 6 2.5 5.2 3 5.5 4.5 8 4.5zm0 0C8 3 9.2 2 10 2.5c.8.5.5 2-2 2z" stroke={c} strokeWidth="1.1" strokeLinejoin="round"/></svg>,
+  clock: (c, s=12) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke={c} strokeWidth="1.3"/><path d="M8 4.5V8l2.5 1.8" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  check: (c, s=13) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  x: (c, s=12) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>,
+};
+
+// ═══ Bitta maqsad kartasi — React.memo (4-band talabi) ═══
+const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, setEditMq, setEditMqN, setEditMqS, delMq, setTupId, setTupS, parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad }) {
+  const p = Math.round(m.jamg / m.maqsad * 100);
+  const waiting = m.status === "waiting_parent";
+  const confirmed = m.status === "parent_confirmed";
+  return (
+    <AppCard th={th} style={{ border: waiting ? "1.5px solid " + th.am + ALPHA.strong : confirmed ? "1.5px solid " + th.gr + ALPHA.strong : undefined }}>
+      {/* icon + title + amount + edit/del */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: SPACE.s2 + 2 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, minWidth: 0 }}>
+          <div style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: m.rang + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{GIco.target(m.rang, 20)}</div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.ism}</div>
+            <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{f(m.jamg, true)} / {f(m.maqsad, true)}</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: SPACE.s1 + 3, alignItems: "center", flexShrink: 0 }}>
+          <span style={{ ...TYPE.heading, fontSize: TYPE.heading.fontSize + 1, color: m.rang, fontVariantNumeric: "tabular-nums" }}>{p}%</span>
+          <button className="ui-press" onClick={() => { setEditMq(m.id); setEditMqN(m.ism); setEditMqS(String(m.maqsad)); }} aria-label="Tahrirlash" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 2 }}>{Ico.edit(th.t2)}</button>
+          <button className="ui-press" onClick={() => delMq(m.id)} aria-label="O'chirish" style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: 2 }}>{Ico.trash(th.t2)}</button>
+        </div>
+      </div>
+      {/* progress — kit, maqsad rangida */}
+      <div style={{ marginBottom: SPACE.s2 + 2 }}>
+        <LinearProgress th={th} value={p} tone={m.rang} height={SPACE.s3} />
+      </div>
+      {m.createdAt && <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{GIco.cal(th.t2)}{lg === "uz" ? "Boshlangan" : "Started"}: {m.createdAt}</div>}
+      {p < 100 && (() => {
+        const remain = m.maqsad - m.jamg;
+        const perMonth = Math.ceil(m.maqsad / 12);
+        const monthsLeft = Math.ceil(remain / perMonth);
+        return (
+          <div style={{ background: m.rang + ALPHA.faint, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 3) + "px", marginBottom: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>
+            <span style={{ flexShrink: 0, display: "flex" }}>{GIco.bulb(m.rang)}</span>
+            <span>{lg === "uz" ? "Har oy " + f(perMonth, true) + " ajratsangiz, ~" + monthsLeft + " oyda yig'asiz" : "Save " + f(perMonth, true) + "/mo to reach in ~" + monthsLeft + " months"}</span>
+          </div>
+        );
+      })()}
+      {p >= 100 ? (
+        <div style={{ textAlign: "center" }} className="ui-fadeUp">
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>
+            <Badge th={th} type="status" tone={m.rang} icon={GIco.trophy(m.rang)}>{t.ach}</Badge>
+          </div>
+          {(m.createdAt || m.completedAt) && (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: SPACE.s1 + 2, flexWrap: "wrap", marginBottom: SPACE.s1 + 2 }}>
+              {m.createdAt && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, background: th.bg, borderRadius: RADIUS.s - 2, padding: "3px " + SPACE.s2 + "px", display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{GIco.cal(th.t2)}{m.createdAt}</span>}
+              {m.createdAt && m.completedAt && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2 }}>—</span>}
+              {m.completedAt && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: m.rang, fontWeight: 700, background: m.rang + ALPHA.soft, borderRadius: RADIUS.s - 2, padding: "3px " + SPACE.s2 + "px", display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{GIco.trophy(m.rang)}{m.completedAt?.slice(0, 10)}</span>}
+            </div>
+          )}
+          {/* ── BOLA: pul yig'ildi, ota olib berishini kutmoqda ── */}
+          {waiting && isKid && m.uid === user.id && (
+            <div style={{ background: th.am + ALPHA.faint, border: "1px solid " + th.am + ALPHA.strong, borderRadius: RADIUS.s + 1, padding: (SPACE.s2 + 2) + "px " + SPACE.s3 + "px", marginTop: SPACE.s2, ...TYPE.caption, color: th.am, fontWeight: 600, lineHeight: 1.5, textAlign: "left" }}>
+              <span style={{ display: "inline-flex", marginRight: SPACE.s1 }}>{GIco.clock(th.am)}</span>{lg === "uz" ? "Oila boshingizga xabar yuborildi — orzuingizni amalga oshirishi kutilmoqda" : "Family head notified — waiting to fulfill"}
+              {m.parentLater && <div style={{ marginTop: SPACE.s1 + 1, color: th.t2, fontWeight: 400 }}>{lg === "uz" ? "Ota-onangiz keyinroq olib berishini aytdi" : "Parent will buy it later"}</div>}
+            </div>
+          )}
+          {/* ── OTA-ONA: pul yig'ildi, olib berish kerak ── */}
+          {waiting && !isKid && m.uid !== user.id && (
+            <div style={{ background: th.am + ALPHA.faint, border: "1px solid " + th.am + ALPHA.strong, borderRadius: RADIUS.s + 1, padding: (SPACE.s2 + 3) + "px " + SPACE.s3 + "px", marginTop: SPACE.s2, textAlign: "left" }}>
+              <div style={{ ...TYPE.caption, color: th.am, fontWeight: 700, marginBottom: SPACE.s2 + 1, lineHeight: 1.5 }}>{(typeof gN === "function" ? gN(m.uid) : "") + " "}{lg === "uz" ? "bu orzu uchun pul yig'ib bo'ldi! Olib bering." : "saved up for this dream!"}</div>
+              <div style={{ display: "flex", gap: SPACE.s2 }}>
+                <PrimaryButton th={th} onClick={() => parentBoughtMaqsad && parentBoughtMaqsad(m)} style={{ flex: 2, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, marginBottom: 0 }}>{GIco.gift("#fff")}{lg === "uz" ? "Olib berdim" : "Bought it"}</PrimaryButton>
+                {!m.parentLater && <GhostButton th={th} onClick={() => parentLaterMaqsad && parentLaterMaqsad(m)} style={{ flex: 2, background: th.surH, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, color: th.t1 }}>{GIco.clock(th.t2)}{lg === "uz" ? "Keyinroq" : "Later"}</GhostButton>}
+              </div>
+              {m.parentLater && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s2 - 1 }}>{lg === "uz" ? "\"Keyinroq\" deb belgilangan — farzandingiz kutmoqda" : "Marked as later"}</div>}
+            </div>
+          )}
+          {/* ── BOLA: ota "olib berdim" dedi — tasdiqlash yoki rad etish ── */}
+          {confirmed && isKid && m.uid === user.id && (
+            <div style={{ background: th.gr + ALPHA.faint, border: "1px solid " + th.gr + ALPHA.strong, borderRadius: RADIUS.s + 1, padding: (SPACE.s2 + 3) + "px " + SPACE.s3 + "px", marginTop: SPACE.s2, textAlign: "left" }}>
+              <div style={{ ...TYPE.caption, color: th.gr, fontWeight: 700, marginBottom: SPACE.s2 + 1, lineHeight: 1.5 }}>{GIco.gift(th.gr)} {lg === "uz" ? "Ota-onangiz orzuingni amalga oshirdim dedi. Rostdan oldingizmi?" : "Parent says it's bought. Did you receive it?"}</div>
+              <div style={{ display: "flex", gap: SPACE.s2 }}>
+                <PrimaryButton th={th} onClick={() => kidAcceptMaqsad && kidAcceptMaqsad(m)} style={{ flex: 2, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, marginBottom: 0 }}>{GIco.check("#fff")}{lg === "uz" ? "Ha, oldim!" : "Yes, got it!"}</PrimaryButton>
+                <GhostButton th={th} onClick={() => kidRejectMaqsad && kidRejectMaqsad(m)} style={{ flex: 2, background: th.rd + ALPHA.soft, border: "1px solid " + th.rd + ALPHA.strong, color: th.rd, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize }}>{GIco.x(th.rd)}{lg === "uz" ? "Hali olganim yo'q" : "Not yet"}</GhostButton>
+              </div>
+            </div>
+          )}
+          {/* ── OTA-ONA: bola tasdig'i kutilmoqda ── */}
+          {confirmed && !isKid && m.uid !== user.id && (
+            <div style={{ ...TYPE.caption, color: th.gr, fontWeight: 600, marginTop: SPACE.s1 + 2, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 }}>{GIco.clock(th.gr)}{lg === "uz" ? "Farzandingiz tasdig'i kutilmoqda" : "Waiting for child confirmation"}</div>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, fontVariantNumeric: "tabular-nums" }}>{t.rem}: {f(m.maqsad - m.jamg, true)}</span>
+          <button className="ui-press" onClick={() => { setTupId(m.id); setTupS(""); }} style={{ background: m.rang + ALPHA.tint, border: "1px solid " + m.rang + ALPHA.strong, borderRadius: RADIUS.s - 1, padding: (SPACE.s1 + 1) + "px " + SPACE.s3 + "px", color: m.rang, cursor: "pointer", fontWeight: 700, fontSize: TYPE.caption.fontSize, fontFamily: "inherit" }}>{t.am}</button>
+        </div>
+      )}
+    </AppCard>
+  );
+});
 
 export default function GoalsPage({
   user, maq, isKid,
@@ -23,31 +135,28 @@ export default function GoalsPage({
     <div>
       {showToy && <WeddingCalc user={user} lg={lg} th={th} addMq={addMq} ok$={ok$} onClose={() => setShowToy(false)} />}
 
-      {/* ── To'y kalkulyatori kirish kartasi ── */}
+      {/* ── To'y kalkulyatori kirish kartasi (ekranning yagona gradienti, CHART palitradan) ── */}
       {!isKid && (
-        <button onClick={() => setShowToy(true)} style={{ width: "100%", background: "linear-gradient(135deg,#ec4899,#a855f7)", border: "none", borderRadius: 18, padding: "15px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 14, position: "relative", overflow: "hidden", boxShadow: "0 6px 18px #ec489933", fontFamily: "inherit" }}>
-          <div style={{ position: "absolute", right: -4, top: "50%", transform: "translateY(-50%) rotate(-10deg)", fontSize: 46, opacity: 0.3 }}>💍</div>
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>💒</div>
+        <button className="ui-press" onClick={() => setShowToy(true)} style={{ width: "100%", background: "linear-gradient(135deg," + CHART[3] + "," + CHART[5] + ")", border: "none", borderRadius: RADIUS.m, padding: SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3 + 2, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(CHART[3]), fontFamily: "inherit" }}>
+          <div style={{ width: SPACE.s8 + SPACE.s3, height: SPACE.s8 + SPACE.s3, borderRadius: RADIUS.s + 3, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{GIco.rings("#fff")}</div>
           <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "To'y kalkulyatori" : "Свадебный калькулятор"}</div>
-            <div style={{ fontSize: 11, color: "rgba(255,255,255,.88)", marginTop: 2 }}>{lg === "uz" ? "Marosimlar smetasi, mehmon kalkulyatori, jamg'arish rejasi" : "Смета, гости, план накоплений"}</div>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "To'y kalkulyatori" : "Свадебный калькулятор"}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,.88)", marginTop: 2 }}>{lg === "uz" ? "Marosimlar smetasi, mehmon kalkulyatori, jamg'arish rejasi" : "Смета, гости, план накоплений"}</div>
           </div>
-          <span style={{ fontSize: 18, color: "#fff" }}>›</span>
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       )}
-      <div style={{ ...STY.row, marginBottom: 12 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, color: th.t1 }}>{isKid ? (lg === "uz" ? "🌟 Orzularim" : "🌟 My dreams") : t.goal}</div>
-        {maqTab === "mine" && <button onClick={() => setAddM(v => !v)} style={{ background: th.ac, border: "none", borderRadius: 10, padding: "7px 14px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 5, boxShadow: "0 4px 12px " + th.ac + "44" }}>{Ico.add("#fff")}</button>}
-      </div>
+
+      <PageHeader th={th} title={isKid ? (lg === "uz" ? "Orzularim" : "My dreams") : t.goal} style={{ marginBottom: SPACE.s3 }}
+        right={maqTab === "mine" && <IconButton th={th} label={lg === "uz" ? "Maqsad qo'shish" : "Add goal"} icon={Ico.add(th.ac)} onClick={() => setAddM(v => !v)} />} />
 
       {!isKid && canSeeReport && (
-        <div style={{ display: "flex", background: th.bg, borderRadius: 14, padding: 3, marginBottom: 14, gap: 3 }}>
-          <button onClick={() => setMaqTab("mine")} style={{ flex: 1, padding: "10px", borderRadius: 11, border: "none", background: maqTab === "mine" ? th.sur : "transparent", color: maqTab === "mine" ? th.t1 : th.t2, fontWeight: maqTab === "mine" ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: maqTab === "mine" ? "0 2px 8px rgba(0,0,0,0.1)" : "none", transition: "all .2s" }}>
-            🎯 {lg === "uz" ? "O'zimning" : "My goals"}
-          </button>
-          <button onClick={() => setMaqTab("oila")} style={{ flex: 1, padding: "10px", borderRadius: 11, border: "none", background: maqTab === "oila" ? th.sur : "transparent", color: maqTab === "oila" ? th.t1 : th.t2, fontWeight: maqTab === "oila" ? 800 : 500, fontSize: 13, cursor: "pointer", boxShadow: maqTab === "oila" ? "0 2px 8px rgba(0,0,0,0.1)" : "none", transition: "all .2s" }}>
-            👨‍👩‍👧 {lg === "uz" ? "Oilamning" : "Family goals"}
-          </button>
+        <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, marginBottom: SPACE.s3 + 2, gap: 3 }}>
+          {[["mine", GIco.target, lg === "uz" ? "O'zimning" : "My goals"], ["oila", GIco.family, lg === "uz" ? "Oilamning" : "Family goals"]].map(([key, ico, label]) => (
+            <button key={key} className="ui-press" onClick={() => setMaqTab(key)} style={{ flex: 1, padding: (SPACE.s2 + 1) + "px 0", borderRadius: RADIUS.s - 1, border: "none", background: maqTab === key ? th.ac : "transparent", color: maqTab === key ? "#fff" : th.t2, fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 1 }}>
+              {ico(maqTab === key ? "#fff" : th.t2)}{label}
+            </button>
+          ))}
         </div>
       )}
 
@@ -56,28 +165,28 @@ export default function GoalsPage({
       )}
 
       {tupId && (
-        <div style={{ ...STY.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: th.t1 }}>{t.tp}</div>
+        <AppCard th={th} style={{ border: "1.5px solid " + th.ac + ALPHA.strong }}>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, marginBottom: SPACE.s2 + 2, color: th.t1 }}>{t.tp}</div>
           <MoneyInput autoFocus style={STY.ip} value={tupS} onChange={setTupS} placeholder="..." th={th} />
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={tupMq} style={{ ...STY.bt(), marginBottom: 0, flex: 1 }}>{t.am}</button>
-            <button onClick={() => setTupId(null)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 14, padding: 14, color: th.t2, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>{t.cn}</button>
+          <div style={{ display: "flex", gap: SPACE.s2 }}>
+            <PrimaryButton th={th} onClick={tupMq} style={{ flex: 1, marginBottom: 0 }}>{t.am}</PrimaryButton>
+            <GhostButton th={th} onClick={() => setTupId(null)} style={{ flex: 1 }}>{t.cn}</GhostButton>
           </div>
-        </div>
+        </AppCard>
       )}
 
       {editMq && (
-        <div style={{ ...STY.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 10, color: th.am }}>{lg === "uz" ? "Maqsadni tahrirlash" : "Edit goal"}</div>
+        <AppCard th={th} style={{ border: "1.5px solid " + th.am + ALPHA.strong }}>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, marginBottom: SPACE.s2 + 2, color: th.am }}>{lg === "uz" ? "Maqsadni tahrirlash" : "Edit goal"}</div>
           <label style={STY.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
           <input style={STY.ip} value={editMqN} onChange={e => setEditMqN(e.target.value)} placeholder="..." />
           <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
           <MoneyInput style={STY.ip} value={editMqS} onChange={setEditMqS} placeholder="..." th={th} />
-          <div style={{ display: "flex", gap: 8 }}>
-            <button onClick={saveEditMq} style={{ ...STY.bt(), marginBottom: 0, flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>{Ico.check("#fff")}{t.sv}</button>
-            <button onClick={() => setEditMq(null)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 14, padding: 14, color: th.t2, cursor: "pointer", fontWeight: 700, fontSize: 14 }}>{t.cn}</button>
+          <div style={{ display: "flex", gap: SPACE.s2 }}>
+            <PrimaryButton th={th} onClick={saveEditMq} style={{ flex: 1, marginBottom: 0 }}>{Ico.check("#fff")}{t.sv}</PrimaryButton>
+            <GhostButton th={th} onClick={() => setEditMq(null)} style={{ flex: 1 }}>{t.cn}</GhostButton>
           </div>
-        </div>
+        </AppCard>
       )}
 
       {(() => {
@@ -92,95 +201,21 @@ export default function GoalsPage({
 
         if (filteredMaq.length === 0 && !addM) {
           return (
-            <div style={{ textAlign: "center", padding: "44px 0", color: th.t2, display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
-              <div style={{ fontSize: 48 }}>🎯</div>
-              <span>{maqTab === "oila" ? (lg === "uz" ? "Oila a'zolari hali maqsad qo'shmagan" : "No family goals yet") : (lg === "uz" ? "Maqsad qo'shing" : "Add a goal")}</span>
-            </div>
+            <EmptyState th={th} preset="goal"
+              title={maqTab === "oila" ? (lg === "uz" ? "Oila a'zolari hali maqsad qo'shmagan" : "No family goals yet") : (lg === "uz" ? "Maqsad qo'ying" : "Add a goal")}
+              message={maqTab === "oila" ? undefined : (lg === "uz" ? "Uy, mashina, sayohat uchun jamg'aring" : "Save for your dreams")}
+              actionText={maqTab !== "oila" ? (lg === "uz" ? "Maqsad qo'shish" : "Add goal") : undefined}
+              onAction={maqTab !== "oila" ? () => setAddM(true) : undefined} />
           );
         }
 
-        return filteredMaq.map(m => {
-          const p = Math.round(m.jamg / m.maqsad * 100);
-          return (
-            <div key={m.id} style={{ ...STY.cd, marginBottom: 10, border: m.status === "waiting_parent" ? "1.5px solid #f59e0b66" : m.status === "parent_confirmed" ? "1.5px solid #22c55e66" : (STY.cd.border || "1px solid " + th.bor) }}>
-              <div style={{ ...STY.row, alignItems: "flex-start", marginBottom: 10 }}>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: th.t1 }}>{m.ism}</div>
-                  <div style={{ fontSize: 12, color: th.t2, marginTop: 2 }}>{f(m.jamg, true)} / {f(m.maqsad, true)}</div>
-                </div>
-                <div style={{ display: "flex", gap: 7, alignItems: "center" }}>
-                  <span style={{ fontSize: 18, fontWeight: 800, color: m.rang }}>{p}%</span>
-                  <button onClick={() => { setEditMq(m.id); setEditMqN(m.ism); setEditMqS(String(m.maqsad)); }} style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>{Ico.edit(th.t2)}</button>
-                  <button onClick={() => delMq(m.id)} style={{ background: "none", border: "none", cursor: "pointer", display: "flex" }}>{Ico.trash(th.t2)}</button>
-                </div>
-              </div>
-              <div style={{ background: th.bg, borderRadius: 10, height: 14, overflow: "hidden", marginBottom: 10 }}>
-                <div style={{ width: p + "%", height: "100%", background: "linear-gradient(90deg," + m.rang + "88," + m.rang + ")", borderRadius: 10, transition: "width .7s" }} />
-              </div>
-              {m.createdAt && <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>📅 {lg === "uz" ? "Boshlangan" : "Started"}: {m.createdAt}</div>}
-              {p < 100 && (() => {
-                const remain = m.maqsad - m.jamg;
-                const perMonth = Math.ceil(m.maqsad / 12);
-                const monthsLeft = Math.ceil(remain / perMonth);
-                return (
-                  <div style={{ background: m.rang + "0d", borderRadius: 9, padding: "8px 11px", marginBottom: 10, fontSize: 11, color: th.t2, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 13 }}>💡</span>
-                    <span>{lg === "uz" ? "Har oy " + f(perMonth, true) + " ajratsangiz, ~" + monthsLeft + " oyda yig'asiz" : "Save " + f(perMonth, true) + "/mo to reach in ~" + monthsLeft + " months"}</span>
-                  </div>
-                );
-              })()}
-              {p >= 100 ? (
-                <div style={{ textAlign: "center" }}>
-                  <div style={{ color: m.rang, fontWeight: 700, fontSize: 13, marginBottom: 8 }}>{t.ach} 🎉</div>
-                  {(m.createdAt || m.completedAt) && (
-                    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
-                      {m.createdAt && <span style={{ fontSize: 11, color: th.t2, background: th.bg, borderRadius: 8, padding: "3px 8px" }}>📅 {lg === "uz" ? "Boshlangan" : "Started"}: {m.createdAt}</span>}
-                      {m.createdAt && m.completedAt && <span style={{ fontSize: 11, color: th.t2 }}>—</span>}
-                      {m.completedAt && <span style={{ fontSize: 11, color: m.rang, fontWeight: 700, background: m.rang + "15", borderRadius: 8, padding: "3px 8px" }}>🏆 {lg === "uz" ? "Erishilgan" : "Achieved"}: {m.completedAt?.slice(0, 10)}</span>}
-                    </div>
-                  )}
-                  {/* ── BOLA: pul yig'ildi, ota olib berishini kutmoqda ── */}
-                  {m.status === "waiting_parent" && isKid && m.uid === user.id && (
-                    <div style={{ background: "#f59e0b12", border: "1px solid #f59e0b44", borderRadius: 11, padding: "10px 12px", marginTop: 8, fontSize: 12, color: "#f59e0b", fontWeight: 600, lineHeight: 1.5 }}>
-                      {"\u23F3"} {lg === "uz" ? "Oila boshingizga xabar yuborildi — orzuingizni amalga oshirishi kutilmoqda" : "Family head notified — waiting to fulfill"}
-                      {m.parentLater && <div style={{ marginTop: 5, color: th.t2, fontWeight: 400 }}>{"\u23F0"} {lg === "uz" ? "Ota-onangiz keyinroq olib berishini aytdi" : "Parent will buy it later"}</div>}
-                    </div>
-                  )}
-                  {/* ── OTA-ONA: pul yig'ildi, olib berish kerak ── */}
-                  {m.status === "waiting_parent" && !isKid && m.uid !== user.id && (
-                    <div style={{ background: "#f59e0b12", border: "1px solid #f59e0b44", borderRadius: 11, padding: "11px 12px", marginTop: 8 }}>
-                      <div style={{ fontSize: 12, color: "#f59e0b", fontWeight: 700, marginBottom: 9, lineHeight: 1.5 }}>{"\ud83c\udfaf"} {(gN ? gN(m.uid) : "") + " "}{lg === "uz" ? "bu orzu uchun pul yig'ib bo'ldi! Olib bering." : "saved up for this dream!"}</div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => parentBoughtMaqsad && parentBoughtMaqsad(m)} style={{ flex: 2, background: "#22c55e", border: "none", borderRadius: 10, padding: "10px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\ud83c\udf81"} {lg === "uz" ? "Olib berdim" : "Bought it"}</button>
-                        {!m.parentLater && <button onClick={() => parentLaterMaqsad && parentLaterMaqsad(m)} style={{ flex: 2, background: th.surH, border: "1px solid " + th.bor, borderRadius: 10, padding: "10px", color: th.t1, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\u23F0"} {lg === "uz" ? "Keyinroq" : "Later"}</button>}
-                      </div>
-                      {m.parentLater && <div style={{ fontSize: 10, color: th.t2, marginTop: 7 }}>{"\u23F0"} {lg === "uz" ? "\"Keyinroq\" deb belgilangan — farzandingiz kutmoqda" : "Marked as later"}</div>}
-                    </div>
-                  )}
-                  {/* ── BOLA: ota "olib berdim" dedi — tasdiqlash yoki rad etish ── */}
-                  {m.status === "parent_confirmed" && isKid && m.uid === user.id && (
-                    <div style={{ background: "#22c55e12", border: "1px solid #22c55e44", borderRadius: 11, padding: "11px 12px", marginTop: 8 }}>
-                      <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 700, marginBottom: 9, lineHeight: 1.5 }}>{"\ud83c\udf81"} {lg === "uz" ? "Ota-onangiz orzuingni amalga oshirdim dedi. Rostdan oldingizmi?" : "Parent says it's bought. Did you receive it?"}</div>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <button onClick={() => kidAcceptMaqsad && kidAcceptMaqsad(m)} style={{ flex: 2, background: "#22c55e", border: "none", borderRadius: 10, padding: "10px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\u2705"} {lg === "uz" ? "Ha, oldim!" : "Yes, got it!"}</button>
-                        <button onClick={() => kidRejectMaqsad && kidRejectMaqsad(m)} style={{ flex: 2, background: th.rd + "15", border: "1px solid " + th.rd + "44", borderRadius: 10, padding: "10px", color: th.rd, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{"\u274C"} {lg === "uz" ? "Hali olganim yo'q" : "Not yet"}</button>
-                      </div>
-                    </div>
-                  )}
-                  {/* ── OTA-ONA: bola tasdig'i kutilmoqda ── */}
-                  {m.status === "parent_confirmed" && !isKid && m.uid !== user.id && (
-                    <div style={{ fontSize: 12, color: "#22c55e", fontWeight: 600, marginTop: 6 }}>{"\u23F3"} {lg === "uz" ? "Farzandingiz tasdig'i kutilmoqda" : "Waiting for child confirmation"}</div>
-                  )}
-                </div>
-              ) : (
-                <div style={{ ...STY.row }}>
-                  <span style={{ fontSize: 11, color: th.t2 }}>{t.rem}: {f(m.maqsad - m.jamg, true)}</span>
-                  <button onClick={() => { setTupId(m.id); setTupS(""); }} style={{ background: m.rang + "18", border: "1px solid " + m.rang + "44", borderRadius: 9, padding: "5px 12px", color: m.rang, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>{t.am}</button>
-                </div>
-              )}
-            </div>
-          );
-        });
+        return filteredMaq.map(m => (
+          <GoalCard key={m.id} m={m} th={th} t={t} f={f} lg={lg} isKid={isKid} user={user}
+            setEditMq={setEditMq} setEditMqN={setEditMqN} setEditMqS={setEditMqS} delMq={delMq}
+            setTupId={setTupId} setTupS={setTupS}
+            parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad}
+            kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />
+        ));
       })()}
     </div>
   );
@@ -199,16 +234,16 @@ function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
   };
 
   return (
-    <div style={{ ...STY.cd, border: "1.5px solid " + th.ac + "55", marginBottom: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: th.ac, marginBottom: 13 }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
+    <AppCard th={th} style={{ border: "1.5px solid " + th.ac + ALPHA.strong }}>
+      <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.ac, marginBottom: SPACE.s3 }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
       <label style={STY.lb}>{lg === "uz" ? "Tayyor maqsadlar" : "Quick presets"}</label>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginBottom: 12 }}>
-        {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((p, i) => {
-          const active = mN === (p[lg] || p.uz);
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+        {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((pr, i) => {
+          const active = mN === (pr[lg] || pr.uz);
           return (
-            <button key={i} onClick={() => { setMN(p[lg] || p.uz); setMR(p.rang); }} style={{ background: active ? p.rang + "1c" : th.bg, border: "2px solid " + (active ? p.rang : th.bor), borderRadius: 13, padding: "10px 4px 8px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: 5, minHeight: 72 }}>
-              <span style={{ fontSize: 24, lineHeight: 1 }}>{p.emoji}</span>
-              <span style={{ fontSize: 9.5, color: active ? p.rang : th.t2, fontWeight: 700, textAlign: "center", lineHeight: 1.25 }}>{p[lg] || p.uz}</span>
+            <button key={i} className="ui-press" onClick={() => { setMN(pr[lg] || pr.uz); setMR(pr.rang); }} style={{ background: active ? pr.rang + ALPHA.tint : th.bg, border: "2px solid " + (active ? pr.rang : th.bor), borderRadius: RADIUS.s + 3, padding: (SPACE.s2 + 2) + "px " + SPACE.s1 + "px " + SPACE.s2 + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: SPACE.s1 + 1, minHeight: SPACE.s16 + SPACE.s2, fontFamily: "inherit" }}>
+              <span style={{ fontSize: 24, lineHeight: 1 }}>{pr.emoji}</span>
+              <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 0.5, color: active ? pr.rang : th.t2, fontWeight: 700, textAlign: "center", lineHeight: 1.25 }}>{pr[lg] || pr.uz}</span>
             </button>
           );
         })}
@@ -218,38 +253,36 @@ function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
       <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
       <MoneyInput style={STY.ip} value={mS} onChange={setMS} placeholder="5 000 000" th={th} />
       {!isKid && (
-        <button onClick={() => setMShared(v => !v)} style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: mShared ? th.ac + "12" : th.bg, border: "1.5px solid " + (mShared ? th.ac : th.bor), borderRadius: 13, padding: "12px 14px", cursor: "pointer", marginBottom: 13, textAlign: "left" }}>
-          <span style={{ fontSize: 18 }}>{"\ud83d\udc68\u200d\ud83d\udc69\u200d\ud83d\udc67"}</span>
-          <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: mShared ? th.ac : th.t1 }}>{lg === "uz" ? "Oila bilan ulashish" : "Share with family"}
-            <span style={{ display: "block", fontSize: 10, color: th.t2, fontWeight: 400, marginTop: 2 }}>{lg === "uz" ? "Yoqilmasa \u2014 maqsadni faqat o'zingiz ko'rasiz" : "If off \u2014 only you can see this goal"}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, width: "100%", background: mShared ? th.ac + ALPHA.soft : th.bg, border: "1.5px solid " + (mShared ? th.ac : th.bor), borderRadius: RADIUS.s + 3, padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", marginBottom: SPACE.s3 }}>
+          <span style={{ flexShrink: 0, display: "flex" }}>{GIco.family(mShared ? th.ac : th.t2, 18)}</span>
+          <span style={{ flex: 1, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: mShared ? th.ac : th.t1 }}>{lg === "uz" ? "Oila bilan ulashish" : "Share with family"}
+            <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontWeight: 400, marginTop: 2 }}>{lg === "uz" ? "Yoqilmasa \u2014 maqsadni faqat o'zingiz ko'rasiz" : "If off \u2014 only you can see this goal"}</span>
           </span>
-          <span style={{ width: 40, height: 22, borderRadius: 12, background: mShared ? th.ac : th.bor, position: "relative", flexShrink: 0, transition: "background .2s" }}>
-            <span style={{ position: "absolute", top: 2, left: mShared ? 20 : 2, width: 18, height: 18, borderRadius: "50%", background: "#fff", transition: "left .2s" }}/>
-          </span>
-        </button>
+          <Switch th={th} checked={mShared} onChange={setMShared} label={lg === "uz" ? "Oila bilan ulashish" : "Share with family"} />
+        </div>
       )}
       {mS && Number(mS) > 0 && (
-        <div style={{ background: "linear-gradient(135deg," + th.ac + "11," + th.ac2 + "08)", border: "1px solid " + th.ac + "33", borderRadius: 13, padding: "13px 15px", marginBottom: 13 }}>
-          <div style={{ fontSize: 11, color: th.ac, fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 5 }}>💡 {lg === "uz" ? "Avtomatik hisob" : "Auto calculation"}</div>
+        <div style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, borderRadius: RADIUS.s + 3, padding: SPACE.s3 + "px " + (SPACE.s3 + 3) + "px", marginBottom: SPACE.s3 }}>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, fontWeight: 700, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{GIco.bulb(th.ac)}{lg === "uz" ? "Avtomatik hisob" : "Auto calculation"}</div>
           {[{ m: 6, l: lg === "uz" ? "6 oyda" : "6 months" }, { m: 12, l: lg === "uz" ? "12 oyda" : "12 months" }, { m: 24, l: lg === "uz" ? "24 oyda" : "24 months" }].map(opt => {
             const perMonth = Math.ceil(Number(mS) / opt.m);
             return (
-              <div key={opt.m} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6, fontSize: 13 }}>
+              <div key={opt.m} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1 }}>
                 <span style={{ color: th.t2 }}>{opt.l}:</span>
-                <span style={{ color: th.t1, fontWeight: 700 }}>{f(perMonth, true)}/{lg === "uz" ? "oy" : "mo"}</span>
+                <span style={{ color: th.t1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{f(perMonth, true)}/{lg === "uz" ? "oy" : "mo"}</span>
               </div>
             );
           })}
-          <div style={{ fontSize: 11, color: th.t2, marginTop: 8, paddingTop: 8, borderTop: "1px solid " + th.bor }}>{lg === "uz" ? "Har oy ajratsangiz, shu muddatda yig'asiz" : "Save monthly to reach your goal"}</div>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s2, paddingTop: SPACE.s2, borderTop: "1px solid " + th.bor }}>{lg === "uz" ? "Har oy ajratsangiz, shu muddatda yig'asiz" : "Save monthly to reach your goal"}</div>
         </div>
       )}
       <label style={STY.lb}>{lg === "uz" ? "Rang" : "Color"}</label>
-      <div style={{ display: "flex", gap: 8, marginBottom: 13 }}>
-        {[th.gr, th.ac, "#f59e0b", "#8b5cf6", th.rd, "#06b6d4"].map(r => (
-          <button key={r} onClick={() => setMR(r)} style={{ width: 32, height: 32, borderRadius: "50%", background: r, border: mR === r ? "3px solid " + th.t1 : "3px solid transparent", cursor: "pointer", flexShrink: 0 }} />
+      <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+        {[th.gr, th.ac, th.am, CHART[5], th.rd, CHART[4]].map(r => (
+          <button key={r} className="ui-press" onClick={() => setMR(r)} aria-label={r} style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.full, background: r, border: mR === r ? "3px solid " + th.t1 : "3px solid transparent", cursor: "pointer", flexShrink: 0 }} />
         ))}
       </div>
-      <button onClick={submit} style={STY.bt()}>{t.sv}</button>
-    </div>
+      <PrimaryButton th={th} onClick={submit}>{t.sv}</PrimaryButton>
+    </AppCard>
   );
 }
