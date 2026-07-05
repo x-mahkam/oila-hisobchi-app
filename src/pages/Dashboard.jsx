@@ -1,5 +1,11 @@
 import { memo, useMemo, useState, useEffect, useRef } from "react";
-import { KatIco, DarIco, MoneyInput, Av, Spark, Heat, SL, TxRow } from "../components/common/index.jsx";
+import { KatIco, DarIco, MoneyInput } from "../components/common/index.jsx";
+import {
+  SectionHeader, AppCard, StatCard, ListItem, EmptyState, Skeleton,
+  PrimaryButton, GhostButton, DangerButton, Badge, CounterBadge,
+  LinearProgress, ChartCard, UIAvatar,
+} from "../components/ui/index.js";
+import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, OPACITY, COMP } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, QUICK_ADD } from "../utils/constants.js";
@@ -7,26 +13,19 @@ import { tm } from "../utils/formatters.js";
 import { db } from "../firebase.js";
 import KidsGames from "../components/KidsGames.jsx";
 
+// Kartalar ketma-ket paydo bo'lish qadami (ms) — DS'da stagger tokeni yo'q,
+// mavjud UX saqlanadi; kelajakda MOTION'ga ko'chirilishi mumkin.
+const STAGGER = 40;
 
-// ═══════════════════════════════════════════════════════════
-//  DIZAYN TOKENLARI — 8pt grid va tipografiya shkalasi
-//  (magic number'lar o'rniga yagona haqiqat manbai)
-// ═══════════════════════════════════════════════════════════
-const SP = { xs: 4, s: 8, m: 12, l: 16, xl: 24 };
-const TY = {
-  greet: { fontSize: 13, fontWeight: 500 },
-  name:  { fontSize: 21, fontWeight: 800, letterSpacing: "-0.3px" },
-  stat:  { fontSize: 34, fontWeight: 800, letterSpacing: "-1px", lineHeight: 1.1 },
-  h2:    { fontSize: 14, fontWeight: 700 },
-  body:  { fontSize: 13, fontWeight: 500 },
-  cap:   { fontSize: 11, fontWeight: 600 },
-  micro: { fontSize: 10, fontWeight: 600 },
+// ── Dashboard-lokal outline SVG ikonkalar (emoji o'rniga, DS 6-qoida) ──
+const DIco = {
+  target: c => <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.2" opacity=".4"/><circle cx="8" cy="8" r="3.8" stroke={c} strokeWidth="1.2" opacity=".7"/><circle cx="8" cy="8" r="1.4" fill={c}/></svg>,
+  cash: c => <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="9" rx="1.8" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><circle cx="8" cy="8.5" r="2" stroke={c} strokeWidth="1.1"/><path d="M4 6.5v4M12 6.5v4" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+  clip: c => <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><rect x="3" y="2.5" width="10" height="12" rx="2" fill={c} opacity=".1" stroke={c} strokeWidth="1.2"/><path d="M6 1.5h4v2H6z" stroke={c} strokeWidth="1.1" strokeLinejoin="round"/><path d="M5.5 7h5M5.5 9.5h5M5.5 12h3" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+  inbox: c => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 9.5V12a2 2 0 002 2h8a2 2 0 002-2V9.5M2 9.5L4 3.5h8l2 6M2 9.5h3.5c0 1.2 1.1 2 2.5 2s2.5-.8 2.5-2H14" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  bolt: c => <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M9 1.5L3 9h4l-1 5.5L12 7H8l1-5.5z" fill={c} opacity=".2" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  chevD: (c, open) => <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ transform: open ? "rotate(180deg)" : "none", transition: MOTION.trFast("transform"), flexShrink: 0 }}><path d="M4 6l4 4 4-4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
 };
-const CARD_GAP = SP.m;     // kartalar orasidagi masofa
-const SECTION_GAP = SP.xl; // bo'limlar orasidagi masofa
-const ICON_BOX = 44;       // mini-karta ikonka kvadrati
-const RADIUS = 18;         // standart karta radiusi
-const STAGGER = 40;        // kartalar ketma-ket paydo bo'lish qadami (ms)
 
 // ── Balans count-up animatsiyasi (reduced-motion hurmat qilinadi) ──
 function useCountUp(value, dur = 450) {
@@ -51,121 +50,139 @@ function useCountUp(value, dur = 450) {
   return v;
 }
 
-// ── Skeleton yuklanish holati (spinner o'rniga) ──
-const DashSkeleton = memo(function DashSkeleton() {
+// ── Skeleton yuklanish holati — kit primitivlaridan ──
+const DashSkeleton = memo(function DashSkeleton({ th }) {
   return (
     <div>
-      <div className="skeleton" style={{ height: 200, borderRadius: 24, marginBottom: CARD_GAP }} />
-      <div style={{ display: "flex", gap: SP.s, marginBottom: CARD_GAP }}>
-        {[0, 1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 72, flex: 1, borderRadius: 14 }} />)}
+      <Skeleton th={th} h={SPACE.s16 * 3 + SPACE.s2} r={RADIUS.l} style={{ marginBottom: SPACE.s3 }} />
+      <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+        {[0, 1, 2, 3].map(i => <Skeleton key={i} th={th} h={SPACE.s16 + SPACE.s2} r={RADIUS.m} style={{ flex: 1 }} />)}
       </div>
-      {[0, 1, 2].map(i => <div key={i} className="skeleton" style={{ height: 76, borderRadius: RADIUS, marginBottom: CARD_GAP }} />)}
-    </div>
-  );
-});
-
-// ── Bo'lim sarlavhasi ──
-const SecLabel = memo(function SecLabel({ th, children, right }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: SECTION_GAP - SP.s + "px 2px " + SP.s + "px" }}>
-      <span style={{ ...TY.micro, color: th.t2, textTransform: "uppercase", letterSpacing: 1.5 }}>{children}</span>
-      {right}
+      {[0, 1, 2].map(i => <Skeleton key={i} th={th} h={SPACE.s16 + SPACE.s3} r={RADIUS.m} style={{ marginBottom: SPACE.s3 }} />)}
     </div>
   );
 });
 
 // ── HERO: salomlashish + oila balansi + oy daromad/xarajat + o'zgarish ──
+// Bespoke gradient karta (DS 2.8: har sahifada 1 gradient — shu).
 const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScope, delta, bugunX }) {
   const shown = useCountUp(bal);
   const neg = bal < 0;
   const h = new Date().getHours();
   const greet = h < 6 ? (lg === "uz" ? "Xayrli tun" : "Good night") : h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening");
   const dUp = delta > 0, dZero = delta === 0;
+  const heroBg = neg
+    ? "linear-gradient(135deg," + th.rd + "," + th.rd + ")"
+    : "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")";
+  const chip = { background: "rgba(255,255,255,0.13)", borderRadius: RADIUS.s + 3, padding: (SPACE.s2 + 2) + "px " + SPACE.s3 + "px", flex: 1 };
+  const microW = { ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.75)" };
   return (
-    <div className="anim-fadeUp" style={{ background: neg ? "linear-gradient(135deg,#dc2626 0%,#b91c1c 60%,#7f1d1d 100%)" : "linear-gradient(135deg," + th.ac + " 0%," + th.ac2 + " 60%,#a78bfa 100%)", borderRadius: 24, padding: SP.l + 4, marginBottom: CARD_GAP, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px " + (neg ? "#dc262640" : th.ac + "40") }}>
-      <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
-      <div style={{ position: "absolute", bottom: -40, left: -20, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
+    <div className="anim-fadeUp" style={{ background: heroBg, borderRadius: RADIUS.l, padding: SPACE.s4 + SPACE.s1, marginBottom: SPACE.s3, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(neg ? th.rd : th.ac) }}>
+      <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", bottom: -SPACE.s12, left: -SPACE.s6, width: SPACE.s16 + SPACE.s6, height: SPACE.s16 + SPACE.s6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
       <div style={{ position: "relative" }}>
         {/* 1. Salomlashish */}
-        <div style={{ ...TY.greet, color: "rgba(255,255,255,0.85)", marginBottom: 2 }}>{greet}</div>
-        <div style={{ ...TY.name, color: "#fff", marginBottom: SP.l }}>{ism || ""} {"\ud83d\udc4b"}</div>
+        <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", marginBottom: 2 }}>{greet}</div>
+        <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 1, color: "#fff", marginBottom: SPACE.s4 }}>{ism || ""}</div>
         {/* 2. Umumiy (oila) balansi */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SP.xs }}>
-          <div style={{ ...TY.cap, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
-          {bugunX > 0 && <div style={{ ...TY.micro, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: 9, padding: "3px 9px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 }}>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
+          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s - 1, padding: "3px " + (SPACE.s2 + 1) + "px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
         </div>
-        <div style={{ display: "flex", alignItems: "baseline", gap: SP.s, flexWrap: "wrap", marginBottom: neg ? SP.s : SP.l }}>
-          <div style={{ ...TY.stat, color: "#fff" }}>{shown < 0 ? "-" : ""}{f(Math.abs(shown), true)}</div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: SPACE.s2, flexWrap: "wrap", marginBottom: neg ? SPACE.s2 : SPACE.s4 }}>
+          <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{shown < 0 ? "-" : ""}{f(Math.abs(shown), true)}</div>
           {/* 5. Balans o'zgarishi (o'tgan oyga nisbatan) */}
           {!dZero && (
-            <div style={{ ...TY.micro, fontWeight: 800, color: "#fff", background: dUp ? "rgba(34,197,94,0.35)" : "rgba(0,0,0,0.22)", borderRadius: 9, padding: "3px 9px", display: "flex", alignItems: "center", gap: 3 }}>
-              {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: 0.85 }}>{lg === "uz" ? "o'tgan oyga nisb." : "vs last month"}</span>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 800, color: "#fff", background: dUp ? "rgba(34,197,94,0.35)" : "rgba(0,0,0,0.22)", borderRadius: RADIUS.s - 1, padding: "3px " + (SPACE.s2 + 1) + "px", display: "flex", alignItems: "center", gap: 3 }}>
+              {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: OPACITY.pressed }}>{lg === "uz" ? "o'tgan oyga nisb." : "vs last month"}</span>
             </div>
           )}
         </div>
         {neg && (
-          <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: 10, padding: SP.s + "px " + SP.m + "px", marginBottom: SP.m, ...TY.cap, fontWeight: 600, color: "#fff" }}>
-            {"\u26A0\uFE0F"} {lg === "uz" ? "Balans manfiy! Avval daromad kiriting." : "Negative balance! Add income first."}
+          <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", marginBottom: SPACE.s3, ...TYPE.caption, fontWeight: 600, color: "#fff" }}>
+            {lg === "uz" ? "Balans manfiy! Avval daromad kiriting." : "Negative balance! Add income first."}
           </div>
         )}
         {/* 3-4. Shu oy daromad / xarajat */}
-        <div style={{ display: "flex", gap: SP.s + 2 }}>
-          <div style={{ flex: 1, background: "rgba(255,255,255,0.13)", borderRadius: 13, padding: SP.s + 2 + "px " + SP.m + "px" }}>
-            <div style={{ ...TY.micro, color: "rgba(255,255,255,0.75)", marginBottom: 3, display: "flex", alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#86efac" }} />{t.inc}</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>+{f(jD, true)}</div>
+        <div style={{ display: "flex", gap: SPACE.s2 + 2 }}>
+          <div style={chip}>
+            <div style={{ ...microW, marginBottom: 3, display: "flex", alignItems: "center", gap: SPACE.s1 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: RADIUS.full, background: th.gr }} />{t.inc}</div>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums" }}>+{f(jD, true)}</div>
           </div>
-          <div style={{ flex: 1, background: "rgba(255,255,255,0.13)", borderRadius: 13, padding: SP.s + 2 + "px " + SP.m + "px" }}>
-            <div style={{ ...TY.micro, color: "rgba(255,255,255,0.75)", marginBottom: 3, display: "flex", alignItems: "center", gap: 4 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", background: "#fca5a5" }} />{t.exp}</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>-{f(jX, true)}</div>
+          <div style={chip}>
+            <div style={{ ...microW, marginBottom: 3, display: "flex", alignItems: "center", gap: SPACE.s1 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: RADIUS.full, background: th.rd }} />{t.exp}</div>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums" }}>-{f(jX, true)}</div>
           </div>
         </div>
-        {famScope && <div style={{ ...TY.micro, color: "rgba(255,255,255,0.62)", marginTop: SP.s }}>{lg === "uz" ? "Mening balansim" : "My balance"}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
+        {famScope && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.62)", marginTop: SPACE.s2 }}>{lg === "uz" ? "Mening balansim" : "My balance"}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
       </div>
     </div>
   );
 });
 
-// ── Qayta ishlatiladigan mini-karta (qarz / maqsad / vazifa / bo'sh holat) ──
-const MiniCard = memo(function MiniCard({ th, icon, iconBg, badge, border, bg, dashed, title, titleColor, sub, onClick, delay }) {
+// ── Mini-karta (qarz / maqsad / vazifa) — kit primitivlari + tokenlardan yig'ilgan ──
+const MiniCard = memo(function MiniCard({ th, icon, iconTone, badge, border, bg, dashed, title, sub, onClick, delay }) {
+  const c = iconTone || th.ac;
   return (
-    <button className="anim-fadeUp" onClick={onClick} style={{ animationDelay: (delay || 0) + "ms", width: "100%", marginBottom: CARD_GAP, cursor: "pointer", textAlign: "left", background: bg || th.sur, border: (dashed ? "1px dashed " : "1px solid ") + (border || th.bor), borderRadius: RADIUS, padding: SP.l, display: "flex", alignItems: "center", gap: SP.m, minHeight: 48 }}>
-      <div style={{ width: ICON_BOX, height: ICON_BOX, borderRadius: 13, background: iconBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0, position: "relative" }}>
+    <button className="anim-fadeUp ui-press" onClick={onClick}
+      style={{ animationDelay: (delay || 0) + "ms", width: "100%", marginBottom: SPACE.s3, cursor: "pointer", textAlign: "left", fontFamily: "inherit", background: bg || th.sur, border: (dashed ? "1px dashed " : "1px solid ") + (border || th.bor), borderRadius: RADIUS.m, padding: SPACE.s4, display: "flex", alignItems: "center", gap: SPACE.s3, minHeight: COMP.touchMin }}>
+      <div style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.s + 3, background: c + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
         {icon}
-        {badge > 0 && <span style={{ position: "absolute", top: -5, right: -5, background: "#f59e0b", color: "#fff", borderRadius: 20, ...TY.micro, fontWeight: 800, padding: "1px 6px" }}>{badge}</span>}
+        <CounterBadge th={th} count={badge} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ ...TY.h2, color: titleColor || th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
+        <div style={{ ...TYPE.body, fontWeight: 700, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
         {sub}
       </div>
-      <span style={{ fontSize: 18, color: th.ac, flexShrink: 0 }}>{"\u203A"}</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M6 4l4 4-4 4" stroke={th.ac} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
     </button>
   );
 });
 
-// ── Faollik grafigi — endi o'qlar bilan o'qiladigan ──
+// ── Faollik grafigi — ChartCard ichida, streak Badge bilan ──
 const ActivityGraph = memo(function ActivityGraph({ th, lg, days30, streak, mx30, f, delay }) {
+  const H = [SPACE.s1, SPACE.s2 + 2, SPACE.s4 + 2, SPACE.s6 + 2]; // bar balandliklari (token arifmetikasi)
   return (
-    <div className="anim-fadeUp" style={{ animationDelay: (delay || 0) + "ms", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS, padding: SP.l, marginBottom: CARD_GAP }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: SP.s }}>
-        <span style={{ ...TY.h2, fontSize: 13, color: th.t1, flex: 1 }}>{lg === "uz" ? "Xarajat faolligi" : "Spending activity"}</span>
-        {streak > 1 && <span style={{ ...TY.micro, fontWeight: 800, color: "#f59e0b", background: "#f59e0b18", borderRadius: 8, padding: "2px 8px" }}>{"\ud83d\udd25"} {streak} {lg === "uz" ? "kun" : "days"}</span>}
-      </div>
-      {/* Y o'qi: maksimal qiymat ko'rsatkichi */}
-      <div style={{ ...TY.micro, color: th.t2, marginBottom: 3, textAlign: "right" }}>{lg === "uz" ? "maks" : "max"}: {f(mx30, true)}</div>
-      <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: 28, borderBottom: "1px solid " + th.bor, paddingBottom: 2 }}>
-        {days30.map((v, i) => {
-          const lvl = v === 0 ? 0 : v < mx30 * 0.34 ? 1 : v < mx30 * 0.67 ? 2 : 3;
-          const hgt = [4, 10, 18, 26][lvl];
-          const col = lvl === 0 ? th.bor : lvl === 1 ? th.ac + "55" : lvl === 2 ? th.ac + "99" : th.ac;
-          return <div key={i} style={{ flex: 1, height: hgt, borderRadius: 2, background: col, outline: i === 29 ? "1.5px solid " + th.ac2 : "none" }} />;
-        })}
-      </div>
-      {/* X o'qi: sana yorliqlari */}
-      <div style={{ display: "flex", justifyContent: "space-between", marginTop: SP.xs }}>
-        <span style={{ ...TY.micro, color: th.t2 }}>{lg === "uz" ? "30 kun oldin" : "30 days ago"}</span>
-        <span style={{ ...TY.micro, color: th.ac2, fontWeight: 700 }}>{lg === "uz" ? "Bugun" : "Today"}</span>
-      </div>
+    <div className="anim-fadeUp" style={{ animationDelay: (delay || 0) + "ms" }}>
+      <ChartCard th={th} title={lg === "uz" ? "Xarajat faolligi" : "Spending activity"}
+        right={streak > 1 && <Badge th={th} type="warning" icon={DIco.bolt(th.am)}>{streak} {lg === "uz" ? "kun" : "days"}</Badge>}>
+        {/* Y o'qi: maksimal qiymat ko'rsatkichi */}
+        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 3, textAlign: "right" }}>{lg === "uz" ? "maks" : "max"}: {f(mx30, true)}</div>
+        <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: SPACE.s6 + SPACE.s1, borderBottom: "1px solid " + th.bor, paddingBottom: 2 }}>
+          {days30.map((v, i) => {
+            const lvl = v === 0 ? 0 : v < mx30 * 0.34 ? 1 : v < mx30 * 0.67 ? 2 : 3;
+            return <div key={i} style={{ flex: 1, height: H[lvl], borderRadius: 2, background: lvl === 0 ? th.bor : lvl === 1 ? th.ac + ALPHA.strong : th.ac, opacity: lvl === 2 ? OPACITY.hint : 1, outline: i === 29 ? "1.5px solid " + th.ac2 : "none" }} />;
+          })}
+        </div>
+        {/* X o'qi: sana yorliqlari */}
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: SPACE.s1 }}>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{lg === "uz" ? "30 kun oldin" : "30 days ago"}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.ac2, fontWeight: 700 }}>{lg === "uz" ? "Bugun" : "Today"}</span>
+        </div>
+      </ChartCard>
     </div>
+  );
+});
+
+// ── Tranzaksiya qatori adapteri: item → kit ListItem (delete saqlanadi) ──
+const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, divider }) {
+  const isX = !!item.kategoriya;
+  const ki = isX ? KATS.findIndex(k => k.id === item.kategoriya) : -1;
+  const di = !isX ? DARS.findIndex(d => d.id === item.tur) : -1;
+  const cl = isX ? (KATS[ki]?.c || th.t2) : (DARS[di]?.c || th.t2);
+  return (
+    <ListItem th={th} divider={divider} iconTone={cl}
+      icon={isX ? <KatIco id={item.kategoriya} c={cl} s={20} /> : <DarIco id={item.tur} c={cl} s={20} />}
+      title={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{item.izoh}{item.repeat && Ico.repeat(th.ac)}</span>}
+      sub={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 2 }}><UIAvatar th={th} src={gP(item.uid)} name={gN(item.uid)} size={14} />{gN(item.uid)} · {item.sana}</span>}
+      right={
+        <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, flexShrink: 0 }}>
+          <span style={{ ...TYPE.caption, fontWeight: 700, color: isX ? th.rd : th.gr, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{isX ? "-" : "+"}{f(item.summa, true)}</span>
+          {isX && item.uid === user?.id && onDelete && (
+            <button className="ui-press" onClick={() => onDelete(item)} aria-label="O'chirish" style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, display: "flex", padding: 2 }}>{Ico.trash(th.t2)}</button>
+          )}
+        </span>
+      } />
   );
 });
 
@@ -281,13 +298,17 @@ export default function DashboardPage({
   if (showS) {
     return (
       <div>
-        <SL ch={t.res + " (" + srchR.length + ")"} th={th} />
+        <SectionHeader th={th}>{t.res + " (" + srchR.length + ")"}</SectionHeader>
         {srch?.trim() && srchR.length === 0 && (
-          <div style={{ ...STY.cd, textAlign: "center", color: th.t2, padding: 28 }}>{t.nf2}</div>
+          <EmptyState th={th} preset="report" title={t.nf2} />
         )}
-        {srchR.map(item => (
-          <TxRow key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />
-        ))}
+        {srchR.length > 0 && (
+          <AppCard th={th} pad={0}>
+            {srchR.map((item, i) => (
+              <Tx key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} divider={i < srchR.length - 1} />
+            ))}
+          </AppCard>
+        )}
       </div>
     );
   }
@@ -296,46 +317,48 @@ export default function DashboardPage({
     <div>
       {/* So'rovlar */}
       {xReqs.length > 0 && (
-        <div style={{ ...STY.cd, border: "1.5px solid " + th.am + "55", marginBottom: 14, background: th.am + "0a" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: th.am, marginBottom: 12, display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ fontSize: 16 }}>📥</span>{lg === "uz" ? "So'rovlar" : "Requests"} ({xReqs.length})
+        <AppCard th={th} style={{ border: "1.5px solid " + th.am + ALPHA.strong, background: th.am + ALPHA.faint, marginBottom: SPACE.s3 + 2 }}>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.am, marginBottom: SPACE.s3, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>
+            {DIco.inbox(th.am)}{lg === "uz" ? "So'rovlar" : "Requests"} ({xReqs.length})
           </div>
           {xReqs.map(req => {
             const isInc = req.kind === "income";
+            const cl = isInc ? (DARS.find(d => d.id === (req.tur || "sovga"))?.c || th.gr) : (KATS.find(k => k.id === req.kategoriya)?.c || th.t2);
             return (
-              <div key={req.id} style={{ background: th.sur, borderRadius: 13, padding: "12px 14px", marginBottom: 10, border: "1px solid " + (isInc ? th.gr + "44" : th.bor) }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <div style={{ fontSize: 13, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontSize: 16 }}>{isInc ? "💰" : "📤"}</span><b>{req.fromIsm}</b> {isInc ? (lg === "uz" ? "sizga pul berdi" : "gave you money") : (lg === "uz" ? "sizning nomingizdan" : "for you")}
+              <div key={req.id} style={{ background: th.sur, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", marginBottom: SPACE.s3 - 2, border: "1px solid " + (isInc ? th.gr + ALPHA.strong : th.bor) }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s2 }}>
+                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>
+                    {isInc ? <DarIco id={req.tur || "sovga"} c={cl} s={16} /> : <KatIco id={req.kategoriya} c={cl} s={16} />}
+                    <b>{req.fromIsm}</b> {isInc ? (lg === "uz" ? "sizga pul berdi" : "gave you money") : (lg === "uz" ? "sizning nomingizdan" : "for you")}
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: isInc ? th.gr : th.rd }}>{isInc ? "+" : "-"}{f(req.summa, true)}</div>
+                  <div style={{ ...TYPE.subtitle, fontWeight: 800, color: isInc ? th.gr : th.rd, fontVariantNumeric: "tabular-nums" }}>{isInc ? "+" : "-"}{f(req.summa, true)}</div>
                 </div>
-                <div style={{ background: th.bg, borderRadius: 9, padding: "7px 11px", marginBottom: 10, fontSize: 12, color: th.t2 }}>
+                <div style={{ background: th.bg, borderRadius: RADIUS.s - 1, padding: (SPACE.s2 - 1) + "px " + (SPACE.s3 - 1) + "px", marginBottom: SPACE.s3 - 2, ...TYPE.caption, color: th.t2 }}>
                   {isInc ? (DN[lg][DARS.findIndex(d => d.id === (req.tur || "sovga"))] || req.izoh) : KN[lg][KATS.findIndex(k => k.id === req.kategoriya)]} · {req.izoh} · {req.sana}
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button onClick={() => acceptXReq(req)} style={{ flex: 1, background: th.gr, border: "none", borderRadius: 10, padding: "9px 0", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>{isInc ? (lg === "uz" ? "Daromadga qo'shish" : "Add to income") : (lg === "uz" ? "Tasdiqlash" : "Accept")}</button>
-                  <button onClick={() => rejectXReq(req)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.rd + "55", borderRadius: 10, padding: "9px 0", color: th.rd, cursor: "pointer", fontWeight: 700, fontSize: 13 }}>{lg === "uz" ? "Rad etish" : "Reject"}</button>
+                <div style={{ display: "flex", gap: SPACE.s2 }}>
+                  <PrimaryButton th={th} onClick={() => acceptXReq(req)} style={{ flex: 1, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 1) + "px 0", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0 }}>{isInc ? (lg === "uz" ? "Daromadga qo'shish" : "Add to income") : (lg === "uz" ? "Tasdiqlash" : "Accept")}</PrimaryButton>
+                  <DangerButton th={th} onClick={() => rejectXReq(req)} style={{ flex: 1, padding: (SPACE.s2 + 1) + "px 0", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0 }}>{lg === "uz" ? "Rad etish" : "Reject"}</DangerButton>
                 </div>
               </div>
             );
           })}
-        </div>
+        </AppCard>
       )}
 
-      {/* ===== BOLA BOSH SAHIFASI ===== */}
+      {/* ===== BOLA BOSH SAHIFASI (gamification zonasi — o'yin uslubi saqlanadi) ===== */}
       {isKid && (
         <div>
-          <div className="anim-fadeUp" style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%)", borderRadius: 24, padding: "24px 22px", marginBottom: 16, position: "relative", overflow: "hidden", boxShadow: "0 12px 40px #ec489940" }}>
-            <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.12)" }} />
-            <div style={{ position: "absolute", bottom: -40, left: -20, width: 90, height: 90, borderRadius: "50%", background: "rgba(255,255,255,0.08)" }} />
+          <div className="anim-fadeUp" style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%)", borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + (SPACE.s6 - 2) + "px", marginBottom: SPACE.s4, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1("#ec4899") }}>
+            <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.12)" }} />
+            <div style={{ position: "absolute", bottom: -SPACE.s12, left: -SPACE.s6, width: SPACE.s16 + SPACE.s6, height: SPACE.s16 + SPACE.s6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.08)" }} />
             <div style={{ position: "relative" }}>
-              <div style={{ fontSize: 15, color: "rgba(255,255,255,0.9)", marginBottom: 2 }}>
+              <div style={{ ...TYPE.subtitle, fontWeight: 500, color: "rgba(255,255,255,0.9)", marginBottom: 2 }}>
                 {(() => { const h = new Date().getHours(); return h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening"); })()}
               </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 16 }}>{user?.ism} 👋</div>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.8)", marginBottom: 4 }}>{lg === "uz" ? "Mening cho'ntak pulim" : "My pocket money"}</div>
-              <div style={{ fontSize: 34, fontWeight: 800, color: "#fff" }}>{f(kidBalances[user.id] || 0, true)}</div>
+              <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 2, color: "#fff", marginBottom: SPACE.s4 }}>{user?.ism} 👋</div>
+              <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.8)", marginBottom: SPACE.s1 }}>{lg === "uz" ? "Mening cho'ntak pulim" : "My pocket money"}</div>
+              <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{f(kidBalances[user.id] || 0, true)}</div>
               {(() => {
                 const isMine = v => v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase());
                 const taskAll = (vazifalar || []).filter(v => isMine(v) && v.status === "approved").reduce((s, v) => s + Number(v.reward || 0), 0);
@@ -346,18 +369,18 @@ export default function DashboardPage({
                 return (
                   <>
                     {/* Cho'ntak puli manbalari: sovg'a / vazifa (ma'lumot uchun) */}
-                    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: 12, padding: "8px 10px" }}>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)" }}>🎁 {lg === "uz" ? "Sovg'adan topilgan" : "From gifts"}</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginTop: 2 }}>{f(giftAll, true)}</div>
+                    <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3 }}>
+                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px" }}>
+                        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>🎁 {lg === "uz" ? "Sovg'adan topilgan" : "From gifts"}</div>
+                        <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{f(giftAll, true)}</div>
                       </div>
-                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: 12, padding: "8px 10px" }}>
-                        <div style={{ fontSize: 10, color: "rgba(255,255,255,0.85)" }}>🎯 {lg === "uz" ? "Vazifadan topilgan" : "From tasks"}</div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: "#fff", marginTop: 2 }}>{f(taskAll, true)}</div>
+                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px" }}>
+                        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>🎯 {lg === "uz" ? "Vazifadan topilgan" : "From tasks"}</div>
+                        <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{f(taskAll, true)}</div>
                       </div>
                     </div>
                     {/* Bugungi harakat: topildi / sarflandi */}
-                    <div style={{ display: "flex", gap: 14, marginTop: 10, fontSize: 11.5, color: "rgba(255,255,255,0.92)", fontWeight: 700 }}>
+                    <div style={{ display: "flex", gap: SPACE.s3 + 2, marginTop: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 0.5, color: "rgba(255,255,255,0.92)", fontWeight: 700 }}>
                       <span>📈 {lg === "uz" ? "Bugun topildi:" : "Earned today:"} +{f(taskToday + giftToday, true)}</span>
                       <span>📉 {lg === "uz" ? "Bugun sarflandi:" : "Spent today:"} −{f(spentToday, true)}</span>
                     </div>
@@ -367,133 +390,130 @@ export default function DashboardPage({
             </div>
           </div>
 
-          <button onClick={() => { buzz(10); setShowGift(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#10b98115,#05966908)", border: "1.5px solid #10b98144", borderRadius: 16, padding: "13px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#10b981,#059669)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>🎁</div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Sovg'a puli kiritish" : "Add gift money"}</div>
-              <div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pul" : "Money from relatives"}</div>
-            </div>
-            <span style={{ fontSize: 18, color: th.gr }}>+</span>
-          </button>
+          <MiniCard th={th} iconTone={th.gr} border={th.gr + ALPHA.strong} bg={th.gr + ALPHA.faint}
+            onClick={() => { buzz(10); setShowGift(true); }}
+            icon={<span style={{ fontSize: 22 }}>🎁</span>}
+            title={lg === "uz" ? "Sovg'a puli kiritish" : "Add gift money"}
+            sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pul" : "Money from relatives"}</div>} />
 
           {/* ── O'yinlar markazi ── */}
-          <button onClick={() => { buzz(10); setShowGames(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#8b5cf6,#6366f1)", border: "none", borderRadius: 18, padding: "15px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 18, position: "relative", overflow: "hidden", boxShadow: "0 6px 18px #8b5cf633" }}>
-            <div style={{ position: "absolute", right: -4, top: "50%", transform: "translateY(-50%) rotate(-10deg)", fontSize: 46, opacity: 0.35 }}>🎮</div>
-            <div style={{ width: 44, height: 44, borderRadius: 13, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🎮</div>
+          <button className="ui-press" onClick={() => { buzz(10); setShowGames(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#8b5cf6," + th.ac + ")", border: "none", borderRadius: RADIUS.m, padding: SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s4 + 2, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1("#8b5cf6"), fontFamily: "inherit" }}>
+            <div style={{ position: "absolute", right: -SPACE.s1, top: "50%", transform: "translateY(-50%) rotate(-10deg)", fontSize: 46, opacity: 0.35 }}>🎮</div>
+            <div style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.s + 3, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🎮</div>
             <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "O'yinlar" : "Games"}</div>
-              <div style={{ fontSize: 11, color: "rgba(255,255,255,.85)", marginTop: 2 }}>{lg === "uz" ? "O'ynab bilim ol va liderbordda ball to'pla!" : "Play, learn and earn points!"}</div>
+              <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "O'yinlar" : "Games"}</div>
+              <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,.85)", marginTop: 2 }}>{lg === "uz" ? "O'ynab bilim ol va liderbordda ball to'pla!" : "Play, learn and earn points!"}</div>
             </div>
-            <span style={{ fontSize: 18, color: "#fff" }}>▶</span>
+            <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M5 3l7 5-7 5V3z" fill="#fff"/></svg>
           </button>
           {showGames && <KidsGames user={user} lg={lg} addStar={addStar} onClose={() => setShowGames(false)} />}
 
-          <button onClick={() => { buzz(10); setShowBilim(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#1e40af15,#3b82f608)", border: "1.5px solid #3b82f644", borderRadius: 16, padding: "13px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg,#1e40af,#3b82f6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>📚</div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Bilim Bozori" : "Knowledge Market"}</div>
-              <div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Ingliz so'z o'rgan, Bilim Coin yig'" : "Learn words, earn coins"}</div>
-            </div>
-            <span style={{ fontSize: 18, color: "#3b82f6" }}>›</span>
-          </button>
+          <MiniCard th={th} iconTone={th.ac} border={th.ac + ALPHA.strong} bg={th.ac + ALPHA.faint}
+            onClick={() => { buzz(10); setShowBilim(true); }}
+            icon={<span style={{ fontSize: 22 }}>📚</span>}
+            title={lg === "uz" ? "Bilim Bozori" : "Knowledge Market"}
+            sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Ingliz so'z o'rgan, Bilim Coin yig'" : "Learn words, earn coins"}</div>} />
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 18 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: SPACE.s2, marginBottom: SPACE.s4 + 2 }}>
             {(() => {
               const myV = vazifalar.filter(v => v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase()));
               const done = myV.filter(v => v.status === "approved").length;
               const pend = myV.filter(v => v.status === "pending" || v.status === "done").length;
               const ball = done * 10;
               return [
-                { ic: "🏆", l: lg === "uz" ? "Bajarildi" : "Done", v: done, c: "#10b981" },
-                { ic: "⏳", l: lg === "uz" ? "Vazifa" : "To do", v: pend, c: "#f59e0b" },
+                { ic: "🏆", l: lg === "uz" ? "Bajarildi" : "Done", v: done, c: th.gr },
+                { ic: "⏳", l: lg === "uz" ? "Vazifa" : "To do", v: pend, c: th.am },
                 { ic: "⭐", l: lg === "uz" ? "Ball" : "Points", v: ball, c: "#8b5cf6" },
               ].map((s, i) => (
-                <div key={i} className="anim-fadeUp" style={{ background: "linear-gradient(135deg," + s.c + "0d," + th.sur + ")", borderRadius: 15, padding: "14px 8px", textAlign: "center", border: "1px solid " + s.c + "22", animationDelay: (i * 0.08) + "s" }}>
-                  <div style={{ fontSize: 24, marginBottom: 4 }}>{s.ic}</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: s.c }}>{s.v}</div>
-                  <div style={{ fontSize: 10, color: th.t2, fontWeight: 600 }}>{s.l}</div>
+                <div key={i} className="anim-fadeUp" style={{ animationDelay: (i * STAGGER * 2) + "ms" }}>
+                  <StatCard th={th} icon={<span style={{ fontSize: 24 }}>{s.ic}</span>} value={s.v} label={s.l} tone={s.c}
+                    style={{ background: "linear-gradient(135deg," + s.c + ALPHA.faint + "," + th.sur + ")", border: "1px solid " + s.c + ALPHA.med }} />
                 </div>
               ));
             })()}
           </div>
 
-          <SL ch={lg === "uz" ? "Bajarish kerak" : "To do"} th={th} />
+          <SectionHeader th={th}>{lg === "uz" ? "Bajarish kerak" : "To do"}</SectionHeader>
           {(() => {
             const active = vazifalar.filter(v => (v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase())) && (v.status === "pending" || v.status === "done"));
             if (active.length === 0) {
               return (
-                <div style={{ textAlign: "center", padding: "30px 20px", color: th.t2 }}>
-                  <div style={{ fontSize: 44, marginBottom: 10 }}>🎉</div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Barakalla! Hamma vazifa bajarilgan" : "All done!"}</div>
+                <div style={{ textAlign: "center", padding: SPACE.s8 + "px " + SPACE.s6 + "px", color: th.t2 }}>
+                  <div style={{ fontSize: 44, marginBottom: SPACE.s2 + 2 }}>🎉</div>
+                  <div style={{ ...TYPE.subtitle, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Barakalla! Hamma vazifa bajarilgan" : "All done!"}</div>
                 </div>
               );
             }
             return active.slice(0, 4).map(v => (
-              <div key={v.id} className="anim-fadeUp" style={{ background: th.sur, borderRadius: 16, padding: "14px", marginBottom: 10, border: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 13, background: th.ac + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>{v.emoji}</div>
+              <AppCard key={v.id} th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
+                <div style={{ width: COMP.touchMin + 2, height: COMP.touchMin + 2, borderRadius: RADIUS.s + 3, background: th.ac + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{v.emoji}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{v.title}</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>+{f(v.reward, true)}</div>
+                  <div style={{ ...TYPE.body, fontWeight: 700, color: th.t1 }}>{v.title}</div>
+                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 800, color: th.gr, fontVariantNumeric: "tabular-nums" }}>+{f(v.reward, true)}</div>
                 </div>
                 {v.status === "pending"
-                  ? <button onClick={() => vazifaDone(v.id)} style={{ background: th.ac, border: "none", borderRadius: 11, padding: "10px 16px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13 }}>✓ {lg === "uz" ? "Bajardim" : "Done"}</button>
-                  : <span style={{ fontSize: 11, color: th.am, fontWeight: 600 }}>⏳</span>}
-              </div>
+                  ? <PrimaryButton th={th} onClick={() => vazifaDone(v.id)} style={{ width: "auto", background: th.ac, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px " + SPACE.s4 + "px", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0, flexShrink: 0 }}>✓ {lg === "uz" ? "Bajardim" : "Done"}</PrimaryButton>
+                  : <Badge th={th} type="warning">{lg === "uz" ? "Kutilmoqda" : "Pending"}</Badge>}
+              </AppCard>
             ));
           })()}
         </div>
       )}
 
       {/* ===== KATTALAR BOSH SAHIFASI (yangi oqim: 1-11) ===== */}
-      {!isKid && !oila && <DashSkeleton />}
+      {!isKid && !oila && <DashSkeleton th={th} />}
       {!isKid && oila && (
         <div>
           {/* 1-5. Hero: salomlashish, oila balansi, daromad, xarajat, o'zgarish */}
           <Hero th={th} lg={lg} t={t} f={f} ism={user?.ism} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
 
-          {/* Byudjet — oy xarajati kontekstini davom ettiradi */}
-          <div className="anim-fadeUp" style={{ animationDelay: STAGGER + "ms", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS, padding: SP.l, marginBottom: CARD_GAP }}>
-            <div style={{ ...STY.row, marginBottom: SP.s }}><span style={{ ...TY.cap, color: th.t2 }}>{t.bud}</span><span style={{ ...TY.cap, fontWeight: 700, color: th.t1 }}>{f(bdj, true)}</span></div>
-            <div style={{ background: th.bg, borderRadius: 10, height: 12, overflow: "hidden" }}><div style={{ width: pct + "%", height: "100%", background: "linear-gradient(90deg," + bRng + "88," + bRng + ")", borderRadius: 10, transition: "width .6s" }} /></div>
-            <div style={{ ...STY.row, marginTop: SP.s - 1 }}><span style={{ ...TY.cap, color: bRng, fontWeight: 700 }}>{pct}% {t.sp}</span><span style={{ ...TY.cap, color: bdj - jX >= 0 ? th.gr : th.rd }}>{f(Math.abs(bdj - jX), true)} {bdj - jX >= 0 ? t.lf : t.ex}</span></div>
+          {/* Byudjet — oy xarajati kontekstini davom ettiradi (LinearProgress budget rejimi) */}
+          <div className="anim-fadeUp" style={{ animationDelay: STAGGER + "ms" }}>
+            <AppCard th={th}>
+              <div style={{ ...STY.row, marginBottom: SPACE.s2 }}><span style={{ ...TYPE.caption, color: th.t2 }}>{t.bud}</span><span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{f(bdj, true)}</span></div>
+              <LinearProgress th={th} value={pct} budget height={SPACE.s3} />
+              <div style={{ ...STY.row, marginTop: SPACE.s2 - 1 }}><span style={{ ...TYPE.caption, color: bRng, fontWeight: 700 }}>{pct}% {t.sp}</span><span style={{ ...TYPE.caption, color: bdj - jX >= 0 ? th.gr : th.rd, fontVariantNumeric: "tabular-nums" }}>{f(Math.abs(bdj - jX), true)} {bdj - jX >= 0 ? t.lf : t.ex}</span></div>
+            </AppCard>
           </div>
 
           {/* 6. Tezkor amallar — bir qo'l uchun kattaroq target */}
-          <SecLabel th={th}>{"\u26A1"} {lg === "uz" ? "Tez qo'shish" : "Quick add"}</SecLabel>
-          <div style={{ display: "flex", gap: SP.s, overflowX: "auto", paddingBottom: SP.xs, marginBottom: quickItem ? SP.s : CARD_GAP }}>
+          <SectionHeader th={th} right={null}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.am)}{lg === "uz" ? "Tez qo'shish" : "Quick add"}</span></SectionHeader>
+          <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s1, marginBottom: quickItem ? SPACE.s2 : SPACE.s3 }}>
             {QUICK_ADD.map((q, i) => (
-              <button key={i} onClick={() => { buzz(10); setQuickItem(q); setQuickSum(""); }} style={{ flexShrink: 0, background: th.sur, border: "1px solid " + th.bor, borderRadius: 14, padding: SP.m + "px " + SP.l + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: SP.xs, minWidth: 76, minHeight: 48 }}>
+              <button key={i} className="ui-press" onClick={() => { buzz(10); setQuickItem(q); setQuickSum(""); }} style={{ flexShrink: 0, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4 + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1, minWidth: SPACE.s16 + SPACE.s3, minHeight: COMP.touchMin, fontFamily: "inherit" }}>
                 <span style={{ fontSize: 26 }}>{q.emoji}</span>
-                <span style={{ ...TY.cap, color: th.t2 }}>{q[lg] || q.uz}</span>
+                <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2 }}>{q[lg] || q.uz}</span>
               </button>
             ))}
           </div>
 
           {quickItem && (
-            <div className="anim-scaleIn" style={{ background: th.sur, borderRadius: RADIUS, padding: SP.l, marginBottom: CARD_GAP, border: "1.5px solid " + th.ac + "55" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: SP.s, marginBottom: SP.s + 2 }}>
-                <span style={{ fontSize: 22 }}>{quickItem.emoji}</span>
-                <span style={{ ...TY.h2, color: th.t1 }}>{quickItem[lg] || quickItem.uz}</span>
-              </div>
-              <MoneyInput style={{ ...STY.ip, fontSize: 20, fontWeight: 800, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
-              <div style={{ display: "flex", gap: SP.s }}>
-                <button onClick={() => setQuickItem(null)} style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 12, padding: "11px", color: th.t2, cursor: "pointer", fontWeight: 700 }}>{lg === "uz" ? "Bekor" : "Cancel"}</button>
-                <button onClick={quickAdd} style={{ flex: 2, background: th.ac, border: "none", borderRadius: 12, padding: "11px", color: "#fff", cursor: "pointer", fontWeight: 700 }}>{lg === "uz" ? "Saqlash" : "Save"}</button>
-              </div>
+            <div className="anim-scaleIn">
+              <AppCard th={th} style={{ border: "1.5px solid " + th.ac + ALPHA.strong }}>
+                <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2 + 2 }}>
+                  <span style={{ fontSize: 22 }}>{quickItem.emoji}</span>
+                  <span style={{ ...TYPE.body, fontWeight: 700, color: th.t1 }}>{quickItem[lg] || quickItem.uz}</span>
+                </div>
+                <MoneyInput style={{ ...STY.ip, ...TYPE.title, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
+                <div style={{ display: "flex", gap: SPACE.s2 }}>
+                  <GhostButton th={th} onClick={() => setQuickItem(null)} style={{ flex: 1 }}>{lg === "uz" ? "Bekor" : "Cancel"}</GhostButton>
+                  <PrimaryButton th={th} onClick={quickAdd} style={{ flex: 2, marginBottom: 0 }}>{lg === "uz" ? "Saqlash" : "Save"}</PrimaryButton>
+                </div>
+              </AppCard>
             </div>
           )}
 
           {/* 7. Oxirgi tranzaksiyalar */}
-          <SecLabel th={th} right={recentTx.length > 0 && <button onClick={() => setScr("hisobot")} style={{ background: "none", border: "none", ...TY.cap, color: th.ac, cursor: "pointer", padding: "4px 2px", fontWeight: 700 }}>{lg === "uz" ? "Hammasi" : "See all"} {"\u203A"}</button>}>{lg === "uz" ? "Oxirgi operatsiyalar" : "Recent transactions"}</SecLabel>
+          <SectionHeader th={th} right={recentTx.length > 0 && <button className="ui-press" onClick={() => setScr("hisobot")} style={{ background: "none", border: "none", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, cursor: "pointer", padding: SPACE.s1 + "px 2px", fontWeight: 700, fontFamily: "inherit" }}>{lg === "uz" ? "Hammasi" : "See all"} ›</button>}>{lg === "uz" ? "Oxirgi operatsiyalar" : "Recent transactions"}</SectionHeader>
           {recentTx.length === 0 ? (
-            <div className="anim-fadeUp" style={{ textAlign: "center", padding: SP.xl * 1.5 + "px " + SP.xl + "px", color: th.t2, display: "flex", flexDirection: "column", alignItems: "center", background: th.sur, border: "1px dashed " + th.bor, borderRadius: RADIUS, marginBottom: CARD_GAP }}>
-              <div style={{ width: 72, height: 72, borderRadius: "50%", background: th.ac + "11", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, marginBottom: SP.m }}>{"\ud83d\udcb3"}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: th.t1, marginBottom: SP.xs + 2 }}>{lg === "uz" ? "Hali xarajat kiritilmagan" : "No transactions yet"}</div>
-              <div style={{ ...TY.body, fontWeight: 400, color: th.t2, marginBottom: SP.l, maxWidth: 240 }}>{lg === "uz" ? "Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing" : "Use quick add buttons above or tap + below"}</div>
-              <button onClick={() => setScr("qoshish")} style={{ ...STY.bt(), width: "auto", padding: "12px 28px", marginBottom: 0, display: "flex", alignItems: "center", gap: SP.s }}>{Ico.add("#fff")}{lg === "uz" ? "Xarajat qo'shish" : "Add expense"}</button>
-            </div>
+            <EmptyState th={th} preset="transaction"
+              title={lg === "uz" ? "Hali xarajat kiritilmagan" : "No transactions yet"}
+              message={lg === "uz" ? "Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing" : "Use quick add buttons above or tap + below"}
+              actionText={lg === "uz" ? "Xarajat qo'shish" : "Add expense"} onAction={() => setScr("qoshish")} />
           ) : (
-            recentTx.map(item => <TxRow key={item.tp + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)
+            <AppCard th={th} pad={0}>
+              {recentTx.map((item, i) => <Tx key={item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} divider={i < recentTx.length - 1} />)}
+            </AppCard>
           )}
 
           {/* 8. Grafik — o'qlari bilan */}
@@ -501,87 +521,89 @@ export default function DashboardPage({
 
           {/* 9. Maqsad progresslari */}
           {(gls.waitG.length > 0 || gls.top || maq.length === 0 || dbt.n > 0 || hasKids) && (
-            <SecLabel th={th}>{lg === "uz" ? "Maqsad va majburiyatlar" : "Goals & commitments"}</SecLabel>
+            <SectionHeader th={th}>{lg === "uz" ? "Maqsad va majburiyatlar" : "Goals & commitments"}</SectionHeader>
           )}
           {gls.waitG.length > 0 && (
             <MiniCard th={th} delay={STAGGER * 3} onClick={() => { buzz(8); setScr("maqsad"); }}
-              icon={"\ud83c\udfaf"} iconBg={"#f59e0b1c"} border={"#f59e0b66"} bg={"#f59e0b0d"}
-              title={<span style={{ color: "#f59e0b" }}>{gN(gls.waitG[0].uid)} {lg === "uz" ? "orzusi uchun pul yig'ib bo'ldi!" : "saved up for a dream!"}{gls.waitG.length > 1 ? " (+" + (gls.waitG.length - 1) + ")" : ""}</span>}
-              sub={<div style={{ ...TY.cap, fontWeight: 400, color: th.t2, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"\u201C"}{gls.waitG[0].ism}{"\u201D"} {"\u2014"} {lg === "uz" ? "olib berish kutilmoqda" : "waiting to fulfill"}</div>} />
+              icon={DIco.target(th.am)} iconTone={th.am} border={th.am + ALPHA.strong} bg={th.am + ALPHA.faint}
+              title={<span style={{ color: th.am }}>{gN(gls.waitG[0].uid)} {lg === "uz" ? "orzusi uchun pul yig'ib bo'ldi!" : "saved up for a dream!"}{gls.waitG.length > 1 ? " (+" + (gls.waitG.length - 1) + ")" : ""}</span>}
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"\u201C"}{gls.waitG[0].ism}{"\u201D"} {"\u2014"} {lg === "uz" ? "olib berish kutilmoqda" : "waiting to fulfill"}</div>} />
           )}
           {gls.top && (
             <MiniCard th={th} delay={STAGGER * 3} onClick={() => { buzz(8); setScr("maqsad"); }}
-              icon={"\ud83c\udfaf"} iconBg={th.ac + "18"}
-              title={<span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{gls.top.ism}{gls.activeM.length > 1 ? " +" + (gls.activeM.length - 1) : ""}</span><span style={{ fontSize: 12, fontWeight: 800, color: th.ac, flexShrink: 0, marginLeft: SP.s }}>{gls.mp}%</span></span>}
-              sub={<div><div style={{ height: 7, background: th.bg, borderRadius: 4, overflow: "hidden", marginTop: SP.xs + 1 }}><div style={{ height: "100%", width: gls.mp + "%", background: "linear-gradient(90deg," + th.ac + "," + th.ac2 + ")", borderRadius: 4, transition: "width .5s" }} /></div><div style={{ ...TY.micro, fontWeight: 400, color: th.t2, marginTop: SP.xs }}>{f(Number(gls.top.jamg || 0), true)} / {f(Number(gls.top.maqsad), true)}</div></div>} />
+              icon={DIco.target(th.ac)}
+              title={<span style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{gls.top.ism}{gls.activeM.length > 1 ? " +" + (gls.activeM.length - 1) : ""}</span><span style={{ ...TYPE.caption, fontWeight: 800, color: th.ac, flexShrink: 0, marginLeft: SPACE.s2 }}>{gls.mp}%</span></span>}
+              sub={<div><div style={{ marginTop: SPACE.s1 + 1 }}><LinearProgress th={th} value={gls.mp} height={SPACE.s2 - 1} /></div><div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s1, fontVariantNumeric: "tabular-nums" }}>{f(Number(gls.top.jamg || 0), true)} / {f(Number(gls.top.maqsad), true)}</div></div>} />
           )}
           {maq.length === 0 && (
-            <MiniCard th={th} delay={STAGGER * 3} dashed border={th.ac + "55"} bg={th.ac + "08"} onClick={() => { buzz(8); setScr("maqsad"); }}
-              icon={"\ud83c\udfaf"} iconBg={th.ac + "18"}
+            <MiniCard th={th} delay={STAGGER * 3} dashed border={th.ac + ALPHA.strong} bg={th.ac + ALPHA.faint} onClick={() => { buzz(8); setScr("maqsad"); }}
+              icon={DIco.target(th.ac)}
               title={lg === "uz" ? "Maqsad qo'ying" : "Set a goal"}
-              sub={<div style={{ ...TY.cap, fontWeight: 400, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Uy, mashina, sayohat uchun jamg'aring" : "Save for your dreams"}</div>} />
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Uy, mashina, sayohat uchun jamg'aring" : "Save for your dreams"}</div>} />
           )}
 
           {/* 10. Qarz eslatmalari */}
           {dbt.n > 0 && (
             <MiniCard th={th} delay={STAGGER * 4} onClick={() => { buzz(8); setScr("qarz"); }}
-              icon={"\ud83d\udcb8"} iconBg={(dbt.overdue ? th.rd : th.ac) + "18"} border={dbt.overdue ? th.rd + "66" : undefined} bg={dbt.overdue ? th.rd + "0d" : undefined}
-              title={<span>{lg === "uz" ? "Qarzlar" : "Debts"} ({dbt.n}){dbt.overdue && <span style={{ marginLeft: 6, ...TY.micro, color: th.rd, fontWeight: 800 }}>{"\u26A0\uFE0F"} {lg === "uz" ? "Muddati o'tgan!" : "Overdue!"}</span>}</span>}
-              sub={<div style={{ ...TY.cap, marginTop: 3, display: "flex", gap: SP.m, flexWrap: "wrap" }}>{dbt.menga > 0 && <span style={{ color: th.gr, fontWeight: 700 }}>{lg === "uz" ? "Menga qaytariladi" : "They owe"}: +{f(dbt.menga, true)}</span>}{dbt.mendan > 0 && <span style={{ color: th.rd, fontWeight: 700 }}>{lg === "uz" ? "Men qaytaraman" : "I owe"}: -{f(dbt.mendan, true)}</span>}</div>} />
+              icon={DIco.cash(dbt.overdue ? th.rd : th.ac)} iconTone={dbt.overdue ? th.rd : th.ac} border={dbt.overdue ? th.rd + ALPHA.strong : undefined} bg={dbt.overdue ? th.rd + ALPHA.faint : undefined}
+              title={<span>{lg === "uz" ? "Qarzlar" : "Debts"} ({dbt.n}){dbt.overdue && <span style={{ marginLeft: SPACE.s1 + 2, ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.rd, fontWeight: 800 }}>{lg === "uz" ? "Muddati o'tgan!" : "Overdue!"}</span>}</span>}
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, marginTop: 3, display: "flex", gap: SPACE.s3, flexWrap: "wrap" }}>{dbt.menga > 0 && <span style={{ color: th.gr, fontWeight: 700 }}>{lg === "uz" ? "Menga qaytariladi" : "They owe"}: +{f(dbt.menga, true)}</span>}{dbt.mendan > 0 && <span style={{ color: th.rd, fontWeight: 700 }}>{lg === "uz" ? "Men qaytaraman" : "I owe"}: -{f(dbt.mendan, true)}</span>}</div>} />
           )}
 
           {/* Farzand vazifalari (oila klasteri) */}
           {hasKids && (
             <MiniCard th={th} delay={STAGGER * 5} onClick={() => { buzz(8); setScr("vazifa"); }}
-              icon={"\ud83d\udccb"} iconBg={"#f59e0b18"} badge={vaz.pending} border={vaz.pending > 0 ? "#f59e0b66" : undefined} bg={vaz.pending > 0 ? "#f59e0b0d" : undefined}
+              icon={DIco.clip(th.am)} iconTone={th.am} badge={vaz.pending} border={vaz.pending > 0 ? th.am + ALPHA.strong : undefined} bg={vaz.pending > 0 ? th.am + ALPHA.faint : undefined}
               title={lg === "uz" ? "Farzandga vazifa" : "Kids' tasks"}
-              sub={<div style={{ ...TY.cap, color: vaz.pending > 0 ? "#f59e0b" : th.t2, marginTop: 2, fontWeight: vaz.pending > 0 ? 700 : 400 }}>{vaz.pending > 0 ? "\u23F3 " + vaz.pending + (lg === "uz" ? " ta tasdiqlash kutilmoqda" : " awaiting approval") : vaz.active > 0 ? vaz.active + (lg === "uz" ? " ta faol vazifa" : " active tasks") : (lg === "uz" ? "Topshiriq bering, mukofot belgilang" : "Assign tasks with rewards")}</div>} />
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: vaz.pending > 0 ? th.am : th.t2, marginTop: 2, fontWeight: vaz.pending > 0 ? 700 : 400 }}>{vaz.pending > 0 ? vaz.pending + (lg === "uz" ? " ta tasdiqlash kutilmoqda" : " awaiting approval") : vaz.active > 0 ? vaz.active + (lg === "uz" ? " ta faol vazifa" : " active tasks") : (lg === "uz" ? "Topshiriq bering, mukofot belgilang" : "Assign tasks with rewards")}</div>} />
           )}
 
           {/* 11. Oiladagi oxirgi faoliyat */}
           {canSeeReport && famTx.length > 0 && (
             <div>
-              <SecLabel th={th}>{lg === "uz" ? "Oiladagi oxirgi faoliyat" : "Family activity"}</SecLabel>
-              {famTx.map(item => <TxRow key={"fam" + item.tp + item.id} item={item} th={th} STY={STY} KATS={KATS} KN={KN} DARS={DARS} DN={DN} lg={lg} gN={gN} gP={gP} f={f} user={user} onDelete={delX} Ico={Ico} />)}
+              <SectionHeader th={th}>{lg === "uz" ? "Oiladagi oxirgi faoliyat" : "Family activity"}</SectionHeader>
+              <AppCard th={th} pad={0}>
+                {famTx.map((item, i) => <Tx key={"fam" + item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} divider={i < famTx.length - 1} />)}
+              </AppCard>
             </div>
           )}
 
           {/* Valyuta kurslari — passiv ma'lumot, eng pastda */}
-          <div style={{ height: SECTION_GAP - CARD_GAP }} />
-          <div className="anim-fadeUp" style={{ animationDelay: STAGGER * 6 + "ms", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS, padding: SP.m + "px " + SP.l + "px", marginBottom: CARD_GAP }}>
-            <div onClick={() => { setShowRates(v => !v); if (!showRates && rates.length === 0) fetchRates(); }} style={{ display: "flex", alignItems: "center", gap: SP.s, cursor: "pointer", minHeight: 32 }}>
-              {Ico.bank(th.ac)}
-              <span style={{ ...TY.h2, fontSize: 13, color: th.t1, flexShrink: 0 }}>{t.rates}</span>
-              <span style={{ flex: 1, ...TY.cap, fontWeight: 400, color: th.t2, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                {(() => {
-                  const usd = rates.find(r => r.code === "USD");
-                  const rub = rates.find(r => r.code === "RUB");
-                  if (!usd && !rub) return lg === "uz" ? "ko'rish" : "view";
-                  return (usd ? "USD " + Number(usd.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 }) : "") + (usd && rub ? " \u00b7 " : "") + (rub ? "RUB " + Number(rub.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 2 }) : "");
-                })()}
-              </span>
-              <span style={{ ...TY.micro, color: th.t2, transform: showRates ? "rotate(180deg)" : "none", transition: "transform .2s", flexShrink: 0 }}>{"\u25BC"}</span>
-            </div>
-            {showRates && (
-              <div style={{ marginTop: SP.m }}>
-                {rateL && <div style={{ textAlign: "center", padding: SP.s + "px 0", color: th.t2, fontSize: 13 }}>{t.ldd}</div>}
-                {!rateL && rates.length > 0 && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SP.s }}>
-                    {rates.map(r => {
-                      const flags = { USD: "\ud83c\uddfa\ud83c\uddf8", EUR: "\ud83c\uddea\ud83c\uddfa", RUB: "\ud83c\uddf7\ud83c\uddfa", GBP: "\ud83c\uddec\ud83c\udde7", CNY: "\ud83c\udde8\ud83c\uddf3", KZT: "\ud83c\uddf0\ud83c\uddff" };
-                      return (
-                        <div key={r.code} style={{ background: th.surH, borderRadius: 12, padding: SP.s + 1 + "px " + (SP.m - 1) + "px", border: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: SP.s }}>
-                          <span style={{ fontSize: 17, flexShrink: 0 }}>{flags[r.code] || "\ud83d\udcb1"}</span>
-                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ ...TY.cap, fontWeight: 700, color: th.t1 }}>{r.code}</div></div>
-                          <div style={{ fontSize: 12, fontWeight: 800, color: th.ac, flexShrink: 0 }}>{Number(r.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 })}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-                <button onClick={fetchRates} style={{ marginTop: SP.s + 2, width: "100%", background: "none", border: "1px solid " + th.bor, borderRadius: 9, padding: "7px 0", cursor: "pointer", ...TY.cap, fontWeight: 400, color: th.t2, display: "flex", alignItems: "center", justifyContent: "center", gap: 5 }}>{Ico.repeat(th.t2)}{lg === "uz" ? "Yangilash" : "Refresh"}</button>
+          <div style={{ height: SPACE.s3 }} />
+          <div className="anim-fadeUp" style={{ animationDelay: STAGGER * 6 + "ms" }}>
+            <AppCard th={th} pad={SPACE.s3}>
+              <div className="ui-press" onClick={() => { setShowRates(v => !v); if (!showRates && rates.length === 0) fetchRates(); }} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, cursor: "pointer", minHeight: SPACE.s8, padding: "0 " + SPACE.s1 + "px" }}>
+                {Ico.bank(th.ac)}
+                <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1, flexShrink: 0 }}>{t.rates}</span>
+                <span style={{ flex: 1, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                  {(() => {
+                    const usd = rates.find(r => r.code === "USD");
+                    const rub = rates.find(r => r.code === "RUB");
+                    if (!usd && !rub) return lg === "uz" ? "ko'rish" : "view";
+                    return (usd ? "USD " + Number(usd.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 }) : "") + (usd && rub ? " \u00b7 " : "") + (rub ? "RUB " + Number(rub.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 2 }) : "");
+                  })()}
+                </span>
+                {DIco.chevD(th.t2, showRates)}
               </div>
-            )}
+              {showRates && (
+                <div style={{ marginTop: SPACE.s3 }}>
+                  {rateL && <div style={{ textAlign: "center", padding: SPACE.s2 + "px 0", color: th.t2, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1 }}>{t.ldd}</div>}
+                  {!rateL && rates.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 }}>
+                      {rates.map(r => (
+                        <div key={r.code} style={{ background: th.surH, borderRadius: RADIUS.s + 2, padding: (SPACE.s2 + 1) + "px " + (SPACE.s3 - 1) + "px", border: "1px solid " + th.bor, display: "flex", alignItems: "center", gap: SPACE.s2 }}>
+                          <div style={{ flex: 1, minWidth: 0 }}><div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: th.t1 }}>{r.code}</div></div>
+                          <div style={{ ...TYPE.caption, fontWeight: 800, color: th.ac, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{Number(r.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 })}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <GhostButton th={th} onClick={fetchRates} style={{ marginTop: SPACE.s2 + 2, padding: (SPACE.s2 - 1) + "px 0", fontSize: TYPE.caption.fontSize - 1 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{Ico.repeat(th.t2)}{lg === "uz" ? "Yangilash" : "Refresh"}</span>
+                  </GhostButton>
+                </div>
+              )}
+            </AppCard>
           </div>
         </div>
       )}
