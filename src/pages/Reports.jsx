@@ -24,6 +24,7 @@ const RIco = {
   warn: (c, s=14) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 2L1.5 13.5h13L8 2z" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M8 6.5v3.2" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><circle cx="8" cy="11.8" r=".8" fill={c}/></svg>,
   chevD: (c, sz=10, open=false) => <svg width={sz} height={sz} viewBox="0 0 16 16" fill="none" style={{ transform: open ? "rotate(180deg)" : "none", transition: MOTION.trFast("transform"), display: "inline-block" }}><path d="M4 6l4 4 4-4" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   coin: (c, s=16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M8 4.5v7M6 6.2c0-.9.9-1.4 2-1.4s2 .5 2 1.3c0 2-4 1.6-4 3.6 0 .8.9 1.3 2 1.3s2-.5 2-1.4" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+  cal: (c, s=18) => <svg width={s} height={s} viewBox="0 0 18 18" fill="none"><rect x="2" y="3.5" width="14" height="12" rx="2.5" stroke={c} strokeWidth="1.4"/><path d="M2 7.5h14M6 2v3M12 2v3" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></svg>,
 };
 
 export default function ReportsPage({
