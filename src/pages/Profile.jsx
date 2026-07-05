@@ -1,12 +1,54 @@
-import { useMemo } from "react";
+import { useMemo, memo } from "react";
 import { KatIco, Av, MoneyInput, BH } from "../components/common/index.jsx";
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, VALS, RELATIONS, FAQS } from "../utils/constants.js";
 import Garden from "../Garden.jsx";
 
+// ═══ Profile-lokal professional SVG ikonkalar (emoji o'rniga) ═══
+const PIco = {
+  leaf: c => <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M15 3C8 3 3.5 6.5 3.5 12c0 1 .2 2 .5 3 5.5 0 11-3 11-12z" fill={c} opacity=".15" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M4 15C6.5 11 9.5 8.5 13 6.5" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  book: c => <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 4.5C7.5 3 5.5 2.5 2.5 2.5v11c3 0 5 .5 6.5 2 1.5-1.5 3.5-2 6.5-2v-11c-3 0-5 .5-6.5 2z" fill={c} opacity=".12" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M9 4.5v11" stroke={c} strokeWidth="1.2"/></svg>,
+  baby: c => <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke={c} strokeWidth="1.3" fill={c} opacity=".08"/><circle cx="9" cy="9" r="6.5" stroke={c} strokeWidth="1.3" fill="none"/><circle cx="6.8" cy="8" r=".9" fill={c}/><circle cx="11.2" cy="8" r=".9" fill={c}/><path d="M6.5 11.2c.7.8 1.5 1.2 2.5 1.2s1.8-.4 2.5-1.2" stroke={c} strokeWidth="1.2" strokeLinecap="round"/><path d="M9 2.5c.8-.8 2-.8 2 .3" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  gift: c => <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="7" width="13" height="8.5" rx="1.5" fill={c} opacity=".12" stroke={c} strokeWidth="1.3"/><path d="M2 5h14v2.5H2z" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M9 5v10.5M9 5C9 3 7.5 2 6.5 2.5 5.5 3 6 5 9 5zm0 0c0-2 1.5-3 2.5-2.5 1 .5.5 2.5-2.5 2.5z" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  star: c => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.9 4.1 4.5.5-3.3 3.1.9 4.4L8 11.4l-4 2.2.9-4.4L1.6 6.1l4.5-.5L8 1.5z" fill={c} opacity=".2" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/></svg>,
+  gem: c => <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M5 2.5h8L16.5 7 9 15.5 1.5 7 5 2.5z" fill={c} opacity=".15" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M1.5 7h15M6.5 7L9 15.5 11.5 7M5 2.5L6.5 7 9 2.5l2.5 4.5 1.5-4.5" stroke={c} strokeWidth="1.1" strokeLinejoin="round"/></svg>,
+  cal: c => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  list: c => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2.5" y="2" width="11" height="12" rx="2" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  target: c => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.2" opacity=".4"/><circle cx="8" cy="8" r="3.8" stroke={c} strokeWidth="1.2" opacity=".7"/><circle cx="8" cy="8" r="1.4" fill={c}/></svg>,
+  hand: c => <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="9" rx="1.8" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><path d="M1.5 7h13" stroke={c} strokeWidth="1.1"/><circle cx="11.5" cy="10" r="1.1" fill={c} opacity=".8"/></svg>,
+};
+
+// ═══ Kichik, qayta ishlatiladigan qismlar (module-level → har renderda qayta yaratilmaydi) ═══
+const SectionLabel = memo(({ th, children }) => (
+  <div style={{ fontSize: 11, color: th.t2, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, margin: "18px 0 8px", paddingLeft: 4 }}>{children}</div>
+));
+
+const SettingRow = memo(({ th, ico, label, sub, right, onClick, first, last, danger }) => (
+  <button onClick={onClick} className={onClick ? "pf-press" : undefined} style={{ width: "100%", background: "transparent", border: "none", borderBottom: last ? "none" : "1px solid " + th.bor, padding: "13px 16px", cursor: onClick ? "pointer" : "default", display: "flex", alignItems: "center", gap: 12, textAlign: "left", borderRadius: first && last ? 16 : first ? "16px 16px 0 0" : last ? "0 0 16px 16px" : 0 }}>
+    <div style={{ width: 36, height: 36, borderRadius: 11, background: (danger ? th.rd : th.ac) + "14", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ico}</div>
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: danger ? th.rd : th.t1 }}>{label}</div>
+      {sub && <div style={{ fontSize: 11, color: th.t2, marginTop: 1 }}>{sub}</div>}
+    </div>
+    {right !== undefined ? right : (onClick && Ico.right(th.t2))}
+  </button>
+));
+
+const StatCell = memo(({ th, ico, value, label }) => (
+  <div style={{ flex: 1, background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, padding: "12px 6px", textAlign: "center", minWidth: 0 }}>
+    <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>{ico}</div>
+    <div style={{ fontSize: 17, fontWeight: 800, color: th.t1, lineHeight: 1 }}>{value}</div>
+    <div style={{ fontSize: 9.5, color: th.t2, marginTop: 4, fontWeight: 600, textTransform: "uppercase", letterSpacing: .4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
+  </div>
+));
+
+const ProBadge = ({ th }) => (
+  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "linear-gradient(135deg,#f59e0b,#f97316)", borderRadius: 6, padding: "2px 6px", fontSize: 9, fontWeight: 800, color: "#fff", letterSpacing: .5, flexShrink: 0 }}>{PIco.star("#fff")}PRO</span>
+);
+
 export default function ProfilePage({
-  user, oila, azolar, xar, qarzlar,
+  user, oila, azolar, xar, qarzlar, maq,
   isPremium, isKid, isAdmin,
   th, t, f, lg, dark, val, setVal, setLg, setDark,
   bX, bD,
@@ -34,65 +76,155 @@ export default function ProfilePage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
 
+  // ═══ Statistika — faqat mavjud ma'lumotlardan, og'ir hisob memoizatsiya qilingan ═══
+  const pStats = useMemo(() => {
+    const myXar = (xar || []).filter(x => x.uid === user?.id);
+    // Foydalanish kunlari: registeredAt (Google) yoki eng birinchi o'z yozuvi sanasi
+    let firstTs = user?.registeredAt ? Date.parse(user.registeredAt) : NaN;
+    for (const x of myXar) {
+      const ts = Date.parse(x.sana);
+      if (!isNaN(ts) && (isNaN(firstTs) || ts < firstTs)) firstTs = ts;
+    }
+    const days = isNaN(firstTs) ? 1 : Math.max(1, Math.floor((Date.now() - firstTs) / 86400000) + 1);
+    return {
+      days,
+      txCount: myXar.length,
+      goalCount: (maq || []).filter(m => m.uid === user?.id || m.shared).length,
+      debtCount: (qarzlar || []).filter(q => !q.done).length,
+      gardenLevel: gardenData?.level || 0,
+    };
+  }, [xar, maq, qarzlar, gardenData, user?.id, user?.registeredAt]);
+
   return (
     <div>
       {pTab === "main" && (
         <div>
-          <div style={{ ...STY.row, marginBottom: 20 }}>
-            <div style={{ fontSize: 20, fontWeight: 800, color: th.t1 }}>{t.prf}</div>
-            <button onClick={logout} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: th.rd, fontWeight: 700, fontSize: 14 }}>{Ico.door(th.rd)}{t.lo}</button>
-          </div>
+          <style>{`.pf-press{transition:transform .12s ease,opacity .12s ease}.pf-press:active{transform:scale(.98);opacity:.85}`}</style>
 
-          <div style={{ background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", borderRadius: 20, padding: "20px 18px", marginBottom: 18, display: "flex", alignItems: "center", gap: 14, position: "relative", overflow: "hidden" }}>
-            <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
-            <div style={{ position: "relative" }}>
-              <Av src={user?.photo} name={user?.ism} size={64} ac="#fff" />
-              <button onClick={() => fRef.current?.click()} style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,.2)" }}>{Ico.camera(th.ac)}</button>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism}</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.75)", marginTop: 3 }}>{user?.email}</div>
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.18)", borderRadius: 20, padding: "3px 10px", marginTop: 7, fontSize: 11, color: "#fff", fontWeight: 600 }}>
-                {user?.rol === "bosh" ? Ico.crown("#fff") : Ico.user("#fff")}
-                {user?.rol === "bosh" ? (lg === "uz" ? "Oila boshlig'i" : "Family head") : (lg === "uz" ? "A'zo" : "Member")}
+          {/* ═══ 1. HERO ═══ */}
+          <div style={{ fontSize: 20, fontWeight: 800, color: th.t1, marginBottom: 16 }}>{t.prf}</div>
+          <div className="anim-fadeUp" style={{ background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", borderRadius: 20, padding: "22px 18px", marginBottom: 16, position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -50, left: -30, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 14, position: "relative" }}>
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <div style={{ padding: isPremium ? 2.5 : 0, borderRadius: "50%", background: isPremium ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "transparent" }}>
+                  <Av src={user?.photo} name={user?.ism} size={64} ac="#fff" />
+                </div>
+                <button onClick={() => fRef.current?.click()} className="pf-press" style={{ position: "absolute", bottom: -2, right: -2, width: 22, height: 22, borderRadius: "50%", background: "#fff", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 2px 8px rgba(0,0,0,.2)" }}>{Ico.camera(th.ac)}</button>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism}</div>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
+                <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,255,255,0.18)", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#fff", fontWeight: 600 }}>
+                    {user?.rol === "bosh" ? Ico.crown("#fff") : Ico.user("#fff")}
+                    {user?.rol === "bosh" ? (lg === "uz" ? "Oila boshlig'i" : "Family head") : (lg === "uz" ? "A'zo" : "Member")}
+                  </div>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: isPremium ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "rgba(255,255,255,0.18)", borderRadius: 20, padding: "3px 10px", fontSize: 11, color: "#fff", fontWeight: 700 }}>
+                    {PIco.gem("#fff")}{isPremium ? "Premium" : (lg === "uz" ? "Bepul" : "Free")}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div style={{ fontSize: 11, color: th.t2, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 10, paddingLeft: 4 }}>{t.qoshimcha}</div>
-          {[
-            { id: "garden", label: lg === "uz" ? "🌱 Oila bog'i" : "🌱 Family Garden", ico: <span style={{ fontSize: 20 }}>🌱</span> },
-            { id: "bilim", label: lg === "uz" ? "📚 Bilim Bozori" : "📚 Knowledge Market", ico: <span style={{ fontSize: 20 }}>📚</span> },
-            { id: "shaxsiy", label: t.shaxsiy, ico: Ico.user(th.ac) },
-            ...(user?.rol === "bosh" ? [{ id: "budjet", label: lg === "uz" ? "Budjet va limitlar" : "Budget & limits", ico: Ico.wallet(th.ac) }] : []),
-            { id: "ilovaS", label: t.ilovaS, ico: Ico.settings(th.ac) },
-            { id: "xav", label: t.xav, ico: Ico.shield(th.ac) },
-            { id: "qol", label: t.qol, ico: Ico.help(th.ac) },
-            ...(!isKid ? [{ id: "__addkid__", label: lg === "uz" ? "Bola akkaunti qo'shish" : "Add kid account", ico: <span style={{ fontSize: 20 }}>👶</span> }] : []),
-          ].map(item => (
-            <button key={item.id} onClick={() => { if (item.id === "__addkid__") { buzz(10); setShowAddKid(true); } else if (item.id === "bilim") { buzz(10); setShowBilim(true); } else { setPTab(item.id); } }} style={{ width: "100%", background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 10, textAlign: "left" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: th.ac + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{item.ico}</div>
-              <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: th.t1 }}>{item.label}</span>
-              {Ico.right(th.t2)}
-            </button>
-          ))}
+          {/* ═══ 2. STATISTIKA (faqat mavjud ma'lumotlar) ═══ */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+            <StatCell th={th} ico={PIco.cal(th.ac)} value={pStats.days} label={lg === "uz" ? "Kun" : "Days"} />
+            <StatCell th={th} ico={PIco.list(th.ac)} value={pStats.txCount} label={lg === "uz" ? "Yozuv" : "Records"} />
+            <StatCell th={th} ico={PIco.target(th.gr)} value={pStats.goalCount} label={lg === "uz" ? "Maqsad" : "Goals"} />
+            <StatCell th={th} ico={PIco.hand(th.am)} value={pStats.debtCount} label={lg === "uz" ? "Qarz" : "Debts"} />
+          </div>
 
-          {!isKid && (
-            <button onClick={() => setShowReferral(true)} style={{ width: "100%", background: "linear-gradient(135deg,#10b98115,#05966908)", border: "1.5px solid #10b98144", borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 10, textAlign: "left" }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: "#10b98122", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, fontSize: 20 }}>🎁</div>
+          {/* ═══ 3. YUTUQLAR (faqat tizimda real hisoblanadigan: yulduzcha, bog' darajasi, takliflar) ═══ */}
+          <div style={{ background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, padding: "14px 16px", marginBottom: 16 }}>
+            <div style={{ fontSize: 11, color: th.t2, textTransform: "uppercase", letterSpacing: 1.5, fontWeight: 700, marginBottom: 12 }}>{lg === "uz" ? "Yutuqlar" : "Achievements"}</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[
+                { ico: PIco.star("#f59e0b"), v: stars || 0, l: lg === "uz" ? "Yulduzcha" : "Stars", c: "#f59e0b", onClick: null },
+                { ico: PIco.leaf(th.gr), v: pStats.gardenLevel, l: lg === "uz" ? "Bog' darajasi" : "Garden lvl", c: th.gr, onClick: () => setPTab("garden") },
+                { ico: PIco.gift(th.ac), v: refCount || 0, l: lg === "uz" ? "Taklif" : "Invites", c: th.ac, onClick: !isKid ? () => setShowReferral(true) : null },
+              ].map((a, i) => (
+                <button key={i} onClick={a.onClick || undefined} className={a.onClick ? "pf-press" : undefined} style={{ flex: 1, background: a.c + "0d", border: "1px solid " + a.c + "26", borderRadius: 13, padding: "11px 4px", textAlign: "center", cursor: a.onClick ? "pointer" : "default" }}>
+                  <div style={{ display: "flex", justifyContent: "center", marginBottom: 5 }}>{a.ico}</div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: a.c, lineHeight: 1 }}>{a.v}</div>
+                  <div style={{ fontSize: 9.5, color: th.t2, marginTop: 4, fontWeight: 600 }}>{a.l}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ═══ 4. PREMIUM CARD ═══ */}
+          <button onClick={() => { buzz(10); setShowPremModal(true); }} className="pf-press" style={{ width: "100%", background: isPremium ? "linear-gradient(135deg,#f59e0b14,#f9731608)" : "linear-gradient(135deg," + th.ac + "12," + th.ac2 + "08)", border: "1.5px solid " + (isPremium ? "#f59e0b44" : th.ac + "33"), borderRadius: 16, padding: "16px", marginBottom: 12, cursor: "pointer", textAlign: "left" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: isPremium ? 0 : 12 }}>
+              <div style={{ width: 42, height: 42, borderRadius: 13, background: isPremium ? "linear-gradient(135deg,#fbbf24,#f59e0b)" : "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{PIco.gem("#fff")}</div>
               <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: th.gr }}>{lg === "uz" ? "Do'stlarni taklif qiling" : "Invite friends"}</div>
-                <div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "3 ta do'st = 1 oy Premium bepul!" : "3 friends = 1 month Premium free!"}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: isPremium ? "#f59e0b" : th.ac }}>{isPremium ? (lg === "uz" ? "Premium faol" : "Premium active") : (lg === "uz" ? "Premium'ga o'ting" : "Upgrade to Premium")}</div>
+                <div style={{ fontSize: 11, color: th.t2, marginTop: 2 }}>{isPremium ? (lg === "uz" ? "Barcha funksiyalar ochiq" : "All features unlocked") : (lg === "uz" ? "Barcha imkoniyatlarni oching" : "Unlock everything")}</div>
               </div>
-              {Ico.right(th.gr)}
+              {isPremium ? <span style={{ color: "#f59e0b" }}>{Ico.check("#f59e0b")}</span> : <div style={{ background: th.ac, borderRadius: 10, padding: "6px 12px", color: "#fff", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{lg === "uz" ? "Ochish" : "Unlock"}</div>}
+            </div>
+            {!isPremium && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                {[
+                  lg === "uz" ? "Cheksiz maqsad" : "Unlimited goals",
+                  lg === "uz" ? "PDF/Excel eksport" : "PDF/Excel export",
+                  lg === "uz" ? "Cheksiz a'zo" : "Unlimited members",
+                  lg === "uz" ? "Ovoz kiritish" : "Voice input",
+                ].map(feat => (
+                  <div key={feat} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, background: th.sur, border: "1px solid " + th.bor, borderRadius: 10, padding: "8px 10px" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{feat}</span>
+                    <ProBadge th={th} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </button>
+
+          {/* ═══ 5. REFERRAL (Premium'dan keyin, Hero bilan raqobatlashmaydigan neytral uslub) ═══ */}
+          {!isKid && (
+            <button onClick={() => setShowReferral(true)} className="pf-press" style={{ width: "100%", background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, marginBottom: 4, textAlign: "left" }}>
+              <div style={{ width: 36, height: 36, borderRadius: 11, background: th.gr + "14", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{PIco.gift(th.gr)}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Do'stlarni taklif qiling" : "Invite friends"}</div>
+                <div style={{ fontSize: 11, color: th.t2, marginTop: 1 }}>{lg === "uz" ? "3 ta do'st = 1 oy Premium bepul" : "3 friends = 1 month free Premium"}</div>
+              </div>
+              {Ico.right(th.t2)}
             </button>
           )}
 
-          <div style={{ background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, padding: "14px 16px", display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: th.ac + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{Ico.version(th.ac)}</div>
-            <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: th.t1 }}>{t.ver}</span>
-            <span style={{ fontSize: 13, color: th.t2, fontWeight: 600 }}>v{APP_VER}</span>
+          {/* ═══ 6. SOZLAMALAR — kategoriyalarga ajratilgan ═══ */}
+          <SectionLabel th={th}>{lg === "uz" ? "Hisob" : "Account"}</SectionLabel>
+          <div style={{ background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, overflow: "hidden" }}>
+            <SettingRow th={th} first last={user?.rol !== "bosh" && isKid} ico={Ico.user(th.ac)} label={t.shaxsiy} sub={lg === "uz" ? "Ism, telefon, oila a'zolari" : "Name, phone, family"} onClick={() => setPTab("shaxsiy")} />
+            {user?.rol === "bosh" && <SettingRow th={th} last={isKid} ico={Ico.wallet(th.ac)} label={lg === "uz" ? "Budjet va limitlar" : "Budget & limits"} sub={lg === "uz" ? "Oylik chegara, kategoriya limitlari" : "Monthly cap, category limits"} onClick={() => setPTab("budjet")} />}
+            {!isKid && <SettingRow th={th} last ico={PIco.baby(th.ac)} label={lg === "uz" ? "Bola akkaunti qo'shish" : "Add kid account"} sub={lg === "uz" ? "Farzandingizga login yarating" : "Create a login for your child"} onClick={() => { buzz(10); setShowAddKid(true); }} />}
           </div>
+
+          <SectionLabel th={th}>{lg === "uz" ? "Xavfsizlik" : "Security"}</SectionLabel>
+          <div style={{ background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, overflow: "hidden" }}>
+            <SettingRow th={th} first last ico={Ico.shield(th.ac)} label={t.xav} sub={lg === "uz" ? "PIN, biometrika" : "PIN, biometrics"} onClick={() => setPTab("xav")} />
+          </div>
+
+          <SectionLabel th={th}>{lg === "uz" ? "Ilova" : "App"}</SectionLabel>
+          <div style={{ background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, overflow: "hidden" }}>
+            <SettingRow th={th} first ico={Ico.settings(th.ac)} label={t.ilovaS} sub={lg === "uz" ? "Til, valyuta, mavzu, bildirishnoma" : "Language, currency, theme"} onClick={() => setPTab("ilovaS")} />
+            <SettingRow th={th} ico={PIco.leaf(th.gr)} label={lg === "uz" ? "Oila bog'i" : "Family Garden"} sub={lg === "uz" ? "Yulduzcha bilan bog'ni o'stiring" : "Grow your garden with stars"} onClick={() => setPTab("garden")} />
+            <SettingRow th={th} last ico={PIco.book(th.ac)} label={lg === "uz" ? "Bilim Bozori" : "Knowledge Market"} sub={lg === "uz" ? "Moliyaviy savodxonlik" : "Financial literacy"} onClick={() => { buzz(10); setShowBilim(true); }} />
+          </div>
+
+          <SectionLabel th={th}>{lg === "uz" ? "Ma'lumot" : "About"}</SectionLabel>
+          <div style={{ background: th.sur, border: "1px solid " + th.bor, borderRadius: 16, overflow: "hidden" }}>
+            <SettingRow th={th} first ico={Ico.help(th.ac)} label={t.qol} sub={lg === "uz" ? "FAQ, Telegram bot, fikr bildirish" : "FAQ, Telegram, feedback"} onClick={() => setPTab("qol")} />
+            <SettingRow th={th} last ico={Ico.version(th.ac)} label={t.ver} right={<span style={{ fontSize: 13, color: th.t2, fontWeight: 600 }}>v{APP_VER}</span>} />
+          </div>
+
+          {/* ═══ 7. LOGOUT — eng pastda, xavfsiz joyda ═══ */}
+          <button onClick={logout} className="pf-press" style={{ width: "100%", background: th.rd + "0d", border: "1px solid " + th.rd + "33", borderRadius: 16, padding: "14px", marginTop: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: th.rd, fontWeight: 700, fontSize: 14 }}>
+            {Ico.door(th.rd)}{t.lo}
+          </button>
+          <div style={{ textAlign: "center", fontSize: 10, color: th.t2, marginTop: 12, marginBottom: 4, opacity: .7 }}>Oila Hisobchi · v{APP_VER}</div>
         </div>
       )}
 
