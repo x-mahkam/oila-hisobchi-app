@@ -437,6 +437,7 @@ export default function App() {
   // AI maslahat
   const [adv,  setAdv]  = useState("");
   const [advL, setAdvL] = useState(false);
+  const [advErr, setAdvErr] = useState("");
 
   const fRef = useRef(null);
   const importFileRef = useRef(null);
@@ -1400,9 +1401,8 @@ export default function App() {
   };
 
   // ── AI maslahat ───────────────────────────────────────────
-  const aiAdv = async () => {
-    if (!isPremium) { setShowPremModal(true); return; }
-    setAdvL(true); setAdv(""); setScr("maslahat");
+  // Lokal tahlil dvigateli — internetga bog'liq emas, HAR DOIM natija beradi.
+  const buildLocalAdvice = () => {
     const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
     const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
     const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
@@ -1460,9 +1460,55 @@ export default function App() {
       : bal2 >= 0
         ? L("🏆 Barakalla, " + (user?.ism || "do'stim") + "! Siz moliyangizni nazoratda tutyapsiz — bu ko'pchilikning qo'lidan kelmaydi. Keling, tahlilni ko'ramiz:", "🏆 Great job, " + (user?.ism || "") + "!")
         : L("💪 " + (user?.ism || "Do'stim") + ", tashvishlanmang — har bir katta yutuq kichik qadamdan boshlanadi. Bu oy tahlili sizga yo'l ko'rsatadi:", "💪 Don't worry, every big win starts small.");
-    if (totX === 0 && totD === 0) setAdv(L("Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!", "No data yet. Add expenses and income."));
-    else setAdv(salom + "\n\n" + L("📈 " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n"));
-    setTimeout(() => setAdvL(false), 400);
+    if (totX === 0 && totD === 0) return L("Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!", "No data yet. Add expenses and income.");
+    return salom + "\n\n" + L("📈 " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n");
+  };
+
+  // Masofaviy AI API (ixtiyoriy): VITE_AI_API_URL sozlansa shu endpointga so'rov yuboriladi.
+  // Sozlanmagan yoki ishlamasa — lokal dvigatel zaxira sifatida ishlaydi (AI hech qachon "o'lmaydi").
+  const fetchRemoteAdvice = async () => {
+    const AI_URL = import.meta.env.VITE_AI_API_URL;
+    if (!AI_URL) return null;                                  // API sozlanmagan
+    if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("offline");
+    const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
+    const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
+    const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
+    const totD = mD.reduce((s, d) => s + Number(d.summa || 0), 0);
+    const kats = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0);
+    const prompt = (lg === "uz"
+      ? "Siz oilaviy moliya bo'yicha maslahatchisiz. Quyidagi oy ma'lumotlari asosida qisqa, amaliy moliyaviy maslahat bering (o'zbek tilida): "
+      : "You are a family finance advisor. Give short practical advice based on this month: ")
+      + JSON.stringify({ oy: tm(), daromad: totD, xarajat: totX, budjet: oila?.budjet || 0, kategoriyalar: kats });
+    const resp = await fetch(AI_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, lang: lg }),
+      signal: AbortSignal.timeout(12000),
+    });
+    if (!resp.ok) throw new Error("API " + resp.status);
+    const data = await resp.json();
+    const text = data.advice || data.text || data.result || (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content);
+    if (!text || typeof text !== "string") throw new Error("empty response");
+    return text;
+  };
+
+  const aiAdv = async () => {
+    if (!isPremium) { setShowPremModal(true); return; }        // Premium logikasi saqlanadi
+    setAdvL(true); setAdv(""); setAdvErr(""); setScr("maslahat");
+    try {
+      let text = null;
+      try { text = await fetchRemoteAdvice(); }                // 1) masofaviy AI (sozlangan bo'lsa)
+      catch (e) { text = null; }                               //    xato/oflayn → lokalga tushamiz
+      if (!text) text = buildLocalAdvice();                    // 2) lokal tahlil — oflaynda ham ishlaydi
+      setAdv(text);
+    } catch (e) {
+      // Kutilmagan runtime xato — tushunarli xabar + Retry tugmasi (Reports sahifasida)
+      setAdvErr(lg === "uz"
+        ? "Maslahat tayyorlashda xatolik yuz berdi. Internetni tekshirib, qayta urinib ko'ring."
+        : "Failed to generate advice. Check your connection and retry.");
+    } finally {
+      setTimeout(() => setAdvL(false), 400);
+    }
   };
 
 
@@ -1728,7 +1774,7 @@ export default function App() {
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
-        {scr === "hisobot" && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
+        {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} advErr={advErr} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
