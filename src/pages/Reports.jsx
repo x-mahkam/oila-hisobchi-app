@@ -33,7 +33,7 @@ export default function ReportsPage({
   bX, bD, jX, jD, bdj, canSeeReport, xar, dar,
   hisFil, setHisFil,
   exportLoading, exportExcel, exportPDF,
-  adv, advL, aiAdv,
+  adv, advL, advErr, aiAdv, setScr,
   adminStats, adminLoad, loadAdminStats,
 }) {
   // PDF hisobot doirasi: o'zimning / oilamning
@@ -46,13 +46,24 @@ export default function ReportsPage({
   if (scr === "maslahat") {
     return (
       <div>
-        <PageHeader th={th} title={t.aa} />
+        <PageHeader th={th} title={t.aa} onBack={setScr ? () => setScr("hisobot") : undefined} />
         {advL ? (
+          /* 1) LOADING — tahlil tayyorlanmoqda */
           <div style={{ textAlign: "center", padding: SPACE.s16 + "px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s3 }}>{Ico.brain(th.ac)}<div style={{ ...TYPE.body, color: th.t2 }}>{t.an}</div></div>
-        ) : adv && (
+        ) : advErr ? (
+          /* 2) ERROR — tushunarli xabar + Retry */
+          <>
+            <InfoCard th={th} icon={RIco.warn(th.rd, 18)}>{advErr}</InfoCard>
+            <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{lg === "uz" ? "Qayta urinish" : "Retry"}</PrimaryButton>
+          </>
+        ) : adv ? (
+          /* 3) NATIJA */
           <AppCard th={th} style={{ lineHeight: 1.85, ...TYPE.body, color: th.t1, whiteSpace: "pre-wrap" }}>{adv}</AppCard>
+        ) : (
+          /* 4) Bo'sh holat (sahifaga to'g'ridan-to'g'ri kelinsa) */
+          <InfoCard th={th} icon={Ico.brain(th.ac)}>{lg === "uz" ? "Tahlilni boshlash uchun quyidagi tugmani bosing." : "Tap the button below to start the analysis."}</InfoCard>
         )}
-        {!advL && <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{t.na}</PrimaryButton>}
+        {!advL && !advErr && <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{t.na}</PrimaryButton>}
       </div>
     );
   }

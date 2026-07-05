@@ -273,7 +273,56 @@ export default function ProfilePage({
           {user?.rol === "bosh" && (
             <div style={{ ...STY.cd, background: th.ac + "0d", border: "1px solid " + th.ac + "33" }}>
               <div style={{ fontSize: 11, color: th.t2, marginBottom: 5, fontWeight: 600 }}>{Ico.key(th.ac)}{t.fc2}</div>
-              <div style={{ fontFamily: "monospace", fontSize: 14, color: th.ac, wordBreak: "break-all", fontWeight: 800, letterSpacing: 1, padding: "8px 0" }}>{user?.oilaId || "—"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 0", flexWrap: "wrap" }}>
+                <div style={{ fontFamily: "monospace", fontSize: 14, color: th.ac, wordBreak: "break-all", fontWeight: 800, letterSpacing: 1, flex: 1, minWidth: 120 }}>{user?.oilaId || "—"}</div>
+                {/* Copy — clipboard'ga nusxalash */}
+                <button
+                  aria-label={lg === "uz" ? "Oila kodini nusxalash" : "Copy family code"}
+                  onClick={async () => {
+                    const code = user?.oilaId || "";
+                    if (!code) { ok$(lg === "uz" ? "Oila kodi topilmadi" : "No family code", "err"); return; }
+                    buzz(10);
+                    let done = false;
+                    try {
+                      if (navigator.clipboard && window.isSecureContext) { await navigator.clipboard.writeText(code); done = true; }
+                    } catch (e) { done = false; }
+                    if (!done) {
+                      // Zaxira usul: eski brauzerlar / HTTP muhit uchun
+                      try {
+                        const ta = document.createElement("textarea");
+                        ta.value = code; ta.style.position = "fixed"; ta.style.opacity = "0";
+                        document.body.appendChild(ta); ta.focus(); ta.select();
+                        done = document.execCommand("copy");
+                        document.body.removeChild(ta);
+                      } catch (e) { done = false; }
+                    }
+                    if (done) ok$(lg === "uz" ? "Oila kodi nusxalandi" : "Family code copied");
+                    else ok$(lg === "uz" ? "Nusxalab bo'lmadi" : "Copy failed", "err");
+                  }}
+                  style={{ background: th.ac + "18", border: "1px solid " + th.ac + "44", borderRadius: 9, padding: "7px 12px", color: th.ac, cursor: "pointer", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="2" stroke={th.ac} strokeWidth="1.3" fill={th.ac} opacity=".12" /><rect x="5" y="5" width="9" height="9" rx="2" stroke={th.ac} strokeWidth="1.3" fill="none" /><path d="M11 5V4a2 2 0 00-2-2H4a2 2 0 00-2 2v5a2 2 0 002 2h1" stroke={th.ac} strokeWidth="1.3" /></svg>
+                  {lg === "uz" ? "Nusxa" : "Copy"}
+                </button>
+                {/* Share — tizim ulashish oynasi (bo'lmasa nusxalashga tushadi) */}
+                <button
+                  aria-label={lg === "uz" ? "Oila kodini ulashish" : "Share family code"}
+                  onClick={async () => {
+                    const code = user?.oilaId || "";
+                    if (!code) { ok$(lg === "uz" ? "Oila kodi topilmadi" : "No family code", "err"); return; }
+                    buzz(10);
+                    const txt = lg === "uz" ? "Oila Hisobchi ilovasiga qo'shiling! Oila kodi: " + code : "Join Oila Hisobchi! Family code: " + code;
+                    if (navigator.share) {
+                      try { await navigator.share({ title: "Oila Hisobchi", text: txt }); } catch (e) { /* foydalanuvchi bekor qildi */ }
+                    } else {
+                      try { await navigator.clipboard.writeText(txt); ok$(lg === "uz" ? "Oila kodi nusxalandi" : "Family code copied"); }
+                      catch (e) { ok$(lg === "uz" ? "Ulashib bo'lmadi" : "Share failed", "err"); }
+                    }
+                  }}
+                  style={{ background: th.gr + "18", border: "1px solid " + th.gr + "44", borderRadius: 9, padding: "7px 12px", color: th.gr, cursor: "pointer", fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="12" cy="3.5" r="2" stroke={th.gr} strokeWidth="1.3" /><circle cx="4" cy="8" r="2" stroke={th.gr} strokeWidth="1.3" /><circle cx="12" cy="12.5" r="2" stroke={th.gr} strokeWidth="1.3" /><path d="M5.8 7L10.2 4.5M5.8 9l4.4 2.5" stroke={th.gr} strokeWidth="1.3" strokeLinecap="round" /></svg>
+                  {lg === "uz" ? "Ulashish" : "Share"}
+                </button>
+              </div>
               <div style={{ fontSize: 10, color: th.t2, marginTop: 5 }}>{t.fcd}</div>
             </div>
           )}
