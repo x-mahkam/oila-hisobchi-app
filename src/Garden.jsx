@@ -7,14 +7,15 @@ import {
   PLOTS, STAGES, WATER_COOLDOWN, HARVEST_COINS, SUN_CYCLE, SPEEDUP_COST, SUN_ENERGY, SUN_POS,
 } from "./garden/constants.js";
 import {
-  GardenDefs, SunSprite, Cloud, CoinSVG, GemSVG, LockSVG, GiftSVG, SeedSVG,
+  GardenDefs, SunSprite, CoinSVG, GemSVG, LockSVG, GiftSVG, SeedSVG,
   DropSVG, BoltSVG, LeafSVG, RocketSVG, BloomSVG, MapSVG, PlantSVG,
 } from "./garden/sprites.jsx";
 import { GardenScene } from "./garden/GardenScene.jsx";
 import {
   GSection, GCard, GProgress, LevelGauge, StatPill, TodayRow, GChip,
-  PlantCard, AchievementCard, RewardRow, TipCard, GardenEmpty,
+  AchievementCard, RewardRow, TipCard,
 } from "./garden/cards.jsx";
+import { BottomSheet } from "./components/ui/index.js";
 
 // ═══════════════════════════════════════════════════════════
 //  BARAKA BOG'I — Flagship redesign (Design System v1.0, 7-bo'lim)
@@ -135,6 +136,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const [dailyDone, setDailyDone]   = useState(false);
   const [msg, setMsg]               = useState(null);
   const [sunNote, setSunNote]       = useState(null);
+  const [showMenu, setShowMenu]     = useState(false);
   const sunNoteRef = useRef(null);
   const [now, setNow]               = useState(Date.now());
 
@@ -421,37 +423,89 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
   const canAffordUnlock = unlockPlot ? coins >= unlockPlot.unlockCost : false;
 
   // ════════════════════════ RENDER ═══════════════════════════
+  // Immersive rejim: sahna butun ekranni egallaydi, panel — BottomSheet'da.
+  const thSheet = { sur: gt.sur, bor: gt.bor, t1: gt.ink1 };
+  const menuBadge = !dailyDone || sunsReady > 0;
+  const glassBtn = {
+    width: COMP.touchMin, height: COMP.touchMin, flexShrink: 0, borderRadius: RADIUS.full,
+    border: "1.5px solid " + gt.glassBorder, background: gt.skyScrim, cursor: "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center", WebkitTapHighlightColor: "transparent",
+  };
+
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: Z.nav, background: gt.bg, overflowY: "auto", WebkitOverflowScrolling: "touch", fontFamily: "inherit" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: Z.nav, overflow: "hidden", fontFamily: "inherit", userSelect: "none" }}>
       <GardenDefs />
-      <div style={{ maxWidth: COMP.pageMax, margin: "0 auto", padding: "0 " + (SPACE.s4 + SPACE.s1) + "px calc(" + SPACE.s8 + "px + env(safe-area-inset-bottom))" }}>
 
-        {/* ── HERO: osmon sarlavhasi ── */}
-        <div className="ui-fadeUp" style={{ position: "relative", margin: "0 -" + (SPACE.s4 + SPACE.s1) + "px", padding: "calc(" + SPACE.s3 + "px + env(safe-area-inset-top)) " + (SPACE.s4 + SPACE.s1) + "px " + SPACE.s6 + "px", background: SKY_GRAD[mode], borderRadius: "0 0 " + RADIUS.l + "px " + RADIUS.l + "px", overflow: "hidden", marginBottom: SPACE.s4 }}>
-          <div style={{ position: "absolute", right: "8%", top: "16%", animation: "gdDrift 80s ease-in-out infinite", pointerEvents: "none" }}><Cloud w={84} o={0.9} /></div>
-          <div style={{ position: "absolute", right: "36%", top: "58%", animation: "gdDrift 60s ease-in-out infinite reverse", pointerEvents: "none" }}><Cloud w={48} o={0.7} /></div>
-          <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, position: "relative" }}>
-            <button className="ui-press" onClick={onBack} aria-label={L("Orqaga", "Назад")}
-              style={{ width: COMP.touchMin - SPACE.s1, height: COMP.touchMin - SPACE.s1, flexShrink: 0, borderRadius: RADIUS.full, border: "1.5px solid " + gt.glassBorder, background: gt.skyScrim, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke={gt.onSky} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </button>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...TYPE.title, color: gt.onSky, textShadow: "0 2px 10px " + gt.skyScrim }}>{L("Baraka Bog'i", "Сад Бараки")}</div>
-              <div style={{ ...TYPE.caption, color: gt.onSky, opacity: OPACITY.hint + 0.15, marginTop: 1 }}>
-                {mode === "night" ? L("Bog' tinch uyquda", "Сад мирно спит")
-                  : mode === "evening" ? L("Oqshom bog'i", "Вечерний сад")
-                  : L("Oilangiz bilan birga o'stiring", "Растите вместе с семьёй")}
-              </div>
-            </div>
-            <button className="ui-press" onClick={handleDailyGift} aria-label={L("Kunlik sovg'a", "Ежедневный бонус")}
-              style={{ width: COMP.touchMin, height: COMP.touchMin, flexShrink: 0, borderRadius: RADIUS.full, border: "none", background: gt.skyScrim, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", opacity: dailyDone ? OPACITY.disabled + 0.15 : 1, animation: dailyDone ? "none" : "gdBounce 1.6s ease-in-out infinite" }}>
-              <GiftSVG size={24} />
-            </button>
-          </div>
+      {/* ── SAHNA: ekranning ~88% ── */}
+      <GardenScene
+        full
+        gt={gt} mode={mode} L={L}
+        plots={plots} selected={selected} coins={coins}
+        now={now} fTime={fTime}
+        waterReady={waterReady} waterTimer={waterTimer}
+        digAnim={digAnim} growAnim={growAnim} waterAnim={waterAnim}
+        sunNote={sunNote} flyRewards={flyCoins} sunCycle={SUN_CYCLE}
+        onPlotTap={onPlotTap} onSunTap={onSunTap}
+        onSpeedUp={handleSpeedUp}
+        onAction={() => {
+          if (selStage < 0) { setShowPlant(selected); return; }
+          if (selPlot?.harvestReady) { handleHarvest(selected); return; }
+          handleWater(selected);
+        }} />
+
+      {/* ── HUD: yuqori panel (orqaga · sarlavha · menyu) ── */}
+      <div style={{ position: "absolute", top: "env(safe-area-inset-top)", left: 0, right: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s4 + "px 0" }}>
+        <button className="ui-press" onClick={onBack} aria-label={L("Orqaga", "Назад")} style={glassBtn}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke={gt.onSky} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+        <div style={{ ...TYPE.heading, color: gt.onSky, textShadow: "0 2px 10px " + gt.skyScrim, letterSpacing: 0.3 }}>
+          {L("Baraka Bog'i", "Сад Бараки")}
         </div>
+        <button className="ui-press" onClick={() => setShowMenu(true)} aria-label={L("Menyu", "Меню")} style={{ ...glassBtn, position: "relative" }}>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke={gt.onSky} strokeWidth="1.6" strokeLinecap="round">
+            <path d="M3 14.5V9M9 14.5V3.5M15 14.5V6.5" />
+          </svg>
+          {menuBadge && <span style={{ position: "absolute", top: SPACE.s1, right: SPACE.s1, width: SPACE.s2 + 1, height: SPACE.s2 + 1, borderRadius: RADIUS.full, background: gt.gold, border: "1.5px solid " + gt.onSky }} />}
+        </button>
+      </div>
 
-        {/* ── OVERVIEW: Daraja (yarim doira) + XP + boyliklar ── */}
-        <GCard gt={gt} style={{ paddingTop: SPACE.s6 }}>
+      {/* ── HUD: tanlangan o'simlik jarayoni ── */}
+      {selStage >= 0 && selStage < STAGES.length - 1 && (
+        <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + " + (SPACE.s16 - SPACE.s1) + "px)", left: "50%", transform: "translateX(-50%)", zIndex: 40, background: gt.skyScrim, borderRadius: RADIUS.pill, padding: SPACE.s1 + "px " + (SPACE.s3 + 2) + "px", display: "flex", alignItems: "center", gap: SPACE.s2 }}>
+          <span style={{ ...TYPE.caption, fontWeight: 700, color: gt.onSky, whiteSpace: "nowrap" }}>
+            {L(STAGES[selStage].name, STAGES[selStage].nameRu)}
+          </span>
+          <GProgress value={Math.min(100, ((selPlot?.waterCount || 0) / STAGES[selStage].waterNeeded) * 100)} height={SPACE.s2 - 2} style={{ width: SPACE.s16 }} />
+          <span style={{ ...TYPE.caption, fontWeight: 800, color: ART.coinHi, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", gap: 2 }}>
+            <DropSVG size={8} />{selPlot?.waterCount || 0}/{STAGES[selStage].waterNeeded}
+          </span>
+        </div>
+      )}
+
+      {/* ── HUD: bo'sh bog' yo'naltiruvchisi ── */}
+      {!anyPlanted && !showPlant && digAnim === null && (
+        <button className="ui-press" onClick={() => setShowPlant(selected)}
+          style={{ position: "absolute", left: "50%", top: "34%", transform: "translateX(-50%)", zIndex: 40, background: gt.sceneScrim, border: "1.5px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: SPACE.s2 + "px " + (SPACE.s4 + SPACE.s1) + "px", cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s2, fontFamily: "inherit", animation: "gdBounce 2.2s ease-in-out infinite" }}>
+          <SeedSVG size={22} />
+          <span style={{ ...TYPE.subtitle, fontWeight: 700, color: gt.onSky }}>{L("Birinchi urug'ni eking", "Посейте первое семя")}</span>
+        </button>
+      )}
+
+      {/* ── MENYU: BottomSheet (sahna ochiq qoladi) ── */}
+      <BottomSheet th={thSheet} open={showMenu} onClose={() => setShowMenu(false)} maxH="86dvh">
+
+        {/* Profil va daraja */}
+        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s4 }}>
+          <div style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.full, background: gt.accGrad, display: "flex", alignItems: "center", justifyContent: "center", ...TYPE.heading, color: gt.sur, flexShrink: 0 }}>
+            {(user?.ism || "B").slice(0, 1).toUpperCase()}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: gt.ink1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism || L("Bog'bon", "Садовник")}</div>
+            <div style={{ ...TYPE.caption, color: gt.ink2 }}>{L("Oila bog'boni", "Семейный садовник")}</div>
+          </div>
+          <GChip gt={gt} tone="leaf">{L("Daraja", "Уровень")} {anyPlanted ? maxStage : 0}</GChip>
+        </div>
+        <GCard gt={gt} style={{ paddingTop: SPACE.s4 + SPACE.s1 }}>
           <LevelGauge gt={gt} L={L}
             level={anyPlanted ? maxStage : 0}
             progress={levelProgress}
@@ -465,13 +519,14 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           </div>
         </GCard>
 
+        {/* Boyliklar */}
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
           <StatPill gt={gt} kind="coin" value={coins} label={L("Tanga", "Монеты")} />
           <StatPill gt={gt} kind="bolt" value={energy} label={L("Energiya", "Энергия")} />
           <StatPill gt={gt} kind="gem" value={crystals} label={L("Kristall", "Кристаллы")} />
         </div>
 
-        {/* ── BUGUNGI JARAYON ── */}
+        {/* Kunlik sovg'a va bugungi jarayon */}
         <GSection gt={gt}>{L("Bugungi jarayon", "Прогресс дня")}</GSection>
         <GCard gt={gt} pad={SPACE.s2 + "px " + SPACE.s4 + "px"}>
           <TodayRow gt={gt} icon={<GiftSVG size={20} />}
@@ -497,44 +552,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
             last />
         </GCard>
 
-        {/* ── ASOSIY BOG' ── */}
-        <GSection gt={gt}>{L("Bog'ingiz", "Ваш сад")}</GSection>
-        <div className="ui-fadeUp" style={{ marginBottom: SPACE.s3 }}>
-          <GardenScene
-            gt={gt} mode={mode} L={L}
-            plots={plots} selected={selected} coins={coins}
-            now={now} fTime={fTime}
-            waterReady={waterReady} waterTimer={waterTimer}
-            digAnim={digAnim} growAnim={growAnim} waterAnim={waterAnim}
-            sunNote={sunNote} flyRewards={flyCoins} sunCycle={SUN_CYCLE}
-            onPlotTap={onPlotTap} onSunTap={onSunTap}
-            onSpeedUp={handleSpeedUp}
-            onAction={() => {
-              if (selStage < 0) { setShowPlant(selected); return; }
-              if (selPlot?.harvestReady) { handleHarvest(selected); return; }
-              handleWater(selected);
-            }} />
-        </div>
-
-        {/* ── O'SIMLIKLAR ── */}
-        <GSection gt={gt}>{L("O'simliklar", "Растения")}</GSection>
-        {!anyPlanted && <GardenEmpty gt={gt} L={L} onPlant={() => setShowPlant(0)} />}
-        {plots.map(plot => (
-          <PlantCard key={plot.id} gt={gt} L={L} plot={plot}
-            cost={PLOTS.find(p => p.id === plot.id)?.unlockCost}
-            selected={selected === plot.id && plot.stage >= 0}
-            onClick={() => onPlotTap(plot)} />
-        ))}
-
-        {/* ── MUKOFOTLAR ── */}
-        <GSection gt={gt}>{L("Tanga topish yo'llari", "Как получить монеты")}</GSection>
-        <GCard gt={gt} pad={SPACE.s1 + "px " + SPACE.s4 + "px"}>
-          {rewards.map((r, i) => (
-            <RewardRow key={i} gt={gt} icon={r.icon} label={r.label} amount={r.amount} kind={r.kind} negative={r.negative} last={i === rewards.length - 1} />
-          ))}
-        </GCard>
-
-        {/* ── YUTUQLAR ── */}
+        {/* Yutuqlar */}
         <GSection gt={gt} right={<span style={{ ...TYPE.caption, fontWeight: 700, color: gt.acc, fontVariantNumeric: "tabular-nums" }}>{achievements.filter(a => a.ok).length}/{achievements.length}</span>}>
           {L("Yutuqlar", "Достижения")}
         </GSection>
@@ -544,7 +562,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           ))}
         </div>
 
-        {/* ── TARIX ── */}
+        {/* Tarix */}
         <GSection gt={gt}>{L("So'nggi faoliyat", "Последняя активность")}</GSection>
         <GCard gt={gt} pad={SPACE.s2 + "px " + SPACE.s4 + "px"}>
           {history.length === 0 && (
@@ -554,17 +572,24 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           )}
           {history.map((h, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, padding: (SPACE.s2 + 1) + "px 0", borderBottom: i === history.length - 1 ? "none" : "1px solid " + gt.bor }}>
-              <div style={{ width: 32, height: 32, borderRadius: RADIUS.s, background: gt.surH, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{h.icon}</div>
+              <div style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.s, background: gt.surH, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{h.icon}</div>
               <span style={{ flex: 1, ...TYPE.body, color: gt.ink1 }}>{h.label}</span>
               <span style={{ ...TYPE.caption, color: gt.ink3 }}>{h.today ? L("Bugun", "Сегодня") : ago(h.t, lg)}</span>
             </div>
           ))}
         </GCard>
 
-        {/* ── MASLAHATLAR ── */}
+        {/* Qo'llanma (mukofotlar va maslahatlar) */}
+        <GSection gt={gt}>{L("Tanga topish yo'llari", "Как получить монеты")}</GSection>
+        <GCard gt={gt} pad={SPACE.s1 + "px " + SPACE.s4 + "px"}>
+          {rewards.map((r, i) => (
+            <RewardRow key={i} gt={gt} icon={r.icon} label={r.label} amount={r.amount} kind={r.kind} negative={r.negative} last={i === rewards.length - 1} />
+          ))}
+        </GCard>
+
         <GSection gt={gt}>{L("Maslahatlar", "Советы")}</GSection>
         <TipCard gt={gt} title={L("Kunlik ritual", "Ежедневный ритуал")}>
-          {L("Har kuni bir marta sug'oring — daraxt 3 ta suvdan keyin yangi bosqichga o'tadi. Taymerni 100 tanga evaziga 30 daqiqaga tezlatish mumkin.", "Поливайте раз в день — дерево растёт после нескольких поливов. Таймер можно ускорить за 100 монет.")}
+          {L("Har kuni bir marta sug'oring — daraxt bir necha suvdan keyin yangi bosqichga o'tadi. Taymerni 100 tanga evaziga 30 daqiqaga tezlatish mumkin.", "Поливайте раз в день — дерево растёт после нескольких поливов. Таймер можно ускорить за 100 монет.")}
         </TipCard>
         <TipCard gt={gt} title={L("Quyoshlarni boy bermang", "Не упускайте солнца")}>
           {L("Har bir ekilgan o'simlik 3 soatda bitta quyosh chiqaradi — pishganda bosib +15 energiya oling.", "Каждое растение даёт солнце раз в 3 часа — собирайте по +15 энергии.")}
@@ -572,8 +597,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         <TipCard gt={gt} title={L("Oila bilan tezroq", "Быстрее всей семьёй")}>
           {L("Xarajat va daromadlarni yozib boring — har bir moliyaviy amal bog'ga tanga olib keladi.", "Записывайте расходы и доходы — каждое действие приносит монеты саду.")}
         </TipCard>
-
-      </div>
+      </BottomSheet>
 
       {/* ── Toast ── */}
       {msg && (
@@ -585,7 +609,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
       {/* ── Uchastka ochish modali ── */}
       {showUnlock !== null && (
         <GModal gt={gt} onClose={() => setShowUnlock(null)}>
-          <div style={{ width: 64, height: 64, margin: "0 auto " + SPACE.s3 + "px", borderRadius: RADIUS.full, background: gt.surH, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ width: SPACE.s16, height: SPACE.s16, margin: "0 auto " + SPACE.s3 + "px", borderRadius: RADIUS.full, background: gt.surH, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <LockSVG size={32} tone={gt.ink3} />
           </div>
           <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{L("Yangi uchastka", "Новый участок")}</div>
