@@ -50,6 +50,7 @@ function injectGardenCss() {
 @keyframes gdBird{0%{transform:translateX(-30px);opacity:0}6%{opacity:.9}50%{opacity:.9}94%{opacity:.9}100%{transform:translateX(110vw);opacity:0}}
 @keyframes gdTwinkle{0%,100%{opacity:.35}50%{opacity:1}}
 @keyframes gdLeafBurst{0%{transform:translateY(0) scale(.6) rotate(0);opacity:1}100%{transform:translateY(-58px) scale(1) rotate(140deg);opacity:0}}
+@keyframes gdHudPop{0%{transform:scale(1)}35%{transform:scale(1.18)}100%{transform:scale(1)}}
 .gd-root{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100vh;height:100dvh;overflow:hidden}
 .gd-scene-full{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;overflow:hidden}
 .gd-sky-full{position:relative;flex:1 1 auto;min-height:90px;z-index:10}
@@ -57,7 +58,7 @@ function injectGardenCss() {
 @media (prefers-reduced-motion:reduce){
   [style*="gdSway"],[style*="gdDrift"],[style*="gdSunPulse"],[style*="gdSunGlow"],
   [style*="gdShimmer"],[style*="gdBounce"],[style*="gdRay"],[style*="gdBird"],
-  [style*="gdTwinkle"],[style*="gdCoinFly"],[style*="gdDrop"],[style*="gdRipple"],
+  [style*="gdTwinkle"],[style*="gdCoinFly"],[style*="gdDrop"],[style*="gdRipple"],[style*="gdHudPop"],
   [style*="gdGrowPop"],[style*="gdDig"],[style*="gdLeafBurst"]{animation:none!important}
   [style*="gdMsg"],[style*="gdNote"]{animation-duration:1ms!important}
 }`;
@@ -473,18 +474,17 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
         </button>
       </div>
 
-      {/* ── HUD: tanlangan o'simlik jarayoni ── */}
-      {selStage >= 0 && selStage < STAGES.length - 1 && (
-        <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + " + (SPACE.s16 - SPACE.s1) + "px)", left: "50%", transform: "translateX(-50%)", zIndex: 40, background: gt.skyScrim, borderRadius: RADIUS.pill, padding: SPACE.s1 + "px " + (SPACE.s3 + 2) + "px", display: "flex", alignItems: "center", gap: SPACE.s2 }}>
-          <span style={{ ...TYPE.caption, fontWeight: 700, color: gt.onSky, whiteSpace: "nowrap" }}>
-            {L(STAGES[selStage].name, STAGES[selStage].nameRu)}
-          </span>
-          <GProgress value={Math.min(100, ((selPlot?.waterCount || 0) / STAGES[selStage].waterNeeded) * 100)} height={SPACE.s2 - 2} style={{ width: SPACE.s16 }} />
-          <span style={{ ...TYPE.caption, fontWeight: 800, color: ART.coinHi, fontVariantNumeric: "tabular-nums", display: "flex", alignItems: "center", gap: 2 }}>
-            <DropSVG size={8} />{selPlot?.waterCount || 0}/{STAGES[selStage].waterNeeded}
-          </span>
+      {/* ── HUD: resurslar (yig'ilgan quyosh energiyasi va kristallar) ── */}
+      <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + " + (SPACE.s16 - SPACE.s2) + "px)", left: SPACE.s4, zIndex: 40, display: "flex", flexDirection: "column", gap: SPACE.s2 - 2 }}>
+        <div key={"e" + energy} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px " + (SPACE.s1 - 1) + "px " + SPACE.s1 + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
+          <SunSprite size={20} />
+          <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{energy.toLocaleString()}</span>
         </div>
-      )}
+        <div key={"c" + crystals} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
+          <GemSVG size={15} />
+          <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{crystals.toLocaleString()}</span>
+        </div>
+      </div>
 
       {/* ── HUD: bo'sh bog' yo'naltiruvchisi ── */}
       {!anyPlanted && !showPlant && digAnim === null && (
