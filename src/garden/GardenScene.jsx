@@ -58,6 +58,7 @@ export const GardenScene = memo(function GardenScene({
   waterReady, waterTimer, digAnim, growAnim, waterAnim, sunNote,
   flyRewards, sunCycle,
   onPlotTap, onSunTap, onAction, onSpeedUp,
+  full = false,
 }) {
   const selPlot = plots.find(p => p.id === selected) || plots[0];
   const selStage = selPlot?.stage ?? -1;
@@ -65,7 +66,9 @@ export const GardenScene = memo(function GardenScene({
   const actionReady = waterReady || selStage < 0 || selPlot?.harvestReady;
 
   return (
-    <div style={{ position: "relative", borderRadius: RADIUS.l, overflow: "hidden", background: SKY_GRAD[mode], boxShadow: SHADOW.e2, userSelect: "none", border: "1px solid " + gt.bor }}>
+    <div className={full ? "gd-scene-full" : undefined} style={full
+      ? { background: SKY_GRAD[mode], userSelect: "none" }
+      : { position: "relative", borderRadius: RADIUS.l, overflow: "hidden", background: SKY_GRAD[mode], boxShadow: SHADOW.e2, userSelect: "none", border: "1px solid " + gt.bor }}>
       {/* ── Yorug'lik nuri ── */}
       {mode === "day" && (
         <div style={{ position: "absolute", top: "-14%", left: "-24%", width: "70%", height: "90%", background: "linear-gradient(115deg," + gt.ray1 + "," + gt.ray0 + " 62%)", transform: "rotate(8deg)", pointerEvents: "none", animation: "gdRay 6s ease-in-out infinite" }} />
@@ -73,12 +76,14 @@ export const GardenScene = memo(function GardenScene({
       {mode === "night" && <NightStars />}
 
       {/* ── Dekorativ quyosh/oy ── */}
-      <div style={{ position: "absolute", left: "6%", top: "4%", pointerEvents: "none", animation: mode === "night" ? "none" : "gdSunGlow 4s ease-in-out infinite" }}>
+      <div style={{ position: "absolute", left: "6%", top: full ? "calc(4% + env(safe-area-inset-top))" : "4%", pointerEvents: "none", animation: mode === "night" ? "none" : "gdSunGlow 4s ease-in-out infinite" }}>
         {mode === "night" ? <MoonSprite size={44} /> : <SunSprite size={50} />}
       </div>
 
       {/* ── Osmon: bulutlar, qushlar, pishuvchi quyoshlar ── */}
-      <div style={{ position: "relative", height: "clamp(150px, 32vw, 200px)", zIndex: 10 }}>
+      <div className={full ? "gd-sky-full" : undefined} style={full
+        ? undefined
+        : { position: "relative", height: "clamp(150px, 32vw, 200px)", zIndex: 10 }}>
         <div style={{ position: "absolute", left: "16%", top: "30%", animation: "gdDrift 70s ease-in-out infinite" }}><Cloud w={70} o={0.9} /></div>
         <div style={{ position: "absolute", right: "8%", top: "8%", animation: "gdDrift 90s ease-in-out infinite reverse" }}><Cloud w={100} /></div>
         <div style={{ position: "absolute", right: "34%", top: "52%", animation: "gdDrift 60s ease-in-out infinite" }}><Cloud w={52} o={0.85} /></div>
@@ -109,7 +114,9 @@ export const GardenScene = memo(function GardenScene({
       </div>
 
       {/* ── Yaylov ── */}
-      <div style={{ position: "relative", height: "clamp(300px, 68vw, 420px)", zIndex: 11 }}>
+      <div className={full ? "gd-meadow-full" : undefined} style={full
+        ? undefined
+        : { position: "relative", height: "clamp(300px, 68vw, 420px)", zIndex: 11 }}>
         <svg viewBox="0 0 480 80" preserveAspectRatio="none" style={{ position: "absolute", top: -46, left: 0, width: "100%", height: 60 }}>
           <path d="M0 80 Q 90 6 230 34 Q 260 40 300 28 Q 390 4 480 42 L480 80 Z" fill={ART.grassHi} />
           <ellipse cx="415" cy="34" rx="14" ry="9" fill={ART.leafLo} />
@@ -163,14 +170,14 @@ export const GardenScene = memo(function GardenScene({
         })}
 
         {/* ── Tanga hisoblagichi (chap past) ── */}
-        <div style={{ position: "absolute", left: SPACE.s4, bottom: SPACE.s4, zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 }}>
+        <div style={{ position: "absolute", left: SPACE.s4, bottom: full ? "max(" + SPACE.s4 + "px, env(safe-area-inset-bottom))" : SPACE.s4, zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 }}>
           <CoinSVG size={54} />
           <div style={{ background: gt.sceneScrim, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 2) + "px " + SPACE.s4 + "px", ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{coins.toLocaleString()}</div>
         </div>
 
         {/* ── Tezlashtirish (markaz past) ── */}
         {showSpeedUp && (
-          <button onClick={onSpeedUp} className="ui-press" style={{ position: "absolute", left: "50%", bottom: SPACE.s4, transform: "translateX(-50%)", zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1, cursor: "pointer", background: "transparent", border: "none", fontFamily: "inherit", WebkitTapHighlightColor: "transparent", padding: 0 }}>
+          <button onClick={onSpeedUp} className="ui-press" style={{ position: "absolute", left: "50%", bottom: full ? "max(" + SPACE.s4 + "px, env(safe-area-inset-bottom))" : SPACE.s4, transform: "translateX(-50%)", zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1, cursor: "pointer", background: "transparent", border: "none", fontFamily: "inherit", WebkitTapHighlightColor: "transparent", padding: 0 }}>
             <div style={{ animation: "gdBounce 1.8s ease-in-out infinite" }}><RocketSVG size={34} /></div>
             <div style={{ display: "flex", alignItems: "center", gap: SPACE.s1 }}>
               <CoinSVG size={16} />
@@ -183,7 +190,7 @@ export const GardenScene = memo(function GardenScene({
         )}
 
         {/* ── Asosiy harakat (o'ng past): ekish / sug'orish / hosil ── */}
-        <div style={{ position: "absolute", right: SPACE.s4, bottom: SPACE.s4, zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 }}>
+        <div style={{ position: "absolute", right: SPACE.s4, bottom: full ? "max(" + SPACE.s4 + "px, env(safe-area-inset-bottom))" : SPACE.s4, zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 }}>
           <button onClick={onAction} className="ui-press-fab ui-press" aria-label={L("Bog' harakati", "Действие")}
             style={{ width: 72, height: 72, borderRadius: RADIUS.full, border: "3px solid " + gt.glassBorder, cursor: "pointer", background: actionReady ? gt.accGrad : "linear-gradient(135deg," + gt.ink3 + "," + gt.ink2 + ")", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW.e1(actionReady ? ART.leafLo : gt.ink3), position: "relative", WebkitTapHighlightColor: "transparent" }}>
             {selStage < 0
