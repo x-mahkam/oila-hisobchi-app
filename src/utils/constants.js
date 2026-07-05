@@ -2,9 +2,18 @@
 //  CONSTANTS — barcha konstantalar shu yerda
 // ═══════════════════════════════════════════════════════════
 
-export const MK = d => d
-  ? { bg:"#090e1c", sur:"#111827", surH:"#192035", bor:"#2b3852", ac:"#6366f1", ac2:"#818cf8", gr:"#10b981", rd:"#ef4444", am:"#f59e0b", t1:"#FFFFFF", t2:"#B9C3D4", t3:"#9CA3AF", dark:true }
-  : { bg:"#eef2ff", sur:"#ffffff", surH:"#f5f7ff", bor:"#e2e8f0", ac:"#6366f1", ac2:"#4f46e5", gr:"#059669", rd:"#dc2626", am:"#d97706", t1:"#0f172a", t2:"#64748b", t3:"#94a3b8", dark:false };
+import { PALETTE, PREMIUM, CHART, GARDEN } from "./tokens.js";
+
+// Theme obyekti endi tokens.js'dan quriladi.
+// Bazaviy kalitlar (bg, sur, ac, ...) qiymatlari o'zgarmagan — vizual 0 farq.
+// Yangi additiv kalitlar: gold, goldGrad, chart, garden.
+export const MK = d => ({
+  ...(d ? PALETTE.dark : PALETTE.light),
+  gold: PREMIUM.gold,
+  goldGrad: PREMIUM.grad,
+  chart: CHART,
+  garden: GARDEN,
+});
 
 export const KATS = [
   {id:"oziq",     c:"#10b981"},
