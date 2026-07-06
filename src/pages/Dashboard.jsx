@@ -14,6 +14,7 @@ import { db } from "../firebase.js";
 // ── Smart Budget AI (decoupled qatlam — biznes logikaga tegmaydi) ──
 import { computeBudgetAI } from "../ai/budgetEngine.js";
 import { SmartBudgetSection, QuickInsight } from "../ai/BudgetComponents.jsx";
+import { FamilyFeed } from "./ActivityCenter.jsx";
 import { computeSmart } from "../goals/smartEngine.js";
 import { getMeta } from "../goals/smartStore.js";
 import KidsGames from "../components/KidsGames.jsx";
@@ -555,6 +556,9 @@ export default function DashboardPage({
               <SmartBudgetSection th={th} lg={lg} f={f} ai={budgetAI} />
             </>
           )}
+
+          {/* Family Feed — oxirgi 5 faoliyat (bosilsa Activity Center) */}
+          {!isKid && <FamilyFeed user={user} azolar={azolar} xar={xar} dar={dar} maq={maq} qarzlar={qarzlar} vazifalar={vazifalar} th={th} lg={lg} onOpen={() => setScr("activity")} />}
 
           {/* 9. Maqsad progresslari */}
           {(gls.waitG.length > 0 || gls.top || maq.length === 0 || dbt.n > 0 || hasKids) && (
