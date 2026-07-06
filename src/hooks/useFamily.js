@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { db } from "../firebase.js";
 import { td, nt, f } from "../utils/formatters.js";
+import { canApproveTask, canCompleteTask } from "../utils/permissions.js";
 import { useApp } from "../context/AppContext.jsx";
 import { publishKidScore } from "../utils/kidsBoard.js";
 
@@ -12,6 +13,10 @@ export function useFamily() {
 
   // Vazifa bajarildi (bola)
   const vazifaDone = useCallback(async (id) => {
+    // PERMISSION (Sprint 4): "Bajardim" — faqat vazifa biriktirilgan bola.
+    const vv = vazifalar.find(v => v.id === id);
+    if (!canCompleteTask(user, vv))
+      return ok$(lg === "uz" ? "Bu vazifa sizga biriktirilmagan" : "This task is not assigned to you", "err");
     buzz(15);
     const upd = vazifalar.map(v => v.id===id ? {...v, status:"done", doneSana:td()} : v);
     await db.s("vazifa_" + user.oilaId, upd);
@@ -21,6 +26,9 @@ export function useFamily() {
 
   // Vazifani tasdiqlash (ota-ona)
   const vazifaApprove = useCallback(async (id) => {
+    // PERMISSION (Sprint 4): tasdiqlash — barcha KATTA a'zolar (bola emas).
+    if (!canApproveTask(user))
+      return ok$(lg === "uz" ? "Tasdiqlashni faqat katta oila a'zolari bajaradi" : "Only adults can approve tasks", "err");
     buzz(20);
     const v = vazifalar.find(x => x.id===id);
     if (!v) return;
@@ -52,7 +60,8 @@ export function useFamily() {
     const loginKey = v.assignedLogin || cand.map(a => a.login).find(Boolean);
     if (loginKey) {
       try {
-        const realUid = await db.gFresh("kidlogin_" + loginKey);
+        const look = await db.gFresh("kidlogin_" + loginKey);
+        const realUid = (look && typeof look === "object") ? look.uid : look;  // yangi {uid,oila} formati
         if (realUid) kidId = realUid;
       } catch (e2) {}
     } else if (cand.length) {
