@@ -8,8 +8,9 @@ export const td = () => new Date().toISOString().slice(0, 10);
 /** Hozirgi vaqt: HH:MM */
 export const nt = () => new Date().toTimeString().slice(0, 5);
 
-/** To'liq ism: ism + familya (familya bo'lsa). Familyasiz a'zolar — faqat ism. */
-export const fullName = (p) => p ? (((p.ism || "") + (p.familya ? " " + p.familya : "")).trim()) : "";
+/** To'liq ism: kattalar bilan bir xil tartib — FAMILYA oldinda, keyin ism.
+ *  Familya bo'lsa "Familya Ism"; bo'lmasa (kattalar bitta maydonga yozgan) — o'z ismi. */
+export const fullName = (p) => p ? ((p.familya ? (p.familya + " " + (p.ism || "")) : (p.ism || "")).trim()) : "";
 
 /** Joriy oy: YYYY-MM */
 export const tm = () => new Date().toISOString().slice(0, 7);
