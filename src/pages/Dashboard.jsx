@@ -11,6 +11,11 @@ import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, QUICK_ADD } from "../utils/constants.js";
 import { tm, fullName } from "../utils/formatters.js";
 import { db } from "../firebase.js";
+// ── Smart Budget AI (decoupled qatlam — biznes logikaga tegmaydi) ──
+import { computeBudgetAI } from "../ai/budgetEngine.js";
+import { SmartBudgetSection, QuickInsight } from "../ai/BudgetComponents.jsx";
+import { computeSmart } from "../goals/smartEngine.js";
+import { getMeta } from "../goals/smartStore.js";
 import KidsGames from "../components/KidsGames.jsx";
 
 // Kartalar ketma-ket paydo bo'lish qadami (ms) — DS'da stagger tokeni yo'q,
@@ -279,6 +284,27 @@ export default function DashboardPage({
     active: vazifalar.filter(v => v.status === "pending").length,
   }), [vazifalar]);
 
+  // ═══ SMART BUDGET AI ═══════════════════════════════════════════
+  // To'y smetalari — mavjud "toy_<oilaId>" kalitidan O'QILADI (sxema o'zgarmaydi).
+  const [weddings, setWeddings] = useState([]);
+  useEffect(() => {
+    if (isKid || !user?.oilaId) return;
+    db.g("toy_" + user.oilaId).then(v => { if (v && Array.isArray(v.saved)) setWeddings(v.saved); }).catch(() => {});
+  }, [isKid, user?.oilaId]);
+
+  // Kategoriya ranglari + nomlari (KATS/KN) — tilga mos
+  const aiCats = useMemo(() => KATS.map((k, i) => ({ id: k.id, name: (KN[lg] || KN.uz)[i], color: k.c })), [lg]);
+  // Doira: oila (canSeeReport) yoki shaxsiy — Hero bilan bir xil mantiq
+  const aiMine = canSeeReport ? null : (x => x.uid === user?.id || !x.uid);
+
+  const budgetAI = useMemo(() => {
+    if (isKid || !oila) return null;
+    return computeBudgetAI({
+      xar, dar, qarzlar, maq, cats: aiCats, budgetLimit: bdj, mine: aiMine, weddings,
+      sharedGoals: maq.filter(m => m.shared), computeSmart, getMeta, now: new Date(),
+    });
+  }, [xar, dar, qarzlar, maq, aiCats, bdj, canSeeReport, user?.id, weddings, isKid, oila]);
+
   const quickAdd = async () => {
     if (!quickItem || !quickSum || Number(quickSum) <= 0) return ok$(t.ea, "err");
     const { td, nt } = await import("../utils/formatters.js");
@@ -467,6 +493,9 @@ export default function DashboardPage({
           {/* 1-5. Hero: salomlashish, oila balansi, daromad, xarajat, o'zgarish */}
           <Hero th={th} lg={lg} t={t} f={f} ism={fullName(user)} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
 
+          {/* AI Quick Insight — har safar bitta foydali maslahat */}
+          {budgetAI && <QuickInsight th={th} lg={lg} f={f} insight={budgetAI.insight} />}
+
           {/* Byudjet — oy xarajati kontekstini davom ettiradi (LinearProgress budget rejimi) */}
           <div className="anim-fadeUp" style={{ animationDelay: STAGGER + "ms" }}>
             <AppCard th={th}>
@@ -518,6 +547,14 @@ export default function DashboardPage({
 
           {/* 8. Grafik — o'qlari bilan */}
           <ActivityGraph th={th} lg={lg} days30={actv.days30} streak={actv.streak} mx30={actv.mx30} f={f} delay={STAGGER * 2} />
+
+          {/* AI moliyaviy tahlil — Health / Forecast / Trend / Savings / Risk */}
+          {budgetAI && (
+            <>
+              <SectionHeader th={th}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.ac)}{lg === "uz" ? "AI moliyaviy tahlil" : lg === "ru" ? "AI-анализ финансов" : "AI financial analysis"}</span></SectionHeader>
+              <SmartBudgetSection th={th} lg={lg} f={f} ai={budgetAI} />
+            </>
+          )}
 
           {/* 9. Maqsad progresslari */}
           {(gls.waitG.length > 0 || gls.top || maq.length === 0 || dbt.n > 0 || hasKids) && (

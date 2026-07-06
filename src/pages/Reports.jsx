@@ -9,6 +9,12 @@ import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, RELATIONS } from "../utils/constants.js";
 import { tm } from "../utils/formatters.js";
+import { db } from "../firebase.js";
+// ── Smart Budget AI (Reports integratsiyasi) ──
+import { computeBudgetAI } from "../ai/budgetEngine.js";
+import { ReportsAISummary, MonthlySummaryCard } from "../ai/BudgetComponents.jsx";
+import { computeSmart } from "../goals/smartEngine.js";
+import { getMeta } from "../goals/smartStore.js";
 
 // ── Reports-lokal outline SVG ikonkalar (emoji o'rniga, DS 6-qoida) ──
 const RIco = {
@@ -39,6 +45,20 @@ export default function ReportsPage({
   // PDF hisobot doirasi: o'zimning / oilamning
   const [pdfScope, setPdfScope] = useState(canSeeReport ? "family" : "mine");
   const STY = useMemo(() => makeS(th), [th]);
+
+  // ═══ SMART BUDGET AI — Reports uchun trend/summary ═══
+  const [weddings, setWeddings] = useState([]);
+  useEffect(() => {
+    if (!user?.oilaId) return;
+    db.g("toy_" + user.oilaId).then(v => { if (v && Array.isArray(v.saved)) setWeddings(v.saved); }).catch(() => {});
+  }, [user?.oilaId]);
+  const aiCats = useMemo(() => KATS.map((k, i) => ({ id: k.id, name: (KN[lg] || KN.uz)[i], color: k.c })), [lg]);
+  const aiMine = canSeeReport ? null : (x => x.uid === user?.id || !x.uid);
+  const reportAI = useMemo(() => computeBudgetAI({
+    xar: xar || [], dar: dar || [], qarzlar: qarzlar || [], maq: maq || [], cats: aiCats,
+    budgetLimit: bdj, mine: aiMine, weddings, sharedGoals: (maq || []).filter(m => m.shared),
+    computeSmart, getMeta, now: new Date(),
+  }), [xar, dar, qarzlar, maq, aiCats, bdj, canSeeReport, user?.id, weddings]);
 
   // (Admin panel olib tashlandi — alohida admin-sayt orqali.)
 
@@ -91,6 +111,11 @@ export default function ReportsPage({
         KATS={KATS} KN={KN}
         xar={xar} dar={dar} user={user} azolar={azolar} canSeeReport={canSeeReport}
       />
+
+      {/* AI Summary — trend tahlili + oylik xulosa */}
+      <SectionHeader th={th}>{lg === "uz" ? "AI tahlil" : lg === "ru" ? "AI-анализ" : "AI analysis"}</SectionHeader>
+      <MonthlySummaryCard th={th} lg={lg} f={f} ai={reportAI} />
+      <ReportsAISummary th={th} lg={lg} f={f} summary={reportAI.summary} trends={reportAI.trends} />
 
       {/* Moliyaviy sog'liq skor */}
       {(() => {
