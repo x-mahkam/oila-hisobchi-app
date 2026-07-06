@@ -23,6 +23,7 @@ export function useGameEngine(config) {
     subject = mathSubject,
     name = "",
     lg = "uz",
+    rewards = { coin: 1.5, xp: 2.5 },   // fan bo'yicha birlik (registry.rewardOf)
   } = config;
 
   const [phase, setPhase] = useState("intro");     // intro | countdown | play | result
@@ -81,14 +82,16 @@ export function useGameEngine(config) {
         const fin = finalizeScore(sc, questionCount, scoring);
         const seconds = Math.round((Date.now() - startTsRef.current) / 1000);
         const ai = buildAISummary({ ...fin, difficulty: nextAdaptive.level }, name, lg, subject);
-        setResult({ ...fin, seconds, difficulty: nextAdaptive.level, ai });
+        // XP: to'g'ri javob soni * fan XP birligi + perfect bo'lsa 20% bonus
+        const xp = Math.round(fin.correct * rewards.xp * (fin.perfect ? 1.2 : 1));
+        setResult({ ...fin, seconds, difficulty: nextAdaptive.level, ai, xp });
         setPhase("result");
       } else {
         setQIndex(nextIdx);
         nextQuestion(nextAdaptive.level);
       }
     }, 650);
-  }, [question, phase, score, scoring, adaptive, adaptiveOpts, qIndex, questionCount, nextQuestion, name, lg, subject]);
+  }, [question, phase, score, scoring, adaptive, adaptiveOpts, qIndex, questionCount, nextQuestion, name, lg, subject, rewards]);
 
   const progress = useMemo(() => Math.round(qIndex / questionCount * 100), [qIndex, questionCount]);
 
