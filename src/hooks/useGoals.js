@@ -27,10 +27,15 @@ export function useGoals() {
       );
     }
 
+    const isFamily = shared === true;
     const u = [...maq, {
       id:Date.now(), ism:ism.trim(), maqsad:Number(maqsad),
       jamg:0, rang, createdAt:td(), uid:user.id, status:"active",
-      shared: shared === true
+      shared: isFamily,
+      // ── Oilaviy maqsad meta (Sprint 1): tur + a'zolar hissasi ──
+      type: isFamily ? "family" : "personal",
+      contribs: [],        // har a'zoning alohida hissalari
+      lastContrib: null    // oxirgi qo'shilgan hissa
     }];
     await db.s("maq_" + user.oilaId, u);
     setMaq(u);
@@ -85,8 +90,12 @@ export function useGoals() {
     const tgtGoal = maq.find(m=>m.id===tupId);
     const wasComplete = tgtGoal && (tgtGoal.jamg+summa) >= tgtGoal.maqsad && tgtGoal.jamg < tgtGoal.maqsad;
     const completedNow = wasComplete ? td() : undefined;
+    // ── Hissa yozuvi: kim, qancha, qachon (oilaviy maqsadda a'zolar bo'yicha bo'linadi) ──
+    const contribRec = { uid: user.id, ism: user.ism || "", summa, at: new Date().toISOString() };
     const u = maq.map(m => m.id===tupId
-      ? {...m, jamg:Math.min(m.maqsad, m.jamg+summa), ...(wasComplete?{completedAt:completedNow}:{})}
+      ? {...m, jamg:Math.min(m.maqsad, m.jamg+summa), ...(wasComplete?{completedAt:completedNow}:{}),
+         contribs: [ ...(Array.isArray(m.contribs) ? m.contribs : []), contribRec ],
+         lastContrib: contribRec }
       : m
     );
 
