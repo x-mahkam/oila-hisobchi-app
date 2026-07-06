@@ -9,6 +9,23 @@
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useMemo } from "react";
 import { db } from "../firebase.js";
+import { AppCard, PrimaryButton, Badge, TextInput } from "./ui/index.js";
+import { SPACE, RADIUS, TYPE, ALPHA, CHART } from "../utils/tokens.js";
+
+// ── Saqlangan to'y hisobi statuslari (token rangli, emoji yo'q) ──
+const WSTATUS = [
+  { id: "reja",    uz: "Rejalashtirilgan", ru: "Запланирована", tone: "ac" },
+  { id: "jarayon", uz: "Jarayonda",        ru: "В процессе",    tone: "am" },
+  { id: "yakun",   uz: "Yakunlangan",      ru: "Завершена",     tone: "gr" },
+];
+
+// ── Goals sahifasidagi outline ikonkalar bilan bir uslub (emoji o'rniga) ──
+const WIco = {
+  save: (c, s = 15) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M3.5 2.5h7l2.5 2.5v8a.5.5 0 01-.5.5h-9a.5.5 0 01-.5-.5v-10a.5.5 0 01.5-.5z" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M5 2.5v3h5v-3M5.5 13v-3.5h5V13" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  cal:  (c, s = 12) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke={c} strokeWidth="1.3"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>,
+  trash:(c, s = 14) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M6 4.5V3h4v1.5M4.5 4.5l.6 8a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-8" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  rings:(c, s = 16) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="7.5" cy="12" r="5" stroke={c} strokeWidth="1.6"/><circle cx="12.5" cy="12" r="5" stroke={c} strokeWidth="1.6"/><path d="M7.5 7V4.5M5.5 5.5L7.5 3l2 2.5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+};
 
 // ── Marosimlar ──
 const EVENTS = [
@@ -78,10 +95,17 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
   const [saved, setSaved] = useState(false);
   const saveT = useRef(null);
 
+  // ── Saqlangan to'y hisoblari ("My Weddings") ──
+  const [wName, setWName]     = useState("");
+  const [wStatus, setWStatus] = useState("reja");
+  const savedRef = useRef([]);                 // draft qayta qurilsa ham yo'qolmaydigan durable ro'yxat
+  const savedList = (data && Array.isArray(data.saved)) ? data.saved : savedRef.current;
+
   // ── Yuklash ──
   useEffect(() => {
     if (!oilaId) return;
     db.g("toy_" + oilaId).then(v => {
+      if (v && Array.isArray(v.saved)) savedRef.current = v.saved;
       if (v && v.events) setData(v);
       else { setData(false); setStep("side"); }
     }).catch(() => { setData(false); setStep("side"); });
@@ -116,7 +140,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
       const relevant = !c.side || c.side === wSide;
       cats[c.id] = { plan: relevant ? (T.cats[c.id] || 0) : 0, fact: 0, dep: 0 };
     });
-    const d = { side: wSide, tpl: tplId, events, cats, date: "", savedSum: 0, upd: Date.now() };
+    const d = { side: wSide, tpl: tplId, events, cats, date: "", savedSum: 0, saved: savedRef.current, upd: Date.now() };
     setData(d); setStep(null);
     try { await db.s("toy_" + oilaId, d); } catch {}
   };
@@ -154,6 +178,36 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
       rang: "#ec4899",
       shared: true,
     });
+  };
+
+  // ── Hisobni "My Weddings" ro'yxatiga saqlash (cheksiz, eskisi o'chmaydi) ──
+  const persistSaved = async (list) => {
+    savedRef.current = list;
+    const base = (data && data.events) ? structuredClone(data) : {};
+    const next = { ...base, saved: list, upd: Date.now() };
+    if (data && data.events) setData(next);
+    try { await db.s("toy_" + oilaId, next); } catch {}
+  };
+
+  const saveWedding = async () => {
+    if (!data || !calc) return;
+    const w = {
+      id: Date.now(),
+      name: (wName.trim() || L("To'y hisobi", "Смета свадьбы")) + (savedList.length ? " " + (savedList.length + 1) : ""),
+      date: data.date || "",
+      total: calc.forecast,       // jami xarajat (prognoz)
+      status: wStatus,            // reja | jarayon | yakun
+      side: data.side, tpl: data.tpl,
+      createdAt: new Date().toISOString(),
+    };
+    await persistSaved([w, ...savedList]);
+    setWName("");
+    ok$ && ok$(L("Hisob saqlandi", "Смета сохранена"));
+  };
+
+  const delWedding = async (id) => {
+    await persistSaved(savedList.filter(w => w.id !== id));
+    ok$ && ok$(L("O'chirildi", "Удалено"));
   };
 
   // ── PDF smeta (chop etish oynasi — "Save as PDF") ──
@@ -327,6 +381,54 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
             </div>
           </div>
 
+          {/* ── Hisobni saqlash + Mening to'ylarim (Sprint 1, Component Kit) ── */}
+          <AppCard th={th} style={{ border: "1.5px solid " + CHART[3] + ALPHA.strong, marginBottom: SPACE.s3 }}>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+              {WIco.save(CHART[3], 16)}{L("Hisobni saqlash", "Сохранить смету")}
+            </div>
+            <TextInput th={th} value={wName} onChange={setWName} placeholder={L("Hisob nomi (masalan: O'g'lim to'yi)", "Название (напр.: Свадьба сына)")} style={{ marginBottom: SPACE.s3 }} />
+            <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+              {WSTATUS.map(s => {
+                const on = wStatus === s.id; const c = th[s.tone];
+                return (
+                  <button key={s.id} type="button" className="ui-press" onClick={() => setWStatus(s.id)}
+                    style={{ flex: 1, background: on ? c + ALPHA.tint : "transparent", border: "1.5px solid " + (on ? c : th.bor), borderRadius: RADIUS.pill, padding: SPACE.s2 + "px 0", color: on ? c : th.t2, fontWeight: 700, fontSize: TYPE.caption.fontSize, cursor: "pointer", fontFamily: "inherit" }}>
+                    {L(s.uz, s.ru)}
+                  </button>
+                );
+              })}
+            </div>
+            <PrimaryButton th={th} onClick={saveWedding} style={{ marginBottom: 0 }}>{WIco.save("#fff", 15)}{L("Saqla", "Сохранить")}</PrimaryButton>
+          </AppCard>
+
+          {savedList.length > 0 && (
+            <div style={{ marginBottom: SPACE.s3 }}>
+              <div style={{ ...TYPE.tiny, fontWeight: 700, letterSpacing: 1.5, color: th.t2, margin: SPACE.s2 + "px " + SPACE.s1 + "px " + SPACE.s2 + "px" }}>{L("Mening to'ylarim", "Мои свадьбы")} · {savedList.length}</div>
+              {savedList.map(w => {
+                const st = WSTATUS.find(s => s.id === w.status) || WSTATUS[0];
+                const tone = th[st.tone];
+                return (
+                  <AppCard th={th} key={w.id} pad={SPACE.s3} style={{ marginBottom: SPACE.s2 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
+                      <div style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: CHART[3] + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{WIco.rings(CHART[3], 20)}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
+                        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 - 1, flexWrap: "wrap" }}>
+                          {w.date && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.cal(th.t2)}{w.date}</span>}
+                          <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{fmt(w.total)} {L("so'm", "сум")}</span>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: SPACE.s2, flexShrink: 0 }}>
+                        <Badge th={th} type="status" tone={tone}>{L(st.uz, st.ru)}</Badge>
+                        <button type="button" className="ui-press" onClick={() => delWedding(w.id)} aria-label={L("O'chirish", "Удалить")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: SPACE.s1 - 2 }}>{WIco.trash(th.t2)}</button>
+                      </div>
+                    </div>
+                  </AppCard>
+                );
+              })}
+            </div>
+          )}
+
           {/* Jamg'arish rejasi */}
           <div style={{ ...card, border: "1.5px solid " + P.pink + "44" }}>
             <div style={{ fontSize: 13.5, fontWeight: 800, color: th.t1, marginBottom: 10 }}>📅 {L("Jamg'arish rejasi", "План накоплений")}</div>
@@ -441,7 +543,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
           <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
             <button onClick={printSmeta} style={{ ...btnP, flex: 1.4, padding: 14, background: `linear-gradient(135deg,${P.pink},${P.vio})`, color: "#fff", fontSize: 13 }}>🖨️ {L("PDF smeta", "PDF смета")}</button>
             <button onClick={copySmeta} style={{ ...btnP, flex: 1.2, padding: 14, background: th.sur, border: "1.5px solid " + th.bor, color: th.t1, fontSize: 13 }}>📋 {L("Nusxalash", "Копировать")}</button>
-            <button onClick={() => { if (confirm(L("Smeta o'chirilib, qaytadan boshlansinmi?", "Начать заново?"))) { setData(false); setStep("side"); setWEv([]); db.s("toy_" + oilaId, null).catch(() => {}); } }}
+            <button onClick={() => { if (confirm(L("Smeta o'chirilib, qaytadan boshlansinmi?", "Начать заново?"))) { setData(false); setStep("side"); setWEv([]); db.s("toy_" + oilaId, { saved: savedRef.current, upd: Date.now() }).catch(() => {}); } }}
               style={{ ...btnP, flex: 0.8, padding: 14, background: "transparent", border: "1.5px solid " + th.bor, color: th.t2, fontSize: 13 }}>🔄</button>
           </div>
           <div style={{ fontSize: 10.5, color: th.t2, textAlign: "center", marginTop: 12, lineHeight: 1.6 }}>
