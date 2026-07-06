@@ -16,7 +16,7 @@ import {
   Badge, UIAvatar,
   PrimaryButton, SecondaryButton, GhostButton, DangerButton, LoadingButton,
   TextInput, AmountInput, TextArea, Switch,
-  BottomSheet, LinearProgress,
+  BottomSheet, ConfirmDialog, IconButton, LinearProgress,
 } from "../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, MOTION, OPACITY, COMP, PREMIUM } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
@@ -97,9 +97,9 @@ const AchCard = memo(function AchCard({ th, icon, title, desc, cur, goal, unlock
 });
 
 // ═══ Quick Stat — StatCard + count-up ═══
-const AnimatedStat = memo(function AnimatedStat({ th, icon, value, label, tone }) {
+const AnimatedStat = memo(function AnimatedStat({ th, icon, value, label, tone, onClick }) {
   const shown = useCountUp(Number(value) || 0);
-  return <StatCard th={th} icon={icon} value={shown} label={label} tone={tone} />;
+  return <StatCard th={th} icon={icon} value={shown} label={label} tone={tone} onClick={onClick} />;
 });
 
 // ═══ Tanlov chip (til/mavzu/vaqt) — token-driven segment ═══
@@ -125,7 +125,7 @@ export default function ProfilePage({
   faqO, setFaqO,
   pinStep, setPinStep, pinVal, setPinVal, pinCfm, setPinCfm,
   finger, setFinger,
-  showAddKid, setShowAddKid, kidName, setKidName, kidSurname, setKidSurname, kidBirthYear, setKidBirthYear, kidGender, setKidGender, kidGrade, setKidGrade, kidLogin, setKidLogin, kidPw, setKidPw, addKidAccount,
+  showAddKid, setShowAddKid, kidName, setKidName, kidSurname, setKidSurname, kidBirthYear, setKidBirthYear, kidGender, setKidGender, kidGrade, setKidGrade, kidLogin, setKidLogin, kidPw, setKidPw, addKidAccount, delKidAccount, purgeData,
   showReferral, setShowReferral, refCount,
   fbRating, setFbRating, fbText, setFbText, fbType, setFbType, fbSending, sendFeedback,
   adminStats, adminLoad, loadAdminStats,
@@ -179,6 +179,22 @@ export default function ProfilePage({
 
   // ── Bola akkaunti: maydon darajasidagi validatsiya (UI-lokal) ──
   const [kidErr, setKidErr] = useState({});
+  // ── Bola akkauntini o'chirish tasdig'i ──
+  const [kidDel, setKidDel] = useState(null); // o'chiriladigan a'zo obyekti
+  // ── Ma'lumotlarni tozalash sheet holati ──
+  const [showClean, setShowClean] = useState(false);
+  const [clnFam,  setClnFam]  = useState(false);  // false = faqat men, true = butun oila
+  const [clnAll,  setClnAll]  = useState(true);   // true = hammasi, false = sana oralig'i
+  const [clnFrom, setClnFrom] = useState("");
+  const [clnTo,   setClnTo]   = useState("");
+  const [clnAsk,  setClnAsk]  = useState(false);  // yakuniy tasdiq dialogi
+  const openClean  = useCallback(() => { buzz(10); setShowClean(true); }, [buzz]);
+  const closeClean = useCallback(() => { setShowClean(false); setClnAsk(false); }, []);
+  const doPurge = useCallback(async () => {
+    setClnAsk(false);
+    const okDone = await purgeData(clnAll ? "" : clnFrom, clnAll ? "" : clnTo, clnFam);
+    if (okDone) { setShowClean(false); setClnFrom(""); setClnTo(""); setClnAll(true); setClnFam(false); }
+  }, [purgeData, clnAll, clnFrom, clnTo, clnFam]);
   const submitKid = useCallback(() => {
     const nowY = new Date().getFullYear();
     const by = Number(kidBirthYear);
@@ -312,8 +328,8 @@ export default function ProfilePage({
           <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s2 }}>
             <AnimatedStat th={th} icon={PIco.cal(th.ac)} value={pStats.days} label={uz ? "Kun" : "Days"} />
             <AnimatedStat th={th} icon={PIco.star(PREMIUM.gold)} value={stars || 0} label={uz ? "Yulduz" : "Stars"} tone={PREMIUM.gold} />
-            <AnimatedStat th={th} icon={PIco.leaf(th.gr)} value={pStats.gardenLevel} label={uz ? "Bog'" : "Garden"} tone={th.gr} />
-            <AnimatedStat th={th} icon={PIco.gift(th.ac)} value={refCount || 0} label={uz ? "Taklif" : "Invites"} />
+            <AnimatedStat th={th} icon={PIco.leaf(th.gr)} value={pStats.gardenLevel} label={uz ? "Bog'" : "Garden"} tone={th.gr} onClick={openGarden} />
+            <AnimatedStat th={th} icon={PIco.gift(th.ac)} value={refCount || 0} label={uz ? "Taklif" : "Invites"} onClick={!isKid ? openReferral : undefined} />
           </div>
 
           {/* ═══ 3. ACHIEVEMENTS — horizontal scroll, collectible ═══ */}
@@ -411,6 +427,9 @@ export default function ProfilePage({
 
           {/* ═══ 8. DANGER ZONE — eng pastda ═══ */}
           <SectionHeader th={th}>{uz ? "Xavfli hudud" : "Danger zone"}</SectionHeader>
+          <AppCard th={th} pad={0} style={{ border: "1px solid " + th.rd + ALPHA.med }}>
+            <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"} sub={uz ? "Yozuvlarni butunlay yoki sana bo'yicha o'chirish" : "Delete records entirely or by date range"} onClick={openClean} divider={false} />
+          </AppCard>
           <DangerButton th={th} onClick={logout}>{Ico.door(th.rd)}{t.lo}</DangerButton>
           <div style={{ textAlign: "center", ...TYPE.tiny, letterSpacing: 0.4, textTransform: "none", color: th.t3, marginTop: SPACE.s3, marginBottom: SPACE.s1 }}>Oila Hisobchi · v{APP_VER}</div>
         </div>
@@ -546,15 +565,23 @@ export default function ProfilePage({
               <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px " + SPACE.s1 + "px" }}>
                 <SubHeader th={th} style={{ marginBottom: 0 }}>{t.fam}: {oila?.nomi}</SubHeader>
               </div>
-              {azolar.map((a, i) => (
-                <MemberRow key={a.id} th={th} photo={a.photo} name={a.ism + (a.id === user.id ? " (" + t.me + ")" : "")}
-                  sub={a.email}
-                  variant={a.rol === "kid" ? "kid" : undefined}
-                  divider={i < azolar.length - 1}
-                  badge={a.rol === "bosh"
-                    ? <Badge th={th} type="warning" icon={Ico.crown(th.am)}>{t.hd}</Badge>
-                    : <Badge th={th} tone={th.t2}>{a.rol === "kid" ? (uz ? "Bola" : "Kid") : t.mb2}</Badge>} />
-              ))}
+              {azolar.map((a, i) => {
+                const canDelKid = a.rol === "kid" && (user?.rol === "bosh" || a.parentId === user?.id);
+                return (
+                  <MemberRow key={a.id} th={th} photo={a.photo} name={a.ism + (a.id === user.id ? " (" + t.me + ")" : "")}
+                    sub={a.email || (a.rol === "kid" ? a.login : "")}
+                    variant={a.rol === "kid" ? "kid" : undefined}
+                    divider={i < azolar.length - 1}
+                    badge={
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s2, flexShrink: 0 }}>
+                        {a.rol === "bosh"
+                          ? <Badge th={th} type="warning" icon={Ico.crown(th.am)}>{t.hd}</Badge>
+                          : <Badge th={th} tone={th.t2}>{a.rol === "kid" ? (uz ? "Bola" : "Kid") : t.mb2}</Badge>}
+                        {canDelKid && <IconButton th={th} tone="danger" icon={Ico.trash(th.rd)} label={uz ? a.ism + " akkauntini o'chirish" : "Delete kid account"} onClick={() => setKidDel(a)} size={COMP.touchMin - SPACE.s3} />}
+                      </span>
+                    } />
+                );
+              })}
             </AppCard>
           )}
         </div>
@@ -884,6 +911,66 @@ export default function ProfilePage({
 
         <GhostButton th={th} onClick={closeReferral}>{uz ? "Yopish" : "Close"}</GhostButton>
       </BottomSheet>
+
+      {/* ═══════════════ MA'LUMOTLARNI TOZALASH — BottomSheet ═══════════════ */}
+      <BottomSheet th={th} open={!!showClean} onClose={closeClean} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"}>
+        <WarningCard th={th} tone="danger" icon={PIco.warn(th.rd, 18)} title={uz ? "Qaytarib bo'lmaydi" : "Irreversible"}>
+          {uz ? "Tanlangan xarajat va daromad yozuvlari butunlay o'chiriladi." : "Selected expense and income records will be permanently deleted."}
+        </WarningCard>
+
+        {/* Qamrov: faqat men / butun oila (oila boshi) */}
+        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Kimning yozuvlari" : "Whose records"}</div>
+        <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+          <ChoiceChip th={th} on={!clnFam} onClick={() => setClnFam(false)} style={{ flex: 1 }}>{uz ? "Faqat mening yozuvlarim" : "Only my records"}</ChoiceChip>
+          {user?.rol === "bosh" && <ChoiceChip th={th} on={clnFam} onClick={() => setClnFam(true)} style={{ flex: 1 }}>{uz ? "Butun oila" : "Whole family"}</ChoiceChip>}
+        </div>
+
+        {/* Davr: hammasi / sana oralig'i */}
+        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Davr" : "Period"}</div>
+        <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+          <ChoiceChip th={th} on={clnAll} onClick={() => setClnAll(true)} style={{ flex: 1 }}>{uz ? "Hammasi" : "Everything"}</ChoiceChip>
+          <ChoiceChip th={th} on={!clnAll} onClick={() => setClnAll(false)} style={{ flex: 1 }}>{uz ? "Sana oralig'i" : "Date range"}</ChoiceChip>
+        </div>
+        {!clnAll && (
+          <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Boshlanish" : "From"}</div>
+              <input type="date" value={clnFrom} onChange={e => setClnFrom(e.target.value)}
+                style={{ width: "100%", background: th.surH, border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: COMP.inputPad, color: th.t1, fontSize: TYPE.caption.fontSize + 1, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Tugash" : "To"}</div>
+              <input type="date" value={clnTo} onChange={e => setClnTo(e.target.value)}
+                style={{ width: "100%", background: th.surH, border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: COMP.inputPad, color: th.t1, fontSize: TYPE.caption.fontSize + 1, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
+            </div>
+          </div>
+        )}
+        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginBottom: SPACE.s3, lineHeight: 1.5 }}>
+          {uz ? "Maqsad, qarz va bog' ma'lumotlariga tegilmaydi — faqat xarajat/daromad yozuvlari o'chadi." : "Goals, debts and garden are untouched — only expense/income records are deleted."}
+        </div>
+        <DangerButton th={th} solid onClick={() => {
+          if (!clnAll && !clnFrom && !clnTo) { setClnAll(true); }
+          setClnAsk(true);
+        }} style={{ marginBottom: SPACE.s2 }}>{Ico.trash("#fff")}{uz ? "O'chirish" : "Delete"}</DangerButton>
+        <GhostButton th={th} onClick={closeClean}>{uz ? "Bekor qilish" : "Cancel"}</GhostButton>
+      </BottomSheet>
+
+      {/* Tozalash — yakuniy tasdiq */}
+      <ConfirmDialog th={th} open={!!clnAsk} onClose={() => setClnAsk(false)} onConfirm={doPurge}
+        title={uz ? "Aniq o'chirilsinmi?" : "Delete for sure?"}
+        message={(clnFam ? (uz ? "Butun oilaning " : "The whole family's ") : (uz ? "Sizning " : "Your "))
+          + (clnAll ? (uz ? "BARCHA yozuvlari" : "ALL records") : (uz ? (clnFrom || "…") + " — " + (clnTo || "…") + " oralig'idagi yozuvlari" : "records in " + (clnFrom || "…") + " — " + (clnTo || "…")))
+          + (uz ? " butunlay o'chiriladi. Bu amalni qaytarib bo'lmaydi." : " will be permanently deleted. This cannot be undone.")}
+        confirmText={uz ? "Ha, o'chirilsin" : "Yes, delete"} cancelText={uz ? "Bekor qilish" : "Cancel"} />
+
+      {/* Bola akkauntini o'chirish — tasdiq */}
+      <ConfirmDialog th={th} open={!!kidDel} onClose={() => setKidDel(null)}
+        onConfirm={() => { const k = kidDel; setKidDel(null); delKidAccount(k); }}
+        title={uz ? "Bola akkaunti o'chirilsinmi?" : "Delete kid account?"}
+        message={kidDel ? (uz
+          ? kidDel.ism + " akkaunti va logini (" + (kidDel.login || "—") + ") butunlay o'chiriladi. Bola boshqa kira olmaydi. Yozuvlari tarixda saqlanib qoladi."
+          : kidDel.ism + "'s account and login (" + (kidDel.login || "—") + ") will be deleted permanently. Their records remain in history.") : ""}
+        confirmText={uz ? "Ha, o'chirilsin" : "Yes, delete"} cancelText={uz ? "Bekor qilish" : "Cancel"} />
     </div>
   );
 }
