@@ -32,13 +32,28 @@ service cloud.firestore {
     function hasSess() {
       return exists(/databases/$(database)/documents/appdata/$(DB() + 'ksess_' + uid()));
     }
-    // Mening oilaId'im: user_<uid>.v.oilaId (bo'lsa) yoki ksess_<uid>.oila (bola).
+    // Mening oilaId'im: user_<uid>.v.oilaId (katta) yoki ksess_<uid>.v.oila (bola).
+    // DIQQAT: hujjat tuzilishi { v: {...}, t, _u } — qiymatlar `.v` ICHIDA.
+    // Ilgari `sessData().oila` (top-level) o'qilib, doim NONE qaytar edi va
+    // bola yangi qurilmada o'z profilini o'qiy olmasdi (permission denied).
     function myOila() {
       return hasUser()
         ? (('v' in userData()) && ('oilaId' in userData().v) ? userData().v.oilaId : 'NONE')
-        : (hasSess()
-            ? (('oila' in sessData()) ? sessData().oila : 'NONE')
+        : (hasSess() && ('v' in sessData()) && ('oila' in sessData().v)
+            ? sessData().v.oila
             : 'NONE');
+    }
+
+    // Bola sessiyasidagi kid uid: ksess_<anon>.v.kid.
+    function mySessKid() {
+      return hasSess() && ('v' in sessData()) && ('kid' in sessData().v)
+        ? sessData().v.kid : 'NONE';
+    }
+    // Hujjat aynan MENING bola-profilimmi? (ksess.v.kid == docId dagi kid uid)
+    //  Bu bolaga o'z user_<kidUid> hujjatini bevosita o'qish/yozish imkonini beradi —
+    //  oila yorlig'iga bog'liq bo'lmagan mustahkam yo'l.
+    function isMyKidDoc(id) {
+      return mySessKid() != 'NONE' && id == (DB() + 'user_' + mySessKid());
     }
 
     // Hujjat docId'sida mening oilaId'im bormi? (masalan maq_<oila>, x_<oila>_<uid>)
@@ -101,16 +116,17 @@ service cloud.firestore {
       allow read: if isLookup(docId)
                   || (signedIn() && isOilaDoc(docId))
                   || (signedIn() && isMine())
+                  || (signedIn() && isMyKidDoc(docId))
                   || (signedIn() && mineByUser(resource))
                   || (signedIn() && mineByOila(resource))
                   || (signedIn() && docHasMyOila(docId))
                   || (signedIn() && docIsMyUid(docId))
                   || (signedIn() && myChannel(resource));
 
-      allow create: if signedIn() && (isMine() || isLookup(docId) || writeOk() || docHasMyOila(docId) || docIsMyUid(docId));
+      allow create: if signedIn() && (isMine() || isMyKidDoc(docId) || isLookup(docId) || writeOk() || docHasMyOila(docId) || docIsMyUid(docId));
 
       allow update: if signedIn() && (
-                       isMine() || isLookup(docId)
+                       isMine() || isMyKidDoc(docId) || isLookup(docId)
                        || (writeOk() && (mineByUser(resource) || mineByOila(resource)))
                        || docHasMyOila(docId) || docIsMyUid(docId)
                     );
