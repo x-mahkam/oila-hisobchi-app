@@ -33,8 +33,8 @@ export const ListItem = memo(function ListItem({ th, icon, iconTone, title, sub,
       {right !== undefined ? right : (onClick && chevron(th.t2))}
     </>
   );
-  const s = { width: "100%", display: "flex", alignItems: "center", gap: SPACE.s3, padding: SPACE.s3 + "px " + SPACE.s4 + "px", borderBottom: divider ? "1px solid " + th.bor : "none", boxSizing: "border-box", minHeight: COMP.touchMin };
-  if (onClick) return <button className="ui-press" onClick={onClick} style={{ ...s, background: "transparent", border: "none", borderBottom: s.borderBottom, cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>{inner}</button>;
+  const s = { width: "100%", display: "flex", alignItems: "center", gap: SPACE.s3, padding: SPACE.s3 + "px " + SPACE.s4 + "px", borderBottom: divider ? "1px solid " + th.bor : "none", boxSizing: "border-box", minHeight: COMP.touchMin, ...style };
+  if (onClick) return <button className="ui-press" onClick={onClick} style={{ background: "transparent", border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit", ...s }}>{inner}</button>;
   return <div style={s}>{inner}</div>;
 });
 
