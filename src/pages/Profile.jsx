@@ -125,7 +125,7 @@ export default function ProfilePage({
   faqO, setFaqO,
   pinStep, setPinStep, pinVal, setPinVal, pinCfm, setPinCfm,
   finger, setFinger,
-  showAddKid, setShowAddKid, kidName, setKidName, kidLogin, setKidLogin, kidPw, setKidPw, addKidAccount,
+  showAddKid, setShowAddKid, kidName, setKidName, kidSurname, setKidSurname, kidBirthYear, setKidBirthYear, kidGender, setKidGender, kidGrade, setKidGrade, kidLogin, setKidLogin, kidPw, setKidPw, addKidAccount,
   showReferral, setShowReferral, refCount,
   fbRating, setFbRating, fbText, setFbText, fbType, setFbType, fbSending, sendFeedback,
   adminStats, adminLoad, loadAdminStats,
@@ -176,9 +176,27 @@ export default function ProfilePage({
   const openPremium  = useCallback(() => { buzz(10); setShowPremModal(true); }, [buzz, setShowPremModal]);
   const openReferral = useCallback(() => setShowReferral(true), [setShowReferral]);
   const openAddKid   = useCallback(() => { buzz(10); setShowAddKid(true); }, [buzz, setShowAddKid]);
+
+  // ── Bola akkaunti: maydon darajasidagi validatsiya (UI-lokal) ──
+  const [kidErr, setKidErr] = useState({});
+  const submitKid = useCallback(() => {
+    const nowY = new Date().getFullYear();
+    const by = Number(kidBirthYear);
+    const e = {};
+    if (kidName.trim().length < 2)    e.name    = uz ? "Kamida 2 belgi" : "Min 2 chars";
+    if (kidSurname.trim().length < 2) e.surname = uz ? "Kamida 2 belgi" : "Min 2 chars";
+    if (!/^\d{4}$/.test(String(kidBirthYear))) e.birth = uz ? "4 raqamli yil kiriting" : "Enter a 4-digit year";
+    else if (by < nowY - 17 || by > nowY - 3)   e.birth = uz ? "Bola 3–17 yoshda bo'lishi kerak" : "Age must be 3–17";
+    if (kidGrade !== "" && (Number(kidGrade) < 1 || Number(kidGrade) > 11)) e.grade = uz ? "1 dan 11 gacha" : "1 to 11";
+    if (kidLogin.trim().length < 3)   e.login   = uz ? "Kamida 3 belgi" : "Min 3 chars";
+    if (kidPw.length < 4)             e.pw      = uz ? "Kamida 4 belgi" : "Min 4 chars";
+    setKidErr(e);
+    if (Object.keys(e).length) { buzz(20); return; }
+    addKidAccount();
+  }, [kidName, kidSurname, kidBirthYear, kidGrade, kidLogin, kidPw, uz, buzz, addKidAccount]);
   const openBilim    = useCallback(() => { buzz(10); setShowBilim(true); }, [buzz, setShowBilim]);
   const openGarden   = useCallback(() => setPTab("garden"), [setPTab]);
-  const closeAddKid  = useCallback(() => setShowAddKid(false), [setShowAddKid]);
+  const closeAddKid  = useCallback(() => { setShowAddKid(false); setKidErr({}); }, [setShowAddKid]);
   const closeReferral= useCallback(() => setShowReferral(false), [setShowReferral]);
   const backToMain   = useCallback(() => setPTab("main"), [setPTab]);
   const pickPhoto    = useCallback(() => fRef.current?.click(), [fRef]);
@@ -381,7 +399,7 @@ export default function ProfilePage({
           <SectionHeader th={th}>{uz ? "Ilova" : "App"}</SectionHeader>
           <AppCard th={th} pad={0}>
             <SettingRow th={th} icon={Ico.settings(th.ac)} title={t.ilovaS} sub={uz ? "Til, valyuta, mavzu, bildirishnoma" : "Language, currency, theme"} onClick={() => setPTab("ilovaS")} />
-            <SettingRow th={th} icon={PIco.leaf(th.gr)} iconTone={th.gr} title={uz ? "Oila bog'i" : "Family Garden"} sub={uz ? "Yulduzcha bilan bog'ni o'stiring" : "Grow your garden with stars"} onClick={openGarden} />
+            <SettingRow th={th} icon={PIco.leaf(th.gr)} iconTone={th.gr} title={uz ? "Baraka Bog'i" : "Baraka Garden"} sub={uz ? "Yulduzcha bilan bog'ni o'stiring" : "Grow your garden with stars"} onClick={openGarden} />
             <SettingRow th={th} icon={PIco.book(th.ac)} title={uz ? "Bilim Bozori" : "Knowledge Market"} sub={uz ? "Moliyaviy savodxonlik" : "Financial literacy"} onClick={openBilim} divider={false} />
           </AppCard>
 
@@ -791,10 +809,22 @@ export default function ProfilePage({
           <div style={{ width: SPACE.s16, height: SPACE.s16, borderRadius: RADIUS.full, background: th.am + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center" }}>{PIco.baby(th.am, 32)}</div>
         </div>
         <div style={{ ...TYPE.caption, color: th.t2, textAlign: "center", marginBottom: SPACE.s4, lineHeight: 1.5 }}>{uz ? "Farzandingiz uchun login va parol yarating." : "Create a login for your child."}</div>
-        <TextInput th={th} label={uz ? "Bola ismi" : "Child's name"} value={kidName} onChange={setKidName} placeholder={uz ? "Jahongir" : "Name"} />
-        <TextInput th={th} label="Login" value={kidLogin} onChange={v => setKidLogin(v.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase())} placeholder="jahongir2015" />
-        <TextInput th={th} label={uz ? "Parol" : "Password"} value={kidPw} onChange={setKidPw} placeholder={uz ? "Kamida 4 belgi" : "Min 4 chars"} />
-        <PrimaryButton th={th} onClick={addKidAccount} style={{ marginTop: SPACE.s1 }}>{uz ? "Akkaunt yaratish" : "Create account"}</PrimaryButton>
+        <TextInput th={th} label={(uz ? "Bola ismi" : "First name") + " *"} value={kidName} onChange={v => { setKidName(v); setKidErr(e => ({ ...e, name: "" })); }} placeholder={uz ? "Jahongir" : "Name"} error={kidErr.name} />
+        <TextInput th={th} label={(uz ? "Familya" : "Surname") + " *"} value={kidSurname} onChange={v => { setKidSurname(v); setKidErr(e => ({ ...e, surname: "" })); }} placeholder={uz ? "Aliyev" : "Surname"} error={kidErr.surname} />
+        <TextInput th={th} label={(uz ? "Tug'ilgan yili" : "Birth year") + " *"} value={kidBirthYear} onChange={v => { setKidBirthYear(v.replace(/\D/g, "").slice(0, 4)); setKidErr(e => ({ ...e, birth: "" })); }} placeholder={String(new Date().getFullYear() - 10)} inputMode="numeric" error={kidErr.birth} />
+        {/* Jinsi — ixtiyoriy (qayta bosilsa bekor bo'ladi) */}
+        <div style={{ marginBottom: SPACE.s3 }}>
+          <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Jinsi (ixtiyoriy)" : "Gender (optional)"}</div>
+          <div style={{ display: "flex", gap: SPACE.s2 }}>
+            {[{ id: "ogil", l: uz ? "O'g'il bola" : "Boy" }, { id: "qiz", l: uz ? "Qiz bola" : "Girl" }].map(g => (
+              <ChoiceChip key={g.id} th={th} on={kidGender === g.id} onClick={() => setKidGender(kidGender === g.id ? "" : g.id)} style={{ flex: 1 }}>{g.l}</ChoiceChip>
+            ))}
+          </div>
+        </div>
+        <TextInput th={th} label={uz ? "Sinfi (ixtiyoriy)" : "Grade (optional)"} value={kidGrade} onChange={v => { setKidGrade(v.replace(/\D/g, "").slice(0, 2)); setKidErr(e => ({ ...e, grade: "" })); }} placeholder={uz ? "1–11" : "1–11"} inputMode="numeric" error={kidErr.grade} />
+        <TextInput th={th} label="Login *" value={kidLogin} onChange={v => { setKidLogin(v.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase()); setKidErr(e => ({ ...e, login: "" })); }} placeholder="jahongir2015" error={kidErr.login} />
+        <TextInput th={th} label={(uz ? "Parol" : "Password") + " *"} value={kidPw} onChange={v => { setKidPw(v); setKidErr(e => ({ ...e, pw: "" })); }} placeholder={uz ? "Kamida 4 belgi" : "Min 4 chars"} error={kidErr.pw} />
+        <PrimaryButton th={th} onClick={submitKid} style={{ marginTop: SPACE.s1 }}>{uz ? "Akkaunt yaratish" : "Create account"}</PrimaryButton>
       </BottomSheet>
 
       {/* ═══════════════ REFERRAL — BottomSheet ═══════════════ */}
