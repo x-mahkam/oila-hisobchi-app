@@ -14,6 +14,7 @@ import LoginPage      from "./pages/Login.jsx";
 import OnboardingPage from "./pages/Onboarding.jsx";
 import Garden         from "./Garden.jsx";
 import BilimBozor     from "./BilimBozor.jsx";
+import BilimHub       from "./bilim/BilimHub.jsx";
 
 // Components
 import BottomNav             from "./components/ui/BottomNav.jsx";
@@ -1727,8 +1728,10 @@ export default function App() {
         </div>
       )}
       {showBilim && (
-        <div style={{ position: "fixed", inset: 0, background: th.bg, zIndex: 1500, overflowY: "auto" }}>
-          <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
+        <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: th.bg, zIndex: 1500, overflowY: "auto", padding: "16px", boxSizing: "border-box" }}>
+          <div style={{ maxWidth: 430, margin: "0 auto" }}>
+            <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
+          </div>
         </div>
       )}
 
