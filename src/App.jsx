@@ -681,24 +681,44 @@ export default function App() {
       if (kidLoginMode) {
         const loginKey = fTel.trim().toLowerCase();
         if (!loginKey || !fPw.trim()) return ok$(lg === "uz" ? "Login va parolni yozing" : "Enter login and password", "err");
-        const kidUid = await db.gFresh("kidlogin_" + loginKey);
+        // Lookup endi obyekt: { uid, oila } (eski yozuvlar oddiy string — uid)
+        const look = await db.gFresh("kidlogin_" + loginKey);
+        if (!look) return ok$(lg === "uz" ? "Login topilmadi. Ota-onangdan so'ra." : "Login not found", "err");
+        const kidUid  = (typeof look === "object" && look) ? look.uid : look;
+        const kidOila = (typeof look === "object" && look) ? (look.oila || null) : null;
         if (!kidUid) return ok$(lg === "uz" ? "Login topilmadi. Ota-onangdan so'ra." : "Login not found", "err");
         buzz(15);
         try { await auth.loginAnon(); } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
-        // XAVFSIZLIK: sessiya-da'vosi. Parol xeshi Firestore Rules ichida
-        // bazadagi xesh bilan SERVER tomonda solishtiriladi — noto'g'ri parol
-        // bilan bu yozuv rad etiladi va bola ma'lumotlariga kirish ochilmaydi.
-        const ku = await db.g("user_" + kidUid);
-        if (!ku || ku.rol !== "kid") return ok$(lg === "uz" ? "Login topilmadi" : "Not found", "err");
-        if (await hp(fPw) !== ku.ph) { try { await auth.logout(); } catch (e) {} return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err"); }
+        // MUHIM TARTIB: ksess AVVAL yoziladi — Firestore Rules bola (user_<kidUid>)
+        // hujjatini o'qishga ruxsatni aynan ksess_<anon>.oila orqali beradi.
+        // Ilgari user hujjati ksess'dan OLDIN o'qilib, yangi qurilmada ruxsat
+        // rad etilar va noto'g'ri "Login topilmadi" chiqar edi.
+        const anonUid = auth.current()?.uid;
+        const phv = await hp(fPw);
+        setOwnerCtx(kidUid, kidOila);  // xavfsizlik: bola konteksti (yozuvlardan oldin)
         try {
-          const anonUid = auth.current()?.uid;
-          setOwnerCtx(kidUid, ku.oilaId || null);  // xavfsizlik: bola konteksti (yozuvlardan oldin)
-          await db.s("ksess_" + anonUid, { kid: kidUid, oila: ku.oilaId || null, ph: await hp(fPw) });
+          if (anonUid) await db.s("ksess_" + anonUid, { kid: kidUid, oila: kidOila, ph: phv });
         } catch (e) {
           try { await auth.logout(); } catch (e2) {}
+          return ok$(lg === "uz" ? "Kirishda xato, qayta urinib ko'ring" : "Sign-in error, try again", "err");
+        }
+        const ku = await db.g("user_" + kidUid);
+        if (!ku || ku.rol !== "kid") {
+          try { if (anonUid) await db.s("ksess_" + anonUid, null); } catch (e) {}
+          try { await auth.logout(); } catch (e) {}
+          // Eski formatdagi lookup'da oila yo'q — ota-ona ilovani ochsa avtomatik yangilanadi
+          return ok$(kidOila
+            ? (lg === "uz" ? "Login topilmadi" : "Not found")
+            : (lg === "uz" ? "Akkaunt yangilanishi kerak: ota-onangiz ilovani bir marta ochib qo'ysin, keyin qayta urinib ko'r." : "Account needs an update: ask a parent to open the app once, then retry."), "err");
+        }
+        if (phv !== ku.ph) {
+          try { if (anonUid) await db.s("ksess_" + anonUid, null); } catch (e) {}
+          try { await auth.logout(); } catch (e) {}
           return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
         }
+        // ksess'dagi oila'ni haqiqiy qiymat bilan moslash (legacy lookup holati)
+        try { if (anonUid && (ku.oilaId || null) !== kidOila) await db.s("ksess_" + anonUid, { kid: kidUid, oila: ku.oilaId || null, ph: phv }); } catch (e) {}
+        setOwnerCtx(kidUid, ku.oilaId || kidOila);
         // O'z-o'zini davolash: bola oilaId'si ota-onaning JORIY oilasi bilan moslanadi
         // (eski migratsiyadan keyin farq qilib qolgan bo'lsa, vazifa/balans boshqa kalitga tushardi)
         try {
@@ -798,18 +818,26 @@ export default function App() {
         // BOLA LOGINI: agar email/telefon emas, oddiy login kiritilgan bo'lsa
         const tryLogin = fTel.trim().toLowerCase();
         if (tryLogin && !tryLogin.includes("@") && !/^[0-9+ ]+$/.test(tryLogin)) {
-          const kidUid = await db.gFresh("kidlogin_" + tryLogin);
+          const look2 = await db.gFresh("kidlogin_" + tryLogin);
+          const kidUid  = (typeof look2 === "object" && look2) ? look2.uid : look2;
+          const kidOila2 = (typeof look2 === "object" && look2) ? (look2.oila || null) : null;
           if (kidUid) {
+            buzz(15);
+            try { await auth.loginAnon(); } catch (e) {}
+            const anonUid2 = auth.current()?.uid;
+            const phv2 = await hp(fPw);
+            setOwnerCtx(kidUid, kidOila2);  // xavfsizlik: bola konteksti
+            // ksess AVVAL — Rules user_<kidUid> o'qishini shu orqali ochadi
+            try { if (anonUid2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: kidOila2, ph: phv2 }); } catch (e) {}
             const ku = await db.g("user_" + kidUid);
             if (ku && ku.rol === "kid") {
-              if (await hp(fPw) !== ku.ph) return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
-              buzz(15);
-              try { await auth.loginAnon(); } catch (e) {}
-              setOwnerCtx(kidUid, ku.oilaId || null);  // xavfsizlik: bola konteksti
-              try {
-                const anonUid2 = auth.current()?.uid;
-                if (anonUid2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: ku.oilaId || null, ph: await hp(fPw) });
-              } catch (e) {}
+              if (phv2 !== ku.ph) {
+                try { if (anonUid2) await db.s("ksess_" + anonUid2, null); } catch (e) {}
+                try { await auth.logout(); } catch (e) {}
+                return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
+              }
+              try { if (anonUid2 && (ku.oilaId || null) !== kidOila2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: ku.oilaId || null, ph: phv2 }); } catch (e) {}
+              setOwnerCtx(kidUid, ku.oilaId || kidOila2);
               try {
                 if (ku.parentId) {
                   const pu = await db.g("user_" + ku.parentId);
@@ -821,6 +849,12 @@ export default function App() {
               ok$((lg === "uz" ? "Xush kelibsiz, " : "Welcome, ") + ku.ism + " 👋");
               return;
             }
+            // Hujjat o'qilmadi (eski format lookup) — sessiyani tozalaymiz
+            try { if (anonUid2) await db.s("ksess_" + anonUid2, null); } catch (e) {}
+            try { await auth.logout(); } catch (e) {}
+            return ok$(kidOila2
+              ? (lg === "uz" ? "Login topilmadi" : "Not found")
+              : (lg === "uz" ? "Akkaunt yangilanishi kerak: ota-onangiz ilovani bir marta ochib qo'ysin." : "Ask a parent to open the app once, then retry."), "err");
           }
           return ok$(lg === "uz" ? "Login yoki parol noto'g'ri" : "Wrong login or password", "err");
         }
@@ -1063,7 +1097,7 @@ export default function App() {
       const uid = "kid" + Date.now();
       const ph = await hp(kidPw);
       const nu = { id: uid, ism: kidName.trim(), familya: kidSurname.trim(), birthYear: by, gender: kidGender || null, sinf: kidGrade !== "" ? Number(kidGrade) : null, login: loginKey, ph, oilaId: user.oilaId, rol: "kid", rel: "farzand", photo: null, parentId: user.id };
-      await db.s("user_" + uid, nu); await db.s("kidlogin_" + loginKey, uid);
+      await db.s("user_" + uid, nu); await db.s("kidlogin_" + loginKey, { uid, oila: user.oilaId });
       const o2 = { ...oila, azolarIds: [...(oila.azolarIds || oila.azolar || [user.id]), uid] };
       // ikki kalitga ham yozamiz: eski fam_ va yangi oila_
       if (oila.id) await db.s("oila_" + oila.id, o2);
@@ -1073,6 +1107,68 @@ export default function App() {
       setShowAddKid(false); setKidName(""); setKidSurname(""); setKidBirthYear(""); setKidGender(""); setKidGrade(""); setKidLogin(""); setKidPw("");
       setKidCreated({ ism: nu.ism, login: loginKey, pw: kidPw });
     } catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error: " + (e.code || e.message), "err"); }
+  };
+
+  // ── Eski bola login-lookup'larini davolash (bir sessiyada bir marta) ──
+  // Eski format: kidlogin_<login> = "<uid>" (oila yo'q) — bola yangi qurilmadan
+  // kira olmaydi (Rules). Ota-ona ilovani ochganda { uid, oila } ga yangilanadi.
+  const kidLookupHealed = useRef(false);
+  useEffect(() => {
+    if (kidLookupHealed.current || !user || user.rol === "kid" || !user.oilaId || !azolar?.length) return;
+    kidLookupHealed.current = true;
+    (async () => {
+      for (const a of azolar) {
+        if (a.rol !== "kid" || !a.login) continue;
+        try {
+          const cur = await db.gFresh("kidlogin_" + a.login);
+          if (cur && typeof cur !== "object") await db.s("kidlogin_" + a.login, { uid: a.id, oila: user.oilaId });
+        } catch (e) {}
+      }
+    })();
+  }, [user, azolar]);
+
+  // ── Bola akkauntini o'chirish (faqat oila boshi yoki yaratgan ota-ona) ──
+  const delKidAccount = async (kid) => {
+    if (!kid || kid.rol !== "kid") return;
+    if (user?.rol !== "bosh" && kid.parentId !== user?.id)
+      return ok$(lg === "uz" ? "Faqat oila boshi yoki akkauntni yaratgan ota-ona o'chira oladi" : "Only the family head or the creating parent can delete", "err");
+    buzz(15);
+    try {
+      if (kid.login) await db.s("kidlogin_" + kid.login, null);   // login bo'shatiladi
+      await db.s("user_" + kid.id, null);                          // profil o'chadi
+      const ids = (oila?.azolarIds || oila?.azolar || []).filter(id => id !== kid.id);
+      const o2 = { ...oila, azolarIds: ids };
+      if (oila?.id) await db.s("oila_" + oila.id, o2);
+      await db.s("fam_" + user.oilaId, { ...o2, azolar: ids });
+      setOila(o2); setAzolar(azolar.filter(a => a.id !== kid.id));
+      ok$(lg === "uz" ? kid.ism + " akkaunti o'chirildi" : "Kid account deleted");
+    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.code || e.message), "err"); }
+  };
+
+  // ── MA'LUMOTLARNI TOZALASH: xarajat/daromad yozuvlari ──
+  // fromS/toS: "YYYY-MM-DD" yoki "" (chegara yo'q). wholeFamily — faqat oila boshi.
+  const purgeData = async (fromS, toS, wholeFamily) => {
+    if (wholeFamily && user?.rol !== "bosh")
+      return ok$(lg === "uz" ? "Butun oila ma'lumotini faqat oila boshi tozalay oladi" : "Only the family head can clear family data", "err");
+    const inRange = sn => (!fromS || (sn || "") >= fromS) && (!toS || (sn || "") <= toS);
+    const targets = wholeFamily ? azolar : azolar.filter(a => a.id === user.id);
+    buzz(15);
+    let removed = 0;
+    try {
+      for (const m of targets) {
+        const kx = "x_" + user.oilaId + "_" + m.id, kd2 = "d_" + user.oilaId + "_" + m.id;
+        const xa = (await db.g(kx)) || [], da = (await db.g(kd2)) || [];
+        const xKeep = xa.filter(r => !inRange(r.sana)), dKeep = da.filter(r => !inRange(r.sana));
+        removed += (xa.length - xKeep.length) + (da.length - dKeep.length);
+        if (xKeep.length !== xa.length) await db.s(kx, xKeep);
+        if (dKeep.length !== da.length) await db.s(kd2, dKeep);
+      }
+      const ids = new Set(targets.map(m => m.id));
+      setXar(xar.filter(r => !(ids.has(r.uid) && inRange(r.sana))));
+      setDar(dar.filter(r => !(ids.has(r.uid) && inRange(r.sana))));
+      ok$(lg === "uz" ? removed + " ta yozuv o'chirildi" : removed + " records deleted");
+      return true;
+    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.code || e.message), "err"); return false; }
   };
 
   // ── Vazifa ────────────────────────────────────────────────
@@ -1789,7 +1885,7 @@ export default function App() {
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} advErr={advErr} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
-        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidSurname={kidSurname} setKidSurname={setKidSurname} kidBirthYear={kidBirthYear} setKidBirthYear={setKidBirthYear} kidGender={kidGender} setKidGender={setKidGender} kidGrade={kidGrade} setKidGrade={setKidGrade} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
+        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidSurname={kidSurname} setKidSurname={setKidSurname} kidBirthYear={kidBirthYear} setKidBirthYear={setKidBirthYear} kidGender={kidGender} setKidGender={setKidGender} kidGrade={kidGrade} setKidGrade={setKidGrade} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} delKidAccount={delKidAccount} purgeData={purgeData} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
       {/* ── Ovoz bilan kiritish oynasi ── */}
