@@ -107,7 +107,7 @@ const DICT = {
   deadlineReq:  { uz: "Sana majburiy",       ru: "Дата обязательна",   en: "Date is required" },
   deadlineHint: { uz: "Qachon erishmoqchisiz?", ru: "Когда хотите достичь?", en: "When do you want it?" },
   goalImage:    { uz: "Maqsad rasmi",        ru: "Изображение цели",   en: "Goal image" },
-  imageHint:    { uz: "Ixtiyoriy — havola yoki belgicha", ru: "Опционально", en: "Optional — link or icon" },
+  imageHint:    { uz: "Ixtiyoriy — rasm havolasi (URL)", ru: "Опционально — ссылка на фото", en: "Optional — image link (URL)" },
   imageUrl:     { uz: "Rasm havolasi (URL)", ru: "Ссылка на изображение", en: "Image URL" },
 
   // ── Umumiy ──

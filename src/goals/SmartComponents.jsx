@@ -34,11 +34,20 @@ export function statusColor(status, th) {
 }
 const toneColor = (tone, th) => tone === "danger" ? th.rd : tone === "warn" ? th.am : tone === "ok" ? th.gr : th.ac;
 
+// Oy nomlari — uz-UZ lokali "M09" kabi tushunarsiz qisqartma bergani uchun qo'lda.
+const MONTHS = {
+  uz: ["yanvar", "fevral", "mart", "aprel", "may", "iyun", "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr"],
+  ru: ["янв.", "фев.", "мар.", "апр.", "мая", "июн.", "июл.", "авг.", "сен.", "окт.", "ноя.", "дек."],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+};
 const fmtDate = (v, lg) => {
   const d = new Date(v);
   if (isNaN(d)) return "";
-  const loc = lg === "ru" ? "ru-RU" : lg === "en" ? "en-US" : "uz-UZ";
-  return d.toLocaleDateString(loc, { day: "numeric", month: "short", year: "2-digit" });
+  const day = d.getDate(), mo = MONTHS[lg] ? lg : "uz", y = d.getFullYear();
+  const m = MONTHS[mo][d.getMonth()];
+  if (mo === "uz") return `${day}-${m}, ${y}`;        // 3-sentabr, 2026
+  if (mo === "ru") return `${day} ${m} ${y}`;          // 3 сен. 2026
+  return `${m} ${day}, ${y}`;                           // Sep 3, 2026
 };
 
 // ═══ Progress Ring — token-driven SVG, markazda foiz + health rang ═══

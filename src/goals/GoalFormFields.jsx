@@ -41,24 +41,11 @@ export const DeadlineField = memo(function DeadlineField({ th, STY, lg, value, o
   );
 });
 
-const EMOJI_PICKS = ["🏠", "🚗", "✈️", "💍", "📱", "🎓", "💼", "🎉"];
-
 export const ImageField = memo(function ImageField({ th, STY, lg, value, onChange }) {
   const isUrl = typeof value === "string" && /^https?:\/\//.test(value);
   return (
     <div style={{ marginBottom: SPACE.s3 }}>
       <label style={STY.lb}>{T("goalImage", lg)}</label>
-      <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s2, flexWrap: "wrap" }}>
-        {EMOJI_PICKS.map(em => {
-          const active = value === em;
-          return (
-            <button key={em} type="button" className="ui-press" onClick={() => onChange(active ? "" : em)}
-              style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s, background: active ? th.ac + ALPHA.tint : th.bg, border: "1.5px solid " + (active ? th.ac : th.bor), cursor: "pointer", fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              {em}
-            </button>
-          );
-        })}
-      </div>
       <input value={isUrl ? value : ""} onChange={e => onChange(e.target.value)} placeholder={T("imageUrl", lg)}
         style={{ ...STY.ip, marginBottom: SPACE.s1 }} />
       <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{T("imageHint", lg)}</div>
