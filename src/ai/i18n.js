@@ -62,6 +62,7 @@ const DICT = {
 
   // Trend
   trUp:          { uz: "oshdi",   ru: "рост",    en: "up" },
+  trNew:         { uz: "yangi",   ru: "новое",   en: "new" },
   trDown:        { uz: "kamaydi", ru: "спад",    en: "down" },
   trFlat:        { uz: "barqaror", ru: "стабильно", en: "flat" },
   trVs:          { uz: "o'tgan oyga nisbatan", ru: "к прошлому месяцу", en: "vs last month" },
@@ -141,5 +142,6 @@ export function T(key, lg = "uz", ...args) {
   let s = entry[lg] || entry.uz || entry.en || key;
   let i = 0;
   s = s.replace(/%[ds]/g, () => (i < args.length ? String(args[i++]) : ""));
+  s = s.replace(/%%/g, "%");   // literal foiz belgisi (%d%% -> 100%)
   return s;
 }

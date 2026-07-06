@@ -111,7 +111,7 @@ export const TrendCard = memo(function TrendCard({ th, lg, f, trends }) {
               <span style={{ ...TYPE.body, color: th.t1, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tr.name}</span>
               <span style={{ ...TYPE.caption, color: th.t2, fontVariantNumeric: "tabular-nums" }}>{f(tr.cur)}</span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 2, color: dc, ...TYPE.caption, fontWeight: 700, minWidth: 52, justifyContent: "flex-end" }}>
-                {ic}{tr.pct > 0 ? "+" : ""}{tr.pct}%
+                {ic}{tr.isNew ? T("trNew", lg) : (tr.pct > 0 ? "+" : "") + tr.pct + "%"}
               </span>
             </div>
           );

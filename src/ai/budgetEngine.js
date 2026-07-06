@@ -110,11 +110,11 @@ export function expenseTrends({ xar = [], cats = [], mine = null, now = new Date
       .reduce((s, x) => s + Number(x.summa || 0), 0);
     const prevV = xar.filter(x => x.kategoriya === c.id && x.sana?.startsWith(prev) && (!mine || mine(x)))
       .reduce((s, x) => s + Number(x.summa || 0), 0);
-    let pct;
+    let pct, isNew = false;
     if (prevV > 0) pct = Math.round((curV - prevV) / prevV * 100);
-    else pct = curV > 0 ? 100 : 0;
-    const dir = pct > 5 ? "up" : pct < -5 ? "down" : "flat";
-    return { id: c.id, name: c.name, color: c.color, cur: curV, prev: prevV, pct, dir };
+    else { pct = curV > 0 ? 100 : 0; isNew = curV > 0; }  // o'tgan oy 0 -> "yangi", foiz emas
+    const dir = isNew ? "up" : (pct > 5 ? "up" : pct < -5 ? "down" : "flat");
+    return { id: c.id, name: c.name, color: c.color, cur: curV, prev: prevV, pct, dir, isNew };
   }).filter(r => r.cur > 0 || r.prev > 0);
   rows.sort((a, b) => Math.abs(b.pct) - Math.abs(a.pct));
   return rows;
