@@ -404,6 +404,10 @@ export default function App() {
   const [kidName,   setKidName]   = useState("");
   const [kidLogin,  setKidLogin]  = useState("");
   const [kidPw,     setKidPw]     = useState("");
+  const [kidSurname,   setKidSurname]   = useState("");
+  const [kidBirthYear, setKidBirthYear] = useState("");
+  const [kidGender,    setKidGender]    = useState("");   // ixtiyoriy: "ogil" | "qiz"
+  const [kidGrade,     setKidGrade]     = useState("");   // ixtiyoriy: 1–11
   const [showAddVazifa, setShowAddVazifa] = useState(false);
   const [vTitle,    setVTitle]    = useState("");
   const [vReward,   setVReward]   = useState("");
@@ -1041,14 +1045,24 @@ export default function App() {
   const [kidCreated, setKidCreated] = useState(null); // { ism, login, pw }
 
   const addKidAccount = async () => {
-    if (!kidName.trim() || !kidLogin.trim() || kidPw.length < 4) return ok$(lg === "uz" ? "Ism, login va parol (4+) kiriting" : "Fill all fields", "err");
+    // ── Validatsiya: majburiy — ism, familya, tug'ilgan yili; login/parol ──
+    const nowY = new Date().getFullYear();
+    const by = Number(kidBirthYear);
+    if (kidName.trim().length < 2)    return ok$(lg === "uz" ? "Bola ismini kiriting (kamida 2 belgi)" : "Enter child's first name", "err");
+    if (kidSurname.trim().length < 2) return ok$(lg === "uz" ? "Familyani kiriting (kamida 2 belgi)" : "Enter surname", "err");
+    if (!/^\d{4}$/.test(String(kidBirthYear)) || by < nowY - 17 || by > nowY - 3)
+      return ok$(lg === "uz" ? "Tug'ilgan yili noto'g'ri (bola 3–17 yoshda bo'lishi kerak)" : "Invalid birth year (age 3–17)", "err");
+    if (kidGrade !== "" && (Number(kidGrade) < 1 || Number(kidGrade) > 11))
+      return ok$(lg === "uz" ? "Sinf 1 dan 11 gacha bo'lishi kerak" : "Grade must be 1–11", "err");
+    if (kidLogin.trim().length < 3)   return ok$(lg === "uz" ? "Login kamida 3 belgi bo'lsin" : "Login min 3 chars", "err");
+    if (kidPw.length < 4)             return ok$(lg === "uz" ? "Parol kamida 4 belgi bo'lsin" : "Password min 4 chars", "err");
     buzz(12);
     const loginKey = kidLogin.trim().toLowerCase();
     if (await db.gFresh("kidlogin_" + loginKey)) return ok$(lg === "uz" ? "Bu login band, boshqa login tanlang" : "Login taken, choose another", "err");
     try {
       const uid = "kid" + Date.now();
       const ph = await hp(kidPw);
-      const nu = { id: uid, ism: kidName.trim(), login: loginKey, ph, oilaId: user.oilaId, rol: "kid", rel: "farzand", photo: null, parentId: user.id };
+      const nu = { id: uid, ism: kidName.trim(), familya: kidSurname.trim(), birthYear: by, gender: kidGender || null, sinf: kidGrade !== "" ? Number(kidGrade) : null, login: loginKey, ph, oilaId: user.oilaId, rol: "kid", rel: "farzand", photo: null, parentId: user.id };
       await db.s("user_" + uid, nu); await db.s("kidlogin_" + loginKey, uid);
       const o2 = { ...oila, azolarIds: [...(oila.azolarIds || oila.azolar || [user.id]), uid] };
       // ikki kalitga ham yozamiz: eski fam_ va yangi oila_
@@ -1056,7 +1070,7 @@ export default function App() {
       await db.s("fam_" + user.oilaId, { ...o2, azolar: o2.azolarIds });
       setOila(o2);
       setAzolar([...azolar, nu]);
-      setShowAddKid(false); setKidName(""); setKidLogin(""); setKidPw("");
+      setShowAddKid(false); setKidName(""); setKidSurname(""); setKidBirthYear(""); setKidGender(""); setKidGrade(""); setKidLogin(""); setKidPw("");
       setKidCreated({ ism: nu.ism, login: loginKey, pw: kidPw });
     } catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error: " + (e.code || e.message), "err"); }
   };
@@ -1775,7 +1789,7 @@ export default function App() {
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} advErr={advErr} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
-        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
+        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidSurname={kidSurname} setKidSurname={setKidSurname} kidBirthYear={kidBirthYear} setKidBirthYear={setKidBirthYear} kidGender={kidGender} setKidGender={setKidGender} kidGrade={kidGrade} setKidGrade={setKidGrade} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
       {/* ── Ovoz bilan kiritish oynasi ── */}

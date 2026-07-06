@@ -505,7 +505,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin }) {
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ ...TYPE.subtitle, fontWeight: 800, color: gt.ink1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism || L("Bog'bon", "Садовник")}</div>
-            <div style={{ ...TYPE.caption, color: gt.ink2 }}>{L("Oila bog'boni", "Семейный садовник")}</div>
+            <div style={{ ...TYPE.caption, color: gt.ink2 }}>{L("Baraka bog'boni", "Садовник Бараки")}</div>
           </div>
           <GChip gt={gt} tone="leaf">{L("Daraja", "Уровень")} {anyPlanted ? maxStage : 0}</GChip>
         </div>
