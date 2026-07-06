@@ -43,7 +43,7 @@ import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
-import { db, auth, setOwnerCtx } from "./firebase.js";
+import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
 export default function App() {
@@ -689,11 +689,14 @@ export default function App() {
         const kidOila = (typeof look === "object" && look) ? (look.oila || null) : null;
         if (!kidUid) return ok$(lg === "uz" ? "Login topilmadi. Ota-onangdan so'ra." : "Login not found", "err");
         buzz(15);
-        try { await auth.loginAnon(); } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
+        // ANON HISOB YIG'ILISHINING OLDINI OLISH: agar allaqachon anonim
+        // sessiya bo'lsa — QAYTA ISHLATAMIZ, yangi anonim hisob YARATMAYMIZ.
+        try {
+          if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
+        } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
+        const freshAnon = !!(fbAuth.currentUser && fbAuth.currentUser.isAnonymous);
         // MUHIM TARTIB: ksess AVVAL yoziladi — Firestore Rules bola (user_<kidUid>)
-        // hujjatini o'qishga ruxsatni aynan ksess_<anon>.oila orqali beradi.
-        // Ilgari user hujjati ksess'dan OLDIN o'qilib, yangi qurilmada ruxsat
-        // rad etilar va noto'g'ri "Login topilmadi" chiqar edi.
+        // hujjatini o'qishga ruxsatni ksess_<anon>.v.oila / v.kid orqali beradi.
         const anonUid = auth.current()?.uid;
         const phv = await hp(fPw);
         setOwnerCtx(kidUid, kidOila);  // xavfsizlik: bola konteksti (yozuvlardan oldin)
@@ -705,16 +708,15 @@ export default function App() {
         }
         const ku = await db.g("user_" + kidUid);
         if (!ku || ku.rol !== "kid") {
-          try { if (anonUid) await db.s("ksess_" + anonUid, null); } catch (e) {}
-          try { await auth.logout(); } catch (e) {}
-          // Eski formatdagi lookup'da oila yo'q — ota-ona ilovani ochsa avtomatik yangilanadi
+          try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
+          try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
           return ok$(kidOila
             ? (lg === "uz" ? "Login topilmadi" : "Not found")
             : (lg === "uz" ? "Akkaunt yangilanishi kerak: ota-onangiz ilovani bir marta ochib qo'ysin, keyin qayta urinib ko'r." : "Account needs an update: ask a parent to open the app once, then retry."), "err");
         }
         if (phv !== ku.ph) {
-          try { if (anonUid) await db.s("ksess_" + anonUid, null); } catch (e) {}
-          try { await auth.logout(); } catch (e) {}
+          try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
+          try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
           return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
         }
         // ksess'dagi oila'ni haqiqiy qiymat bilan moslash (legacy lookup holati)
@@ -824,7 +826,9 @@ export default function App() {
           const kidOila2 = (typeof look2 === "object" && look2) ? (look2.oila || null) : null;
           if (kidUid) {
             buzz(15);
-            try { await auth.loginAnon(); } catch (e) {}
+            try {
+              if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
+            } catch (e) {}
             const anonUid2 = auth.current()?.uid;
             const phv2 = await hp(fPw);
             setOwnerCtx(kidUid, kidOila2);  // xavfsizlik: bola konteksti
@@ -833,8 +837,8 @@ export default function App() {
             const ku = await db.g("user_" + kidUid);
             if (ku && ku.rol === "kid") {
               if (phv2 !== ku.ph) {
-                try { if (anonUid2) await db.s("ksess_" + anonUid2, null); } catch (e) {}
-                try { await auth.logout(); } catch (e) {}
+                try { if (anonUid2) await db.del("ksess_" + anonUid2); } catch (e) {}
+                try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
                 return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
               }
               try { if (anonUid2 && (ku.oilaId || null) !== kidOila2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: ku.oilaId || null, ph: phv2 }); } catch (e) {}
@@ -851,8 +855,8 @@ export default function App() {
               return;
             }
             // Hujjat o'qilmadi (eski format lookup) — sessiyani tozalaymiz
-            try { if (anonUid2) await db.s("ksess_" + anonUid2, null); } catch (e) {}
-            try { await auth.logout(); } catch (e) {}
+            try { if (anonUid2) await db.del("ksess_" + anonUid2); } catch (e) {}
+            try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
             return ok$(kidOila2
               ? (lg === "uz" ? "Login topilmadi" : "Not found")
               : (lg === "uz" ? "Akkaunt yangilanishi kerak: ota-onangiz ilovani bir marta ochib qo'ysin." : "Ask a parent to open the app once, then retry."), "err");
@@ -1135,8 +1139,8 @@ export default function App() {
       return ok$(lg === "uz" ? "Faqat oila boshi yoki akkauntni yaratgan ota-ona o'chira oladi" : "Only the family head or the creating parent can delete", "err");
     buzz(15);
     try {
-      if (kid.login) await db.s("kidlogin_" + kid.login, null);   // login bo'shatiladi
-      await db.s("user_" + kid.id, null);                          // profil o'chadi
+      if (kid.login) await db.del("kidlogin_" + kid.login);   // login bo'shatiladi (haqiqatan o'chadi)
+      await db.del("user_" + kid.id);                          // profil butunlay o'chadi
       const ids = (oila?.azolarIds || oila?.azolar || []).filter(id => id !== kid.id);
       const o2 = { ...oila, azolarIds: ids };
       if (oila?.id) await db.s("oila_" + oila.id, o2);
