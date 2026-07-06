@@ -119,7 +119,7 @@ export default function ProfilePage({
   bX, bD,
   ok$, buzz, addStar,
   pTab, setPTab,
-  edN, setEdN, newN, setNewN, updName,
+  edN, setEdN, newN, setNewN, newF, setNewF, updName,
   edT, setEdT, newT, setNewT, saveTel,
   fBj, setFBj, fKL, setFKL, saveBj,
   faqO, setFaqO,
@@ -141,6 +141,8 @@ export default function ProfilePage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const uz = lg === "uz";
+  // To'liq ism: ism + familya (familya bo'lsa). Barcha ko'rsatishlar shu orqali.
+  const fullName = (p) => p ? ((p.ism || "") + (p.familya ? " " + p.familya : "")).trim() : "";
 
   // ═══ Statistika — faqat mavjud ma'lumotlardan, og'ir hisob memoizatsiya qilingan ═══
   const pStats = useMemo(() => {
@@ -304,7 +306,7 @@ export default function ProfilePage({
                 </button>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ ...TYPE.heading, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism}</div>
+                <div style={{ ...TYPE.heading, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user)}</div>
                 <div style={{ ...TYPE.caption, color: heroText, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
                 <div style={{ display: "flex", gap: SPACE.s1 + 2, marginTop: SPACE.s2, flexWrap: "wrap" }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, background: heroSoft, borderRadius: RADIUS.pill, padding: "3px 10px", ...TYPE.caption, fontWeight: 600, color: "#fff" }}>
@@ -369,7 +371,7 @@ export default function ProfilePage({
                   const isChild = a.rol === "kid";
                   const me = a.id === user?.id;
                   return (
-                    <MemberRow key={a.id} th={th} photo={a.photo} name={a.ism + (me ? " (" + t.me + ")" : "")}
+                    <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (me ? " (" + t.me + ")" : "")}
                       sub={rel ? (rel[lg] || rel.uz) : (isHead ? t.hd : t.mb2)}
                       variant={isChild ? "kid" : (isHead && isPremium ? "premium" : undefined)}
                       divider={i < azolar.length - 1}
@@ -458,15 +460,16 @@ export default function ProfilePage({
           {/* Ism */}
           <AppCard th={th}>
             <div style={{ ...STY.row, marginBottom: edN ? SPACE.s3 : 0 }}>
-              <div>
-                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: 2 }}>{uz ? "Ism" : "Name"}</div>
-                <div style={{ ...TYPE.subtitle, color: th.t1 }}>{user?.ism}</div>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: 2 }}>{uz ? "Ism va familya" : "Full name"}</div>
+                <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user) || (uz ? "Kiritilmagan" : "Not set")}</div>
               </div>
-              <SecondaryButton th={th} onClick={() => { setEdN(v => !v); setNewN(user?.ism || ""); }} style={{ width: "auto", padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize }}>{Ico.edit(th.ac)}{edN ? t.cn : t.ep}</SecondaryButton>
+              <SecondaryButton th={th} onClick={() => { setEdN(v => !v); setNewN(user?.ism || ""); setNewF(user?.familya || ""); }} style={{ width: "auto", padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>{Ico.edit(th.ac)}{edN ? t.cn : t.ep}</SecondaryButton>
             </div>
             {edN && (
               <div>
-                <TextInput th={th} value={newN} onChange={setNewN} placeholder={uz ? "Ism" : "Name"} autoFocus />
+                <TextInput th={th} label={uz ? "Ism" : "First name"} value={newN} onChange={setNewN} placeholder={uz ? "Ism" : "First name"} autoFocus />
+                <TextInput th={th} label={uz ? "Familya" : "Surname"} value={newF} onChange={setNewF} placeholder={uz ? "Familya" : "Surname"} />
                 <PrimaryButton th={th} onClick={updName}>{t.un}</PrimaryButton>
               </div>
             )}
@@ -547,7 +550,7 @@ export default function ProfilePage({
                 const hasAccess = isAHead || (oila?.reportAccess || []).includes(a.id);
                 const rel = RELATIONS.find(r => r.id === a.rel);
                 return (
-                  <MemberRow key={a.id} th={th} photo={a.photo} name={a.ism + (a.id === user.id ? " (" + t.me + ")" : "")}
+                  <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
                     sub={rel ? (rel[lg] || rel.uz) : (isAHead ? t.hd : t.mb2)}
                     divider={i < azolar.length - 1}
                     badge={isAHead
@@ -568,7 +571,7 @@ export default function ProfilePage({
               {azolar.map((a, i) => {
                 const canDelKid = a.rol === "kid" && (user?.rol === "bosh" || a.parentId === user?.id);
                 return (
-                  <MemberRow key={a.id} th={th} photo={a.photo} name={a.ism + (a.id === user.id ? " (" + t.me + ")" : "")}
+                  <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
                     sub={a.email || (a.rol === "kid" ? a.login : "")}
                     variant={a.rol === "kid" ? "kid" : undefined}
                     divider={i < azolar.length - 1}
