@@ -16,6 +16,8 @@ import { Ico } from "../utils/icons.jsx";
 import { f } from "../utils/formatters.js";
 import KidsLeaderboard from "../components/KidsLeaderboard.jsx";
 import { db } from "../firebase.js";
+import { recommendTasks, getKidAge } from "../utils/parenting.js";
+import { canAssignTask, canDeleteTask } from "../utils/permissions.js";
 
 // Tayyor vazifalar to'plami — 4 ustunli grid uchun
 // (e — DATA emoji: bazaga avvalgidek yoziladi, UI'da ko'rsatilmaydi)
@@ -106,7 +108,7 @@ const StatusBadge = memo(function StatusBadge({ th, lg, status }) {
 
 // ═══ TaskCard — bitta vazifa kartasi (AppCard ichida, React.memo) ═══
 // Tuzilishi: Icon → Title → (kid) → Reward → Sana → Progress → Status → Actions
-const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, onDone, onApprove, onReject, onAskDelete }) {
+const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAskDelete }) {
   const m = statusMeta(v.status, th, lg);
   const st = v.status;
   return (
@@ -139,6 +141,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, onDone, onA
       {(v.sana || v.doneSana) && (
         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, marginTop: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2 }}>
           {v.sana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.cal(th.t3)}{lg === "uz" ? "Berilgan" : "Assigned"}: {v.sana}</span>}
+          {v.createdByName && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.user(th.t3)}{lg === "uz" ? "Berdi" : "By"}: {v.createdByName}</span>}
           {v.doneSana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.clock(th.t3)}{lg === "uz" ? "Bajarildi" : "Done"}: {v.doneSana}</span>}
         </div>
       )}
@@ -175,7 +178,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, onDone, onA
             )}
           </>
         )}
-        {!isKid && st !== "done" && (
+        {!isKid && canDelete && st !== "done" && (
           <DangerButton th={th} onClick={onAskDelete} style={{ padding: (SPACE.s2 + 1) + "px", fontSize: TYPE.caption.fontSize }}>
             {Ico.trash(th.rd)}{lg === "uz" ? "O'chirish" : "Delete"}
           </DangerButton>
@@ -320,6 +323,21 @@ export default function TasksPage({
 
   const hasDup = !isKid && isBosh && azolar.filter(a => a.rol === "kid").length > kids.length;
 
+  // ── YOSHGA MOS TAVSIYALAR — offline intellekt (ishlangan ma'lumotlar:
+  //    bola yoshi + vazifa tarixi + mukofot odati). Tashqi AI ulanmagan. ──
+  const selKid = vAssignee ? kidById[vAssignee] : null;
+  const recs = useMemo(
+    () => (showAddVazifa && selKid) ? recommendTasks({ kid: selKid, vazifalar, lg }) : null,
+    [showAddVazifa, selKid, vazifalar, lg]
+  );
+  const pickRec = useCallback(r => {
+    buzz(8);
+    setSelPreset(r.presetId || "tavsiya");
+    setVEmoji(r.e);
+    setVTitle(r.title);
+    setVReward(prev => prev ? prev : String(r.reward));
+  }, [buzz, setVEmoji, setVTitle, setVReward]);
+
   return (
     <div>
       {/* ── Sarlavha: kit PageHeader (orqaga + yangilash) ── */}
@@ -328,7 +346,7 @@ export default function TasksPage({
         right={<IconButton th={th} label={lg === "uz" ? "Yangilash" : "Refresh"} icon={Ico.repeat(th.ac)} onClick={doReload} disabled={vSyncing} />} />
 
       {/* ── Vazifa qo'shish — kit BottomSheet ── */}
-      <BottomSheet th={th} open={!!(showAddVazifa && !isKid)} onClose={closeAdd} title={lg === "uz" ? "Yangi vazifa berish" : "Add new task"}>
+      <BottomSheet th={th} open={!!(showAddVazifa && canAssignTask(user))} onClose={closeAdd} title={lg === "uz" ? "Yangi vazifa berish" : "Add new task"}>
         {/* Kim uchun */}
         <SectionHeader th={th} style={{ marginTop: 0 }}>{lg === "uz" ? "Kim uchun?" : "For whom?"}</SectionHeader>
         {kids.length === 0
@@ -350,6 +368,34 @@ export default function TasksPage({
               })}
             </div>
         }
+
+        {/* ── Yoshga mos tavsiyalar (offline intellekt) ── */}
+        {recs && (
+          <>
+            <SectionHeader th={th}
+              right={<Badge th={th} type={recs.age != null ? "info" : "warning"}>
+                {recs.age != null ? (recs.age + (lg === "uz" ? " yosh" : " y.o.")) : (lg === "uz" ? "Yosh kiritilmagan" : "No birth year")}
+              </Badge>}>
+              {lg === "uz" ? "Yoshga mos tavsiyalar" : "Age-based suggestions"}
+            </SectionHeader>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, margin: "-" + SPACE.s1 + "px 0 " + SPACE.s2 + "px", paddingLeft: SPACE.s1 }}>
+              {lg === "uz" ? recs.group.uz : recs.group.en}
+              {recs.age == null && (lg === "uz" ? " \u00b7 aniq tavsiya uchun Profil \u2192 Bola akkauntida tug'ilgan yilini kiriting" : " \u00b7 add birth year in the kid profile for precise tips")}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 + 2 }}>
+              {recs.items.map(r => (
+                <button key={r.id} className="ui-press" onClick={() => pickRec(r)}
+                  style={{ textAlign: "left", background: th.ac + ALPHA.faint, border: "1.5px solid " + th.ac + ALPHA.med, borderRadius: RADIUS.s + 2, padding: (SPACE.s2 + 2) + "px " + SPACE.s3 + "px", cursor: "pointer", fontFamily: "inherit", minWidth: 0 }}>
+                  <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.title}</span>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: SPACE.s1, marginTop: 2 }}>
+                    <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.ac, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.reason}</span>
+                    <span style={{ ...TYPE.tiny, letterSpacing: 0, color: th.t3, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>~{f(r.reward, true)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
 
         {/* Vazifa tanlash — 4 ustunli grid, SVG ikonkalar */}
         <SectionHeader th={th}>{lg === "uz" ? "Vazifani tanlang" : "Choose a task"}</SectionHeader>
@@ -419,8 +465,8 @@ export default function TasksPage({
         </AppCard>
       )}
 
-      {/* ── Ota-ona: vazifa qo'shish tugmasi (kit PrimaryButton) ── */}
-      {!isKid && (
+      {/* ── Katta a'zolar: vazifa qo'shish (PERMISSION: canAssignTask) ── */}
+      {canAssignTask(user) && (
         <PrimaryButton th={th} onClick={openAdd} style={{ marginBottom: SPACE.s4 }}>
           {Ico.add("#fff")}{lg === "uz" ? "Yangi vazifa berish" : "New task"}
         </PrimaryButton>
@@ -470,6 +516,7 @@ export default function TasksPage({
           <TaskCard key={v.id} th={th} lg={lg} v={v}
             kidName={kidById[v.assignedTo]?.ism}
             isKid={isKid}
+            canDelete={canDeleteTask(user, v)}
             onDone={() => vazifaDone(v.id)}
             onApprove={() => vazifaApprove(v.id)}
             onReject={vazifaReject ? () => vazifaReject(v.id) : null}
