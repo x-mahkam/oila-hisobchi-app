@@ -44,6 +44,7 @@ import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
 import { db, auth, setOwnerCtx } from "./firebase.js";
+import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
 export default function App() {
   const {
@@ -1173,16 +1174,22 @@ export default function App() {
 
   // ── Vazifa ────────────────────────────────────────────────
   const addVazifa = async () => {
+    // PERMISSION (Sprint 4): barcha KATTA a'zolar vazifa bera oladi, bola — yo'q.
+    if (!canAssignTask(user)) return ok$(lg === "uz" ? "Vazifani faqat katta oila a'zolari bera oladi" : "Only adult family members can assign tasks", "err");
     if (!vTitle.trim() || !vReward || Number(vReward) <= 0 || !vAssignee) return ok$(lg === "uz" ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
     buzz(12);
     const kd = azolar.find(a => a.id === vAssignee);
-    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, status: "pending", sana: td(), doneSana: "", paidSana: "" };
+    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, createdByName: user.ism || "", status: "pending", sana: td(), doneSana: "", paidSana: "" };
     const upd = [item, ...vazifalar];
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
     setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚");
     ok$(lg === "uz" ? "Vazifa qo'shildi! 🎯" : "Task added!");
   };
   const delVazifa = async (id) => {
+    // PERMISSION (Sprint 4): bosh — hammasini; katta a'zo — faqat o'zi berganini.
+    const v = vazifalar.find(x => x.id === id);
+    if (!canDeleteTask(user, v))
+      return ok$(lg === "uz" ? "Faqat o'zingiz bergan vazifani o'chira olasiz" : "You can only delete tasks you created", "err");
     const upd = vazifalar.filter(x => x.id !== id);
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
   };
