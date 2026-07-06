@@ -9,7 +9,7 @@ import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, OPACITY, COMP } from "../ut
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, QUICK_ADD } from "../utils/constants.js";
-import { tm } from "../utils/formatters.js";
+import { tm, fullName } from "../utils/formatters.js";
 import { db } from "../firebase.js";
 import KidsGames from "../components/KidsGames.jsx";
 
@@ -356,7 +356,7 @@ export default function DashboardPage({
               <div style={{ ...TYPE.subtitle, fontWeight: 500, color: "rgba(255,255,255,0.9)", marginBottom: 2 }}>
                 {(() => { const h = new Date().getHours(); return h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening"); })()}
               </div>
-              <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 2, color: "#fff", marginBottom: SPACE.s4 }}>{user?.ism} 👋</div>
+              <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 2, color: "#fff", marginBottom: SPACE.s4 }}>{fullName(user)} 👋</div>
               <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.8)", marginBottom: SPACE.s1 }}>{lg === "uz" ? "Mening cho'ntak pulim" : "My pocket money"}</div>
               <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{f(kidBalances[user.id] || 0, true)}</div>
               {(() => {
@@ -465,7 +465,7 @@ export default function DashboardPage({
       {!isKid && oila && (
         <div>
           {/* 1-5. Hero: salomlashish, oila balansi, daromad, xarajat, o'zgarish */}
-          <Hero th={th} lg={lg} t={t} f={f} ism={user?.ism} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
+          <Hero th={th} lg={lg} t={t} f={f} ism={fullName(user)} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
 
           {/* Byudjet — oy xarajati kontekstini davom ettiradi (LinearProgress budget rejimi) */}
           <div className="anim-fadeUp" style={{ animationDelay: STAGGER + "ms" }}>
