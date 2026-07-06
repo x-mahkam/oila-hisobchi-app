@@ -2,7 +2,7 @@ import { useMemo, useState, memo } from "react";
 import { MoneyInput } from "../components/common/index.jsx";
 import {
   PageHeader, SectionHeader, AppCard, Badge, EmptyState,
-  PrimaryButton, GhostButton, IconButton, LinearProgress, Switch,
+  PrimaryButton, GhostButton, IconButton, LinearProgress, UIAvatar,
 } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, CHART, OPACITY } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
@@ -25,10 +25,25 @@ const GIco = {
 };
 
 // ═══ Bitta maqsad kartasi — React.memo (4-band talabi) ═══
-const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, setEditMq, setEditMqN, setEditMqS, delMq, setTupId, setTupS, parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad }) {
+const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, setEditMq, setEditMqN, setEditMqS, delMq, setTupId, setTupS, parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad }) {
   const p = Math.round(m.jamg / m.maqsad * 100);
   const waiting = m.status === "waiting_parent";
   const confirmed = m.status === "parent_confirmed";
+
+  // ── Oilaviy maqsad: a'zolar hissasini yig'ish (uid bo'yicha) ──
+  const isFamilyGoal = m.shared === true || m.type === "family";
+  const contribList = Array.isArray(m.contribs) ? m.contribs : [];
+  const nameOf = (c) => {
+    const n = (typeof gN === "function") ? gN(c.uid) : "";
+    return (n && n !== "?") ? n : (c.ism || (lg === "uz" ? "A'zo" : "Member"));
+  };
+  const members = Object.values(contribList.reduce((acc, c) => {
+    const k = c.uid || "?";
+    if (!acc[k]) acc[k] = { uid: c.uid, ism: c.ism || "", total: 0 };
+    acc[k].total += Number(c.summa) || 0;
+    if (c.ism) acc[k].ism = c.ism;
+    return acc;
+  }, {})).sort((a, b) => b.total - a.total);
   return (
     <AppCard th={th} style={{ border: waiting ? "1.5px solid " + th.am + ALPHA.strong : confirmed ? "1.5px solid " + th.gr + ALPHA.strong : undefined }}>
       {/* icon + title + amount + edit/del */}
@@ -62,6 +77,38 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, setEditM
           </div>
         );
       })()}
+      {/* ── Oilaviy maqsad: a'zolar hissasi + oxirgi hissa ── */}
+      {isFamilyGoal && members.length > 0 && (
+        <div style={{ marginBottom: SPACE.s2 + 2 }}>
+          {m.lastContrib && (
+            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, background: m.rang + ALPHA.faint, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 3) + "px", marginBottom: SPACE.s2 + 1 }}>
+              <span style={{ flexShrink: 0, display: "flex" }}>{GIco.family(m.rang, 15)}</span>
+              <span style={{ flex: 1, minWidth: 0, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lg === "uz" ? "Oxirgi hissa" : "Last contribution"}: <b style={{ color: th.t1 }}>{nameOf(m.lastContrib)}</b></span>
+              <span style={{ ...TYPE.caption, fontWeight: 800, color: m.rang, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>+{f(m.lastContrib.summa, true)}</span>
+            </div>
+          )}
+          <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{GIco.family(th.t2, 12)}{lg === "uz" ? "A'zolar hissasi" : "Member contributions"}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
+            {members.map(mem => {
+              const share = m.jamg > 0 ? Math.round(mem.total / m.jamg * 100) : 0;
+              return (
+                <div key={mem.uid} style={{ display: "flex", alignItems: "center", gap: SPACE.s2 }}>
+                  <UIAvatar th={th} src={(typeof gP === "function") ? gP(mem.uid) : null} name={nameOf(mem)} size={SPACE.s6 + SPACE.s1} />
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: SPACE.s2 }}>
+                      <span style={{ ...TYPE.caption, color: th.t1, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nameOf(mem)}</span>
+                      <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{f(mem.total, true)} · {share}%</span>
+                    </div>
+                    <div style={{ marginTop: SPACE.s1 - 1 }}>
+                      <LinearProgress th={th} value={share} tone={m.rang} height={SPACE.s1 + 2} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {p >= 100 ? (
         <div style={{ textAlign: "center" }} className="ui-fadeUp">
           <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>
@@ -118,7 +165,7 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, setEditM
 });
 
 export default function GoalsPage({
-  user, maq, isKid,
+  user, maq, isKid, gN, gP,
   th, t, f, lg,
   addM, setAddM, maqTab, setMaqTab,
   canSeeReport, isBosh,
@@ -210,7 +257,7 @@ export default function GoalsPage({
         }
 
         return filteredMaq.map(m => (
-          <GoalCard key={m.id} m={m} th={th} t={t} f={f} lg={lg} isKid={isKid} user={user}
+          <GoalCard key={m.id} m={m} th={th} t={t} f={f} lg={lg} isKid={isKid} user={user} gN={gN} gP={gP}
             setEditMq={setEditMq} setEditMqN={setEditMqN} setEditMqS={setEditMqS} delMq={delMq}
             setTupId={setTupId} setTupS={setTupS}
             parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad}
@@ -253,12 +300,24 @@ function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
       <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
       <MoneyInput style={STY.ip} value={mS} onChange={setMS} placeholder="5 000 000" th={th} />
       {!isKid && (
-        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, width: "100%", background: mShared ? th.ac + ALPHA.soft : th.bg, border: "1.5px solid " + (mShared ? th.ac : th.bor), borderRadius: RADIUS.s + 3, padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", marginBottom: SPACE.s3 }}>
-          <span style={{ flexShrink: 0, display: "flex" }}>{GIco.family(mShared ? th.ac : th.t2, 18)}</span>
-          <span style={{ flex: 1, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: mShared ? th.ac : th.t1 }}>{lg === "uz" ? "Oila bilan ulashish" : "Share with family"}
-            <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontWeight: 400, marginTop: 2 }}>{lg === "uz" ? "Yoqilmasa \u2014 maqsadni faqat o'zingiz ko'rasiz" : "If off \u2014 only you can see this goal"}</span>
-          </span>
-          <Switch th={th} checked={mShared} onChange={setMShared} label={lg === "uz" ? "Oila bilan ulashish" : "Share with family"} />
+        <div style={{ marginBottom: SPACE.s3 }}>
+          <label style={STY.lb}>{lg === "uz" ? "Maqsad turi" : "Goal type"}</label>
+          <div style={{ display: "flex", gap: SPACE.s2 }}>
+            {[
+              { key: false, ico: GIco.target, uz: "Shaxsiy", ru: "Личная",   suz: "Faqat siz ko'rasiz",       sru: "Видите только вы" },
+              { key: true,  ico: GIco.family, uz: "Oilaviy", ru: "Семейная", suz: "Oila birga hissa qo'shadi", sru: "Копит вся семья" },
+            ].map(opt => {
+              const on = mShared === opt.key;
+              return (
+                <button key={String(opt.key)} type="button" className="ui-press" onClick={() => setMShared(opt.key)}
+                  style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 + 1, background: on ? th.ac + ALPHA.soft : th.bg, border: "1.5px solid " + (on ? th.ac : th.bor), borderRadius: RADIUS.s + 3, padding: SPACE.s3 + "px " + SPACE.s2 + "px", cursor: "pointer", fontFamily: "inherit" }}>
+                  <span style={{ display: "flex" }}>{opt.ico(on ? th.ac : th.t2, 20)}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 800, color: on ? th.ac : th.t1 }}>{lg === "uz" ? opt.uz : opt.ru}</span>
+                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>{lg === "uz" ? opt.suz : opt.sru}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
       {mS && Number(mS) > 0 && (
