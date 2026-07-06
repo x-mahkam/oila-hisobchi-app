@@ -22,7 +22,7 @@ import { Tst, Av }           from "./components/common/index.jsx";
 import { Ico }               from "./utils/icons.jsx";
 import { makeS }             from "./utils/styles.js";
 import Confetti              from "./components/common/Confetti.jsx";
-import NotifPanel            from "./components/common/NotifPanel.jsx";
+import NotifCenter          from "./components/common/NotifCenter.jsx";
 import PremiumModal          from "./components/modals/PremiumModal.jsx";
 import QarzDonePrompt        from "./components/modals/QarzDonePrompt.jsx";
 import PartialQarzModal      from "./components/modals/PartialQarzModal.jsx";
@@ -1711,7 +1711,7 @@ export default function App() {
 
       {/* Global Modals */}
       {confetti && <Confetti th={th} />}
-      {showNotifs && <NotifPanel notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} />}
+      {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
       {askTel && user && (
         <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(0,0,0,0.62)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
@@ -1878,7 +1878,7 @@ export default function App() {
             </button>
             <button onClick={() => setShowNotifs(true)} style={{ background: "transparent", border: "1px solid " + th.bor, borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", position: "relative" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a4.5 4.5 0 00-4.5 4.5v2.7L3 12h12l-1.5-2.8V6.5A4.5 4.5 0 009 2z" fill={th.t2} opacity=".15" stroke={th.t2} strokeWidth="1.3" strokeLinejoin="round" /><path d="M7.5 14.5a1.5 1.5 0 003 0" stroke={th.t2} strokeWidth="1.3" strokeLinecap="round" /></svg>
-              {unreadCount > 0 && <div style={{ position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, background: th.rd, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{unreadCount > 9 ? "9+" : unreadCount}</div>}
+              {unreadCount > 0 && <div style={{ position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, background: th.rd, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{unreadCount > 99 ? "99+" : unreadCount}</div>}
             </button>
           </div>
         </div>
