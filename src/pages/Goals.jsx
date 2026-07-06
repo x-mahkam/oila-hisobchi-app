@@ -1,4 +1,4 @@
-import { useMemo, useState, memo } from "react";
+import { useMemo, useState, memo, useEffect } from "react";
 import { MoneyInput } from "../components/common/index.jsx";
 import {
   PageHeader, SectionHeader, AppCard, Badge, EmptyState,
@@ -9,6 +9,14 @@ import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { GOAL_PRESETS, KID_GOAL_PRESETS } from "../utils/constants.js";
 import WeddingCalc from "../components/WeddingCalc.jsx";
+// ── SMART GOALS qatlami (Sprint 3A) — decoupled, App/Firebase'ga tegmaydi ──
+import { SmartGoalDetail, statusColor, useGoalMeta } from "../goals/SmartComponents.jsx";
+import { computeSmart, STATUS } from "../goals/smartEngine.js";
+import { DeadlineField, ImageField, GoalMedia } from "../goals/GoalFormFields.jsx";
+import { T } from "../goals/i18n.js";
+import { getMeta, setMeta, pushEvent, enqueuePending, reconcilePending, pruneMeta } from "../goals/smartStore.js";
+import { dispatchDue } from "../goals/notifications.js";
+import { uid as genUid } from "../utils/formatters.js";
 
 // ── Goals-lokal outline SVG ikonkalar (emoji o'rniga, DS 6) ──
 const GIco = {
@@ -25,10 +33,18 @@ const GIco = {
 };
 
 // ═══ Bitta maqsad kartasi — React.memo (4-band talabi) ═══
-const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, setEditMq, setEditMqN, setEditMqS, delMq, setTupId, setTupS, parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad }) {
+const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, setEditMq, setEditMqN, setEditMqS, delMq, setTupId, setTupS, parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad, onAddDeadline }) {
   const p = Math.round(m.jamg / m.maqsad * 100);
   const waiting = m.status === "waiting_parent";
   const confirmed = m.status === "parent_confirmed";
+
+  // ── SMART qatlami: muddat/rasm meta (localStorage) + hisoblangan ko'rsatkichlar ──
+  const meta = useGoalMeta(m.id);
+  const smart = useMemo(() => computeSmart(m, meta, new Date()), [m, meta]);
+  const [open, setOpen] = useState(false);
+  const chipColor = statusColor(smart.status, th);
+  const chipDot = smart.status === STATUS.SERIOUS || smart.status === STATUS.OVERDUE ? "🔴"
+    : smart.status === STATUS.SLIGHTLY ? "🟡" : "🟢";
 
   // ── Oilaviy maqsad: a'zolar hissasini yig'ish (uid bo'yicha) ──
   const isFamilyGoal = m.shared === true || m.type === "family";
@@ -49,7 +65,7 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
       {/* icon + title + amount + edit/del */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: SPACE.s2 + 2 }}>
         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, minWidth: 0 }}>
-          <div style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: m.rang + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{GIco.target(m.rang, 20)}</div>
+          <GoalMedia img={meta.img} rang={m.rang} size={SPACE.s8 + SPACE.s2} fallback={GIco.target(m.rang, 20)} />
           <div style={{ minWidth: 0 }}>
             <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.ism}</div>
             <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{f(m.jamg, true)} / {f(m.maqsad, true)}</div>
@@ -65,8 +81,19 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
       <div style={{ marginBottom: SPACE.s2 + 2 }}>
         <LinearProgress th={th} value={p} tone={m.rang} height={SPACE.s3} />
       </div>
+      {/* ── SMART status chip (muddat bo'lsa): holat + qolgan kun ── */}
+      {smart.hasDeadline && !smart.complete && (
+        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2 + 2, flexWrap: "wrap" }}>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, background: chipColor + ALPHA.tint, border: "1px solid " + chipColor + ALPHA.strong, borderRadius: RADIUS.pill, padding: "3px " + (SPACE.s2 + 2) + "px", ...TYPE.caption, fontWeight: 800, color: chipColor }}>
+            <span style={{ fontSize: TYPE.tiny.fontSize }}>{chipDot}</span>{T(smart.status, lg)}
+          </span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, ...TYPE.caption, color: th.t2, fontVariantNumeric: "tabular-nums" }}>
+            {GIco.clock(th.t2)}{smart.overdue ? T("overdue", lg) : smart.daysLeft + " " + T("daysShort", lg)}
+          </span>
+        </div>
+      )}
       {m.createdAt && <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{GIco.cal(th.t2)}{lg === "uz" ? "Boshlangan" : "Started"}: {m.createdAt}</div>}
-      {p < 100 && (() => {
+      {p < 100 && !smart.hasDeadline && (() => {
         const remain = m.maqsad - m.jamg;
         const perMonth = Math.ceil(m.maqsad / 12);
         const monthsLeft = Math.ceil(remain / perMonth);
@@ -160,6 +187,18 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
           <button className="ui-press" onClick={() => { setTupId(m.id); setTupS(""); }} style={{ background: m.rang + ALPHA.tint, border: "1px solid " + m.rang + ALPHA.strong, borderRadius: RADIUS.s - 1, padding: (SPACE.s1 + 1) + "px " + SPACE.s3 + "px", color: m.rang, cursor: "pointer", fontWeight: 700, fontSize: TYPE.caption.fontSize, fontFamily: "inherit" }}>{t.am}</button>
         </div>
       )}
+
+      {/* ── SMART tahlil: ochiladigan panel (Health · Prediction · Countdown · AI · Timeline · Notifs) ── */}
+      {!waiting && (
+        <button className="ui-press" onClick={() => setOpen(o => !o)} aria-expanded={open}
+          style={{ width: "100%", marginTop: SPACE.s3, background: "transparent", border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: (SPACE.s2) + "px 0", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 1, color: th.t2, fontWeight: 700, fontSize: TYPE.caption.fontSize, cursor: "pointer", fontFamily: "inherit" }}>
+          {open ? T("collapse", lg) : T("expand", lg)}{Ico.chevron(th.t2, open)}
+        </button>
+      )}
+      {open && !waiting && (
+        <SmartGoalDetail th={th} goal={m} lg={lg} f={f}
+          onAddDeadline={() => onAddDeadline && onAddDeadline(m)} />
+      )}
     </AppCard>
   );
 });
@@ -177,6 +216,48 @@ export default function GoalsPage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const [showToy, setShowToy] = useState(false);
+  // Tahrirlashda muddat/rasm (SMART meta — App state'ga tegmaydi)
+  const [editDeadline, setEditDeadline] = useState("");
+  const [editImg, setEditImg] = useState("");
+
+  // ── SMART meta'ni `maq` bilan sinxronlash: yangi maqsadlarga muddatni
+  //    bog'lash (reconcile) + o'chirilganlarni tozalash (prune) ──
+  useEffect(() => {
+    reconcilePending(maq);
+    pruneMeta(Array.isArray(maq) ? maq.map(m => m.id) : []);
+  }, [maq]);
+
+  // ── Push Notification ARXITEKTURASI: due notiflarni dispatch qilish
+  //    (default kanal no-op — FCM hali ulanmagan; dedupe store orqali) ──
+  useEffect(() => {
+    if (Array.isArray(maq) && maq.length) dispatchDue(maq.filter(m => m.uid === user.id || m.shared === true), new Date(), lg);
+  }, [maq, lg, user.id]);
+
+  // ── Tahrir panelini muddat qiymati bilan to'ldirish ──
+  useEffect(() => {
+    if (editMq != null) { const mt = getMeta(editMq); setEditDeadline(mt.deadline || ""); setEditImg(mt.img || ""); }
+  }, [editMq]);
+
+  // Yangi maqsad yaratish: mavjud addMq (o'zgarmagan) + SMART meta'ni pending'ga
+  const submitGoal = async (core, smartMeta) => {
+    const knownIds = Array.isArray(maq) ? maq.map(m => m.id) : [];
+    await addMq(core); // ← Firebase/business logic O'ZGARMAYDI
+    enqueuePending({ pid: genUid(), knownIds, ism: String(core.ism || "").trim(), maqsad: Number(core.maqsad), meta: smartMeta });
+  };
+
+  // "Muddat qo'shing" — tahrir panelini shu maqsad uchun ochadi
+  const openDeadlineEditor = (m) => { setEditMq(m.id); setEditMqN(m.ism); setEditMqS(String(m.maqsad)); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  // Tahrirni saqlash: nom/summa — mavjud saveEditMq; muddat/rasm — SMART meta
+  const handleSaveEdit = () => {
+    if (editMq != null) {
+      const prev = getMeta(editMq);
+      setMeta(editMq, { deadline: editDeadline || null, img: editImg || null });
+      pushEvent(editMq, "edited");
+      if (editDeadline && editDeadline !== prev.deadline) pushEvent(editMq, "deadline");
+    }
+    saveEditMq(); // ← mavjud logika: nom/summa saqlaydi va panelni yopadi
+  };
 
   return (
     <div>
@@ -208,7 +289,7 @@ export default function GoalsPage({
       )}
 
       {addM && (
-        <GoalForm th={th} STY={STY} lg={lg} isKid={isKid} f={f} t={t} addMq={addMq} setAddM={setAddM} />
+        <GoalForm th={th} STY={STY} lg={lg} isKid={isKid} f={f} t={t} submitGoal={submitGoal} setAddM={setAddM} />
       )}
 
       {tupId && (
@@ -229,8 +310,10 @@ export default function GoalsPage({
           <input style={STY.ip} value={editMqN} onChange={e => setEditMqN(e.target.value)} placeholder="..." />
           <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
           <MoneyInput style={STY.ip} value={editMqS} onChange={setEditMqS} placeholder="..." th={th} />
+          <DeadlineField th={th} STY={STY} lg={lg} value={editDeadline} onChange={setEditDeadline} />
+          <ImageField th={th} STY={STY} lg={lg} value={editImg} onChange={setEditImg} />
           <div style={{ display: "flex", gap: SPACE.s2 }}>
-            <PrimaryButton th={th} onClick={saveEditMq} style={{ flex: 1, marginBottom: 0 }}>{Ico.check("#fff")}{t.sv}</PrimaryButton>
+            <PrimaryButton th={th} onClick={handleSaveEdit} style={{ flex: 1, marginBottom: 0 }}>{Ico.check("#fff")}{t.sv}</PrimaryButton>
             <GhostButton th={th} onClick={() => setEditMq(null)} style={{ flex: 1 }}>{t.cn}</GhostButton>
           </div>
         </AppCard>
@@ -267,7 +350,8 @@ export default function GoalsPage({
             setEditMq={setEditMq} setEditMqN={setEditMqN} setEditMqS={setEditMqS} delMq={delMq}
             setTupId={setTupId} setTupS={setTupS}
             parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad}
-            kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />
+            kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad}
+            onAddDeadline={openDeadlineEditor} />
         ));
       })()}
     </div>
@@ -275,15 +359,23 @@ export default function GoalsPage({
 }
 
 // ── Separate, self-contained "new goal" form (has its own state) ──
-function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
+function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM }) {
   const [mN, setMN] = useState("");
   const [mS, setMS] = useState("");
   const [mR, setMR] = useState(th.gr);
   const [mShared, setMShared] = useState(false);
+  const [mDeadline, setMDeadline] = useState(""); // SMART: majburiy muddat
+  const [mImg, setMImg] = useState("");           // SMART: ixtiyoriy rasm
+  const [dlErr, setDlErr] = useState(false);
 
   const submit = async () => {
-    await addMq({ ism: mN, maqsad: mS, rang: mR, shared: isKid ? true : mShared });
-    setMN(""); setMS(""); setMR(th.gr); setMShared(false); setAddM(false);
+    if (!mDeadline) { setDlErr(true); return; } // muddat majburiy
+    const shared = isKid ? true : mShared;
+    await submitGoal(
+      { ism: mN, maqsad: mS, rang: mR, shared }, // ← addMq'ga o'zgarmagan shakl
+      { deadline: mDeadline, img: mImg || null, type: isKid ? "kid" : (shared ? "family" : "personal"), events: [] }
+    );
+    setMN(""); setMS(""); setMR(th.gr); setMShared(false); setMDeadline(""); setMImg(""); setDlErr(false); setAddM(false);
   };
 
   return (
@@ -341,6 +433,8 @@ function GoalForm({ th, STY, lg, isKid, f, t, addMq, setAddM }) {
           <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s2, paddingTop: SPACE.s2, borderTop: "1px solid " + th.bor }}>{lg === "uz" ? "Har oy ajratsangiz, shu muddatda yig'asiz" : "Save monthly to reach your goal"}</div>
         </div>
       )}
+      <DeadlineField th={th} STY={STY} lg={lg} value={mDeadline} onChange={v => { setMDeadline(v); setDlErr(false); }} error={dlErr} />
+      <ImageField th={th} STY={STY} lg={lg} value={mImg} onChange={setMImg} />
       <label style={STY.lb}>{lg === "uz" ? "Rang" : "Color"}</label>
       <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
         {[th.gr, th.ac, th.am, CHART[5], th.rd, CHART[4]].map(r => (
