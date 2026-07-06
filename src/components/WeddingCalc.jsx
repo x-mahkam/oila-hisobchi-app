@@ -9,7 +9,7 @@
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useMemo } from "react";
 import { db } from "../firebase.js";
-import { AppCard, PrimaryButton, Badge, TextInput } from "./ui/index.js";
+import { AppCard, PrimaryButton, GhostButton, Badge, TextInput } from "./ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, CHART } from "../utils/tokens.js";
 
 // ── Saqlangan to'y hisobi statuslari (token rangli, emoji yo'q) ──
@@ -25,6 +25,8 @@ const WIco = {
   cal:  (c, s = 12) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="3" width="12" height="11" rx="2" stroke={c} strokeWidth="1.3"/><path d="M2 6.5h12M5 1.5v3M11 1.5v3" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>,
   trash:(c, s = 14) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M3 4.5h10M6 4.5V3h4v1.5M4.5 4.5l.6 8a1 1 0 001 .9h3.8a1 1 0 001-.9l.6-8" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   rings:(c, s = 16) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="7.5" cy="12" r="5" stroke={c} strokeWidth="1.6"/><circle cx="12.5" cy="12" r="5" stroke={c} strokeWidth="1.6"/><path d="M7.5 7V4.5M5.5 5.5L7.5 3l2 2.5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  plus: (c, s = 15) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 3.5v9M3.5 8h9" stroke={c} strokeWidth="1.8" strokeLinecap="round"/></svg>,
+  open: (c, s = 13) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M6 3.5l4.5 4.5L6 12.5" stroke={c} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>,
 };
 
 // ── Marosimlar ──
@@ -191,6 +193,8 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
 
   const saveWedding = async () => {
     if (!data || !calc) return;
+    // To'liq snapshot — keyin qayta ochish uchun (marosim/xarajat maydonlari bilan)
+    const snapshot = { side: data.side, tpl: data.tpl, events: structuredClone(data.events), cats: structuredClone(data.cats), date: data.date || "", savedSum: data.savedSum || 0 };
     const w = {
       id: Date.now(),
       name: (wName.trim() || L("To'y hisobi", "Смета свадьбы")) + (savedList.length ? " " + (savedList.length + 1) : ""),
@@ -199,6 +203,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
       status: wStatus,            // reja | jarayon | yakun
       side: data.side, tpl: data.tpl,
       createdAt: new Date().toISOString(),
+      snapshot,
     };
     await persistSaved([w, ...savedList]);
     setWName("");
@@ -208,6 +213,23 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
   const delWedding = async (id) => {
     await persistSaved(savedList.filter(w => w.id !== id));
     ok$ && ok$(L("O'chirildi", "Удалено"));
+  };
+
+  // ── Saqlangan to'yni qayta ochish (draft sifatida yuklash) ──
+  const openWedding = async (w) => {
+    if (!w || !w.snapshot) return;
+    const next = { ...structuredClone(w.snapshot), saved: savedRef.current, upd: Date.now() };
+    setData(next); setStep(null); setEdit(null);
+    setWName(w.name || ""); setWStatus(w.status || "reja");
+    try { await db.s("toy_" + oilaId, next); } catch {}
+    ok$ && ok$(L("Hisob ochildi", "Смета открыта"));
+  };
+
+  // ── Yangi to'y hisoblashni boshlash (saqlanganlar saqlanib qoladi) ──
+  const startNew = () => {
+    setData(false); setStep("side"); setWEv([]); setEdit(null);
+    setWName(""); setWStatus("reja");
+    db.s("toy_" + oilaId, { saved: savedRef.current, upd: Date.now() }).catch(() => {});
   };
 
   // ── PDF smeta (chop etish oynasi — "Save as PDF") ──
@@ -398,7 +420,8 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
                 );
               })}
             </div>
-            <PrimaryButton th={th} onClick={saveWedding} style={{ marginBottom: 0 }}>{WIco.save("#fff", 15)}{L("Saqla", "Сохранить")}</PrimaryButton>
+            <PrimaryButton th={th} onClick={saveWedding} style={{ marginBottom: SPACE.s2 }}>{WIco.save("#fff", 15)}{L("Saqla", "Сохранить")}</PrimaryButton>
+            <GhostButton th={th} onClick={startNew} style={{ marginBottom: 0 }}>{WIco.plus(th.t1)}{L("Yangi to'y hisoblash", "Новый расчёт")}</GhostButton>
           </AppCard>
 
           {savedList.length > 0 && (
@@ -410,12 +433,16 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
                 return (
                   <AppCard th={th} key={w.id} pad={SPACE.s3} style={{ marginBottom: SPACE.s2 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
-                      <div style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: CHART[3] + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{WIco.rings(CHART[3], 20)}</div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
-                        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 - 1, flexWrap: "wrap" }}>
-                          {w.date && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.cal(th.t2)}{w.date}</span>}
-                          <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{fmt(w.total)} {L("so'm", "сум")}</span>
+                      <div onClick={() => w.snapshot && openWedding(w)} role={w.snapshot ? "button" : undefined} className={w.snapshot ? "ui-press" : undefined}
+                        style={{ display: "flex", alignItems: "center", gap: SPACE.s3, flex: 1, minWidth: 0, cursor: w.snapshot ? "pointer" : "default" }}>
+                        <div style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: CHART[3] + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{WIco.rings(CHART[3], 20)}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
+                          <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 - 1, flexWrap: "wrap" }}>
+                            {w.date && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.cal(th.t2)}{w.date}</span>}
+                            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{fmt(w.total)} {L("so'm", "сум")}</span>
+                          </div>
+                          {w.snapshot && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: CHART[3], fontWeight: 700, marginTop: SPACE.s1, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.open(CHART[3])}{L("Ochish uchun bosing", "Нажмите чтобы открыть")}</div>}
                         </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: SPACE.s2, flexShrink: 0 }}>
