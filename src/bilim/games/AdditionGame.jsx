@@ -12,7 +12,8 @@ import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE, MOTION } fr
 import { useGameEngine } from "../engine/useGameEngine.js";
 import { additionGenerator } from "./generators/addition.js";
 import { addCoins, logGameSession, bestForGame } from "../engine/persist.js";
-import { DIFF } from "../registry.jsx";
+import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
+import { DIFF, rewardOf } from "../registry.jsx";
 
 // Bir marta inject qilinadigan keyframe'lar (pulse / shake / fly)
 const CSS_ID = "bilim-game-css";
@@ -64,6 +65,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
     startDifficulty: "easy",
     name: kidName,
     lg,
+    rewards: rewardOf("math"),
   });
 
   const [count, setCount] = useState(3);           // countdown 3-2-1
@@ -72,6 +74,8 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
   const [flies, setFlies] = useState([]);          // uchuvchi coinlar
   const [saved, setSaved] = useState(false);
   const [record, setRecord] = useState(false);
+  const [leveledUp, setLeveledUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(null);
   const savingRef = useRef(false);
 
   // Countdown
@@ -97,14 +101,17 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
     savingRef.current = true;
     (async () => {
       const prevBest = await bestForGame(user.id, gameId);
+      const beforeXp = await readXp(user.id);
       await addCoins(user.id, eng.result.coins);
+      const afterXp = await addXp(user.id, eng.result.xp || 0);
       const isRec = eng.result.coins > prevBest;
+      const lvlUp = didLevelUp(beforeXp, afterXp);
       await logGameSession(user.id, {
-        gameId, correct: eng.result.correct, total: eng.result.total, pct: eng.result.pct,
+        gameId, subject: "math", correct: eng.result.correct, total: eng.result.total, pct: eng.result.pct,
         seconds: eng.result.seconds, maxCombo: eng.result.maxCombo, coins: eng.result.coins,
-        difficulty: eng.result.difficulty, newRecord: isRec,
+        xp: eng.result.xp || 0, difficulty: eng.result.difficulty, newRecord: isRec,
       });
-      setRecord(isRec); setSaved(true);
+      setRecord(isRec); setLeveledUp(lvlUp); setNewLevel(levelFor(afterXp).level); setSaved(true);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eng.phase, eng.result]);
@@ -190,6 +197,14 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
             <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.coins}</div>
           </div>
           {r.perfect && <Badge th={th} tone={PREMIUM.gold}>Perfect +{r.perfectBonus}</Badge>}
+        </AppCard>
+        <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
+          <div style={{ flex: 1 }}>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Tajriba (XP)" : lg === "ru" ? "Опыт (XP)" : "Experience (XP)"}</div>
+            <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.xp || 0}</div>
+          </div>
+          {leveledUp && newLevel && <Badge th={th} type="premium" icon={null}>{uz ? "LEVEL " : "LEVEL "}{newLevel}</Badge>}
         </AppCard>
         {/* AI tahlil */}
         <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med }}>
