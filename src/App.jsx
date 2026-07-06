@@ -41,7 +41,7 @@ import { usePremium }        from "./hooks/usePremium.js";
 import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 
 // Utils
-import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
+import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
 import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
@@ -1864,7 +1864,7 @@ export default function App() {
             </button>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{user?.ism || t.app}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{fullName(user) || t.app}</span>
                 {isPremium && <span style={{ fontSize: 8, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", color: "#fff", borderRadius: 20, padding: "1px 6px", fontWeight: 700 }}>PRO</span>}
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: -0.2 }}>
