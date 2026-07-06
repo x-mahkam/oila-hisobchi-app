@@ -195,7 +195,7 @@ const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, divider }) {
 
 export default function DashboardPage({
   user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
-  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
+  kidBalances, notifs, qarzReqs, xReqs, rates, stars, gardenData,
   setXar, setDar, setMaq, setKidBalances,
   dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
   th, t, f, ok$, buzz, addStar, fireConfetti,
