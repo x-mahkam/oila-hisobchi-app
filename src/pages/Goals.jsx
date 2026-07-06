@@ -237,14 +237,20 @@ export default function GoalsPage({
       )}
 
       {(() => {
-        // Ko'rinish huquqlari:
-        // - Bola: faqat O'ZINING orzulari + oila bilan ulashilgan (shared) maqsadlar
-        // - Katta "Mening": o'ziniki (uid'siz eski yozuvlar ham o'ziniki)
-        // - Katta "Oila": boshqalarning ULASHILGAN maqsadlari + bolalar orzulari
+        // Ko'rinish huquqlari (Firebase darajasida maq_<oilaId> allaqachon butun oilaga ochiq —
+        // bu faqat UI filtri, qo'shimcha ruxsat kerak emas):
+        // - Bola: o'z orzulari + oila bilan ulashilgan (shared) maqsadlar
+        // - Katta, hisobot huquqisiz (tab yo'q): shaxsiy + BARCHA oilaviy birga
+        // - Katta "O'zimning": faqat SHAXSIY maqsadlar
+        // - Katta "Oilamning": BARCHA oilaviy maqsadlar (kim yaratganidan qat'i nazar) + bolalar orzulari
+        const isFam = m => m.shared === true || String(m.uid).startsWith("kid");
         const filteredMaq = isKid
           ? maq.filter(m => m.uid === user.id || m.shared === true)
-          : maqTab === "mine" ? maq.filter(m => m.uid === user.id || !m.uid)
-          : maq.filter(m => m.uid && m.uid !== user.id && (m.shared === true || String(m.uid).startsWith("kid")));
+          : !canSeeReport
+            ? maq.filter(m => m.uid === user.id || !m.uid || isFam(m))
+            : maqTab === "mine"
+              ? maq.filter(m => (m.uid === user.id || !m.uid) && m.shared !== true && !String(m.uid).startsWith("kid"))
+              : maq.filter(isFam);
 
         if (filteredMaq.length === 0 && !addM) {
           return (
