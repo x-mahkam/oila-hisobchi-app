@@ -16,6 +16,10 @@ import {
   availableCount, gameCount, DIFF, TIERS, tierFor, medalSvg,
 } from "./registry.jsx";
 import { readSessions } from "./engine/persist.js";
+import { levelFor, rankFor, readXp } from "./engine/xp.js";
+import { computeAchievements } from "./engine/achievements.jsx";
+import { analyzeLearning, weeklyReport } from "./engine/analytics.js";
+import LearningProfile from "./LearningProfile.jsx";
 import BilimBozor from "../BilimBozor.jsx";
 import AdditionGame from "./games/AdditionGame.jsx";
 
@@ -86,28 +90,33 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
 
   // ── Mavjud bilim_* dan o'qish (yozuv yo'q, sxema o'zgarmaydi) ──
   const [coins, setCoins] = useState(0);
+  const [xp, setXp] = useState(0);
   const [stats, setStats] = useState({});
   const [streak, setStreak] = useState(0);
+  const [sessions, setSessions] = useState([]);
   const [parentData, setParentData] = useState([]); // ota-ona uchun bolalar bo'yicha
 
   useEffect(() => {
     if (!user?.id) return;
     if (isKid) {
       db.g("bilim_coins_" + user.id).then(v => { if (v != null) setCoins(v); }).catch(() => {});
+      db.g("bilim_xp_" + user.id).then(v => { if (v != null) setXp(Number(v) || 0); }).catch(() => {});
       db.g("bilim_stats_" + user.id).then(v => { if (v && typeof v === "object") setStats(v); }).catch(() => {});
       db.g("bilim_streak_" + user.id).then(v => { if (v != null) setStreak(v); }).catch(() => {});
+      readSessions(user.id).then(setSessions).catch(() => {});
     } else {
       // Ota-ona: har bolaning natijasini o'qib preview tayyorlash
       const kids = (azolar || []).filter(a => a.rol === "kid");
       Promise.all(kids.map(async k => {
-        const [c, s, st] = await Promise.all([
+        const [c, xpv, s, st] = await Promise.all([
           db.g("bilim_coins_" + k.id).catch(() => 0),
+          db.g("bilim_xp_" + k.id).catch(() => 0),
           db.g("bilim_stats_" + k.id).catch(() => ({})),
           db.g("bilim_streak_" + k.id).catch(() => 0),
         ]);
         const learned = s && typeof s === "object" ? Object.keys(s).length : 0;
-        const sessions = await readSessions(k.id);
-        return { id: k.id, name: fullName(k), photo: k.photo, coins: c || 0, learned, streak: st || 0, sessions };
+        const ksessions = await readSessions(k.id);
+        return { id: k.id, name: fullName(k), photo: k.photo, coins: c || 0, xp: Number(xpv) || 0, learned, streak: st || 0, sessions: ksessions };
       })).then(setParentData).catch(() => {});
     }
   }, [user?.id, isKid, azolar]);
@@ -135,10 +144,20 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
 
   // ═══ PLAY — real o'yin (hozircha english/words → BilimBozor) ═══
   if (view === "play" && game && game.load === "english/words") {
-    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setView("detail")} />;
+    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} embedded gameTitle={game.name[lg] || game.name.uz} onBack={() => setView("detail")} />;
   }
   if (view === "play" && game && game.load === "math/addition") {
     return <AdditionGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+
+  // ═══ LEARNING PROFILE (bola) ═══
+  if (view === "profile") {
+    return (
+      <div>
+        <PageHeader th={th_(dark)} title={uz ? "Mening profilim" : lg === "ru" ? "Мой профиль" : "My profile"} onBack={() => setView("cats")} />
+        <LearningProfile th={th_(dark)} lg={lg} user={user} coins={coins} xp={xp} streak={streak} sessions={sessions} />
+      </div>
+    );
   }
 
   // ═══ PARENT PREVIEW — o'yin ko'rinmaydi, faqat natija ═══
@@ -219,32 +238,65 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   }
 
   // ═══ KATEGORIYALAR (bola bosh ekrani) ═══
-  const { cur, next } = tierFor(coins);
+  const lv = levelFor(xp);
+  const rankObj = rankFor(lv.level);
+  const rankLabel = rankObj[lg] || rankObj.uz;
+  const achievements = computeAchievements({ coins, xp, streak }, sessions, lg);
+  const unlocked = achievements.filter(a => a.unlocked);
   return (
     <div>
       <PageHeader th={th} title={uz ? "Bilim Bozori" : lg === "ru" ? "Рынок знаний" : "Knowledge Market"} onBack={onBack} />
 
-      {/* Coin + achievement bosh paneli */}
-      <AppCard th={th} style={{ background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", border: "none" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
-          <div style={{ width: COMP.touchMin + SPACE.s2, height: COMP.touchMin + SPACE.s2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            {cur ? medalSvg("#fff", 28) : <span style={{ ...TYPE.title, color: "#fff" }}>{coins}</span>}
-          </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>{uz ? "Bilim Coin" : "Coins"}</div>
-            <div style={{ ...TYPE.heading, fontWeight: 800, color: "#fff" }}>{coins} {cur ? "· " + (cur[lg] || cur.uz) : ""}</div>
-            {next && (
-              <div style={{ marginTop: SPACE.s1 }}>
-                <div style={{ height: 5, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
-                  <div style={{ width: Math.min(100, Math.round(coins / next.need * 100)) + "%", height: "100%", background: "#fff" }} />
-                </div>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>{next.need - coins} coin → {next[lg] || next.uz}</div>
+      {/* Learning header: Level + XP + Coin (bosilsa profil) */}
+      <button className="ui-press" onClick={() => setView("profile")} style={{ width: "100%", textAlign: "left", fontFamily: "inherit", cursor: "pointer", border: "none", padding: 0, marginBottom: SPACE.s3, borderRadius: RADIUS.l, overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(135deg," + rankObj.color + "," + th.ac2 + ")", padding: SPACE.s4, boxShadow: SHADOW.e1(th.ac) }}>
+          <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <div style={{ padding: 3, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.3)", display: "inline-flex" }}>
+                <UIAvatar th={th} src={user?.photo} name={fullName(user)} size={COMP.touchMin + SPACE.s2} />
               </div>
-            )}
+              <span style={{ position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)", background: "#fff", color: rankObj.color, ...TYPE.tiny, fontWeight: 800, letterSpacing: 0, borderRadius: RADIUS.pill, padding: "1px 8px" }}>LVL {lv.level}</span>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user)}</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.9)" }}>{rankLabel}</div>
+              <div style={{ marginTop: SPACE.s1 }}>
+                <div style={{ height: 6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
+                  <div style={{ width: lv.pct + "%", height: "100%", background: "#fff" }} />
+                </div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>{lv.max ? (uz ? "Maksimal daraja" : "Max level") : (lv.toNext + " XP → LVL " + (lv.level + 1))}</div>
+              </div>
+            </div>
           </div>
-          {streak > 0 && <Badge th={th} type="warning">{streak} {uz ? "kun" : "d"}</Badge>}
+          {/* Coin + XP + streak chiplari */}
+          <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3 }}>
+            <span style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + SPACE.s3, textAlign: "center" }}>
+              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>Coin</span>
+              <span style={{ display: "block", ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{coins}</span>
+            </span>
+            <span style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + SPACE.s3, textAlign: "center" }}>
+              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>XP</span>
+              <span style={{ display: "block", ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{xp}</span>
+            </span>
+            <span style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + SPACE.s3, textAlign: "center" }}>
+              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>{uz ? "Streak" : "Streak"}</span>
+              <span style={{ display: "block", ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{streak}</span>
+            </span>
+          </div>
         </div>
-      </AppCard>
+      </button>
+
+      {/* Yutuqlar (umumiy, SVG badge) */}
+      <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlocked.length}/{achievements.length}</Badge>}>{uz ? "Yutuqlar" : lg === "ru" ? "Достижения" : "Achievements"}</SectionHeader>
+      <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s3, WebkitOverflowScrolling: "touch" }}>
+        {achievements.map(a => (
+          <div key={a.id} style={{ flexShrink: 0, width: SPACE.s16 + SPACE.s6, textAlign: "center", background: a.unlocked ? a.color + ALPHA.faint : th.sur, border: a.unlocked ? "1.5px solid " + a.color + ALPHA.strong : "1px dashed " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s2, opacity: a.unlocked ? 1 : 0.6 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 2, filter: a.unlocked ? "none" : "grayscale(1)" }}>{a.icon(a.unlocked ? a.color : th.t3, 26)}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: a.unlocked ? th.t1 : th.t3, lineHeight: 1.2 }}>{a.title}</div>
+            {!a.unlocked && <div style={{ ...TYPE.tiny, letterSpacing: 0, color: th.t3, marginTop: 1 }}>{a.cur}/{a.goal}</div>}
+          </div>
+        ))}
+      </div>
 
       <SectionHeader th={th}>{uz ? "Kategoriyalar" : lg === "ru" ? "Категории" : "Categories"}</SectionHeader>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 }}>
@@ -265,43 +317,79 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
   return (
     <>
       {data.map(k => {
-        const { cur } = tierFor(k.coins);
-        const estMin = Math.round(k.learned * 0.5); // taxminiy: har so'z ~30s
-        const tip = k.learned === 0
-          ? (uz ? "Hali boshlamagan — birga boshlab bering" : "Not started — start together")
-          : k.streak >= 3
-            ? (uz ? "Zo'r sur'at! Rag'batlantiring" : "Great streak! Encourage them")
-            : (uz ? "Kunlik odat shakllantiring" : "Build a daily habit");
+        const lv = levelFor(k.xp || 0);
+        const rankObj = rankFor(lv.level);
+        const analysis = analyzeLearning(k.sessions || [], lg, k.name, 30);
+        const week = weeklyReport(k.sessions || [], lg, k.name);
+        const D = { easy: uz ? "Oson" : "Easy", medium: uz ? "O'rta" : "Medium", hard: uz ? "Qiyin" : "Hard" };
         return (
           <AppCard key={k.id} th={th}>
+            {/* Sarlavha: avatar + level + rank */}
             <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3 }}>
-              <UIAvatar th={th} src={k.photo} name={k.name} size={COMP.touchMin} />
+              <div style={{ position: "relative", flexShrink: 0 }}>
+                <UIAvatar th={th} src={k.photo} name={k.name} size={COMP.touchMin} />
+                <span style={{ position: "absolute", bottom: -3, right: -3, background: rankObj.color, color: "#fff", ...TYPE.tiny, fontWeight: 800, letterSpacing: 0, borderRadius: RADIUS.pill, padding: "0px 5px", border: "1.5px solid " + th.sur }}>{lv.level}</span>
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{k.name}</div>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{uz ? "So'z o'rgan (Ingliz tili)" : lg === "ru" ? "Учит слова" : "Learning words"}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: rankObj.color, marginTop: 1, fontWeight: 700 }}>{rankObj[lg] || rankObj.uz}</div>
               </div>
-              {cur && <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>{medalSvg(cur.color, 18)}</span>}
             </div>
+            {/* Coin · XP · Streak */}
             <div style={{ display: "flex", gap: SPACE.s2 }}>
-              <StatCard th={th} value={k.coins} label={uz ? "Coin" : "Coins"} tone={PREMIUM.gold} />
-              <StatCard th={th} value={k.learned} label={uz ? "Natija (so'z)" : lg === "ru" ? "Слова" : "Words"} tone={th.gr} />
-              <StatCard th={th} value={"~" + estMin + (uz ? " daq" : "m")} label={uz ? "Vaqt" : lg === "ru" ? "Время" : "Time"} tone={th.ac} />
+              <StatCard th={th} value={k.coins} label="Coin" tone={PREMIUM.gold} />
+              <StatCard th={th} value={k.xp || 0} label="XP" tone={th.ac} />
+              <StatCard th={th} value={k.streak || 0} label={uz ? "Streak" : "Streak"} tone={th.rd} />
             </div>
+
+            {/* Oxirgi o'yin natijasi (o'yinning o'zi ko'rinmaydi) */}
             {k.sessions && k.sessions.length > 0 && (() => {
               const last = k.sessions[0];
-              const D = { easy: uz ? "Oson" : "Easy", medium: uz ? "O'rta" : "Medium", hard: uz ? "Qiyin" : "Hard" };
+              const subj = analysis.bySubject.find(x => x.cat === (last.gameId || "").split("/")[0]);
               const mm = Math.floor((last.seconds || 0) / 60), ssx = (last.seconds || 0) % 60;
               return (
                 <div style={{ marginTop: SPACE.s3, background: th.gr + ALPHA.faint, borderRadius: RADIUS.s, padding: SPACE.s3, border: "1px solid " + th.gr + ALPHA.med }}>
-                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 2 }}>{uz ? "Bugungi o'yin" : lg === "ru" ? "Игра сегодня" : "Today's game"}</div>
-                  <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700 }}>{uz ? "Qo'shish" : "Addition"} — {last.correct}/{last.total} · {last.pct}%</div>
-                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{(mm ? mm + "m " : "") + ssx + "s"} · {last.coins} coin · {D[last.difficulty] || last.difficulty}</div>
+                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 2 }}>{uz ? "Oxirgi o'yin" : lg === "ru" ? "Последняя игра" : "Last game"}</div>
+                  <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700 }}>{subj ? subj.name : (last.gameId || "")} — {last.correct}/{last.total} · {last.pct}%</div>
+                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{(mm ? mm + "m " : "") + ssx + "s"} · +{last.coins} coin · +{last.xp || 0} XP · {D[last.difficulty] || last.difficulty}</div>
                 </div>
               );
             })()}
+
+            {/* 30 kunlik fan kesimi */}
+            {analysis.bySubject.length > 0 && (
+              <div style={{ marginTop: SPACE.s3 }}>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Oxirgi 30 kun (fan bo'yicha)" : lg === "ru" ? "30 дней" : "Last 30 days"}</div>
+                {analysis.bySubject.slice(0, 4).map(sub => (
+                  <div key={sub.cat} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s1 }}>
+                    <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t1, width: SPACE.s16, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.name}</span>
+                    <LinearProgress th={th} value={sub.pct} tone={sub.pct >= 80 ? th.gr : sub.pct >= 60 ? th.am : th.rd} style={{ flex: 1 }} />
+                    <span style={{ ...TYPE.tiny, letterSpacing: 0, fontWeight: 700, color: th.t2, width: SPACE.s8, textAlign: "right", flexShrink: 0 }}>{sub.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Haftalik hisobot */}
+            <div style={{ marginTop: SPACE.s3, display: "flex", gap: SPACE.s2 }}>
+              <div style={{ flex: 1, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s2, textAlign: "center" }}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1 }}>{week.games}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>{uz ? "Haftalik o'yin" : "Games/wk"}</div>
+              </div>
+              <div style={{ flex: 1, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s2, textAlign: "center" }}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: PREMIUM.gold }}>+{week.coins}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>Coin/wk</div>
+              </div>
+              <div style={{ flex: 1, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s2, textAlign: "center" }}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.ac }}>+{week.xp}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>XP/wk</div>
+              </div>
+            </div>
+
+            {/* AI xulosasi */}
             <div style={{ marginTop: SPACE.s3, background: th.ac + ALPHA.faint, borderRadius: RADIUS.s, padding: SPACE.s3, display: "flex", gap: SPACE.s2, alignItems: "flex-start" }}>
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 2a5 5 0 00-3 9c.6.5 1 1 1 2h4c0-1 .4-1.5 1-2a5 5 0 00-3-9z" stroke={th.ac} strokeWidth="1.4" fill={th.ac} fillOpacity="0.15"/><path d="M8 16h4M8.5 18h3" stroke={th.ac} strokeWidth="1.4" strokeLinecap="round"/></svg>
-              <span style={{ ...TYPE.caption, color: th.t1 }}><b style={{ color: th.ac }}>{uz ? "AI tavsiyasi: " : "AI: "}</b>{tip}</span>
+              <span style={{ ...TYPE.caption, color: th.t1 }}><b style={{ color: th.ac }}>{uz ? "AI: " : "AI: "}</b>{analysis.tip}{analysis.weakTip ? " " + analysis.weakTip : ""}</span>
             </div>
           </AppCard>
         );
