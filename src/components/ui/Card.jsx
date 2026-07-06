@@ -26,14 +26,18 @@ export const AppCard = memo(function AppCard({ th, children, onClick, pad = SPAC
 });
 
 /** Statistika katagi (raqam+label). Qatorda 3-4 tasi yonma-yon. */
-export const StatCard = memo(function StatCard({ th, icon, value, label, tone, style }) {
-  return (
-    <div style={{ flex: 1, minWidth: 0, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s2 + "px", textAlign: "center", boxSizing: "border-box", ...style }}>
+export const StatCard = memo(function StatCard({ th, icon, value, label, tone, onClick, style }) {
+  injectUiCss();
+  const s = { flex: 1, minWidth: 0, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s2 + "px", textAlign: "center", boxSizing: "border-box", ...style };
+  const inner = (
+    <>
       {icon && <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s1 + 2 }}>{icon}</div>}
       <div style={{ ...TYPE.heading, color: tone || th.t1, fontVariantNumeric: "tabular-nums" }}>{value}</div>
       <div style={{ ...TYPE.tiny, color: th.t2, marginTop: SPACE.s1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{label}</div>
-    </div>
+    </>
   );
+  if (onClick) return <button className="ui-press" onClick={onClick} style={{ ...s, cursor: "pointer", fontFamily: "inherit" }}>{inner}</button>;
+  return <div style={s}>{inner}</div>;
 });
 
 /** Ma'lumot urg'usi (indigo soft). Bir ekranda ≤2. */
