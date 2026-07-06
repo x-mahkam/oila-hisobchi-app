@@ -8,6 +8,9 @@ export const td = () => new Date().toISOString().slice(0, 10);
 /** Hozirgi vaqt: HH:MM */
 export const nt = () => new Date().toTimeString().slice(0, 5);
 
+/** To'liq ism: ism + familya (familya bo'lsa). Familyasiz a'zolar — faqat ism. */
+export const fullName = (p) => p ? (((p.ism || "") + (p.familya ? " " + p.familya : "")).trim()) : "";
+
 /** Joriy oy: YYYY-MM */
 export const tm = () => new Date().toISOString().slice(0, 7);
 
