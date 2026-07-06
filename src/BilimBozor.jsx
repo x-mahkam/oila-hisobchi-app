@@ -91,13 +91,13 @@ const getMultiplier = (seenCount) => {
 
 const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
 
-export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar }) {
+export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, embedded=false, gameTitle }) {
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh";
   const oilaId = user?.oilaId;
   const L = (uz, ru=uz) => lg==="ru" ? ru : uz;
 
-  const [tab, setTab]               = useState(isKid ? "oyin" : "bozor");
+  const [tab, setTab]               = useState(embedded ? "oyin" : (isKid ? "oyin" : "bozor"));
   const [vazifalar, setVazifalar]   = useState([]);
   const [showAddV, setShowAddV]     = useState(false);
   const [vCoins, setVCoins]         = useState("");
@@ -359,7 +359,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar }
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M19 12H5M5 12l7 7M5 12l7-7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"/></svg>
         </button>
         <div style={{textAlign:"center"}}>
-          <div style={{fontSize:17,fontWeight:900,color:"#fff"}}>📚 {L("Bilim Bozori","Рынок знаний")}</div>
+          <div style={{fontSize:17,fontWeight:900,color:"#fff"}}>{embedded ? (gameTitle || L("So'z o'rgan","Учи слова")) : L("Bilim Bozori","Рынок знаний")}</div>
           <div style={{fontSize:12,color:"rgba(255,255,255,0.85)",marginTop:2}}>
             🪙 {bilimCoins} {L("Bilim Coin","монет")}
             {streak>1 && <span style={{marginLeft:8}}>🔥{streak}</span>}
@@ -368,8 +368,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar }
         <div style={{width:38}}/>
       </div>
 
-      {/* Tabs */}
-      <div style={{display:"flex",background:dark?"#1e293b":"#fff",borderBottom:`2px solid ${dark?"#334155":"#e2e8f0"}`}}>
+      {/* Tabs (embedded rejimda yashiriladi — platforma navigatsiyasi tashqarida) */}
+      {!embedded && <div style={{display:"flex",background:dark?"#1e293b":"#fff",borderBottom:`2px solid ${dark?"#334155":"#e2e8f0"}`}}>
         {[
           {id:"oyin",   label:L("🎮 O'yin","🎮 Игра")},
           {id:"bozor",  label:L("🛒 Bozor","🛒 Рынок")},
@@ -380,7 +380,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar }
             {t.label}
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* ══════════ O'YIN ══════════════════════════════════════ */}
       {tab==="oyin" && (
