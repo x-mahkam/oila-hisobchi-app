@@ -55,6 +55,21 @@ service cloud.firestore {
     function isMyKidDoc(id) {
       return mySessKid() != 'NONE' && id == (DB() + 'user_' + mySessKid());
     }
+    // Hujjat MENING bola uid'im bilan tugaydimi? (notif_<kid>, xreq_<kid>,
+    //  kidgift_<kid>, kidledger_<kid> ...). Bola anonim auth uid'i har sessiyada
+    //  o'zgargani uchun docIsMyUid ishlamaydi — bu yo'l ksess.v.kid orqali beradi.
+    function docIsMySessKid(id) {
+      return mySessKid() != 'NONE' && id.matches('.*_' + mySessKid());
+    }
+    // Global bolalar reytingi (liderbord) — barcha autentifikatsiyalangan
+    //  foydalanuvchilar O'QIYDI (ommaviy, maxfiy moliyaviy tafsilotsiz: taxallus + ball).
+    //  kb_<kidId> hujjatlari `c: "kb"` kanalida; eski yagona `kids_board` blobi ham.
+    function isKidsBoardChannel(res) {
+      return res != null && ('c' in res.data) && res.data.c == 'kb';
+    }
+    function isKidsBoardDoc(id) {
+      return id == (DB() + 'kids_board') || id.matches(DB() + 'kb_.*');
+    }
 
     // Hujjat docId'sida mening oilaId'im bormi? (masalan maq_<oila>, x_<oila>_<uid>)
     //  Bu get()-ning ichma-ich .v.oilaId muammosini chetlab o'tuvchi bardoshli usul:
@@ -117,21 +132,24 @@ service cloud.firestore {
                   || (signedIn() && isOilaDoc(docId))
                   || (signedIn() && isMine())
                   || (signedIn() && isMyKidDoc(docId))
+                  || (signedIn() && docIsMySessKid(docId))
+                  || (signedIn() && isKidsBoardDoc(docId))
+                  || (signedIn() && isKidsBoardChannel(resource))
                   || (signedIn() && mineByUser(resource))
                   || (signedIn() && mineByOila(resource))
                   || (signedIn() && docHasMyOila(docId))
                   || (signedIn() && docIsMyUid(docId))
                   || (signedIn() && myChannel(resource));
 
-      allow create: if signedIn() && (isMine() || isMyKidDoc(docId) || isLookup(docId) || writeOk() || docHasMyOila(docId) || docIsMyUid(docId));
+      allow create: if signedIn() && (isMine() || isMyKidDoc(docId) || docIsMySessKid(docId) || isLookup(docId) || writeOk() || docHasMyOila(docId) || docIsMyUid(docId));
 
       allow update: if signedIn() && (
-                       isMine() || isMyKidDoc(docId) || isLookup(docId)
+                       isMine() || isMyKidDoc(docId) || docIsMySessKid(docId) || isLookup(docId)
                        || (writeOk() && (mineByUser(resource) || mineByOila(resource)))
                        || docHasMyOila(docId) || docIsMyUid(docId)
                     );
 
-      allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || docHasMyOila(docId) || docIsMyUid(docId) || myChannel(resource));
+      allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || docHasMyOila(docId) || docIsMyUid(docId) || docIsMySessKid(docId) || myChannel(resource));
     }
 
     match /{document=**} { allow read, write: if false; }
