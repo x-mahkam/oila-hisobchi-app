@@ -142,7 +142,7 @@ export default function ProfilePage({
   const STY = useMemo(() => makeS(th), [th]);
   const uz = lg === "uz";
   // To'liq ism: ism + familya (familya bo'lsa). Barcha ko'rsatishlar shu orqali.
-  const fullName = (p) => p ? ((p.ism || "") + (p.familya ? " " + p.familya : "")).trim() : "";
+  const fullName = (p) => p ? (p.familya ? (p.familya + " " + (p.ism || "")) : (p.ism || "")).trim() : "";
 
   // ═══ Statistika — faqat mavjud ma'lumotlardan, og'ir hisob memoizatsiya qilingan ═══
   const pStats = useMemo(() => {
