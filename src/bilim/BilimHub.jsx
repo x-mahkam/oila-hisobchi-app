@@ -15,7 +15,9 @@ import {
   CATEGORIES, GAMES, catById, gamesOf, gameById, isAvailable,
   availableCount, gameCount, DIFF, TIERS, tierFor, medalSvg,
 } from "./registry.jsx";
+import { readSessions } from "./engine/persist.js";
 import BilimBozor from "../BilimBozor.jsx";
+import AdditionGame from "./games/AdditionGame.jsx";
 
 const diffColor = (tone, th) => ({ gr: th.gr, am: th.am, rd: th.rd }[tone] || th.ac);
 const grad = (g, th) => "linear-gradient(135deg," + (th[g.grad[0]] || th.ac) + "," + (th[g.grad[1]] || th.ac2) + ")";
@@ -104,7 +106,8 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
           db.g("bilim_streak_" + k.id).catch(() => 0),
         ]);
         const learned = s && typeof s === "object" ? Object.keys(s).length : 0;
-        return { id: k.id, name: fullName(k), photo: k.photo, coins: c || 0, learned, streak: st || 0 };
+        const sessions = await readSessions(k.id);
+        return { id: k.id, name: fullName(k), photo: k.photo, coins: c || 0, learned, streak: st || 0, sessions };
       })).then(setParentData).catch(() => {});
     }
   }, [user?.id, isKid, azolar]);
@@ -133,6 +136,9 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   // ═══ PLAY — real o'yin (hozircha english/words → BilimBozor) ═══
   if (view === "play" && game && game.load === "english/words") {
     return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "math/addition") {
+    return <AdditionGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
   }
 
   // ═══ PARENT PREVIEW — o'yin ko'rinmaydi, faqat natija ═══
@@ -281,6 +287,18 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
               <StatCard th={th} value={k.learned} label={uz ? "Natija (so'z)" : lg === "ru" ? "Слова" : "Words"} tone={th.gr} />
               <StatCard th={th} value={"~" + estMin + (uz ? " daq" : "m")} label={uz ? "Vaqt" : lg === "ru" ? "Время" : "Time"} tone={th.ac} />
             </div>
+            {k.sessions && k.sessions.length > 0 && (() => {
+              const last = k.sessions[0];
+              const D = { easy: uz ? "Oson" : "Easy", medium: uz ? "O'rta" : "Medium", hard: uz ? "Qiyin" : "Hard" };
+              const mm = Math.floor((last.seconds || 0) / 60), ssx = (last.seconds || 0) % 60;
+              return (
+                <div style={{ marginTop: SPACE.s3, background: th.gr + ALPHA.faint, borderRadius: RADIUS.s, padding: SPACE.s3, border: "1px solid " + th.gr + ALPHA.med }}>
+                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 2 }}>{uz ? "Bugungi o'yin" : lg === "ru" ? "Игра сегодня" : "Today's game"}</div>
+                  <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700 }}>{uz ? "Qo'shish" : "Addition"} — {last.correct}/{last.total} · {last.pct}%</div>
+                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{(mm ? mm + "m " : "") + ssx + "s"} · {last.coins} coin · {D[last.difficulty] || last.difficulty}</div>
+                </div>
+              );
+            })()}
             <div style={{ marginTop: SPACE.s3, background: th.ac + ALPHA.faint, borderRadius: RADIUS.s, padding: SPACE.s3, display: "flex", gap: SPACE.s2, alignItems: "flex-start" }}>
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 2a5 5 0 00-3 9c.6.5 1 1 1 2h4c0-1 .4-1.5 1-2a5 5 0 00-3-9z" stroke={th.ac} strokeWidth="1.4" fill={th.ac} fillOpacity="0.15"/><path d="M8 16h4M8.5 18h3" stroke={th.ac} strokeWidth="1.4" strokeLinecap="round"/></svg>
               <span style={{ ...TYPE.caption, color: th.t1 }}><b style={{ color: th.ac }}>{uz ? "AI tavsiyasi: " : "AI: "}</b>{tip}</span>

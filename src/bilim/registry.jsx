@@ -89,7 +89,7 @@ export const GAMES = [
     load: "english/words",   // Hub bu id ni mavjud BilimBozor o'yiniga ulaydi
   },
   // ── Reja qilingan o'yinlar (metadata tayyor; komponent keyin) ──
-  { id: "math/addition",    category: "math",  name: { uz: "Qo'shish", ru: "Сложение", en: "Addition" },     desc: { uz: "Sonlarni qo'shishni mashq qil", ru: "Практика сложения", en: "Practice adding numbers" }, icon: BIco.plus,   difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
+  { id: "math/addition",    category: "math",  name: { uz: "Qo'shish", ru: "Сложение", en: "Addition" },     desc: { uz: "Sonlarni qo'shishni mashq qil", ru: "Практика сложения", en: "Practice adding numbers" }, icon: BIco.plus,   difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false, load: "math/addition" },
   { id: "math/subtraction", category: "math",  name: { uz: "Ayirish", ru: "Вычитание", en: "Subtraction" },   desc: { uz: "Ayirishni o'rgan", ru: "Учись вычитать", en: "Learn subtraction" },                     icon: BIco.minus,  difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
   { id: "math/multiply",    category: "math",  name: { uz: "Ko'paytirish", ru: "Умножение", en: "Multiply" }, desc: { uz: "Ko'paytirish jadvali", ru: "Таблица умножения", en: "Times tables" },                   icon: BIco.math,   difficulty: "medium", minutes: 10, maxCoin: 15, premium: false },
   { id: "english/colors",   category: "english", name: { uz: "Ranglar", ru: "Цвета", en: "Colors" },          desc: { uz: "Inglizcha ranglarni o'rgan", ru: "Учи цвета", en: "Learn colors in English" },          icon: BIco.palette,difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
