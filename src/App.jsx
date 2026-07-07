@@ -1730,7 +1730,7 @@ export default function App() {
       {showBilim && (
         <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: th.bg, zIndex: 1500, overflowY: "auto", padding: "16px", boxSizing: "border-box" }}>
           <div style={{ maxWidth: 430, margin: "0 auto" }}>
-            <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
+            <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} gardenData={gardenData} onGarden={() => { setShowBilim(false); setScr("profil"); setPTab("garden"); }} />
           </div>
         </div>
       )}
