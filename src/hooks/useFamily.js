@@ -33,6 +33,14 @@ export function useFamily() {
     const v = vazifalar.find(x => x.id===id);
     if (!v) return;
 
+    // Muddat forfeit (intizom): muddati o'tgan bo'lsa mukofot berilmaydi.
+    if (v.deadline && td() > v.deadline && v.status !== "approved") {
+      const updX = vazifalar.map(x => x.id===id ? {...x, status:"expired"} : x);
+      await db.s("vazifa_" + user.oilaId, updX);
+      setVazifalar(updX);
+      return ok$(lg==="uz" ? "Muddati o'tgan — mukofot berilmadi" : "Deadline passed — no reward", "err");
+    }
+
     // Balans tekshirish
     const myDar = dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
     const myXar = xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);

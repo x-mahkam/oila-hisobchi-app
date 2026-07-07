@@ -417,6 +417,7 @@ export default function App() {
   const [vReward,   setVReward]   = useState("");
   const [vAssignee, setVAssignee] = useState("");
   const [vEmoji,    setVEmoji]    = useState("📚");
+  const [vDeadline, setVDeadline] = useState(""); // vazifa muddati (ixtiyoriy; kechiksa mukofot yo'q)
 
   // Auth form states
   const [reg,          setReg]          = useState(false);
@@ -1187,10 +1188,10 @@ export default function App() {
     if (!vTitle.trim() || !vReward || Number(vReward) <= 0 || !vAssignee) return ok$(lg === "uz" ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
     buzz(12);
     const kd = azolar.find(a => a.id === vAssignee);
-    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, createdByName: user.ism || "", status: "pending", sana: td(), doneSana: "", paidSana: "" };
+    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, createdByName: user.ism || "", status: "pending", sana: td(), doneSana: "", paidSana: "", deadline: vDeadline || "" };
     const upd = [item, ...vazifalar];
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
-    setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚");
+    setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚"); setVDeadline("");
     ok$(lg === "uz" ? "Vazifa qo'shildi! 🎯" : "Task added!");
   };
   const delVazifa = async (id) => {
@@ -1689,7 +1690,7 @@ export default function App() {
 
   // ── Nav items ─────────────────────────────────────────────
   const navItems = isKid
-    ? [{ id: "bosh", lb: t.home }, { id: "vazifa", lb: lg === "uz" ? "Vazifa" : "Tasks" }, { id: "maqsad", lb: t.goal }]
+    ? [{ id: "bosh", lb: t.home }, { id: "vazifa", lb: lg === "uz" ? "Vazifa" : "Tasks" }, { id: "bilim", lb: lg === "uz" ? "Bilim" : "Learn" }, { id: "maqsad", lb: t.goal }]
     : [{ id: "bosh", lb: t.home }, { id: "qarz", lb: lg === "uz" ? "Qarz" : "Debt" }, { id: "qoshish", pr: true }, { id: "maqsad", lb: t.goal }, { id: "hisobot", lb: t.rep }];
 
   // ── Shared page props ─────────────────────────────────────
@@ -1900,7 +1901,8 @@ export default function App() {
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
         {scr === "activity" && <ActivityCenter {...pageProps} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
-        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
+        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} vDeadline={vDeadline} setVDeadline={setVDeadline} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
+        {scr === "bilim"   && <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setScr("bosh")} gardenData={gardenData} onGarden={() => { setScr("profil"); setPTab("garden"); }} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} advErr={advErr} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} newF={newF} setNewF={setNewF} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidSurname={kidSurname} setKidSurname={setKidSurname} kidBirthYear={kidBirthYear} setKidBirthYear={setKidBirthYear} kidGender={kidGender} setKidGender={setKidGender} kidGrade={kidGrade} setKidGrade={setKidGrade} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} delKidAccount={delKidAccount} purgeData={purgeData} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}

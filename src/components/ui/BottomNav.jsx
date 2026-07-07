@@ -45,6 +45,14 @@ export default function BottomNav({
                 <path d="M8 16h9" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             )}
+            {item.id==="bilim" && (
+              <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+                <path d="M5 11v9a1 1 0 001 1h14a1 1 0 001-1v-9" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4" fill={scr===item.id?th.ac:th.t2} opacity=".15" strokeLinejoin="round"/>
+                <path d="M5 11v9a1 1 0 001 1h14a1 1 0 001-1v-9" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4" fill="none" strokeLinejoin="round"/>
+                <path d="M3.5 6h19l-1 4.2a2.2 2.2 0 01-4.3.1 2.2 2.2 0 01-4.35 0 2.2 2.2 0 01-4.35 0 2.2 2.2 0 01-4.3-.1L3.5 6z" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.4" strokeLinejoin="round"/>
+                <path d="M10.5 21v-4.5h5V21" stroke={scr===item.id?th.ac:th.t2} strokeWidth="1.3" strokeLinejoin="round"/>
+              </svg>
+            )}
             <span style={{ fontSize:9, fontWeight:700, letterSpacing:.5, color:scr===item.id?th.ac:th.t2 }}>{item.lb}</span>
           </button>
       )}

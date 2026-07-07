@@ -95,6 +95,16 @@ const statusMeta = (st, th, lg) => {
   }
 };
 
+// ── Bugungi sana (mahalliy; UTC siljishisiz) ──
+const TODAY_STR = () => { const d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+const addDaysStr = (n) => { const d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+// Muddatni hisobga olgan ko'rinish holati: muddati o'tib, hali tasdiqlanmagan bo'lsa → "expired"
+const effStatus = (v) => {
+  if (v.status === "approved" || v.status === "rejected" || v.status === "expired") return v.status;
+  if (v.deadline && TODAY_STR() > v.deadline) return "expired";
+  return v.status;
+};
+
 // ═══ RewardChip — mukofot (kit Badge, React.memo) ═══
 const RewardChip = memo(function RewardChip({ th, amount }) {
   return <Badge th={th} type="success" icon={TIco.coin(th.gr, 11)}>+{f(amount, true)}</Badge>;
@@ -109,8 +119,9 @@ const StatusBadge = memo(function StatusBadge({ th, lg, status }) {
 // ═══ TaskCard — bitta vazifa kartasi (AppCard ichida, React.memo) ═══
 // Tuzilishi: Icon → Title → (kid) → Reward → Sana → Progress → Status → Actions
 const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAskDelete }) {
-  const m = statusMeta(v.status, th, lg);
-  const st = v.status;
+  const st = effStatus(v);
+  const m = statusMeta(st, th, lg);
+  const dlPast = v.deadline && TODAY_STR() > v.deadline && st !== "approved";
   return (
     <AppCard th={th} style={{ position: "relative", overflow: "hidden", paddingLeft: SPACE.s4 + SPACE.s1 }}>
       {/* chap status chizig'i */}
@@ -138,9 +149,10 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
         </div>
       </div>
       {/* Sana / muddat qatori */}
-      {(v.sana || v.doneSana) && (
-        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, marginTop: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2 }}>
+      {(v.sana || v.doneSana || v.deadline) && (
+        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, marginTop: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, flexWrap: "wrap" }}>
           {v.sana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.cal(th.t3)}{lg === "uz" ? "Berilgan" : "Assigned"}: {v.sana}</span>}
+          {v.deadline && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, color: dlPast ? th.rd : th.am, fontWeight: 700 }}>{TIco.clock(dlPast ? th.rd : th.am)}{lg === "uz" ? "Muddat" : "Due"}: {v.deadline}{dlPast ? (lg === "uz" ? " (o'tgan)" : " (passed)") : ""}</span>}
           {v.createdByName && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.user(th.t3)}{lg === "uz" ? "Berdi" : "By"}: {v.createdByName}</span>}
           {v.doneSana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.clock(th.t3)}{lg === "uz" ? "Bajarildi" : "Done"}: {v.doneSana}</span>}
         </div>
@@ -235,6 +247,7 @@ export default function TasksPage({
   buzz, setScr,
   showAddVazifa, setShowAddVazifa,
   vTitle, setVTitle, vReward, setVReward, vAssignee, setVAssignee, vEmoji, setVEmoji,
+  vDeadline, setVDeadline,
   addVazifa,
   vazifaDone, vazifaApprove, vazifaReject, delVazifa,
   cleanupKidDuplicates, isBosh,
@@ -431,6 +444,20 @@ export default function TasksPage({
                 );
               })}
             </div>
+            {/* Muddat (ixtiyoriy) — kechiksa mukofot berilmaydi */}
+            <label style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, display: "block", marginBottom: SPACE.s2 }}>{lg === "uz" ? "Muddat (ixtiyoriy)" : "Deadline (optional)"}</label>
+            <div style={{ display: "flex", gap: SPACE.s2 - 1, marginBottom: SPACE.s2, flexWrap: "wrap" }}>
+              {[{ n: 0, uz: "Bugun", en: "Today" }, { n: 1, uz: "Ertaga", en: "Tomorrow" }, { n: 3, uz: "3 kun", en: "3 days" }, { n: 7, uz: "1 hafta", en: "1 week" }].map(opt => {
+                const ds = addDaysStr(opt.n); const on = vDeadline === ds;
+                return (
+                  <button key={opt.n} type="button" className="ui-press" onClick={() => setVDeadline(on ? "" : ds)} style={{ flex: "1 0 auto", background: on ? th.ac + ALPHA.tint : th.surH, border: "1.5px solid " + (on ? th.ac : th.bor), borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", cursor: "pointer", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: on ? th.ac : th.t2, fontFamily: "inherit" }}>{lg === "uz" ? opt.uz : opt.en}</button>
+                );
+              })}
+              <button type="button" className="ui-press" onClick={() => setVDeadline("")} style={{ flex: "1 0 auto", background: !vDeadline ? th.ac + ALPHA.tint : th.surH, border: "1.5px solid " + (!vDeadline ? th.ac : th.bor), borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", cursor: "pointer", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: !vDeadline ? th.ac : th.t2, fontFamily: "inherit" }}>{lg === "uz" ? "Muddatsiz" : "None"}</button>
+            </div>
+            <input type="date" min={TODAY_STR()} value={vDeadline || ""} onChange={e => setVDeadline(e.target.value)}
+              style={{ width: "100%", boxSizing: "border-box", background: th.bg, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s3 + "px", color: th.t1, fontFamily: "inherit", fontSize: TYPE.body.fontSize, marginBottom: SPACE.s2, colorScheme: th.dark ? "dark" : "light" }} />
+            {vDeadline && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s4 }}>{lg === "uz" ? "Muddatida bajarilmasa, mukofot berilmaydi." : "No reward if not completed by the deadline."}</div>}
             <PrimaryButton th={th} onClick={addVazifa}>
               {TIco.target("#fff", 16)}{lg === "uz" ? "Vazifa berish" : "Assign task"}
             </PrimaryButton>

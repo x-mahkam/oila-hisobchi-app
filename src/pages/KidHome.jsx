@@ -215,8 +215,8 @@ export default function KidHome({
   const missions = useMemo(() => {
     const list = [
       { id: "task",   icon: KI.task(th.ac), label: uz ? "Vazifa bajar" : "Do a task",     cur: tasks.doneToday,   goal: 1, onClick: () => { buzz(6); setScr("vazifa"); } },
-      { id: "game",   icon: KI.game(th.ac), label: uz ? "O'yin o'yna" : "Play a game",     cur: todayLearn.games,  goal: 1, onClick: () => { buzz(6); setShowBilim(true); } },
-      { id: "coin",   icon: KI.coin(th.ac), label: uz ? "10 coin yig'" : "Earn 10 coins",  cur: todayLearn.coins,  goal: 10, onClick: () => { buzz(6); setShowBilim(true); } },
+      { id: "game",   icon: KI.game(th.ac), label: uz ? "O'yin o'yna" : "Play a game",     cur: todayLearn.games,  goal: 1, onClick: () => { buzz(6); setScr("bilim"); } },
+      { id: "coin",   icon: KI.coin(th.ac), label: uz ? "10 coin yig'" : "Earn 10 coins",  cur: todayLearn.coins,  goal: 10, onClick: () => { buzz(6); setScr("bilim"); } },
       { id: "garden", icon: KI.leaf(th.gr), label: uz ? "Bog' sug'or" : "Water the garden", cur: 0, goal: 0, done: wateredToday, onClick: () => { buzz(6); if (setPTab) setPTab("garden"); setScr("profil"); } },
     ];
     const done = list.filter(m => m.done || (m.goal > 0 && m.cur >= m.goal)).length;
@@ -264,7 +264,8 @@ export default function KidHome({
 
   // ── Barqaror handlerlar ──
   const openGames = useCallback(() => { buzz(10); setShowGames(true); }, [buzz, setShowGames]);
-  const openBilim = useCallback(() => { buzz(10); setShowBilim(true); }, [buzz, setShowBilim]);
+  const openBilim = useCallback(() => { buzz(10); setScr("bilim"); }, [buzz, setScr]);
+  const openTasks = useCallback(() => { buzz(10); setScr("vazifa"); }, [buzz, setScr]);
   const openGarden = useCallback(() => { buzz(10); if (setPTab) setPTab("garden"); setScr("profil"); }, [buzz, setPTab, setScr]);
 
   const ring = COMP.touchMin + SPACE.s16;
@@ -330,6 +331,17 @@ export default function KidHome({
         <LinearProgress th={th} value={Math.round(missions.done / missions.total * 100)} tone={th.gr} height={SPACE.s2 + 2} style={{ marginBottom: SPACE.s2 }} />
         {missions.list.map(m => <Mission key={m.id} th={th} icon={m.icon} label={m.label} cur={m.cur} goal={m.goal} done={m.done} onClick={m.onClick} />)}
       </AppCard>
+
+      {/* ═══ VAZIFALARIM (bosh sahifada oson topilishi uchun) ═══ */}
+      <button className="ui-press" onClick={openTasks} style={{ width: "100%", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3, fontFamily: "inherit" }}>
+        <span style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.task(th.ac, 22)}</span>
+        <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+          <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Vazifalarim" : "My tasks"}</span>
+          <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{tasks.active.length > 0 ? (tasks.active.length + (uz ? " ta faol vazifa — bajarib pul ishla" : " active tasks — earn money")) : (uz ? "Hozircha yangi vazifa yo'q" : "No new tasks yet")}</span>
+        </span>
+        {tasks.active.length > 0 && <Badge th={th} type="warning">{tasks.active.length}</Badge>}
+        {KI.chev(th.t3, 16)}
+      </button>
 
       {/* ═══ BILIM BOZORI — ISHLA (o'rgan/o'yna → coin) ═══ */}
       <SectionHeader th={th} right={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{KI.coin(PREMIUM.gold, 15)}<span style={{ ...TYPE.caption, fontWeight: 800, color: PREMIUM.gold, fontVariantNumeric: "tabular-nums" }}>{coins}</span></span>}>{uz ? "Bilim Bozori" : "Knowledge Market"}</SectionHeader>
