@@ -438,7 +438,7 @@ export default function DashboardPage({
             onClick={() => { buzz(10); setShowBilim(true); }}
             icon={<span style={{ fontSize: 22 }}>📚</span>}
             title={lg === "uz" ? "Bilim Bozori" : "Knowledge Market"}
-            sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Ingliz so'z o'rgan, Bilim Coin yig'" : "Learn words, earn coins"}</div>} />
+            sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Matematika, ingliz tili, mantiq va boshqa fanlar" : "Math, English, logic and more"}</div>} />
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: SPACE.s2, marginBottom: SPACE.s4 + 2 }}>
             {(() => {

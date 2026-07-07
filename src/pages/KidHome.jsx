@@ -220,7 +220,7 @@ export default function KidHome({
         <span style={{ width: SPACE.s10 || SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.bolt(th.ac, 20)}</span>
         <span style={{ flex: 1, textAlign: "left" }}>
           <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Bilim Bozori" : "Knowledge Market"}</span>
-          <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{uz ? "Ingliz so'z o'rgan, coin yig'" : "Learn words, earn coins"}</span>
+          <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{uz ? "Matematika, ingliz tili, mantiq va boshqa fanlar" : "Math, English, logic and more"}</span>
         </span>
         {KI.chev(th.t3, 16)}
       </button>
