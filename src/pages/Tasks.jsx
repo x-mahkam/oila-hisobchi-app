@@ -359,7 +359,8 @@ export default function TasksPage({
         right={<IconButton th={th} label={lg === "uz" ? "Yangilash" : "Refresh"} icon={Ico.repeat(th.ac)} onClick={doReload} disabled={vSyncing} />} />
 
       {/* ── Vazifa qo'shish — kit BottomSheet ── */}
-      <BottomSheet th={th} open={!!(showAddVazifa && canAssignTask(user))} onClose={closeAdd} title={lg === "uz" ? "Yangi vazifa berish" : "Add new task"}>
+      {/* Vazifa qo'shish yagona formada — App.jsx global modal (emoji→nom + muddat). Ikkilik oldini olish uchun bu BottomSheet o'chirilgan. */}
+      <BottomSheet th={th} open={false} onClose={closeAdd} title={lg === "uz" ? "Yangi vazifa berish" : "Add new task"}>
         {/* Kim uchun */}
         <SectionHeader th={th} style={{ marginTop: 0 }}>{lg === "uz" ? "Kim uchun?" : "For whom?"}</SectionHeader>
         {kids.length === 0

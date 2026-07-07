@@ -1751,16 +1751,41 @@ export default function App() {
                   ))}
                 </div>
             }
-            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Emoji":"Emoji"}</label>
+            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa turi":"Task type"}</label>
             <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
-              {["📚","🧹","🍽️","🛒","🌱","🐕","🚴","🎨","🏃","⚽","🎹","🧺"].map(e => (
-                <button key={e} onClick={() => setVEmoji(e)} style={{ width:42, height:42, borderRadius:11, border:"2px solid "+(vEmoji===e?th.ac:th.bor), background:vEmoji===e?th.ac+"18":"transparent", fontSize:22, cursor:"pointer" }}>{e}</button>
+              {[
+                {e:"📚",uz:"Dars qilish",en:"Do homework"},
+                {e:"🧹",uz:"Xonani yig'ishtirish",en:"Tidy the room"},
+                {e:"🍽️",uz:"Idish yuvish",en:"Wash the dishes"},
+                {e:"🛒",uz:"Do'kondan xarid",en:"Grocery run"},
+                {e:"🌱",uz:"Gullarni sug'orish",en:"Water the plants"},
+                {e:"🐕",uz:"Hayvonni boqish",en:"Feed the pet"},
+                {e:"🚴",uz:"Velosipedni tozalash",en:"Clean the bike"},
+                {e:"🎨",uz:"Rasm chizish",en:"Draw a picture"},
+                {e:"🏃",uz:"Mashq qilish",en:"Do exercise"},
+                {e:"⚽",uz:"Sport bilan shug'ullan",en:"Play sport"},
+                {e:"🎹",uz:"Pianino mashqi",en:"Piano practice"},
+                {e:"🧺",uz:"Kir yig'ish",en:"Collect laundry"},
+              ].map(p => (
+                <button key={p.e} onClick={() => { setVEmoji(p.e); setVTitle(lg==="uz"?p.uz:p.en); }} title={lg==="uz"?p.uz:p.en} style={{ width:42, height:42, borderRadius:11, border:"2px solid "+(vEmoji===p.e?th.ac:th.bor), background:vEmoji===p.e?th.ac+"18":"transparent", fontSize:22, cursor:"pointer" }}>{p.e}</button>
               ))}
             </div>
             <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa nomi":"Task title"}</label>
             <input style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:14 }} value={vTitle} onChange={e => setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Xonani yig'ishtirish":"e.g. Clean the room"} />
             <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Mukofot (so'm)":"Reward (UZS)"}</label>
             <input type="number" style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:18, fontWeight:800, textAlign:"center", outline:"none", boxSizing:"border-box", marginBottom:20 }} value={vReward} onChange={e => setVReward(e.target.value)} placeholder="0" />
+            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Muddat (ixtiyoriy)":"Deadline (optional)"}</label>
+            <div style={{ display:"flex", gap:6, marginBottom:8, flexWrap:"wrap" }}>
+              {[{n:0,uz:"Bugun",en:"Today"},{n:1,uz:"Ertaga",en:"Tomorrow"},{n:3,uz:"3 kun",en:"3 days"},{n:7,uz:"1 hafta",en:"1 week"}].map(o => {
+                const d = new Date(); d.setDate(d.getDate()+o.n);
+                const ds = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+                const on = vDeadline===ds;
+                return <button key={o.n} onClick={() => setVDeadline(on?"":ds)} style={{ flex:"1 0 auto", background:on?th.ac+"18":th.surH, border:"1.5px solid "+(on?th.ac:th.bor), borderRadius:10, padding:"9px 12px", cursor:"pointer", color:on?th.ac:th.t2, fontWeight:700, fontSize:12 }}>{lg==="uz"?o.uz:o.en}</button>;
+              })}
+              <button onClick={() => setVDeadline("")} style={{ flex:"1 0 auto", background:!vDeadline?th.ac+"18":th.surH, border:"1.5px solid "+(!vDeadline?th.ac:th.bor), borderRadius:10, padding:"9px 12px", cursor:"pointer", color:!vDeadline?th.ac:th.t2, fontWeight:700, fontSize:12 }}>{lg==="uz"?"Muddatsiz":"None"}</button>
+            </div>
+            <input type="date" value={vDeadline||""} onChange={e => setVDeadline(e.target.value)} style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:vDeadline?6:20, colorScheme:dark?"dark":"light" }} />
+            {vDeadline && <div style={{ fontSize:12, color:th.t2, marginBottom:20 }}>{lg==="uz"?"Muddatida bajarilmasa, mukofot berilmaydi.":"No reward if the deadline is missed."}</div>}
             <button onClick={addVazifa} style={{ width:"100%", background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:14, padding:"15px", color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer" }}>{lg==="uz"?"Vazifa berish":"Assign task"}</button>
           </div>
         </div>

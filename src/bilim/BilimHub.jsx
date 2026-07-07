@@ -128,12 +128,22 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     );
   }
 
+  // ═══ MUKOFOT / SAVDO — ota-ona coin→mukofot qo'yadi (BilimBozor "Bozor" tabi) ═══
+  if (view === "market") {
+    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setView(isKid ? "cats" : "cats")} />;
+  }
+
   // ═══ PARENT PREVIEW — o'yin ko'rinmaydi, faqat natija ═══
   if (view === "parent" || (!isKid && view === "cats")) {
+    const pth = th_(dark);
     return (
       <div>
-        <PageHeader th={th_(dark)} title={uz ? "Bilim Bozori — monitoring" : lg === "ru" ? "Мониторинг" : "Learning monitor"} onBack={onBack} />
-        <ParentPreview th={th_(dark)} lg={lg} data={parentData} />
+        <PageHeader th={pth} title={uz ? "Bilim Bozori — monitoring" : lg === "ru" ? "Мониторинг" : "Learning monitor"} onBack={onBack} />
+        <button onClick={() => setView("market")} style={{ width: "100%", background: "linear-gradient(135deg," + pth.ac + "," + pth.ac2 + ")", border: "none", borderRadius: 14, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16, color: "#fff", fontWeight: 800, fontSize: 15 }}>
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3.5 8.5V16a1 1 0 001 1h11a1 1 0 001-1V8.5" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/><path d="M2.5 4.5h15l-.8 3.2a2 2 0 01-3.9.1 2 2 0 01-3.9 0 2 2 0 01-3.9 0 2 2 0 01-3.9-.1L2.5 4.5z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/></svg>
+          {uz ? "Mukofot qo'yish (Savdo)" : lg === "ru" ? "Назначить награду" : "Set a reward (Shop)"}
+        </button>
+        <ParentPreview th={pth} lg={lg} data={parentData} />
       </div>
     );
   }
