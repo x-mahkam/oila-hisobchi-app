@@ -9,6 +9,7 @@ import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM } from "../utils/toke
 import { fullName } from "../utils/formatters.js";
 import { levelFor, rankFor } from "./engine/xp.js";
 import { analyzeLearning, weeklyReport } from "./engine/analytics.js";
+import { computeAchievements } from "./engine/achievements.jsx";
 import { medalSvg } from "./registry.jsx";
 
 // Level frame rangi (rank rangidan)
@@ -22,6 +23,8 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
   const rank = { color: rankObj.color, label: rankObj[lg] || rankObj.uz };
   const analysis = useMemo(() => analyzeLearning(sessions, lg, name, 30), [sessions, lg, name]);
   const week = useMemo(() => weeklyReport(sessions, lg, name), [sessions, lg, name]);
+  const achievements = useMemo(() => computeAchievements({ coins, xp, streak }, sessions, lg), [coins, xp, streak, sessions, lg]);
+  const unlocked = useMemo(() => achievements.filter(a => a.unlocked), [achievements]);
   const last = sessions && sessions.length ? sessions[0] : null;
 
   const subjName = (catId) => {
@@ -104,6 +107,18 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
           <StatCard th={th} value={week.xp} label="XP" tone={th.gr} />
         </div>
       </AppCard>
+
+      {/* ── Yutuqlar ── */}
+      <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlocked.length}/{achievements.length}</Badge>}>{uz ? "Yutuqlar" : lg === "ru" ? "Достижения" : "Achievements"}</SectionHeader>
+      <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s3, WebkitOverflowScrolling: "touch" }}>
+        {achievements.map(a => (
+          <div key={a.id} style={{ flexShrink: 0, width: SPACE.s16 + SPACE.s6, textAlign: "center", background: a.unlocked ? a.color + ALPHA.faint : th.sur, border: a.unlocked ? "1.5px solid " + a.color + ALPHA.strong : "1px dashed " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s2, opacity: a.unlocked ? 1 : 0.6 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 2, filter: a.unlocked ? "none" : "grayscale(1)" }}>{a.icon(a.unlocked ? a.color : th.t3, 26)}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: a.unlocked ? th.t1 : th.t3, lineHeight: 1.2 }}>{a.title}</div>
+            {!a.unlocked && <div style={{ ...TYPE.tiny, letterSpacing: 0, color: th.t3, marginTop: 1 }}>{a.cur}/{a.goal}</div>}
+          </div>
+        ))}
+      </div>
 
       {/* ── AI bahosi ── */}
       <SectionHeader th={th}>{uz ? "AI bahosi" : lg === "ru" ? "Оценка AI" : "AI assessment"}</SectionHeader>

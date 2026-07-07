@@ -11,49 +11,17 @@ import { db } from "../firebase.js";
 import { PageHeader, SectionHeader, AppCard, StatCard, Badge, EmptyState, PrimaryButton, LinearProgress, UIAvatar } from "../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
-import {
-  CATEGORIES, GAMES, catById, gamesOf, gameById, isAvailable,
-  availableCount, gameCount, DIFF, TIERS, tierFor, medalSvg,
-} from "./registry.jsx";
+import { CATEGORIES, catById, gamesOf, isAvailable, DIFF } from "./registry.jsx";
 import { readSessions } from "./engine/persist.js";
 import { levelFor, rankFor, readXp } from "./engine/xp.js";
-import { computeAchievements } from "./engine/achievements.jsx";
 import { analyzeLearning, weeklyReport } from "./engine/analytics.js";
 import LearningProfile from "./LearningProfile.jsx";
+import { BilimDashboard } from "./dashboard.jsx";
 import BilimBozor from "../BilimBozor.jsx";
 import AdditionGame from "./games/AdditionGame.jsx";
 
 const diffColor = (tone, th) => ({ gr: th.gr, am: th.am, rd: th.rd }[tone] || th.ac);
 const grad = (g, th) => "linear-gradient(135deg," + (th[g.grad[0]] || th.ac) + "," + (th[g.grad[1]] || th.ac2) + ")";
-
-// ── Kategoriya kartasi ──
-const CatCard = memo(function CatCard({ th, lg, cat, coins, progress, onOpen }) {
-  const avail = availableCount(cat.id), total = gameCount(cat.id);
-  const { cur } = tierFor(coins);
-  return (
-    <button className="ui-press" onClick={() => onOpen(cat)}
-      style={{ textAlign: "left", fontFamily: "inherit", cursor: "pointer", border: "none", padding: 0, borderRadius: RADIUS.l, overflow: "hidden", background: grad(cat, th), boxShadow: SHADOW.e1(th[cat.grad[0]] || th.ac), position: "relative", minHeight: SPACE.s16 * 2 + SPACE.s4, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-      <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 + SPACE.s8, height: SPACE.s16 + SPACE.s8, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.12)" }} />
-      <div style={{ padding: SPACE.s3 + "px " + SPACE.s3 + "px 0", position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <span style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.m, background: "rgba(255,255,255,0.22)", display: "flex", alignItems: "center", justifyContent: "center" }}>{cat.icon("#fff", 26)}</span>
-        {cur && <span style={{ background: "rgba(255,255,255,0.9)", borderRadius: RADIUS.pill, padding: "2px 8px", display: "inline-flex", alignItems: "center", gap: 3 }}>{medalSvg(cur.color, 13)}<span style={{ ...TYPE.tiny, letterSpacing: 0, fontWeight: 800, color: cur.color }}>{cur[lg] || cur.uz}</span></span>}
-      </div>
-      <div style={{ padding: "0 " + SPACE.s3 + "px " + SPACE.s3 + "px", position: "relative" }}>
-        <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", marginBottom: 2 }}>{cat.name[lg] || cat.name.uz}</div>
-        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.88)" }}>
-          {avail > 0 ? (avail + (lg === "uz" ? " ta o'yin" : lg === "ru" ? " игр" : " games")) : (lg === "uz" ? "Tez orada" : lg === "ru" ? "Скоро" : "Soon")}
-          {total > avail ? " · +" + (total - avail) : ""}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s1, marginTop: SPACE.s2 }}>
-          <div style={{ flex: 1, height: 5, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
-            <div style={{ width: Math.min(100, progress) + "%", height: "100%", background: "#fff", borderRadius: RADIUS.full }} />
-          </div>
-          <span style={{ ...TYPE.tiny, letterSpacing: 0, fontWeight: 800, color: "#fff" }}>{progress}%</span>
-        </div>
-      </div>
-    </button>
-  );
-});
 
 // ── O'yin kartasi ──
 const GameCard = memo(function GameCard({ th, lg, game, onOpen }) {
@@ -81,7 +49,7 @@ const GameCard = memo(function GameCard({ th, lg, game, onOpen }) {
   );
 });
 
-export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack }) {
+export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack, gardenData = {}, onGarden }) {
   const uz = lg === "uz";
   const isKid = user?.rol === "kid";
   const [view, setView] = useState("cats");      // cats | games | detail | play | parent
@@ -127,10 +95,10 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     if (catId === "english") return Math.min(100, Math.round(learnedWords / 60 * 100));
     return 0; // boshqa kategoriyalar hali o'yinsiz
   }, [learnedWords]);
-  const coinsOf = useCallback((catId) => (catId === "english" ? coins : 0), [coins]);
 
   const openCat = useCallback((c) => { setCat(c); setView("games"); }, []);
   const openGame = useCallback((g) => { setGame(g); setView("detail"); }, []);
+  const openProfile = useCallback(() => setView("profile"), []);
   const back = useCallback(() => {
     if (view === "play") { setView("detail"); }
     else if (view === "detail") { setView("games"); }
@@ -237,73 +205,22 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     );
   }
 
-  // ═══ KATEGORIYALAR (bola bosh ekrani) ═══
+  // ═══ BILIM BOZORI DASHBOARD (bola bosh ekrani) ═══
+  //  Yangi struktura: Hero → Continue → Fanlar → Progress → AI → Bog'.
+  //  Level/Rank — xp.js (BilimHub'da), qolgan hosila — BilimDashboard ichida.
   const lv = levelFor(xp);
   const rankObj = rankFor(lv.level);
   const rankLabel = rankObj[lg] || rankObj.uz;
-  const achievements = computeAchievements({ coins, xp, streak }, sessions, lg);
-  const unlocked = achievements.filter(a => a.unlocked);
   return (
     <div>
       <PageHeader th={th} title={uz ? "Bilim Bozori" : lg === "ru" ? "Рынок знаний" : "Knowledge Market"} onBack={onBack} />
-
-      {/* Learning header: Level + XP + Coin (bosilsa profil) */}
-      <button className="ui-press" onClick={() => setView("profile")} style={{ width: "100%", textAlign: "left", fontFamily: "inherit", cursor: "pointer", border: "none", padding: 0, marginBottom: SPACE.s3, borderRadius: RADIUS.l, overflow: "hidden" }}>
-        <div style={{ background: "linear-gradient(135deg," + rankObj.color + "," + th.ac2 + ")", padding: SPACE.s4, boxShadow: SHADOW.e1(th.ac) }}>
-          <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <div style={{ padding: 3, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.3)", display: "inline-flex" }}>
-                <UIAvatar th={th} src={user?.photo} name={fullName(user)} size={COMP.touchMin + SPACE.s2} />
-              </div>
-              <span style={{ position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)", background: "#fff", color: rankObj.color, ...TYPE.tiny, fontWeight: 800, letterSpacing: 0, borderRadius: RADIUS.pill, padding: "1px 8px" }}>LVL {lv.level}</span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user)}</div>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.9)" }}>{rankLabel}</div>
-              <div style={{ marginTop: SPACE.s1 }}>
-                <div style={{ height: 6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
-                  <div style={{ width: lv.pct + "%", height: "100%", background: "#fff" }} />
-                </div>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)", marginTop: 2 }}>{lv.max ? (uz ? "Maksimal daraja" : "Max level") : (lv.toNext + " XP → LVL " + (lv.level + 1))}</div>
-              </div>
-            </div>
-          </div>
-          {/* Coin + XP + streak chiplari */}
-          <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3 }}>
-            <span style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + SPACE.s3, textAlign: "center" }}>
-              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>Coin</span>
-              <span style={{ display: "block", ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{coins}</span>
-            </span>
-            <span style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + SPACE.s3, textAlign: "center" }}>
-              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>XP</span>
-              <span style={{ display: "block", ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{xp}</span>
-            </span>
-            <span style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + SPACE.s3, textAlign: "center" }}>
-              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>{uz ? "Streak" : "Streak"}</span>
-              <span style={{ display: "block", ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{streak}</span>
-            </span>
-          </div>
-        </div>
-      </button>
-
-      {/* Yutuqlar (umumiy, SVG badge) */}
-      <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlocked.length}/{achievements.length}</Badge>}>{uz ? "Yutuqlar" : lg === "ru" ? "Достижения" : "Achievements"}</SectionHeader>
-      <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s3, WebkitOverflowScrolling: "touch" }}>
-        {achievements.map(a => (
-          <div key={a.id} style={{ flexShrink: 0, width: SPACE.s16 + SPACE.s6, textAlign: "center", background: a.unlocked ? a.color + ALPHA.faint : th.sur, border: a.unlocked ? "1.5px solid " + a.color + ALPHA.strong : "1px dashed " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s2, opacity: a.unlocked ? 1 : 0.6 }}>
-            <div style={{ display: "flex", justifyContent: "center", marginBottom: 2, filter: a.unlocked ? "none" : "grayscale(1)" }}>{a.icon(a.unlocked ? a.color : th.t3, 26)}</div>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: a.unlocked ? th.t1 : th.t3, lineHeight: 1.2 }}>{a.title}</div>
-            {!a.unlocked && <div style={{ ...TYPE.tiny, letterSpacing: 0, color: th.t3, marginTop: 1 }}>{a.cur}/{a.goal}</div>}
-          </div>
-        ))}
-      </div>
-
-      <SectionHeader th={th}>{uz ? "Kategoriyalar" : lg === "ru" ? "Категории" : "Categories"}</SectionHeader>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 }}>
-        {CATEGORIES.map(c => (
-          <CatCard key={c.id} th={th} lg={lg} cat={c} coins={coinsOf(c.id)} progress={progressOf(c.id)} onOpen={openCat} />
-        ))}
-      </div>
+      <BilimDashboard
+        th={th} lg={lg} name={fullName(user)} photo={user?.photo}
+        coins={coins} xp={xp} streak={streak} sessions={sessions} learnedWords={learnedWords} gardenData={gardenData}
+        level={lv.level} rankLabel={rankLabel} rankColor={rankObj.color}
+        xpPct={lv.pct} xpToNext={lv.toNext} maxLevel={lv.max}
+        openGame={openGame} openCat={openCat} onProfile={openProfile} onGarden={onGarden} onBack={onBack}
+      />
     </div>
   );
 }
