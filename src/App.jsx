@@ -14,7 +14,6 @@ import LoginPage      from "./pages/Login.jsx";
 import OnboardingPage from "./pages/Onboarding.jsx";
 import Garden         from "./Garden.jsx";
 import BilimBozor     from "./BilimBozor.jsx";
-import BilimHub       from "./bilim/BilimHub.jsx";
 
 // Components
 import BottomNav             from "./components/ui/BottomNav.jsx";
@@ -23,8 +22,7 @@ import { Tst, Av }           from "./components/common/index.jsx";
 import { Ico }               from "./utils/icons.jsx";
 import { makeS }             from "./utils/styles.js";
 import Confetti              from "./components/common/Confetti.jsx";
-import NotifCenter          from "./components/common/NotifCenter.jsx";
-import ActivityCenter       from "./pages/ActivityCenter.jsx";
+import NotifPanel            from "./components/common/NotifPanel.jsx";
 import PremiumModal          from "./components/modals/PremiumModal.jsx";
 import QarzDonePrompt        from "./components/modals/QarzDonePrompt.jsx";
 import PartialQarzModal      from "./components/modals/PartialQarzModal.jsx";
@@ -43,9 +41,9 @@ import { usePremium }        from "./hooks/usePremium.js";
 import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 
 // Utils
-import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
+import { td, nt, tm, fmtN, normTel, hp, sonSoz } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
-import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
+import { db, auth, setOwnerCtx } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
 export default function App() {
@@ -362,7 +360,6 @@ export default function App() {
   const [pTab,         setPTab]         = useState("main");
   const [edN,          setEdN]          = useState(false);
   const [newN,         setNewN]         = useState("");
-  const [newF,         setNewF]         = useState("");   // familya tahriri
   const [edT,          setEdT]          = useState(false);
   const [newT,         setNewT]         = useState("");
   const [askTel,       setAskTel]       = useState(false);
@@ -692,14 +689,11 @@ export default function App() {
         const kidOila = (typeof look === "object" && look) ? (look.oila || null) : null;
         if (!kidUid) return ok$(lg === "uz" ? "Login topilmadi. Ota-onangdan so'ra." : "Login not found", "err");
         buzz(15);
-        // ANON HISOB YIG'ILISHINING OLDINI OLISH: agar allaqachon anonim
-        // sessiya bo'lsa — QAYTA ISHLATAMIZ, yangi anonim hisob YARATMAYMIZ.
-        try {
-          if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
-        } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
-        const freshAnon = !!(fbAuth.currentUser && fbAuth.currentUser.isAnonymous);
+        try { await auth.loginAnon(); } catch (e) { console.error("Anon login:", e); return ok$(lg === "uz" ? "Firebase Anonymous yoqilmagan!" : "Anonymous auth not enabled", "err"); }
         // MUHIM TARTIB: ksess AVVAL yoziladi — Firestore Rules bola (user_<kidUid>)
-        // hujjatini o'qishga ruxsatni ksess_<anon>.v.oila / v.kid orqali beradi.
+        // hujjatini o'qishga ruxsatni aynan ksess_<anon>.oila orqali beradi.
+        // Ilgari user hujjati ksess'dan OLDIN o'qilib, yangi qurilmada ruxsat
+        // rad etilar va noto'g'ri "Login topilmadi" chiqar edi.
         const anonUid = auth.current()?.uid;
         const phv = await hp(fPw);
         setOwnerCtx(kidUid, kidOila);  // xavfsizlik: bola konteksti (yozuvlardan oldin)
@@ -711,15 +705,16 @@ export default function App() {
         }
         const ku = await db.g("user_" + kidUid);
         if (!ku || ku.rol !== "kid") {
-          try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
-          try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
+          try { if (anonUid) await db.s("ksess_" + anonUid, null); } catch (e) {}
+          try { await auth.logout(); } catch (e) {}
+          // Eski formatdagi lookup'da oila yo'q — ota-ona ilovani ochsa avtomatik yangilanadi
           return ok$(kidOila
             ? (lg === "uz" ? "Login topilmadi" : "Not found")
             : (lg === "uz" ? "Akkaunt yangilanishi kerak: ota-onangiz ilovani bir marta ochib qo'ysin, keyin qayta urinib ko'r." : "Account needs an update: ask a parent to open the app once, then retry."), "err");
         }
         if (phv !== ku.ph) {
-          try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
-          try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
+          try { if (anonUid) await db.s("ksess_" + anonUid, null); } catch (e) {}
+          try { await auth.logout(); } catch (e) {}
           return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
         }
         // ksess'dagi oila'ni haqiqiy qiymat bilan moslash (legacy lookup holati)
@@ -829,9 +824,7 @@ export default function App() {
           const kidOila2 = (typeof look2 === "object" && look2) ? (look2.oila || null) : null;
           if (kidUid) {
             buzz(15);
-            try {
-              if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
-            } catch (e) {}
+            try { await auth.loginAnon(); } catch (e) {}
             const anonUid2 = auth.current()?.uid;
             const phv2 = await hp(fPw);
             setOwnerCtx(kidUid, kidOila2);  // xavfsizlik: bola konteksti
@@ -840,8 +833,8 @@ export default function App() {
             const ku = await db.g("user_" + kidUid);
             if (ku && ku.rol === "kid") {
               if (phv2 !== ku.ph) {
-                try { if (anonUid2) await db.del("ksess_" + anonUid2); } catch (e) {}
-                try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
+                try { if (anonUid2) await db.s("ksess_" + anonUid2, null); } catch (e) {}
+                try { await auth.logout(); } catch (e) {}
                 return ok$(lg === "uz" ? "Parol noto'g'ri" : "Wrong password", "err");
               }
               try { if (anonUid2 && (ku.oilaId || null) !== kidOila2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: ku.oilaId || null, ph: phv2 }); } catch (e) {}
@@ -858,8 +851,8 @@ export default function App() {
               return;
             }
             // Hujjat o'qilmadi (eski format lookup) — sessiyani tozalaymiz
-            try { if (anonUid2) await db.del("ksess_" + anonUid2); } catch (e) {}
-            try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
+            try { if (anonUid2) await db.s("ksess_" + anonUid2, null); } catch (e) {}
+            try { await auth.logout(); } catch (e) {}
             return ok$(kidOila2
               ? (lg === "uz" ? "Login topilmadi" : "Not found")
               : (lg === "uz" ? "Akkaunt yangilanishi kerak: ota-onangiz ilovani bir marta ochib qo'ysin." : "Ask a parent to open the app once, then retry."), "err");
@@ -940,10 +933,9 @@ export default function App() {
 
   const updName = async () => {
     if (!newN.trim()) return;
-    const fam = (newF || "").trim();
-    const u2 = { ...user, ism: newN.trim(), familya: fam };
+    const u2 = { ...user, ism: newN.trim() };
     await db.s("user_" + user.id, u2); setUser(u2);
-    setAzolar(azolar.map(a => a.id === user.id ? { ...a, ism: newN.trim(), familya: fam } : a));
+    setAzolar(azolar.map(a => a.id === user.id ? { ...a, ism: newN.trim() } : a));
     setEdN(false); ok$(t.ua);
   };
   const saveBj = async () => {
@@ -1143,8 +1135,8 @@ export default function App() {
       return ok$(lg === "uz" ? "Faqat oila boshi yoki akkauntni yaratgan ota-ona o'chira oladi" : "Only the family head or the creating parent can delete", "err");
     buzz(15);
     try {
-      if (kid.login) await db.del("kidlogin_" + kid.login);   // login bo'shatiladi (haqiqatan o'chadi)
-      await db.del("user_" + kid.id);                          // profil butunlay o'chadi
+      if (kid.login) await db.s("kidlogin_" + kid.login, null);   // login bo'shatiladi
+      await db.s("user_" + kid.id, null);                          // profil o'chadi
       const ids = (oila?.azolarIds || oila?.azolar || []).filter(id => id !== kid.id);
       const o2 = { ...oila, azolarIds: ids };
       if (oila?.id) await db.s("oila_" + oila.id, o2);
@@ -1713,7 +1705,7 @@ export default function App() {
 
       {/* Global Modals */}
       {confetti && <Confetti th={th} />}
-      {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} />}
+      {showNotifs && <NotifPanel notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
       {askTel && user && (
         <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(0,0,0,0.62)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
@@ -1728,10 +1720,8 @@ export default function App() {
         </div>
       )}
       {showBilim && (
-        <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: th.bg, zIndex: 1500, overflowY: "auto", padding: "16px", boxSizing: "border-box" }}>
-          <div style={{ maxWidth: 430, margin: "0 auto" }}>
-            <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
-          </div>
+        <div style={{ position: "fixed", inset: 0, background: th.bg, zIndex: 1500, overflowY: "auto" }}>
+          <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setShowBilim(false)} />
         </div>
       )}
 
@@ -1868,7 +1858,7 @@ export default function App() {
             </button>
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{fullName(user) || t.app}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{user?.ism || t.app}</span>
                 {isPremium && <span style={{ fontSize: 8, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", color: "#fff", borderRadius: 20, padding: "1px 6px", fontWeight: 700 }}>PRO</span>}
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: -0.2 }}>
@@ -1882,7 +1872,7 @@ export default function App() {
             </button>
             <button onClick={() => setShowNotifs(true)} style={{ background: "transparent", border: "1px solid " + th.bor, borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", position: "relative" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a4.5 4.5 0 00-4.5 4.5v2.7L3 12h12l-1.5-2.8V6.5A4.5 4.5 0 009 2z" fill={th.t2} opacity=".15" stroke={th.t2} strokeWidth="1.3" strokeLinejoin="round" /><path d="M7.5 14.5a1.5 1.5 0 003 0" stroke={th.t2} strokeWidth="1.3" strokeLinecap="round" /></svg>
-              {unreadCount > 0 && <div style={{ position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, background: th.rd, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{unreadCount > 99 ? "99+" : unreadCount}</div>}
+              {unreadCount > 0 && <div style={{ position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, background: th.rd, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{unreadCount > 9 ? "9+" : unreadCount}</div>}
             </button>
           </div>
         </div>
@@ -1896,14 +1886,13 @@ export default function App() {
 
       {/* Pages */}
       <div style={{ padding: "14px 16px 100px" }}>
-        {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} fetchRates={fetchRates} rateL={rateL} setShowGift={setShowGift} setShowBilim={setShowBilim} setShowAddVazifa={setShowAddVazifa} setPTab={setPTab} />}
+        {scr === "bosh"    && <DashboardPage  {...pageProps} showS={showS} srch={srch} srchR={srchR} hisFil={hisFil} setHisFil={setHisFil} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} fetchRates={fetchRates} rateL={rateL} setShowGift={setShowGift} setShowBilim={setShowBilim} setShowAddVazifa={setShowAddVazifa} />}
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
-        {scr === "activity" && <ActivityCenter {...pageProps} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} addM={addM} setAddM={setAddM} maqTab={maqTab} setMaqTab={setMaqTab} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={adv} setAdv={setAdv} advL={advL} advErr={advErr} aiAdv={aiAdv} showImport={showImport} setShowImport={setShowImport} importRows={importRows} setImportRows={setImportRows} importStep={importStep} setImportStep={setImportStep} importFileRef={importFileRef} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
-        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} newF={newF} setNewF={setNewF} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidSurname={kidSurname} setKidSurname={setKidSurname} kidBirthYear={kidBirthYear} setKidBirthYear={setKidBirthYear} kidGender={kidGender} setKidGender={setKidGender} kidGrade={kidGrade} setKidGrade={setKidGrade} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} delKidAccount={delKidAccount} purgeData={purgeData} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
+        {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} edN={edN} setEdN={setEdN} newN={newN} setNewN={setNewN} edT={edT} setEdT={setEdT} newT={newT} setNewT={setNewT} saveTel={saveTel} fBj={fBj} setFBj={setFBj} fKL={fKL} setFKL={setFKL} faqO={faqO} setFaqO={setFaqO} pinStep={pinStep} setPinStep={setPinStep} pinVal={pinVal} setPinVal={setPinVal} pinCfm={pinCfm} setPinCfm={setPinCfm} finger={finger} setFinger={setFinger} showBilim={showBilim} setShowBilim={setShowBilim} showAddKid={showAddKid} setShowAddKid={setShowAddKid} kidName={kidName} setKidName={setKidName} kidSurname={kidSurname} setKidSurname={setKidSurname} kidBirthYear={kidBirthYear} setKidBirthYear={setKidBirthYear} kidGender={kidGender} setKidGender={setKidGender} kidGrade={kidGrade} setKidGrade={setKidGrade} kidLogin={kidLogin} setKidLogin={setKidLogin} kidPw={kidPw} setKidPw={setKidPw} showReferral={showReferral} setShowReferral={setShowReferral} refCount={refCount} fbRating={fbRating} setFbRating={setFbRating} fbText={fbText} setFbText={setFbText} fbType={fbType} setFbType={setFbType} fbSending={fbSending} sendFeedback={sendFeedback} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} waterGarden={waterGarden} gardenData={gardenData} stars={stars} addKidAccount={addKidAccount} delKidAccount={delKidAccount} purgeData={purgeData} activatePremium={activatePremium} setShowPremModal={setShowPremModal} logout={logout} fRef={fRef} doPhoto={doPhoto} rmPhoto={rmPhoto} toggleReportAccess={toggleReportAccess} rates={rates} rateL={rateL} fetchRates={fetchRates} notifEnabled={notifEnabled} notifTime={notifTime} toggleNotif={toggleNotif} saveNotifTime={saveNotifTime} APP_VER={APP_VER} saveBj={saveBj} updName={updName} setVal={setVal} setLg={setLg} setDark={setDark} showValDD={showValDD} setShowValDD={setShowValDD} qarzlar={qarzlar} bX={bX} bD={bD} />}
       </div>
 
       {/* ── Ovoz bilan kiritish oynasi ── */}

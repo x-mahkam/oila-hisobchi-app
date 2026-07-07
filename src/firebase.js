@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
@@ -205,13 +205,5 @@ export const db = {
       console.error("db.s ERROR:", k, e.code, e.message);
       throw e;
     }
-  },
-  // Hujjatni HAQIQATDA o'chirish (setDoc(null) {v:null} qoldiradi — bu esa yo'q qiladi)
-  async del(k) {
-    try {
-      await deleteDoc(doc(fbDB, "appdata", safeKey(k)));
-    } catch (e) { console.error("db.del", k, e.code, e.message); }
-    try { localStorage.removeItem("cache_" + k); } catch (e) {}
-    return true;
   }
 };
