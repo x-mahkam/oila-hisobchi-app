@@ -10,7 +10,7 @@ import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, RELATIONS } from "../utils/constants.js";
 import { tm } from "../utils/formatters.js";
 import { db } from "../firebase.js";
-// ── Smart Budget AI (Reports integratsiyasi) ──
+// ── Sprint 3B: Smart Budget AI (Reports integratsiyasi) ──
 import { computeBudgetAI } from "../ai/budgetEngine.js";
 import { ReportsAISummary, MonthlySummaryCard } from "../ai/BudgetComponents.jsx";
 import { computeSmart } from "../goals/smartEngine.js";
@@ -46,7 +46,7 @@ export default function ReportsPage({
   const [pdfScope, setPdfScope] = useState(canSeeReport ? "family" : "mine");
   const STY = useMemo(() => makeS(th), [th]);
 
-  // ═══ SMART BUDGET AI — Reports uchun trend/summary ═══
+  // ═══ Sprint 3B: SMART BUDGET AI — Reports uchun trend/summary ═══
   const [weddings, setWeddings] = useState([]);
   useEffect(() => {
     if (!user?.oilaId) return;
@@ -112,7 +112,7 @@ export default function ReportsPage({
         xar={xar} dar={dar} user={user} azolar={azolar} canSeeReport={canSeeReport}
       />
 
-      {/* AI Summary — trend tahlili + oylik xulosa */}
+      {/* Sprint 3B: AI Summary — trend tahlili + oylik xulosa */}
       <SectionHeader th={th}>{lg === "uz" ? "AI tahlil" : lg === "ru" ? "AI-анализ" : "AI analysis"}</SectionHeader>
       <MonthlySummaryCard th={th} lg={lg} f={f} ai={reportAI} />
       <ReportsAISummary th={th} lg={lg} f={f} summary={reportAI.summary} trends={reportAI.trends} />
