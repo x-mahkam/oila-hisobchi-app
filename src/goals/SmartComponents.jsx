@@ -194,7 +194,9 @@ export const Timeline = memo(function Timeline({ th, goal, meta, lg, f }) {
                   {it.amount != null && <span style={{ ...TYPE.caption, fontWeight: 800, color: th.ac, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>+{f(it.amount, true)}</span>}
                 </div>
                 <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>
-                  {fmtDate(it.at, lg)}{it.who ? " · " + it.who : ""}
+                  {it.type === "deadline" && it.dl
+                    ? (lg === "uz" ? "Maqsad sanasi: " : lg === "ru" ? "Дата цели: " : "Target date: ") + fmtDate(it.dl, lg)
+                    : fmtDate(it.at, lg)}{it.who ? " · " + it.who : ""}
                 </div>
               </div>
             </div>

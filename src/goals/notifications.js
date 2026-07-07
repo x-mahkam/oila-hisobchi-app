@@ -140,11 +140,10 @@ export function previewSchedule(goal, now = new Date(), lg = "uz") {
   if (s.complete) { add(NOTIF.DONE, "now"); return items; }
   add(NOTIF.SAVE_TODAY, "daily");
   if (s.status !== STATUS.ON_TRACK && s.status !== STATUS.AHEAD) add(NOTIF.BEHIND, "active");
-  if (s.hasDeadline) {
-    if (s.daysLeft > 30) add(NOTIF.DEADLINE_30, "in " + (s.daysLeft - 30) + " " + T("day", lg));
-    else if (s.daysLeft <= 30) add(NOTIF.DEADLINE_30, "passed");
-    if (s.daysLeft > 7) add(NOTIF.DEADLINE_7, "in " + (s.daysLeft - 7) + " " + T("day", lg));
-    else if (s.daysLeft <= 7) add(NOTIF.DEADLINE_7, "passed");
+  if (s.hasDeadline && !s.overdue) {
+    // Faqat muddat haqiqatan yaqinlashganda ko'rsatiladi (uzoq muddatda chalkashlik bo'lmasin).
+    if (s.daysLeft <= 7) add(NOTIF.DEADLINE_7, s.daysLeft + " " + T("day", lg));
+    else if (s.daysLeft <= 30) add(NOTIF.DEADLINE_30, s.daysLeft + " " + T("day", lg));
   }
   return items;
 }

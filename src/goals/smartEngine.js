@@ -180,7 +180,7 @@ export function buildTimeline(goal, meta = {}, lg = "uz") {
   if (goal?.createdAt) items.push({ type: "created", at: normAt(goal.createdAt), label: T("evCreated", lg) });
 
   (Array.isArray(meta?.events) ? meta.events : []).forEach(e => {
-    if (e.t === "deadline") items.push({ type: "deadline", at: e.at, label: T("evDeadline", lg) });
+    if (e.t === "deadline") items.push({ type: "deadline", at: e.at, label: T("evDeadline", lg), dl: e.dl || meta?.deadline || null });
     else if (e.t === "edited") items.push({ type: "edited", at: e.at, label: T("evEdited", lg) });
   });
 
