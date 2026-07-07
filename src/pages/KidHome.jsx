@@ -37,6 +37,8 @@ const KI = {
   book: (c, s = 18) => <svg width={s} height={s} viewBox="0 0 18 18" fill="none"><path d="M9 4.5C7.5 3 5.5 2.5 2.5 2.5v11c3 0 5 .5 6.5 2 1.5-1.5 3.5-2 6.5-2v-11c-3 0-5 .5-6.5 2z" fill={c} opacity=".12" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M9 4.5v11" stroke={c} strokeWidth="1.2"/></svg>,
   heart: (c, s = 18) => <svg width={s} height={s} viewBox="0 0 18 18" fill="none"><path d="M9 15.5C4 12 2 9.5 2 6.8 2 4.7 3.6 3.2 5.6 3.2c1.3 0 2.6.7 3.4 2 .8-1.3 2.1-2 3.4-2 2 0 3.6 1.5 3.6 3.6 0 2.7-2 5.2-7 8.7z" fill={c} opacity=".15" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>,
   clock: (c, s = 13) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke={c} strokeWidth="1.2" fill={c} fillOpacity=".08"/><path d="M8 5v3.2l2 1.3" stroke={c} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+  store: (c, s = 20) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><path d="M3.5 8.5V16a1 1 0 001 1h11a1 1 0 001-1V8.5" stroke={c} strokeWidth="1.4" fill={c} fillOpacity=".1" strokeLinejoin="round"/><path d="M2.5 4.5h15l-.8 3.2a2 2 0 01-2 1.5 2 2 0 01-2-1.6 2 2 0 01-2 1.6 2 2 0 01-2-1.6 2 2 0 01-2 1.6 2 2 0 01-2-1.5L2.5 4.5z" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M8 17v-3.5h4V17" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+  tag: (c, s = 18) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><path d="M10.5 2.5H4a1.5 1.5 0 00-1.5 1.5v6.5a1.5 1.5 0 00.44 1.06l6 6a1.5 1.5 0 002.12 0l5.5-5.5a1.5 1.5 0 000-2.12l-6-6A1.5 1.5 0 0010.5 2.5z" stroke={c} strokeWidth="1.4" fill={c} fillOpacity=".1" strokeLinejoin="round"/><circle cx="6.8" cy="6.8" r="1.2" fill={c}/></svg>,
 };
 
 // mavjud kategoriya ikonlari (fanlar uchun) — registry BIco'ni takrorlamay, sodda o'rovchi
@@ -130,6 +132,30 @@ const GameRow = memo(function GameRow({ th, name, icon, pct, coin, when, onClick
   );
 });
 
+// ── Do'kon mukofot kartasi (coin → mukofot almashinuvi) ──
+const RewardCard = memo(function RewardCard({ th, f, name, reward, targetCoins, coins, done, uz, onClick }) {
+  const pct = targetCoins > 0 ? Math.min(100, Math.round(coins / targetCoins * 100)) : (done ? 100 : 0);
+  const ready = done || (targetCoins > 0 && coins >= targetCoins);
+  const remain = Math.max(0, targetCoins - coins);
+  return (
+    <button className="ui-press" onClick={onClick}
+      style={{ width: "100%", textAlign: "left", fontFamily: "inherit", cursor: "pointer", background: ready ? PREMIUM.gold + ALPHA.faint : th.sur, border: (ready ? "1.5px solid " + PREMIUM.gold + ALPHA.strong : "1px solid " + th.bor), borderRadius: RADIUS.m, padding: SPACE.s3, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s3, boxSizing: "border-box" }}>
+      <span style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.s + 2, background: (ready ? PREMIUM.gold : th.ac) + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{ready ? KI.gift(PREMIUM.gold, 24) : KI.tag(th.ac, 22)}</span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: SPACE.s2 }}>
+          <span style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+          <span style={{ ...TYPE.caption, fontWeight: 800, color: PREMIUM.gold, flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{f(reward, true)}</span>
+        </span>
+        <LinearProgress th={th} value={pct} tone={ready ? th.gr : th.ac} style={{ marginTop: SPACE.s1 }} />
+        <span style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: SPACE.s2, marginTop: SPACE.s1, ...TYPE.tiny, textTransform: "none", letterSpacing: 0 }}>
+          <span style={{ color: ready ? th.gr : th.t2, fontWeight: 700 }}>{ready ? (uz ? "Tayyor! Ota-onang to'laydi" : "Ready! Your parent pays") : (uz ? "Yana " + remain + " coin" : remain + " coins to go")}</span>
+          <span style={{ color: th.t3, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{Math.min(coins, targetCoins)}/{targetCoins}</span>
+        </span>
+      </span>
+    </button>
+  );
+});
+
 export default function KidHome({
   user, lg, th, f, buzz, addStar,
   vazifalar = [], kidBalances = {}, stars = 0, gardenData = {},
@@ -145,13 +171,15 @@ export default function KidHome({
   const [xp, setXp] = useState(0);
   const [bstreak, setBstreak] = useState(0);
   const [sessions, setSessions] = useState([]);
+  const [vazifaRewards, setVazifaRewards] = useState([]); // bilim_vazifa_<oila> (faqat o'qish)
   useEffect(() => {
     if (!user?.id) return;
     db.g("bilim_coins_" + user.id).then(v => { if (v != null) setCoins(Number(v) || 0); }).catch(() => {});
     db.g("bilim_xp_" + user.id).then(v => { if (v != null) setXp(Number(v) || 0); }).catch(() => {});
     db.g("bilim_streak_" + user.id).then(v => { if (v != null) setBstreak(Number(v) || 0); }).catch(() => {});
     readSessions(user.id).then(setSessions).catch(() => {});
-  }, [user?.id]);
+    if (user.oilaId) db.g("bilim_vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifaRewards(v); }).catch(() => {});
+  }, [user?.id, user?.oilaId]);
 
   const lv = useMemo(() => levelFor(xp), [xp]);
   const rankObj = useMemo(() => rankFor(lv.level), [lv.level]);
@@ -210,11 +238,22 @@ export default function KidHome({
   }, [uz, tasks.doneAll.length, coins, sessions.length, gardenData.level, bstreak]);
   const unlockedCount = medals.filter(m => m.unlocked).length;
 
-  // ── Mukofot (parent bergan vazifa mukofoti) ──
-  const nextReward = useMemo(() => {
-    const r = tasks.active.filter(v => Number(v.reward) > 0).sort((a, b) => Number(b.reward) - Number(a.reward))[0];
-    return r ? { title: r.title, reward: Number(r.reward) } : null;
-  }, [tasks.active]);
+  // ── Do'kon mukofotlari (coin → mukofot; bilim_vazifa, faqat shu bola, to'lanmagan) ──
+  const rewards = useMemo(() => {
+    const mine = (vazifaRewards || [])
+      .filter(v => v.uid === user?.id && !v.paid && Number(v.targetCoins) > 0)
+      .map(v => ({
+        id: v.id,
+        name: (v.desc && String(v.desc).trim()) || (uz ? "Mukofot" : "Reward"),
+        reward: Number(v.reward) || 0,
+        targetCoins: Number(v.targetCoins) || 0,
+        done: !!v.done || coins >= (Number(v.targetCoins) || 0),
+        remain: Math.max(0, (Number(v.targetCoins) || 0) - coins),
+      }))
+      // eng yaqin (kam qolgan) birinchi; tayyorlar eng tepada
+      .sort((a, b) => (b.done - a.done) || (a.remain - b.remain));
+    return mine.slice(0, 3);
+  }, [vazifaRewards, user?.id, coins, uz]);
 
   // ── Ota-ona maqtovi (placeholder — kelajakda AI) ──
   const praise = useMemo(() => {
@@ -226,7 +265,6 @@ export default function KidHome({
   // ── Barqaror handlerlar ──
   const openGames = useCallback(() => { buzz(10); setShowGames(true); }, [buzz, setShowGames]);
   const openBilim = useCallback(() => { buzz(10); setShowBilim(true); }, [buzz, setShowBilim]);
-  const openTasks = useCallback(() => { buzz(10); setScr("vazifa"); }, [buzz, setScr]);
   const openGarden = useCallback(() => { buzz(10); if (setPTab) setPTab("garden"); setScr("profil"); }, [buzz, setPTab, setScr]);
 
   const ring = COMP.touchMin + SPACE.s16;
@@ -293,15 +331,33 @@ export default function KidHome({
         {missions.list.map(m => <Mission key={m.id} th={th} icon={m.icon} label={m.label} cur={m.cur} goal={m.goal} done={m.done} onClick={m.onClick} />)}
       </AppCard>
 
-      {/* ═══ O'yin markazi — mini-o'yinlar (eski modul, o'zgarmaydi) ═══ */}
-      <button className="ui-press" onClick={openGames} style={{ width: "100%", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3, fontFamily: "inherit" }}>
-        <span style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac2 + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.game(th.ac2, 20)}</span>
-        <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-          <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "O'yin markazi" : "Games center"}</span>
-          <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{uz ? "Qiziqarli mini-o'yinlar" : "Fun mini-games"}</span>
-        </span>
-        {KI.chev(th.t3, 16)}
-      </button>
+      {/* ═══ BILIM BOZORI — ISHLA (o'rgan/o'yna → coin) ═══ */}
+      <SectionHeader th={th} right={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{KI.coin(PREMIUM.gold, 15)}<span style={{ ...TYPE.caption, fontWeight: 800, color: PREMIUM.gold, fontVariantNumeric: "tabular-nums" }}>{coins}</span></span>}>{uz ? "Bilim Bozori" : "Knowledge Market"}</SectionHeader>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s2 }}>
+        <button className="ui-press" onClick={openBilim} style={{ background: "linear-gradient(135deg," + th.ac + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.ac + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", textAlign: "left", display: "flex", flexDirection: "column", gap: SPACE.s1, boxSizing: "border-box" }}>
+          <span style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s1 }}>{KI.book(th.ac, 22)}</span>
+          <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "O'rgan va ishla" : "Learn & earn"}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Dars yech → coin" : "Lessons → coins"}</span>
+        </button>
+        <button className="ui-press" onClick={openGames} style={{ background: "linear-gradient(135deg," + th.ac2 + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.ac2 + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", textAlign: "left", display: "flex", flexDirection: "column", gap: SPACE.s1, boxSizing: "border-box" }}>
+          <span style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac2 + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s1 }}>{KI.game(th.ac2, 22)}</span>
+          <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "O'yin markazi" : "Games center"}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Mini-o'yinlar" : "Mini-games"}</span>
+        </button>
+      </div>
+
+      {/* ═══ BILIM BOZORI — DO'KON (coin → mukofot) ═══ */}
+      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2, marginTop: SPACE.s1 }}>
+        <span style={{ display: "flex", flexShrink: 0 }}>{KI.store(th.gr, 18)}</span>
+        <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, textTransform: "uppercase", letterSpacing: ".3px" }}>{uz ? "Do'kon — coinni almashtir" : "Shop — spend coins"}</span>
+      </div>
+      {rewards.length === 0 ? (
+        <EmptyState th={th} icon={KI.gift(th.t3, 40)} title={uz ? "Hozircha mukofot yo'q" : "No rewards yet"} message={uz ? "Ota-onangdan Bilim Bozorida mukofot qo'yishini so'ra — coinlaringni muzqaymoq, kitob yoki pulga almashtir." : "Ask a parent to add a reward in the Knowledge Market — swap coins for treats, books or money."} actionText={uz ? "Bilim Bozori" : "Knowledge Market"} onAction={openBilim} style={{ marginBottom: SPACE.s3 }} />
+      ) : (
+        <div style={{ marginBottom: SPACE.s3 }}>
+          {rewards.map(r => <RewardCard key={r.id} th={th} f={f} uz={uz} name={r.name} reward={r.reward} targetCoins={r.targetCoins} coins={coins} done={r.done} onClick={openBilim} />)}
+        </div>
+      )}
 
       {/* ═══ 4. DAILY STREAK ═══ */}
       <SectionHeader th={th}>{uz ? "Kunlik seriya" : "Daily streak"}</SectionHeader>
@@ -342,27 +398,7 @@ export default function KidHome({
         </div>
       </div>
 
-      {/* ═══ 8. MUKOFOTGA YAQIN ═══ */}
-      <SectionHeader th={th}>{uz ? "Mukofotga yaqin" : "Reward preview"}</SectionHeader>
-      <button className="ui-press" onClick={openTasks} style={{ width: "100%", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s4, cursor: "pointer", fontFamily: "inherit", marginBottom: SPACE.s3, display: "flex", alignItems: "center", gap: SPACE.s3 }}>
-        <span style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.s + 2, background: PREMIUM.gold + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.gift(PREMIUM.gold, 24)}</span>
-        <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-          {nextReward ? (
-            <>
-              <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{nextReward.title}</span>
-              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{uz ? "Bajarsang" : "Complete to earn"}: <b style={{ color: th.gr }}>+{f(nextReward.reward, true)}</b></span>
-            </>
-          ) : (
-            <>
-              <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Yangi mukofotlar" : "New rewards"}</span>
-              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{uz ? "Ota-onang vazifa bersa shu yerda ko'rinadi" : "Parent-created rewards appear here"}</span>
-            </>
-          )}
-        </span>
-        {KI.chev(th.t3, 16)}
-      </button>
-
-      {/* ═══ 9. OXIRGI O'YNALGAN O'YINLAR ═══ */}
+      {/* ═══ OXIRGI O'YNALGAN O'YINLAR ═══ */}
       {recent.length > 0 && (
         <>
           <SectionHeader th={th}>{uz ? "Oxirgi o'yinlar" : "Recent games"}</SectionHeader>
