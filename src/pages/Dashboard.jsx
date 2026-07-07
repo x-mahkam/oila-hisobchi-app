@@ -12,6 +12,7 @@ import { KATS, KN, DARS, DN, QUICK_ADD } from "../utils/constants.js";
 import { tm } from "../utils/formatters.js";
 import { db } from "../firebase.js";
 import KidsGames from "../components/KidsGames.jsx";
+import KidHome from "./KidHome.jsx";
 // ── Sprint 3B: Smart Budget AI (decoupled qatlam — biznes logikaga tegmaydi) ──
 import { computeBudgetAI } from "../ai/budgetEngine.js";
 import { SmartBudgetSection, QuickInsight } from "../ai/BudgetComponents.jsx";
@@ -193,7 +194,7 @@ const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, divider }) {
 
 export default function DashboardPage({
   user, oila, azolar, xar, dar, maq, qarzlar, vazifalar,
-  kidBalances, notifs, qarzReqs, xReqs, rates, stars,
+  kidBalances, notifs, qarzReqs, xReqs, rates, stars, gardenData,
   setXar, setDar, setMaq, setKidBalances,
   dark, lg, val, scr, setScr, isPremium, isKid, isBosh, hasKids, isAdmin,
   th, t, f, ok$, buzz, addStar, fireConfetti,
@@ -202,7 +203,7 @@ export default function DashboardPage({
   delX, acceptXReq, rejectXReq,
   vazifaDone, vazifaApprove,
   fetchRates, rateL,
-  setShowGift, setShowBilim, setShowAddVazifa,
+  setShowGift, setShowBilim, setShowAddVazifa, setPTab,
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const [quickItem, setQuickItem] = useState(null);
@@ -374,118 +375,17 @@ export default function DashboardPage({
 
       {/* ===== BOLA BOSH SAHIFASI (gamification zonasi — o'yin uslubi saqlanadi) ===== */}
       {isKid && (
-        <div>
-          <div className="anim-fadeUp" style={{ background: "linear-gradient(135deg,#f59e0b 0%,#ec4899 55%,#8b5cf6 100%)", borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + (SPACE.s6 - 2) + "px", marginBottom: SPACE.s4, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1("#ec4899") }}>
-            <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.12)" }} />
-            <div style={{ position: "absolute", bottom: -SPACE.s12, left: -SPACE.s6, width: SPACE.s16 + SPACE.s6, height: SPACE.s16 + SPACE.s6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.08)" }} />
-            <div style={{ position: "relative" }}>
-              <div style={{ ...TYPE.subtitle, fontWeight: 500, color: "rgba(255,255,255,0.9)", marginBottom: 2 }}>
-                {(() => { const h = new Date().getHours(); return h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening"); })()}
-              </div>
-              <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 2, color: "#fff", marginBottom: SPACE.s4 }}>{user?.ism} 👋</div>
-              <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.8)", marginBottom: SPACE.s1 }}>{lg === "uz" ? "Mening cho'ntak pulim" : "My pocket money"}</div>
-              <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{f(kidBalances[user.id] || 0, true)}</div>
-              {(() => {
-                const isMine = v => v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase());
-                const taskAll = (vazifalar || []).filter(v => isMine(v) && v.status === "approved").reduce((s, v) => s + Number(v.reward || 0), 0);
-                const giftAll = kidGifts.reduce((s, g) => s + Number(g.summa || 0), 0);
-                const taskToday = (vazifalar || []).filter(v => isMine(v) && v.status === "approved" && v.paidSana === bugun).reduce((s, v) => s + Number(v.reward || 0), 0);
-                const giftToday = kidGifts.filter(g => g.sana === bugun).reduce((s, g) => s + Number(g.summa || 0), 0);
-                const spentToday = kidLedger.filter(l => l.tur === "spend" && l.sana === bugun).reduce((s, l) => s + Number(l.summa || 0), 0);
-                return (
-                  <>
-                    {/* Cho'ntak puli manbalari: sovg'a / vazifa (ma'lumot uchun) */}
-                    <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3 }}>
-                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px" }}>
-                        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>🎁 {lg === "uz" ? "Sovg'adan topilgan" : "From gifts"}</div>
-                        <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{f(giftAll, true)}</div>
-                      </div>
-                      <div style={{ flex: 1, background: "rgba(255,255,255,0.16)", borderRadius: RADIUS.s + 2, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px" }}>
-                        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.85)" }}>🎯 {lg === "uz" ? "Vazifadan topilgan" : "From tasks"}</div>
-                        <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{f(taskAll, true)}</div>
-                      </div>
-                    </div>
-                    {/* Bugungi harakat: topildi / sarflandi */}
-                    <div style={{ display: "flex", gap: SPACE.s3 + 2, marginTop: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 0.5, color: "rgba(255,255,255,0.92)", fontWeight: 700 }}>
-                      <span>📈 {lg === "uz" ? "Bugun topildi:" : "Earned today:"} +{f(taskToday + giftToday, true)}</span>
-                      <span>📉 {lg === "uz" ? "Bugun sarflandi:" : "Spent today:"} −{f(spentToday, true)}</span>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-
-          <MiniCard th={th} iconTone={th.gr} border={th.gr + ALPHA.strong} bg={th.gr + ALPHA.faint}
-            onClick={() => { buzz(10); setShowGift(true); }}
-            icon={<span style={{ fontSize: 22 }}>🎁</span>}
-            title={lg === "uz" ? "Sovg'a puli kiritish" : "Add gift money"}
-            sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Buvi, bobo yoki qarindosh bergan pul" : "Money from relatives"}</div>} />
-
-          {/* ── O'yinlar markazi ── */}
-          <button className="ui-press" onClick={() => { buzz(10); setShowGames(true); }} style={{ width: "100%", background: "linear-gradient(135deg,#8b5cf6," + th.ac + ")", border: "none", borderRadius: RADIUS.m, padding: SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s4 + 2, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1("#8b5cf6"), fontFamily: "inherit" }}>
-            <div style={{ position: "absolute", right: -SPACE.s1, top: "50%", transform: "translateY(-50%) rotate(-10deg)", fontSize: 46, opacity: 0.35 }}>🎮</div>
-            <div style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.s + 3, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>🎮</div>
-            <div style={{ flex: 1, textAlign: "left" }}>
-              <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "O'yinlar" : "Games"}</div>
-              <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,.85)", marginTop: 2 }}>{lg === "uz" ? "O'ynab bilim ol va liderbordda ball to'pla!" : "Play, learn and earn points!"}</div>
-            </div>
-            <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M5 3l7 5-7 5V3z" fill="#fff"/></svg>
-          </button>
+        <>
+          <KidHome
+            user={user} lg={lg} th={th} f={f} buzz={buzz} addStar={addStar}
+            vazifalar={vazifalar} kidBalances={kidBalances} stars={stars} gardenData={gardenData}
+            kidGifts={kidGifts} kidLedger={kidLedger} bugun={bugun}
+            vazifaDone={vazifaDone} setShowGames={setShowGames} setShowGift={setShowGift}
+            setShowBilim={setShowBilim} setScr={setScr} setPTab={setPTab}
+          />
           {showGames && <KidsGames user={user} lg={lg} addStar={addStar} onClose={() => setShowGames(false)} />}
-
-          <MiniCard th={th} iconTone={th.ac} border={th.ac + ALPHA.strong} bg={th.ac + ALPHA.faint}
-            onClick={() => { buzz(10); setShowBilim(true); }}
-            icon={<span style={{ fontSize: 22 }}>📚</span>}
-            title={lg === "uz" ? "Bilim Bozori" : "Knowledge Market"}
-            sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Matematika, ingliz tili, mantiq va boshqa fanlar" : "Math, English, logic and more"}</div>} />
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: SPACE.s2, marginBottom: SPACE.s4 + 2 }}>
-            {(() => {
-              const myV = vazifalar.filter(v => v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase()));
-              const done = myV.filter(v => v.status === "approved").length;
-              const pend = myV.filter(v => v.status === "pending" || v.status === "done").length;
-              const ball = done * 10;
-              return [
-                { ic: "🏆", l: lg === "uz" ? "Bajarildi" : "Done", v: done, c: th.gr },
-                { ic: "⏳", l: lg === "uz" ? "Vazifa" : "To do", v: pend, c: th.am },
-                { ic: "⭐", l: lg === "uz" ? "Ball" : "Points", v: ball, c: "#8b5cf6" },
-              ].map((s, i) => (
-                <div key={i} className="anim-fadeUp" style={{ animationDelay: (i * STAGGER * 2) + "ms" }}>
-                  <StatCard th={th} icon={<span style={{ fontSize: 24 }}>{s.ic}</span>} value={s.v} label={s.l} tone={s.c}
-                    style={{ background: "linear-gradient(135deg," + s.c + ALPHA.faint + "," + th.sur + ")", border: "1px solid " + s.c + ALPHA.med }} />
-                </div>
-              ));
-            })()}
-          </div>
-
-          <SectionHeader th={th}>{lg === "uz" ? "Bajarish kerak" : "To do"}</SectionHeader>
-          {(() => {
-            const active = vazifalar.filter(v => (v.assignedTo === user.id || (v.assignedLogin && user.login && v.assignedLogin === user.login) || (v.assignedName && user.ism && v.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase())) && (v.status === "pending" || v.status === "done"));
-            if (active.length === 0) {
-              return (
-                <div style={{ textAlign: "center", padding: SPACE.s8 + "px " + SPACE.s6 + "px", color: th.t2 }}>
-                  <div style={{ fontSize: 44, marginBottom: SPACE.s2 + 2 }}>🎉</div>
-                  <div style={{ ...TYPE.subtitle, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Barakalla! Hamma vazifa bajarilgan" : "All done!"}</div>
-                </div>
-              );
-            }
-            return active.slice(0, 4).map(v => (
-              <AppCard key={v.id} th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
-                <div style={{ width: COMP.touchMin + 2, height: COMP.touchMin + 2, borderRadius: RADIUS.s + 3, background: th.ac + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>{v.emoji}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ ...TYPE.body, fontWeight: 700, color: th.t1 }}>{v.title}</div>
-                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 800, color: th.gr, fontVariantNumeric: "tabular-nums" }}>+{f(v.reward, true)}</div>
-                </div>
-                {v.status === "pending"
-                  ? <PrimaryButton th={th} onClick={() => vazifaDone(v.id)} style={{ width: "auto", background: th.ac, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px " + SPACE.s4 + "px", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0, flexShrink: 0 }}>✓ {lg === "uz" ? "Bajardim" : "Done"}</PrimaryButton>
-                  : <Badge th={th} type="warning">{lg === "uz" ? "Kutilmoqda" : "Pending"}</Badge>}
-              </AppCard>
-            ));
-          })()}
-        </div>
+        </>
       )}
-
       {/* ===== KATTALAR BOSH SAHIFASI (yangi oqim: 1-11) ===== */}
       {!isKid && !oila && <DashSkeleton th={th} />}
       {!isKid && oila && (
