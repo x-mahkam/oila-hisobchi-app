@@ -1,0 +1,11 @@
+{
+  "name": "Oila Hisobchi",
+  "description": "Oilaviy hisob-kitob va moliyani boshqarish ilovasi",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
