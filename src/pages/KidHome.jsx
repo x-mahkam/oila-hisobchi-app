@@ -98,10 +98,18 @@ const SkillCard = memo(function SkillCard({ th, name, pct, games, coin, onClick 
 });
 
 // ── Yutuq kartasi (collectible) ──
-const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal, isNew }) {
+const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal, isNew, onClick }) {
   const pct = goal > 0 ? Math.min(100, Math.round(cur / goal * 100)) : 0;
   return (
-    <div style={{ width: COMP.pageMax * 0.42, flexShrink: 0, background: unlocked ? PREMIUM.gold + ALPHA.faint : th.sur, border: unlocked ? "1.5px solid " + PREMIUM.gold + ALPHA.strong : "1px dashed " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3, boxSizing: "border-box", scrollSnapAlign: "start", position: "relative" }}>
+    <button className="ui-press" onClick={onClick} disabled={!unlocked}
+      style={{
+        width: COMP.pageMax * 0.42, flexShrink: 0,
+        background: unlocked ? PREMIUM.gold + ALPHA.faint : th.sur,
+        border: unlocked ? "1.5px solid " + PREMIUM.gold + ALPHA.strong : "1px dashed " + th.bor,
+        borderRadius: RADIUS.m, padding: SPACE.s3, boxSizing: "border-box",
+        scrollSnapAlign: "start", position: "relative", textAlign: "left",
+        fontFamily: "inherit", cursor: unlocked ? "pointer" : "default"
+      }}>
       {isNew && unlocked && <span style={{ position: "absolute", top: SPACE.s2, right: SPACE.s2 }}><Badge th={th} type="premium" icon={null}>NEW</Badge></span>}
       <div style={{ width: SPACE.s12, height: SPACE.s12, borderRadius: RADIUS.full, background: unlocked ? PREMIUM.grad : th.surH, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: unlocked ? SHADOW.e1(PREMIUM.deep) : SHADOW.e0, filter: unlocked ? "none" : "grayscale(1)", opacity: unlocked ? 1 : 0.5, marginBottom: SPACE.s2 }}>
         {unlocked ? KI.medal("#fff", 22) : KI.lock(th.t3, 18)}
@@ -109,7 +117,7 @@ const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal,
       <div style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: unlocked ? th.t1 : th.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
       <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
       {!unlocked && goal > 0 && <LinearProgress th={th} value={pct} tone={th.ac} style={{ marginTop: SPACE.s2 }} />}
-    </div>
+    </button>
   );
 });
 
@@ -157,7 +165,7 @@ const RewardCard = memo(function RewardCard({ th, f, name, reward, targetCoins, 
 });
 
 export default function KidHome({
-  user, lg, th, f, buzz, addStar,
+  user, lg, th, f, buzz, addStar, fireConfetti,
   vazifalar = [], kidBalances = {}, stars = 0, gardenData = {},
   kidGifts = [], kidLedger = [], bugun,
   vazifaDone, setShowGames, setShowGift, setShowBilim, setScr, setPTab,
@@ -398,7 +406,18 @@ export default function KidHome({
       {/* ═══ 6. SO'NGGI YUTUQLAR ═══ */}
       <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlockedCount}/{medals.length}</Badge>}>{uz ? "So'nggi yutuqlar" : "Achievements"}</SectionHeader>
       <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s3, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
-        {medals.map(m => <MedalCard key={m.id} th={th} unlocked={m.unlocked} title={m.title} sub={m.sub} cur={m.cur} goal={m.goal} isNew={m.isNew} />)}
+        {medals.map(m => (
+          <MedalCard
+            key={m.id} th={th} unlocked={m.unlocked} title={m.title} sub={m.sub} cur={m.cur} goal={m.goal} isNew={m.isNew}
+            onClick={() => {
+              if (m.unlocked) {
+                buzz(25);
+                if (typeof fireConfetti === "function") fireConfetti();
+                addStar(1, uz ? `Yutuq: ${m.title}` : `Achievement: ${m.title}`);
+              }
+            }}
+          />
+        ))}
       </div>
 
       {/* ═══ 7. OTA-ONA MAQTOVI ═══ */}

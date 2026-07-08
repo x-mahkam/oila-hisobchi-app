@@ -11,9 +11,29 @@ import { T } from "./i18n.js";
 
 const DAY = 24 * 60 * 60 * 1000;
 const clamp = (v, a = 0, b = 100) => Math.max(a, Math.min(b, v));
-const toDate = s => { const d = new Date(s); return isNaN(d) ? null : d; };
-const dayStart = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
-const daysBetween = (a, b) => Math.round((dayStart(b) - dayStart(a)) / DAY);
+const toDate = s => {
+  if (!s) return null;
+  if (s instanceof Date) return isNaN(s.getTime()) ? null : s;
+  if (typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const parts = s.split("-");
+    const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+    return isNaN(d.getTime()) ? null : d;
+  }
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+};
+const dayStart = d => {
+  if (!d) return new Date();
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+};
+const daysBetween = (a, b) => {
+  const da = toDate(a);
+  const db = toDate(b);
+  if (!da || !db) return 0;
+  return Math.round((dayStart(db) - dayStart(da)) / DAY);
+};
 
 /** Health holati kalitlari — UI ranglari shu asosda tanlanadi. */
 export const STATUS = {

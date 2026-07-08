@@ -5,7 +5,7 @@ import {
   PrimaryButton, GhostButton, IconButton, LinearProgress, UIAvatar,
 } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, CHART, OPACITY } from "../utils/tokens.js";
-import { Ico } from "../utils/icons.jsx";
+import { Ico, EM_GOAL_ICONS } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { GOAL_PRESETS, KID_GOAL_PRESETS } from "../utils/constants.js";
 import WeddingCalc from "../components/WeddingCalc.jsx";
@@ -43,8 +43,16 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
   const smart = useMemo(() => computeSmart(m, meta, new Date()), [m, meta]);
   const [open, setOpen] = useState(false);
   const chipColor = statusColor(smart.status, th);
-  const chipDot = smart.status === STATUS.SERIOUS || smart.status === STATUS.OVERDUE ? "🔴"
-    : smart.status === STATUS.SLIGHTLY ? "🟡" : "🟢";
+  const chipDot = (
+    <span style={{
+      display: "inline-block",
+      width: 7,
+      height: 7,
+      borderRadius: "50%",
+      background: chipColor,
+      marginRight: 4
+    }} />
+  );
 
   // ── Oilaviy maqsad: a'zolar hissasini yig'ish (uid bo'yicha) ──
   const isFamilyGoal = m.shared === true || m.type === "family";
@@ -380,14 +388,21 @@ function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM }) {
 
   return (
     <AppCard th={th} style={{ border: "1.5px solid " + th.ac + ALPHA.strong }}>
-      <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.ac, marginBottom: SPACE.s3 }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s3 }}>
+        <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.ac }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
+        <button type="button" className="ui-press" onClick={() => setAddM(false)} aria-label="Close" style={{ border: "none", cursor: "pointer", display: "flex", padding: 4, borderRadius: "50%", background: th.surH + "44" }}>
+          {GIco.x(th.t2, 14)}
+        </button>
+      </div>
       <label style={STY.lb}>{lg === "uz" ? "Tayyor maqsadlar" : "Quick presets"}</label>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
         {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((pr, i) => {
           const active = mN === (pr[lg] || pr.uz);
           return (
-            <button key={i} className="ui-press" onClick={() => { setMN(pr[lg] || pr.uz); setMR(pr.rang); }} style={{ background: active ? pr.rang + ALPHA.tint : th.bg, border: "2px solid " + (active ? pr.rang : th.bor), borderRadius: RADIUS.s + 3, padding: (SPACE.s2 + 2) + "px " + SPACE.s1 + "px " + SPACE.s2 + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start", gap: SPACE.s1 + 1, minHeight: SPACE.s16 + SPACE.s2, fontFamily: "inherit" }}>
-              <span style={{ fontSize: 24, lineHeight: 1 }}>{pr.emoji}</span>
+            <button key={i} className="ui-press" onClick={() => { setMN(pr[lg] || pr.uz); setMR(pr.rang); }} style={{ background: active ? pr.rang + ALPHA.tint : th.bg, border: "2px solid " + (active ? pr.rang : th.bor), borderRadius: RADIUS.s + 3, padding: (SPACE.s2 + 2) + "px " + SPACE.s1 + "px " + SPACE.s2 + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 1, minHeight: SPACE.s16 + SPACE.s2, fontFamily: "inherit" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, color: active ? pr.rang : th.t2 }}>
+                {EM_GOAL_ICONS[pr.emoji] ? EM_GOAL_ICONS[pr.emoji](active ? pr.rang : th.t2, 24) : <span style={{ fontSize: 24, lineHeight: 1 }}>{pr.emoji}</span>}
+              </div>
               <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 0.5, color: active ? pr.rang : th.t2, fontWeight: 700, textAlign: "center", lineHeight: 1.25 }}>{pr[lg] || pr.uz}</span>
             </button>
           );
@@ -441,7 +456,13 @@ function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM }) {
           <button key={r} className="ui-press" onClick={() => setMR(r)} aria-label={r} style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.full, background: r, border: mR === r ? "3px solid " + th.t1 : "3px solid transparent", cursor: "pointer", flexShrink: 0 }} />
         ))}
       </div>
-      <PrimaryButton th={th} onClick={submit}>{t.sv}</PrimaryButton>
+      <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s2 }}>
+        <button type="button" className="ui-press" onClick={() => setAddM(false)}
+          style={{ flex: 1, background: th.surH || "rgba(0,0,0,0.05)", border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px 0", cursor: "pointer", ...TYPE.caption, fontWeight: 700, color: th.t2, fontFamily: "inherit" }}>
+          {lg === "uz" ? "Bekor qilish" : "Cancel"}
+        </button>
+        <PrimaryButton th={th} onClick={submit} style={{ flex: 2, marginBottom: 0 }}>{t.sv}</PrimaryButton>
+      </div>
     </AppCard>
   );
 }

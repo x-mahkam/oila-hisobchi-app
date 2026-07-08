@@ -3,7 +3,7 @@
 //  Barchasi Component Kit + tokens ustida. React.memo, useMemo.
 //  Dark mode / reduced-motion / large-font — tokenlar orqali meros.
 // ─────────────────────────────────────────────────────────────
-import { memo, useState } from "react";
+import { memo, useState, useRef, useEffect } from "react";
 import { SPACE, TYPE, RADIUS, ALPHA, CHART } from "../utils/tokens.js";
 import { AppCard, StatCard, CircularProgress } from "../components/ui/index.js";
 import { T } from "./i18n.js";
@@ -264,18 +264,121 @@ export const ReportsAISummary = memo(function ReportsAISummary({ th, lg, f, summ
   );
 });
 
+// ── CSS Hider for scrollbars ──────────────────────────────────
+let aiCssInjected = false;
+function injectAiCss() {
+  if (aiCssInjected || typeof document === "undefined") return;
+  aiCssInjected = true;
+  const s = document.createElement("style");
+  s.id = "ai-css";
+  s.textContent = `
+    .hide-scrollbar::-webkit-scrollbar { display: none !important; }
+    .hide-scrollbar { -ms-overflow-style: none !important; scrollbar-width: none !important; }
+  `;
+  document.head.appendChild(s);
+}
+
 // ══════════════════════════════════════════════════════════════
 //  ORCHESTRATOR — Dashboard'ga bitta joydan barcha AI kartalar
 // ══════════════════════════════════════════════════════════════
 export const SmartBudgetSection = memo(function SmartBudgetSection({ th, lg, f, ai }) {
   if (!ai) return null;
+  const [activeIdx, setActiveIdx] = useState(0);
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    injectAiCss();
+  }, []);
+
+  const cards = [
+    { key: "health", comp: <BudgetHealthCard th={th} lg={lg} health={ai.health} /> },
+    { key: "forecast", comp: <ForecastCard th={th} lg={lg} f={f} forecast={ai.forecast} /> },
+    { key: "trends", comp: <TrendCard th={th} lg={lg} f={f} trends={ai.trends} /> },
+    { key: "savings", comp: <SavingsCoachCard th={th} lg={lg} f={f} savings={ai.savings} wedding={ai.wedding} family={ai.family} /> },
+    { key: "risks", comp: <RiskCard th={th} lg={lg} f={f} risks={ai.risks} /> }
+  ];
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const nextIdx = (activeIdx + 1) % cards.length;
+      if (containerRef.current) {
+        const width = containerRef.current.clientWidth;
+        if (width > 0) {
+          containerRef.current.scrollTo({ left: nextIdx * width, behavior: "smooth" });
+          setActiveIdx(nextIdx);
+        }
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [activeIdx, cards.length]);
+
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+    const { scrollLeft, clientWidth } = containerRef.current;
+    const index = Math.round(scrollLeft / clientWidth);
+    if (index >= 0 && index < cards.length) {
+      setActiveIdx(index);
+    }
+  };
+
   return (
     <div className="anim-fadeUp">
-      <BudgetHealthCard th={th} lg={lg} health={ai.health} />
-      <ForecastCard th={th} lg={lg} f={f} forecast={ai.forecast} />
-      <TrendCard th={th} lg={lg} f={f} trends={ai.trends} />
-      <SavingsCoachCard th={th} lg={lg} f={f} savings={ai.savings} wedding={ai.wedding} family={ai.family} />
-      <RiskCard th={th} lg={lg} f={f} risks={ai.risks} />
+      {/* Swipeable Horizontal Container */}
+      <div 
+        ref={containerRef}
+        onScroll={handleScroll}
+        style={{
+          display: "flex",
+          overflowX: "auto",
+          scrollSnapType: "x mandatory",
+          scrollBehavior: "smooth",
+          gap: SPACE.s3,
+          padding: `2px 2px ${SPACE.s3}px 2px`,
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
+        className="hide-scrollbar"
+      >
+        {cards.map((card) => (
+          <div 
+            key={card.key}
+            style={{
+              flex: "0 0 100%",
+              width: "100%",
+              scrollSnapAlign: "center",
+            }}
+          >
+            {card.comp}
+          </div>
+        ))}
+      </div>
+
+      {/* Slide dots indicator */}
+      <div style={{ display: "flex", justifyContent: "center", gap: SPACE.s2, marginTop: -SPACE.s1, marginBottom: SPACE.s4 }}>
+        {cards.map((_, idx) => (
+          <button
+            key={idx}
+            onClick={() => {
+              if (containerRef.current) {
+                const width = containerRef.current.clientWidth;
+                containerRef.current.scrollTo({ left: idx * width, behavior: "smooth" });
+                setActiveIdx(idx);
+              }
+            }}
+            style={{
+              width: activeIdx === idx ? 16 : 6,
+              height: 6,
+              borderRadius: RADIUS.full,
+              background: activeIdx === idx ? th.ac : th.bor,
+              border: "none",
+              padding: 0,
+              cursor: "pointer",
+              transition: "all 0.3s ease",
+            }}
+            aria-label={`Slide ${idx + 1}`}
+          />
+        ))}
+      </div>
     </div>
   );
 });

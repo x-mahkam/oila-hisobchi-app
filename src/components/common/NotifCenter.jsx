@@ -39,7 +39,7 @@ const NotifRow = memo(function NotifRow({ th, lg, n, onOpen }) {
           {n._group && <Badge th={th} tone={c}>{n._count}</Badge>}
           {unread && <span style={{ width: 8, height: 8, borderRadius: RADIUS.full, background: c, flexShrink: 0 }} />}
         </span>
-        <span style={{ display: "block", ...TYPE.caption, color: th.t2, marginTop: 2, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.text || n.body}</span>
+        <span style={{ ...TYPE.caption, color: th.t2, marginTop: 2, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.text || n.body}</span>
         <span style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 + 1 }}>
           <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: c, fontWeight: 700 }}>{NCAT_LABEL[cat] ? (NCAT_LABEL[cat][lg] || NCAT_LABEL[cat].uz) : cat}</span>
           <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>· {fmtDate(n.sana, lg)}</span>

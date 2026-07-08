@@ -41,6 +41,9 @@ import { useNotifications }  from "./hooks/useNotifications.js";
 import { useGarden }         from "./hooks/useGarden.js";
 import { usePremium }        from "./hooks/usePremium.js";
 import { useExchangeRates }  from "./hooks/useExchangeRates.js";
+import { useVoiceInput }     from "./hooks/useVoiceInput.js";
+import { useQRScanner }      from "./hooks/useQRScanner.js";
+import { useExport }         from "./hooks/useExport.js";
 
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
@@ -67,8 +70,38 @@ export default function App() {
   // ── Hooks ────────────────────────────────────────────────
   const { loadFam } = useAuth();
   const { addX, addD } = useTransactions();
-  const { tupId, setTupId, tupS, setTupS, addMq, tupMq, delMq } = useGoals();
-  const { vazifaDone, vazifaApprove } = useFamily();
+  const {
+    tupId, setTupId, tupS, setTupS, addMq, tupMq, delMq,
+    editMq, setEditMq, editMqS, setEditMqS, editMqN, setEditMqN,
+    confirmMaqParent, confirmMaqKid, parentBoughtMaqsad, parentLaterMaqsad,
+    kidAcceptMaqsad, kidRejectMaqsad, confirmMaqBought, cancelMaqReturn, saveEditMq
+  } = useGoals();
+
+  const {
+    vazifaDone, vazifaApprove,
+    showGift,  setShowGift,
+    giftSum,   setGiftSum,
+    giftFrom,  setGiftFrom,
+    addGiftMoney,
+    showAddKid, setShowAddKid,
+    kidName,   setKidName,
+    kidSurname,   setKidSurname,
+    kidBirthYear, setKidBirthYear,
+    kidGender,    setKidGender,
+    kidGrade,     setKidGrade,
+    kidLogin,  setKidLogin,
+    kidPw,     setKidPw,
+    kidCreated, setKidCreated,
+    addKidAccount, delKidAccount,
+    showAddVazifa, setShowAddVazifa,
+    vTitle,    setVTitle,
+    vReward,   setVReward,
+    vAssignee, setVAssignee,
+    vEmoji,    setVEmoji,
+    vDeadline, setVDeadline,
+    addVazifa, delVazifa,
+    purgeData
+  } = useFamily();
   const debts = useDebts();
 
   // Qarz sahifasi ochilganda avtomatik sinxronizatsiya (holat + balans)
@@ -149,153 +182,6 @@ export default function App() {
     } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
   };
 
-  // ── OVOZ BILAN KIRITISH (eski versiyadan tiklandi) ──
-  const parseVoice = (text) => {
-    if (!text) return null;
-    const low = text.toLowerCase();
-    let summa = 0;
-    const mingMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(ming|tisyacha|\u0442\u044b\u0441\u044f\u0447|k)/);
-    const milMatch = low.match(/([0-9]+(?:[.,][0-9]+)?)\s*(million|mln|\u043c\u043b\u043d|millon)/);
-    const plainMatch = low.match(/([0-9]{3,})/);
-    if (milMatch) { summa = Math.round(parseFloat(milMatch[1].replace(",", ".")) * 1000000); }
-    else if (mingMatch) { summa = Math.round(parseFloat(mingMatch[1].replace(",", ".")) * 1000); }
-    else if (plainMatch) { summa = parseInt(plainMatch[1]); }
-    const katKeys = {
-      oziq: ["ovqat", "ovkat", "yeg", "tushlik", "nonushta", "kechki", "restoran", "kafe", "kofe", "choy", "non", "sut", "gosht", "go'sht", "meva", "sabzavot", "bozor", "produkt", "food", "oziq", "ovqatlanish"],
-      transport: ["transport", "taksi", "taxi", "yo'l", "benzin", "yoqilg'i", "avtobus", "metro", "mashina", "fuel", "gas"],
-      kommunal: ["kommunal", "svet", "gaz", "suv", "elektr", "internet", "telefon to'lov", "utility"],
-      sog: ["dori", "dorixona", "shifokor", "kasalxona", "apteka", "sog'liq", "tibbiyot", "health", "medicine", "klinika"],
-      kiyim: ["kiyim", "ko'ylak", "poyabzal", "kross", "clothes", "kiyinish"],
-      konil: ["kino", "o'yin", "sayohat", "dam", "konsert", "entertainment", "kongilochar", "ko'ngil"],
-      talim: ["kitob", "o'qish", "kurs", "ta'lim", "maktab", "universitet", "study", "education", "dars"],
-      boshqa: ["boshqa", "other"],
-    };
-    let kat = "boshqa";
-    for (const [k, words] of Object.entries(katKeys)) {
-      if (words.some(w => low.includes(w))) { kat = k; break; }
-    }
-    if (summa <= 0) return null;
-    return { summa, kat, text };
-  };
-  const startVoice = () => {
-    if (!isPremium) { setShowPremModal(true); return; }
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { setShowVoice(true); setVoiceText(""); setVoiceParsed(null); ok$(lg === "uz" ? "Brauzer ovozni qo'llamaydi. Qo'lda yozing." : "Voice not supported.", "warn"); return; }
-    setShowVoice(true); setVoiceText(""); setVoiceParsed(null); setVoiceOn(true);
-    try {
-      const rec = new SR();
-      rec.lang = lg === "uz" ? "uz-UZ" : "en-US";
-      rec.interimResults = true; rec.continuous = false;
-      rec.onresult = (e) => {
-        let txt = "";
-        for (let i = 0; i < e.results.length; i++) { txt += e.results[i][0].transcript; }
-        setVoiceText(txt);
-        const parsed = parseVoice(txt);
-        if (parsed) setVoiceParsed(parsed);
-      };
-      rec.onerror = (e) => { setVoiceOn(false); if (e.error === "not-allowed" || e.error === "permission-denied") { ok$(lg === "uz" ? "Mikrofon ruxsati berilmadi." : "Mic denied.", "warn"); } };
-      rec.onend = () => { setVoiceOn(false); };
-      voiceRecRef.current = rec;
-      rec.start();
-    } catch (e) { setVoiceOn(false); ok$(lg === "uz" ? "Xatolik. Qo'lda yozing." : "Error.", "warn"); }
-  };
-  const stopVoice = () => {
-    if (voiceRecRef.current) { try { voiceRecRef.current.stop(); } catch (e) {} }
-    setVoiceOn(false);
-  };
-  const applyVoice = async () => {
-    const parsed = voiceParsed || parseVoice(voiceText);
-    if (!parsed) { return ok$(lg === "uz" ? "Summa topilmadi. Masalan: 'transportga 20 ming'" : "No amount found.", "err"); }
-    const item = { id: Date.now(), kategoriya: parsed.kat, summa: parsed.summa, izoh: parsed.text.slice(0, 50), sana: td(), vaqt: nt(), repeat: false };
-    const key = "x_" + user.oilaId + "_" + user.id;
-    await db.s(key, [item, ...((await db.g(key)) || [])]);
-    setXar([{ ...item, uid: user.id }, ...xar]);
-    setShowVoice(false); setVoiceText(""); setVoiceParsed(null);
-    ok$(lg === "uz" ? "Qo'shildi: " + f(parsed.summa, true) + " — " + KN[lg][KATS.findIndex(k => k.id === parsed.kat)] : "Added: " + f(parsed.summa, true));
-  };
-
-  // ── CHEK QR SKANERI (eski versiyadan tiklandi) ──
-  const stopScanner = () => {
-    if (scanRafRef.current) { cancelAnimationFrame(scanRafRef.current); scanRafRef.current = null; }
-    if (scanStreamRef.current) { scanStreamRef.current.getTracks().forEach(tr => tr.stop()); scanStreamRef.current = null; }
-    setShowScanner(false); setScanMsg("");
-  };
-  const openWithPrefill = (summa, sana, izoh) => {
-    setScanPrefill({ summa, sana: sana || td(), izoh: izoh || "" });
-    setAddModalTab("xarajat"); setAddStep("form"); setAddKat("boshqa");
-    setShowAddModal(true);
-  };
-  const startScanner = async () => {
-    if (!isPremium) { setShowPremModal(true); return; }
-    setShowScanner(true); setScanMsg(lg === "uz" ? "Kamera ochilmoqda..." : "Opening camera...");
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      scanStreamRef.current = stream;
-      if (scanVideoRef.current) { scanVideoRef.current.srcObject = stream; await scanVideoRef.current.play(); }
-      setScanMsg(lg === "uz" ? "QR kodni ramkaga joylang" : "Point QR into frame");
-      if ("BarcodeDetector" in window) {
-        const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-        const scan = async () => {
-          if (!scanVideoRef.current || !scanStreamRef.current) return;
-          try {
-            const codes = await detector.detect(scanVideoRef.current);
-            if (codes && codes.length > 0) {
-              const raw = codes[0].rawValue;
-              stopScanner();
-              const isUrl = /^https?:\/\//i.test(raw);
-              let sana = "";
-              const tmm = raw.match(/[?&]t=(\d{8})/i);
-              if (tmm) { const d = tmm[1]; sana = d.slice(0, 4) + "-" + d.slice(4, 6) + "-" + d.slice(6, 8); }
-              const rm = raw.match(/[?&]r=(\d+)/i);
-              const izoh = rm ? (lg === "uz" ? "Chek #" : "Receipt #") + rm[1] : "";
-              // 1) URL i= parametri (tiyinda)
-              const im = raw.match(/[?&]i=([0-9]+)/i);
-              if (im) {
-                const v = Math.round(parseInt(im[1], 10) / 100);
-                if (v > 0) { openWithPrefill(v, sana, izoh); ok$("\u2713 " + f(v, true) + (lg === "uz" ? " — tekshiring va saqlang" : " — verify & save")); return; }
-              }
-              if (isUrl) {
-                ok$(lg === "uz" ? "Chek yuklanmoqda..." : "Loading receipt...");
-                try {
-                  const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(raw);
-                  const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-                  const data = await resp.json();
-                  const html = data.contents || "";
-                  let summa = 0;
-                  const jamiRgx = /[Jj]ami[^<]{0,60}?([\d][\d\s.,]*[\d])/;
-                  const jm = html.replace(/<[^>]+>/g, " ").match(jamiRgx);
-                  if (jm) {
-                    const numStr = jm[1].replace(/\s/g, "").replace(/,(\d{2})$/, "").replace(/\.(\d{2})$/, "").replace(/[,.\s]/g, "");
-                    const v = parseInt(numStr, 10);
-                    if (v >= 100 && v <= 999999999) { summa = v; }
-                  }
-                  if (summa > 0) { openWithPrefill(summa, sana, izoh); ok$("\u2713 " + f(summa, true) + (lg === "uz" ? " — tekshiring va saqlang" : " — verify & save")); }
-                  else { openWithPrefill("", sana, izoh); ok$(lg === "uz" ? "Summa topilmadi, qo'lda kiriting" : "Amount not found", "warn"); }
-                } catch (err) { openWithPrefill("", sana, izoh); ok$(lg === "uz" ? "Chek yuklanmadi, qo'lda kiriting" : "Load failed", "warn"); }
-              } else {
-                const jm = raw.match(/[Jj]ami[^\n]{0,60}?([\d][\d\s.,]*[\d])/);
-                if (jm) {
-                  const numStr = jm[1].replace(/\s/g, "").replace(/,(\d{2})$/, "").replace(/\.(\d{2})$/, "").replace(/[,.\s]/g, "");
-                  const v = parseInt(numStr, 10);
-                  if (v >= 100 && v <= 999999999) { openWithPrefill(v, sana, izoh); ok$("\u2713 " + f(v, true)); return; }
-                }
-                openWithPrefill("", sana, izoh);
-                ok$(lg === "uz" ? "Summa topilmadi, qo'lda kiriting" : "Amount not found", "warn");
-              }
-              return;
-            }
-          } catch (e) {}
-          scanRafRef.current = requestAnimationFrame(scan);
-        };
-        scanRafRef.current = requestAnimationFrame(scan);
-      } else { setScanMsg(lg === "uz" ? "Brauzer QR skanerini qo'llamaydi." : "QR scanner not supported."); }
-    } catch (e) {
-      const isDenied = (e.name === "NotAllowedError" || (e.message || "").indexOf("denied") >= 0 || (e.message || "").indexOf("Permission") >= 0);
-      if (isDenied) { setScanMsg(lg === "uz" ? "Kamera ruxsati berilmadi. Sozlamalardan ruxsat bering." : "Camera denied."); }
-      else { setScanMsg((lg === "uz" ? "Kamera ochilmadi. Qo'lda kiriting." : "Camera unavailable.") + " (" + (e.name || "") + ")"); }
-    }
-  };
-
   // Maqsadlar sinxronizatsiyasi: bola pul yig'ib bo'lganda ota bannerni DARHOL ko'rsin
   useEffect(() => {
     if (!user?.oilaId) return;
@@ -334,19 +220,7 @@ export default function App() {
   }, [showNotifs]);
   const [showS,        setShowS]        = useState(false);
   // ── Ovoz bilan kiritish ──
-  const [showVoice, setShowVoice] = useState(false);
-  const [voiceOn, setVoiceOn] = useState(false);
-  const [voiceText, setVoiceText] = useState("");
-  const [voiceParsed, setVoiceParsed] = useState(null);
-  const voiceRecRef = useRef(null);
   const authBusyRef = useRef(false);  // ro'yxatdan o'tish/kirish davomida onChange'ni to'xtatadi
-  // ── Chek QR skaneri ──
-  const [showScanner, setShowScanner] = useState(false);
-  const [scanMsg, setScanMsg] = useState("");
-  const [scanPrefill, setScanPrefill] = useState(null);
-  const scanVideoRef = useRef(null);
-  const scanStreamRef = useRef(null);
-  const scanRafRef = useRef(null);
   // Boshqa sahifaga o'tilganda qidiruv yopiladi
   useEffect(() => { setShowS(false); setSrch(""); /* eslint-disable-next-line */ }, [scr]);
   const [srch,         setSrch]         = useState("");
@@ -356,7 +230,6 @@ export default function App() {
   const [addKat,       setAddKat]       = useState(null);
   const [hisFil,       setHisFil]       = useState("all");
   const [ctab,         setCtab]         = useState("line");
-  const [exportLoading, setExportLoading] = useState(false);
   const [showBilim,    setShowBilim]    = useState(false);
   const [showGardenInfo, setShowGardenInfo] = useState(false);
   const [pTab,         setPTab]         = useState("main");
@@ -393,31 +266,9 @@ export default function App() {
   const [tilxatView, setTilxatView] = useState(null); // APK/WebView uchun ichki tilxat oynasi
 
   // Goals local state
-  const [editMq,   setEditMq]   = useState(null);
-  const [editMqS,  setEditMqS]  = useState("");
-  const [editMqN,  setEditMqN]  = useState("");
   const [mN,       setMN]       = useState("");
   const [mS,       setMS]       = useState("");
   const [mR,       setMR]       = useState("#10b981");
-
-  // Gift / Kid
-  const [showGift,  setShowGift]  = useState(false);
-  const [giftSum,   setGiftSum]   = useState("");
-  const [giftFrom,  setGiftFrom]  = useState("");
-  const [showAddKid, setShowAddKid] = useState(false);
-  const [kidName,   setKidName]   = useState("");
-  const [kidLogin,  setKidLogin]  = useState("");
-  const [kidPw,     setKidPw]     = useState("");
-  const [kidSurname,   setKidSurname]   = useState("");
-  const [kidBirthYear, setKidBirthYear] = useState("");
-  const [kidGender,    setKidGender]    = useState("");   // ixtiyoriy: "ogil" | "qiz"
-  const [kidGrade,     setKidGrade]     = useState("");   // ixtiyoriy: 1–11
-  const [showAddVazifa, setShowAddVazifa] = useState(false);
-  const [vTitle,    setVTitle]    = useState("");
-  const [vReward,   setVReward]   = useState("");
-  const [vAssignee, setVAssignee] = useState("");
-  const [vEmoji,    setVEmoji]    = useState("📚");
-  const [vDeadline, setVDeadline] = useState(""); // vazifa muddati (ixtiyoriy; kechiksa mukofot yo'q)
 
   // Auth form states
   const [reg,          setReg]          = useState(false);
@@ -508,6 +359,28 @@ export default function App() {
   const pieD = useMemo(() => KATS.map((k, i) => ({
     name: KN[lg][i], value: bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0), color: k.c,
   })).filter(d => d.value > 0), [bX, lg]);
+
+  const {
+    showVoice, setShowVoice,
+    voiceOn, setVoiceOn,
+    voiceText, setVoiceText,
+    voiceParsed, setVoiceParsed,
+    startVoice, stopVoice, applyVoice
+  } = useVoiceInput();
+
+  const {
+    showScanner, setShowScanner,
+    scanMsg, setScanMsg,
+    scanPrefill, setScanPrefill,
+    scanVideoRef, scanStreamRef, scanRafRef,
+    startScanner, stopScanner, openWithPrefill
+  } = useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setAddKat });
+
+  const {
+    exportLoading, exportExcel, exportPDF, downloadFile
+  } = useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar });
+
+
 
   // ── Boot / Auth ──────────────────────────────────────────
   useEffect(() => {
@@ -971,248 +844,7 @@ export default function App() {
     setXar(xar.filter(x => !(x.id === item.id && x.uid === user.id)));
   };
 
-  // ── Maqsad confirm ────────────────────────────────────────
-  const confirmMaqParent = async (notif) => {
-    try {
-      const maqUpd = (await db.g("maq_" + user.oilaId)) || [];
-      const finalMaq = maqUpd.map(m => m.id === notif.maqsadId ? { ...m, status: "parent_confirmed", parentConfirmedAt: new Date().toISOString() } : m);
-      await db.s("maq_" + user.oilaId, finalMaq); setMaq(finalMaq);
-      const kn = (await db.g("notif_" + notif.kidId)) || [];
-      await db.s("notif_" + notif.kidId, [{ id: Date.now(), type: "maqsad_kid_confirm", title: lg === "uz" ? "🎁 Ota/onang orzuingni amalga oshirdi!" : "🎁 Parent fulfilled your dream!", text: (lg === "uz" ? "'" + (notif.maqsadIsm || "") + "' sotib olindi! Siz ham tasdiqlang 👇" : "Was bought! Confirm below 👇"), maqsadId: notif.maqsadId, maqsadIsm: notif.maqsadIsm, sana: new Date().toISOString(), read: false, status: "pending" }, ...kn]);
-      const myN = notifs.map(n => n.id === notif.id ? { ...n, read: true, status: "confirmed" } : n);
-      setNotifs(myN); await db.s("notif_" + user.id, myN);
-      fireConfetti(); buzz(20);
-      ok$(lg === "uz" ? "✅ Tasdiqlandi! Farzandingizga xabar yuborildi 🎉" : "✅ Confirmed!");
-    } catch { ok$(lg === "uz" ? "Xato" : "Error", "err"); }
-  };
-  const confirmMaqKid = async (notif) => {
-    try {
-      const maqUpd = (await db.g("maq_" + user.oilaId)) || [];
-      const finalMaq = maqUpd.map(m => m.id === notif.maqsadId ? { ...m, status: "completed", completedAt: new Date().toISOString(), paid: true } : m);
-      await db.s("maq_" + user.oilaId, finalMaq); setMaq(finalMaq);
-      const myN = notifs.map(n => n.id === notif.id ? { ...n, read: true, status: "confirmed" } : n);
-      setNotifs(myN); await db.s("notif_" + user.id, myN);
-      fireConfetti(); buzz(30);
-      ok$(lg === "uz" ? "🎉 Barakalla! Orzuingiz amalga oshdi!" : "🎉 Congratulations!");
-    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
-  };
-  // ── Orzu oqimi: karta ichidagi tugmalar (bildirishnomaga bog'liq emas) ──
-  const notifyTo = async (uid, type, title, text, extra = {}) => {
-    try {
-      const cur = (await db.g("notif_" + uid)) || [];
-      await db.s("notif_" + uid, [{ id: Date.now() + Math.random(), type, title, text, sana: new Date().toISOString(), read: false, ...extra }, ...cur].slice(0, 100));
-    } catch (e) {}
-  };
-  const boshIdOf = () => oila?.boshId || azolar.find(a => a.rol === "bosh")?.id;
 
-  // Ota: "Olib berdim" — bola tasdig'iga o'tadi
-  const parentBoughtMaqsad = async (goal) => {
-    const u = maq.map(m => m.id === goal.id ? { ...m, status: "parent_confirmed", parentConfirmedAt: new Date().toISOString(), parentLater: false } : m);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    await notifyTo(goal.uid, "maqsad_kid_confirm",
-      lg === "uz" ? "🎁 Ota/onang orzuingni amalga oshirdi!" : "🎁 Parent fulfilled your dream!",
-      "'" + (goal.ism || "") + "' " + (lg === "uz" ? "sotib olindi! Maqsad bo'limida tasdiqlang" : "was bought! Confirm in Goals"),
-      { maqsadId: goal.id, maqsadIsm: goal.ism, status: "pending" });
-    fireConfetti(); buzz(20);
-    ok$(lg === "uz" ? "✅ Farzandingizga xabar yuborildi — u tasdiqlaydi" : "✅ Sent to child for confirmation");
-  };
-
-  // Ota: "Keyinroq olib beraman"
-  const parentLaterMaqsad = async (goal) => {
-    const u = maq.map(m => m.id === goal.id ? { ...m, parentLater: true, parentLaterAt: new Date().toISOString() } : m);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    await notifyTo(goal.uid, "yangilik",
-      lg === "uz" ? "⏰ Orzuing esda!" : "⏰ Dream noted!",
-      (lg === "uz" ? "Ota-onangiz '" : "Parent will buy '") + (goal.ism || "") + (lg === "uz" ? "'ni keyinroq olib berishini aytdi" : "' later"));
-    ok$(lg === "uz" ? "Farzandingizga xabar berildi ⏰" : "Child notified ⏰");
-  };
-
-  // Bola: "Ha, oldim!" — orzu yopiladi
-  const kidAcceptMaqsad = async (goal) => {
-    const u = maq.map(m => m.id === goal.id ? { ...m, status: "completed", paid: true, completedAt: new Date().toISOString() } : m);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    const b = boshIdOf();
-    if (b) await notifyTo(b, "yangilik", lg === "uz" ? "🎉 Orzu amalga oshdi!" : "🎉 Dream fulfilled!",
-      (user.ism || "") + " '" + (goal.ism || "") + "' " + (lg === "uz" ? "orzusini tasdiqladi. Rahmat!" : "confirmed."));
-    fireConfetti(); buzz(30);
-    ok$(lg === "uz" ? "🎉 Barakalla! Orzuingiz amalga oshdi!" : "🎉 Congratulations!");
-  };
-
-  // Bola: "Hali olganim yo'q" — holat otaga qaytadi
-  const kidRejectMaqsad = async (goal) => {
-    const u = maq.map(m => m.id === goal.id ? { ...m, status: "waiting_parent", parentConfirmedAt: null } : m);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    const b = boshIdOf();
-    if (b) await notifyTo(b, "maqsad_confirm", lg === "uz" ? "⚠️ Farzandingiz hali olmaganini aytdi" : "⚠️ Child says not received",
-      (user.ism || "") + " '" + (goal.ism || "") + "' " + (lg === "uz" ? "hali qo'liga tegmaganini bildirdi. Iltimos, olib bering." : "not received yet."),
-      { maqsadId: goal.id, kidId: user.id, kidIsm: user.ism, maqsadIsm: goal.ism, summa: goal.maqsad, status: "pending" });
-    ok$(lg === "uz" ? "Ota-onangizga xabar yuborildi" : "Parent notified", "warn");
-  };
-
-  const confirmMaqBought = async (info) => {
-    const u = maq.map(m => m.id === info.maqsadId ? { ...m, status: "completed", paid: true, completedAt: td() } : m);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    setMaqsadConfirmNotif(null); fireConfetti(); buzz(30);
-    ok$(lg === "uz" ? "🎉 Tabriklaymiz!" : "🎉 Congratulations!");
-  };
-  const cancelMaqReturn = async (info) => {
-    const goal = maq.find(m => m.id === info.maqsadId);
-    if (goal?.jamg > 0) {
-      const dItem = { id: Date.now(), tur: "boshqa", summa: goal.jamg, izoh: (lg === "uz" ? "Maqsaddan qaytarildi: " : "Goal cancelled: ") + (goal.ism || ""), sana: td(), vaqt: nt(), uid: user.id };
-      const dk = "d_" + user.oilaId + "_" + user.id;
-      await db.s(dk, [dItem, ...((await db.g(dk)) || [])]); setDar(d => [dItem, ...d]);
-    }
-    const u = maq.filter(m => m.id !== info.maqsadId);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    setMaqsadConfirmNotif(null);
-    ok$(lg === "uz" ? "Maqsad bekor qilindi ↩️" : "Goal cancelled", "warn");
-  };
-  const saveEditMq = async () => {
-    if (!editMqN.trim() || !editMqS || Number(editMqS) <= 0) return ok$(t.fa, "err");
-    const u = maq.map(m => m.id === editMq ? { ...m, ism: editMqN.trim(), maqsad: Number(editMqS) } : m);
-    await db.s("maq_" + user.oilaId, u); setMaq(u);
-    setEditMq(null); setEditMqS(""); setEditMqN(""); ok$(t.ua);
-  };
-
-  // ── Kid / Gift ────────────────────────────────────────────
-  const addGiftMoney = async () => {
-    if (!giftSum || Number(giftSum) <= 0) return ok$(lg === "uz" ? "Summani kiriting" : "Enter amount", "err");
-    buzz(15);
-    const summa = Number(giftSum);
-    const kb = { ...kidBalances }; kb[user.id] = (kb[user.id] || 0) + summa;
-    await db.s("kidbal_" + user.oilaId, kb); setKidBalances(kb);
-    try { const hist = (await db.g("kidgift_" + user.id)) || []; await db.s("kidgift_" + user.id, [{ id: Date.now(), summa, from: giftFrom.trim() || (lg === "uz" ? "Sovg'a" : "Gift"), sana: td() }, ...hist].slice(0, 100)); } catch {}
-    setShowGift(false); setGiftSum(""); setGiftFrom("");
-    ok$(lg === "uz" ? "🎁 " + f(summa, true) + " cho'ntagingizga qo'shildi!" : "Added to your pocket!");
-    fireConfetti();
-  };
-  const [kidCreated, setKidCreated] = useState(null); // { ism, login, pw }
-
-  const addKidAccount = async () => {
-    // ── Validatsiya: majburiy — ism, familya, tug'ilgan yili; login/parol ──
-    const nowY = new Date().getFullYear();
-    const by = Number(kidBirthYear);
-    if (kidName.trim().length < 2)    return ok$(lg === "uz" ? "Bola ismini kiriting (kamida 2 belgi)" : "Enter child's first name", "err");
-    if (kidSurname.trim().length < 2) return ok$(lg === "uz" ? "Familyani kiriting (kamida 2 belgi)" : "Enter surname", "err");
-    if (!/^\d{4}$/.test(String(kidBirthYear)) || by < nowY - 17 || by > nowY - 3)
-      return ok$(lg === "uz" ? "Tug'ilgan yili noto'g'ri (bola 3–17 yoshda bo'lishi kerak)" : "Invalid birth year (age 3–17)", "err");
-    if (kidGrade !== "" && (Number(kidGrade) < 1 || Number(kidGrade) > 11))
-      return ok$(lg === "uz" ? "Sinf 1 dan 11 gacha bo'lishi kerak" : "Grade must be 1–11", "err");
-    if (kidLogin.trim().length < 3)   return ok$(lg === "uz" ? "Login kamida 3 belgi bo'lsin" : "Login min 3 chars", "err");
-    if (kidPw.length < 4)             return ok$(lg === "uz" ? "Parol kamida 4 belgi bo'lsin" : "Password min 4 chars", "err");
-    buzz(12);
-    const loginKey = kidLogin.trim().toLowerCase();
-    if (await db.gFresh("kidlogin_" + loginKey)) return ok$(lg === "uz" ? "Bu login band, boshqa login tanlang" : "Login taken, choose another", "err");
-    try {
-      const uid = "kid" + Date.now();
-      const ph = await hp(kidPw);
-      const nu = { id: uid, ism: kidName.trim(), familya: kidSurname.trim(), birthYear: by, gender: kidGender || null, sinf: kidGrade !== "" ? Number(kidGrade) : null, login: loginKey, ph, oilaId: user.oilaId, rol: "kid", rel: "farzand", photo: null, parentId: user.id };
-      await db.s("user_" + uid, nu); await db.s("kidlogin_" + loginKey, { uid, oila: user.oilaId });
-      const o2 = { ...oila, azolarIds: [...(oila.azolarIds || oila.azolar || [user.id]), uid] };
-      // ikki kalitga ham yozamiz: eski fam_ va yangi oila_
-      if (oila.id) await db.s("oila_" + oila.id, o2);
-      await db.s("fam_" + user.oilaId, { ...o2, azolar: o2.azolarIds });
-      setOila(o2);
-      setAzolar([...azolar, nu]);
-      setShowAddKid(false); setKidName(""); setKidSurname(""); setKidBirthYear(""); setKidGender(""); setKidGrade(""); setKidLogin(""); setKidPw("");
-      setKidCreated({ ism: nu.ism, login: loginKey, pw: kidPw });
-    } catch (e) { ok$(lg === "uz" ? "Xato: " + (e.code || e.message) : "Error: " + (e.code || e.message), "err"); }
-  };
-
-  // ── Eski bola login-lookup'larini davolash (bir sessiyada bir marta) ──
-  // Eski format: kidlogin_<login> = "<uid>" (oila yo'q) — bola yangi qurilmadan
-  // kira olmaydi (Rules). Ota-ona ilovani ochganda { uid, oila } ga yangilanadi.
-  const kidLookupHealed = useRef(false);
-  useEffect(() => {
-    if (kidLookupHealed.current || !user || user.rol === "kid" || !user.oilaId || !azolar?.length) return;
-    kidLookupHealed.current = true;
-    (async () => {
-      for (const a of azolar) {
-        if (a.rol !== "kid" || !a.login) continue;
-        try {
-          const cur = await db.gFresh("kidlogin_" + a.login);
-          if (cur && typeof cur !== "object") await db.s("kidlogin_" + a.login, { uid: a.id, oila: user.oilaId });
-        } catch (e) {}
-      }
-    })();
-  }, [user, azolar]);
-
-  // ── Bola akkauntini o'chirish (faqat oila boshi yoki yaratgan ota-ona) ──
-  const delKidAccount = async (kid) => {
-    if (!kid || kid.rol !== "kid") return;
-    if (user?.rol !== "bosh" && kid.parentId !== user?.id)
-      return ok$(lg === "uz" ? "Faqat oila boshi yoki akkauntni yaratgan ota-ona o'chira oladi" : "Only the family head or the creating parent can delete", "err");
-    buzz(15);
-    try {
-      if (kid.login) await db.del("kidlogin_" + kid.login);   // login bo'shatiladi (haqiqatan o'chadi)
-      await db.del("user_" + kid.id);                          // profil butunlay o'chadi
-      const ids = (oila?.azolarIds || oila?.azolar || []).filter(id => id !== kid.id);
-      const o2 = { ...oila, azolarIds: ids };
-      if (oila?.id) await db.s("oila_" + oila.id, o2);
-      await db.s("fam_" + user.oilaId, { ...o2, azolar: ids });
-      setOila(o2); setAzolar(azolar.filter(a => a.id !== kid.id));
-      ok$(lg === "uz" ? kid.ism + " akkaunti o'chirildi" : "Kid account deleted");
-    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.code || e.message), "err"); }
-  };
-
-  // ── MA'LUMOTLARNI TOZALASH: xarajat/daromad yozuvlari ──
-  // fromS/toS: "YYYY-MM-DD" yoki "" (chegara yo'q). wholeFamily — faqat oila boshi.
-  const purgeData = async (fromS, toS, wholeFamily) => {
-    if (wholeFamily && user?.rol !== "bosh")
-      return ok$(lg === "uz" ? "Butun oila ma'lumotini faqat oila boshi tozalay oladi" : "Only the family head can clear family data", "err");
-    const inRange = sn => (!fromS || (sn || "") >= fromS) && (!toS || (sn || "") <= toS);
-    const targets = wholeFamily ? azolar : azolar.filter(a => a.id === user.id);
-    buzz(15);
-    let removed = 0;
-    try {
-      for (const m of targets) {
-        const kx = "x_" + user.oilaId + "_" + m.id, kd2 = "d_" + user.oilaId + "_" + m.id;
-        const xa = (await db.g(kx)) || [], da = (await db.g(kd2)) || [];
-        const xKeep = xa.filter(r => !inRange(r.sana)), dKeep = da.filter(r => !inRange(r.sana));
-        removed += (xa.length - xKeep.length) + (da.length - dKeep.length);
-        if (xKeep.length !== xa.length) await db.s(kx, xKeep);
-        if (dKeep.length !== da.length) await db.s(kd2, dKeep);
-      }
-      const ids = new Set(targets.map(m => m.id));
-      setXar(xar.filter(r => !(ids.has(r.uid) && inRange(r.sana))));
-      setDar(dar.filter(r => !(ids.has(r.uid) && inRange(r.sana))));
-      ok$(lg === "uz" ? removed + " ta yozuv o'chirildi" : removed + " records deleted");
-      return true;
-    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.code || e.message), "err"); return false; }
-  };
-
-  // ── Vazifa ────────────────────────────────────────────────
-  const addVazifa = async () => {
-    // PERMISSION (Sprint 4): barcha KATTA a'zolar vazifa bera oladi, bola — yo'q.
-    if (!canAssignTask(user)) return ok$(lg === "uz" ? "Vazifani faqat katta oila a'zolari bera oladi" : "Only adult family members can assign tasks", "err");
-    if (!vTitle.trim() || !vReward || Number(vReward) <= 0 || !vAssignee) return ok$(lg === "uz" ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
-    buzz(12);
-    const kd = azolar.find(a => a.id === vAssignee);
-    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, createdByName: user.ism || "", status: "pending", sana: td(), doneSana: "", paidSana: "", deadline: vDeadline || "" };
-    const upd = [item, ...vazifalar];
-    await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
-    setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚"); setVDeadline("");
-    ok$(lg === "uz" ? "Vazifa qo'shildi! 🎯" : "Task added!");
-  };
-  const delVazifa = async (id) => {
-    // PERMISSION (Sprint 4): bosh — hammasini; katta a'zo — faqat o'zi berganini.
-    const v = vazifalar.find(x => x.id === id);
-    if (!canDeleteTask(user, v))
-      return ok$(lg === "uz" ? "Faqat o'zingiz bergan vazifani o'chira olasiz" : "You can only delete tasks you created", "err");
-    const upd = vazifalar.filter(x => x.id !== id);
-    await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
-  };
-
-  // ── Export ────────────────────────────────────────────────
-  const downloadFile = (content, filename, mime) => {
-    try {
-      const blob = new Blob([content], { type: mime });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a"); a.href = url; a.download = filename;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000); return true;
-    } catch { return false; }
-  };
 
   // ── Feedback ──────────────────────────────────────────────
   const sendFeedback = async () => {
@@ -1370,164 +1002,8 @@ export default function App() {
     ok$(lg === "uz" ? "Rad etildi" : "Rejected", "warn");
   };
 
-  // ── Export ────────────────────────────────────────────────
-  const exportExcel = () => {
-    if (!isPremium) { setShowPremModal(true); return; }
-    setExportLoading(true);
-    try {
-      const month = tm();
-      const esc = s => { const v = String(s == null ? "" : s); if (v.indexOf('"') >= 0 || v.indexOf(";") >= 0) { return '"' + v.split('"').join('""') + '"'; } return v; };
-      const exFil = canSeeReport ? hisFil : user?.id;
-      const exX = exFil === "all" ? bX : bX.filter(x => x.uid === exFil);
-      const exD = exFil === "all" ? bD : bD.filter(d => d.uid === exFil);
-      const exjX = exX.reduce((s, x) => s + Number(x.summa || 0), 0);
-      const exjD = exD.reduce((s, d) => s + Number(d.summa || 0), 0);
-      const rows = [];
-      rows.push([lg === "uz" ? "OILA HISOBOTI" : "FAMILY REPORT", month].join(";"));
-      rows.push("");
-      rows.push([lg === "uz" ? "Jami daromad" : "Total income", exjD].join(";"));
-      rows.push([lg === "uz" ? "Jami xarajat" : "Total expense", exjX].join(";"));
-      rows.push([lg === "uz" ? "Balans" : "Balance", exjD - exjX].join(";"));
-      rows.push([lg === "uz" ? "Budjet" : "Budget", bdj].join(";"));
-      rows.push("");
-      if (exX.length > 0) {
-        rows.push([lg === "uz" ? "XARAJATLAR" : "EXPENSES"].join(";"));
-        rows.push(["#", lg === "uz" ? "Sana" : "Date", lg === "uz" ? "Kategoriya" : "Category", lg === "uz" ? "Izoh" : "Note", lg === "uz" ? "Kim" : "Who", lg === "uz" ? "Summa" : "Amount"].map(esc).join(";"));
-        exX.forEach((x, i) => rows.push([i + 1, x.sana, KN[lg][KATS.findIndex(k => k.id === x.kategoriya)] || "", x.izoh || "", gN(x.uid), x.summa].map(esc).join(";")));
-        rows.push("");
-      }
-      if (exD.length > 0) {
-        rows.push([lg === "uz" ? "DAROMADLAR" : "INCOME"].join(";"));
-        rows.push(["#", lg === "uz" ? "Sana" : "Date", lg === "uz" ? "Tur" : "Type", lg === "uz" ? "Izoh" : "Note", lg === "uz" ? "Kim" : "Who", lg === "uz" ? "Summa" : "Amount"].map(esc).join(";"));
-        exD.forEach((d, i) => rows.push([i + 1, d.sana, DN[lg][DARS.findIndex(dr => dr.id === d.tur)] || "", d.izoh || "", gN(d.uid), d.summa].map(esc).join(";")));
-        rows.push("");
-      }
-      if (qarzlar.length > 0) {
-        rows.push([lg === "uz" ? "QARZLAR" : "DEBTS"].join(";"));
-        rows.push(["#", lg === "uz" ? "Kim" : "Person", lg === "uz" ? "Tur" : "Type", lg === "uz" ? "Summa" : "Amount", lg === "uz" ? "Sana" : "Date", lg === "uz" ? "Holat" : "Status"].map(esc).join(";"));
-        qarzlar.forEach((q, i) => rows.push([i + 1, q.kim, q.tur === "bergan" ? (lg === "uz" ? "Berdim" : "Lent") : (lg === "uz" ? "Oldim" : "Borrowed"), q.summa, q.sana, q.paid ? (lg === "uz" ? "Qaytarilgan" : "Returned") : (lg === "uz" ? "Faol" : "Active")].map(esc).join(";")));
-      }
-      const csv = "\uFEFF" + rows.join("\n");
-      const okk = downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
-      ok$(okk ? (lg === "uz" ? "Yuklab olindi!" : "Downloaded!") : (lg === "uz" ? "Xatolik" : "Error"), okk ? "ok" : "err");
-    } catch (e) { ok$((lg === "uz" ? "Xatolik: " : "Error: ") + e.message, "err"); }
-    setExportLoading(false);
-  };
-
-  const exportPDF = (scopeArg) => {
-    if (!isPremium) { setShowPremModal(true); return; }
-    try {
-      const month = tm();
-      const sc = (scopeArg === "mine" || scopeArg === "family") ? scopeArg : (canSeeReport ? "family" : "mine");
-      const pX = (sc === "family" && canSeeReport) ? bX : bX.filter(x => x.uid === user?.id || !x.uid);
-      const pD = (sc === "family" && canSeeReport) ? bD : bD.filter(d => d.uid === user?.id || !d.uid);
-      const pdfWho = sc === "family" ? (lg === "uz" ? "Oila hisoboti" : "Family report") : ((user?.ism || "") + (lg === "uz" ? " \u00b7 Shaxsiy hisobot" : " \u00b7 Personal report"));
-      const jX2 = pX.reduce((s, x) => s + Number(x.summa || 0), 0);
-      const jD2 = pD.reduce((s, d) => s + Number(d.summa || 0), 0);
-
-      // ── SVG donut yasovchi (chop etishda ham aniq ko'rinadi) ──
-      const arcPath = (cx, cy, r, rIn, a0, a1) => {
-        const lg2 = (a1 - a0) > Math.PI ? 1 : 0;
-        const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
-        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-        const x2 = cx + rIn * Math.cos(a1), y2 = cy + rIn * Math.sin(a1);
-        const x3 = cx + rIn * Math.cos(a0), y3 = cy + rIn * Math.sin(a0);
-        return "M" + x0.toFixed(1) + " " + y0.toFixed(1) + " A" + r + " " + r + " 0 " + lg2 + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1) + " A" + rIn + " " + rIn + " 0 " + lg2 + " 0 " + x3.toFixed(1) + " " + y3.toFixed(1) + " Z";
-      };
-      const donutSVG = (data, centerLabel) => {
-        const total = data.reduce((s, d) => s + d.sum, 0);
-        if (total <= 0) return "<div style='height:130px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px'>Ma'lumot yo'q</div>";
-        let a = -Math.PI / 2;
-        const segs = data.slice(0, 6).map(d => {
-          const ang = Math.min(d.sum / total * 2 * Math.PI, 2 * Math.PI - 0.002);
-          const p = arcPath(65, 65, 58, 36, a + 0.015, a + ang - 0.015 > a + 0.015 ? a + ang - 0.015 : a + ang);
-          a += ang;
-          return "<path d='" + p + "' fill='" + d.color + "'/>";
-        }).join("");
-        const legend = data.slice(0, 6).map(d =>
-          "<div style='display:flex;align-items:center;gap:5px;font-size:9px;color:#374151;margin-top:3px'><span style='width:8px;height:8px;border-radius:50%;background:" + d.color + ";display:inline-block;flex-shrink:0'></span><span style='flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>" + d.name + "</span><b>" + Math.round(d.sum / total * 100) + "%</b></div>").join("");
-        return "<svg width='130' height='130' viewBox='0 0 130 130' style='display:block;margin:0 auto'>" + segs +
-          "<text x='65' y='62' text-anchor='middle' font-size='9' fill='#6b7280'>" + centerLabel + "</text>" +
-          "<text x='65' y='75' text-anchor='middle' font-size='10' font-weight='800' fill='#1f2937'>" + (total >= 1e6 ? (total / 1e6).toFixed(1) + " mln" : total.toLocaleString()) + "</text></svg>" +
-          "<div style='margin-top:8px'>" + legend + "</div>";
-      };
-      // ── Kunlik ustunli grafik ──
-      const barSVG = (() => {
-        const [yy, mm] = month.split("-").map(Number);
-        const dim = new Date(yy, mm, 0).getDate();
-        const days = Array.from({ length: dim }, (_, i) => {
-          const sana = month + "-" + String(i + 1).padStart(2, "0");
-          return pX.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa || 0), 0);
-        });
-        const mx = Math.max(...days, 1);
-        const W = 190, H = 108, bw = W / dim;
-        const bars = days.map((v, i) => {
-          const h = Math.max(v > 0 ? 3 : 1, v / mx * (H - 24));
-          return "<rect x='" + (i * bw + 0.5).toFixed(1) + "' y='" + (H - 14 - h).toFixed(1) + "' width='" + Math.max(bw - 1.2, 1.5).toFixed(1) + "' height='" + h.toFixed(1) + "' rx='1.2' fill='" + (v > 0 ? "#6366f1" : "#e5e7eb") + "'/>";
-        }).join("");
-        const labels = [1, Math.round(dim / 2), dim].map(d => "<text x='" + ((d - 0.5) * bw).toFixed(1) + "' y='" + (H - 3) + "' text-anchor='middle' font-size='8' fill='#9ca3af'>" + d + "</text>").join("");
-        return "<svg width='100%' height='" + H + "' viewBox='0 0 " + W + " " + H + "' preserveAspectRatio='none' style='display:block'>" + bars + labels + "</svg>" +
-          "<div style='font-size:9px;color:#6b7280;text-align:center;margin-top:4px'>" + (lg === "uz" ? "Kunlik xarajatlar \u00b7 maks: " : "Daily \u00b7 max: ") + mx.toLocaleString() + "</div>";
-      })();
-
-      // Diagramma ma'lumotlari
-      const knownKat = new Set([...KATS.map(k => k.id), "qarz", "maqsad"]);
-      const katData = KATS.map((k, i) => ({ name: KN[lg][i], color: k.c, sum: pX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) }))
-        .concat([
-          { name: lg === "uz" ? "Qarz berildi" : "Loan given", color: "#F97316", sum: pX.filter(x => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) },
-          { name: lg === "uz" ? "Jamg'arma (maqsad)" : "Goal savings", color: "#EAB308", sum: pX.filter(x => x.kategoriya === "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0) },
-          { name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: "#94A3B8", sum: pX.filter(x => !knownKat.has(x.kategoriya)).reduce((s, x) => s + Number(x.summa || 0), 0) },
-        ])
-        .filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum);
-      const MEMC = ["#22C55E", "#3B82F6", "#A855F7", "#F97316", "#F5B731", "#EC4899", "#06B6D4"];
-      const secondDonut = (sc === "family" && canSeeReport && azolar.length > 1)
-        ? { title: lg === "uz" ? "Oila a'zolari ulushi" : "Members share", html: donutSVG(azolar.map((a, i) => ({ name: a.ism || "?", color: MEMC[i % MEMC.length], sum: pX.filter(x => x.uid === a.id || (!x.uid && a.id === user?.id)).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum), lg === "uz" ? "Oila jami" : "Total") }
-        : { title: lg === "uz" ? "Daromad turlari" : "Income types", html: donutSVG(DARS.map((d, i) => ({ name: DN[lg]?.[i] || d.id, color: d.c, sum: pD.filter(x => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).concat([{ name: lg === "uz" ? "Qarz olindi" : "Loan received", color: "#14B8A6", sum: pD.filter(x => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) }, { name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: "#94A3B8", sum: pD.filter(x => !["oylik","qoshimcha","biznes","sovga","boshqa","qarz"].includes(x.tur)).reduce((s, x) => s + Number(x.summa || 0), 0) }]).filter(d => d.sum > 0).sort((a, b) => b.sum - a.sum), lg === "uz" ? "Daromad" : "Income") };
-
-      const katRows = KATS.map((k, i) => { const tot = pX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0); if (!tot) return ""; const pct2 = jX2 > 0 ? Math.round(tot / jX2 * 100) : 0; return "<tr><td>" + KN[lg][i] + "</td><td style='text-align:right'>" + tot.toLocaleString() + " so'm</td><td style='text-align:center'>" + pct2 + "%</td></tr>"; }).join("");
-      const xRows = pX.slice(0, 40).map(x => "<tr><td>" + x.sana + "</td><td>" + KN[lg][KATS.findIndex(k => k.id === x.kategoriya)] + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right'>" + Number(x.summa).toLocaleString() + "</td><td>" + gN(x.uid) + "</td></tr>").join("");
-      const qActive = qarzlar.filter(q => !q.paid && (sc === "family" && canSeeReport ? true : (q.uid === user?.id || !q.uid)));
-      const qRows = qActive.slice(0, 15).map(q => "<tr><td>" + q.kim + "</td><td>" + (q.tur === "bergan" ? (lg === "uz" ? "Berilgan" : "Lent") : (lg === "uz" ? "Olingan" : "Borrowed")) + "</td><td style='text-align:right'>" + Number(q.summa).toLocaleString() + "</td><td>" + (q.qaytSana || "-") + "</td></tr>").join("");
-
-      // QR — hisobotni yaratgan profil referali
-      const refLink = window.location.origin + "/?ref=" + (user?.id || "");
-      const refQR = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(refLink);
-
-      const H = "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Hisobot " + month + "</title><style>" +
-        "*{box-sizing:border-box}body{font-family:Arial,sans-serif;padding:24px;color:#1f2937;max-width:760px;margin:0 auto;font-size:13px}" +
-        "h2{color:#374151;margin-top:26px;font-size:16px}" +
-        "table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#6366f1;color:#fff;padding:9px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px}" +
-        ".sum{display:flex;gap:12px;margin:18px 0}.box{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center}.box .lbl{font-size:11px;color:#6b7280}.box .val{font-size:18px;font-weight:800;margin-top:5px}.g{color:#10b981}.r{color:#ef4444}" +
-        ".hdr{display:flex;align-items:center;gap:12px;margin-bottom:6px}.logo{width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;flex-shrink:0}.logo span{color:#fff;font-size:24px}" +
-        ".charts{display:flex;gap:10px;margin:18px 0}.chart{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px 10px;min-width:0}.chart .ct{font-size:11px;font-weight:800;color:#6366f1;text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}" +
-        ".qr{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:22px;padding:14px;background:#f9fafb;border:1.5px solid #6366f133;border-radius:12px}.qr img{width:88px;height:88px;border-radius:8px}" +
-        ".foot{margin-top:30px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}" +
-        ".btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#6366f1;color:#fff;border:none;padding:14px 32px;border-radius:30px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.4);z-index:99}" +
-        "@media print{.btn{display:none}.charts{page-break-inside:avoid}}</style></head><body>" +
-        "<div class='hdr'><div class='logo'><span>\ud83d\udcb0</span></div><div><div style='font-size:20px;font-weight:800;color:#6366f1'>Oila Hisobchi</div><div style='font-size:12px;color:#6b7280'>" + (oila && oila.nomi ? oila.nomi : "Oila") + " \u00b7 " + pdfWho + " \u00b7 " + month + "</div></div></div>" +
-        "<div style='border-bottom:3px solid #6366f1;margin-bottom:14px'></div>" +
-        "<p style='color:#6b7280;font-size:12px'>" + (lg === "uz" ? "Yaratildi" : "Generated") + ": " + new Date().toLocaleString("uz-UZ") + "</p>" +
-        "<div class='sum'><div class='box'><div class='lbl'>" + (lg === "uz" ? "Daromad" : "Income") + "</div><div class='val g'>" + jD2.toLocaleString() + "</div></div><div class='box'><div class='lbl'>" + (lg === "uz" ? "Xarajat" : "Expense") + "</div><div class='val r'>" + jX2.toLocaleString() + "</div></div><div class='box'><div class='lbl'>" + (lg === "uz" ? "Balans" : "Balance") + "</div><div class='val " + (jD2 - jX2 >= 0 ? "g" : "r") + "'>" + (jD2 - jX2).toLocaleString() + "</div></div></div>" +
-        "<div class='charts'>" +
-        "<div class='chart'><div class='ct'>" + (lg === "uz" ? "Kategoriyalar" : "Categories") + "</div>" + donutSVG(katData, lg === "uz" ? "Xarajat" : "Expense") + "</div>" +
-        "<div class='chart'><div class='ct'>" + secondDonut.title + "</div>" + secondDonut.html + "</div>" +
-        "<div class='chart'><div class='ct'>" + (lg === "uz" ? "Oy dinamikasi" : "Monthly trend") + "</div>" + barSVG + "</div>" +
-        "</div>" +
-        "<h2>" + (lg === "uz" ? "Kategoriyalar" : "Categories") + "</h2><table><thead><tr><th>" + (lg === "uz" ? "Kategoriya" : "Category") + "</th><th style='text-align:right'>" + (lg === "uz" ? "Summa" : "Amount") + "</th><th style='text-align:center'>%</th></tr></thead><tbody>" + (katRows || "<tr><td colspan=3 style='text-align:center;color:#9ca3af'>-</td></tr>") + "</tbody></table>" +
-        "<h2>" + (lg === "uz" ? "Xarajatlar" : "Expenses") + "</h2><table><thead><tr><th>" + (lg === "uz" ? "Sana" : "Date") + "</th><th>" + (lg === "uz" ? "Kategoriya" : "Category") + "</th><th>" + (lg === "uz" ? "Izoh" : "Note") + "</th><th style='text-align:right'>" + (lg === "uz" ? "Summa" : "Amount") + "</th><th>" + (lg === "uz" ? "Kim" : "Who") + "</th></tr></thead><tbody>" + (xRows || "<tr><td colspan=5 style='text-align:center;color:#9ca3af'>-</td></tr>") + "</tbody></table>" +
-        (qRows ? "<h2>" + (lg === "uz" ? "Faol qarzlar" : "Active debts") + "</h2><table><thead><tr><th>" + (lg === "uz" ? "Kim" : "Person") + "</th><th>" + (lg === "uz" ? "Tur" : "Type") + "</th><th style='text-align:right'>" + (lg === "uz" ? "Summa" : "Amount") + "</th><th>" + (lg === "uz" ? "Qaytarish" : "Return") + "</th></tr></thead><tbody>" + qRows + "</tbody></table>" : "") +
-        "<div class='qr'><img src='" + refQR + "' alt='QR'/><div style='text-align:left'><div style='font-size:13px;font-weight:700;color:#374151'>" + (lg === "uz" ? (user?.ism || "") + " sizni taklif qiladi" : (user?.ism || "") + " invites you") + "</div><div style='font-size:11px;color:#6b7280;margin-top:3px'>" + (lg === "uz" ? "QR kodni skanerlab Oila Hisobchi ilovasiga qo'shiling" : "Scan QR to join the app") + "</div><div style='font-size:9px;color:#9ca3af;margin-top:4px;word-break:break-all'>" + refLink + "</div></div></div>" +
-        "<div class='foot'>" + (lg === "uz" ? "Bu hisobot Oila Hisobchi ilovasi tomonidan yaratilgan" : "Generated by Oila Hisobchi") + " \u00b7 " + month + "</div>" +
-        "<button class='btn' onclick='window.print()'>" + (lg === "uz" ? "PDF saqlash / Chop etish" : "Save PDF / Print") + "</button></body></html>";
-
-      const w = window.open("", "_blank");
-      if (w && w.document) { w.document.write(H); w.document.close(); ok$(lg === "uz" ? "PDF tayyor!" : "PDF ready!"); }
-      else { const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;"); ok$(okk ? (lg === "uz" ? "HTML yuklandi!" : "HTML downloaded!") : (lg === "uz" ? "Xatolik" : "Error"), okk ? "ok" : "err"); }
-    } catch (e) { ok$((lg === "uz" ? "Xatolik: " : "Error: ") + e.message, "err"); }
-  };
-
   // ── AI maslahat ───────────────────────────────────────────
-  // Lokal tahlil dvigateli — internetga bog'liq emas, HAR DOIM natija beradi.
+  // Lokal tahlil dvigateli — internetga bog'liq emas, HAR DOIM tahlil natijasini taqdim etadi.
   const buildLocalAdvice = () => {
     const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
     const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
@@ -1539,28 +1015,28 @@ export default function App() {
     const tips = [];
     const L = (uz, en) => lg === "uz" ? uz : en;
     if (totD > 0 || totX > 0) {
-      if (bal2 >= 0) tips.push("✅ " + L("Bu oy balansingiz ijobiy: +" + f(bal2, true) + ". Barakali boring!", "Positive balance: +" + f(bal2, true)));
-      else tips.push("⚠️ " + L("Bu oy xarajat daromaddan " + f(-bal2, true) + " ko'p.", "Expenses exceed income by " + f(-bal2, true)));
+      if (bal2 >= 0) tips.push(L("◆ Ijobiy balans: ", "◆ Positive balance: ") + L("Bu oy balansingiz ijobiy: +" + f(bal2, true) + ". Barakali boring!", "Positive balance: +" + f(bal2, true)));
+      else tips.push(L("◆ Diqqat: ", "◆ Attention: ") + L("Bu oy xarajat daromaddan " + f(-bal2, true) + " ko'p.", "Expenses exceed income by " + f(-bal2, true)));
     }
     const bpct = budget > 0 ? Math.round(totX / budget * 100) : 0;
-    if (bpct >= 100) tips.push("🔴 " + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
-    else if (bpct >= 80) tips.push("🟡 " + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
-    else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push("👍 " + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
+    if (bpct >= 100) tips.push(L("◆ Budjet ogohlantirishi: ", "◆ Budget warning: ") + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
+    else if (bpct >= 80) tips.push(L("◆ Budjet nazorati: ", "◆ Budget check: ") + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
+    else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push(L("◆ Zo'r natija: ", "◆ Great progress: ") + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
     const katTotals = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
-    if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push("📊 " + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
+    if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push(L("◆ Eng yuqori xarajat: ", "◆ Top spending: ") + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
     if (totD > 0) {
       const savePct = bal2 > 0 ? Math.round(bal2 / totD * 100) : 0;
-      if (savePct >= 20) tips.push("💰 " + L("Daromadning " + savePct + "% jamg'ardingiz. A'lo natija!", "Saved " + savePct + "%!"));
-      else if (savePct > 0) tips.push("💡 " + L("Daromadning faqat " + savePct + "% qoldi.", "Only " + savePct + "% saved."));
-      else if (bal2 < 0) tips.push("💡 " + L("Bu oy jamg'arma bo'lmadi.", "No savings."));
+      if (savePct >= 20) tips.push(L("◆ Jamg'arma muvaffaqiyati: ", "◆ Savings success: ") + L("Daromadning " + savePct + "% jamg'ardingiz. A'lo natija!", "Saved " + savePct + "%!"));
+      else if (savePct > 0) tips.push(L("◆ Jamg'arma tahlili: ", "◆ Savings analysis: ") + L("Daromadning faqat " + savePct + "% qoldi.", "Only " + savePct + "% saved."));
+      else if (bal2 < 0) tips.push(L("◆ Jamg'arma tahlili: ", "◆ Savings analysis: ") + L("Bu oy jamg'arma bo'lmadi.", "No savings."));
     }
     if (maq.length > 0) {
       const ng = maq.filter(m => !m.paid).map(m => ({ ...m, pct: Math.round(m.jamg / m.maqsad * 100) })).sort((a, b) => b.pct - a.pct)[0];
-      if (ng) { if (ng.pct >= 80 && ng.pct < 100) tips.push("🎯 " + L("'" + ng.ism + "' maqsadi " + ng.pct + "% bajarildi!", "Goal '" + ng.ism + "' at " + ng.pct + "%!")); else if (ng.pct < 30) tips.push("🎯 " + L("'" + ng.ism + "' uchun har oy summa ajrating.", "Save for '" + ng.ism + "'.")); }
-    } else tips.push("🎯 " + L("Maqsad qo'ying — jamg'arish uchun motivatsiya beradi.", "Set a goal."));
+      if (ng) { if (ng.pct >= 80 && ng.pct < 100) tips.push(L("◆ Maqsad progressi: ", "◆ Goal progress: ") + L("'" + ng.ism + "' maqsadi " + ng.pct + "% bajarildi!", "Goal '" + ng.ism + "' at " + ng.pct + "%!")); else if (ng.pct < 30) tips.push(L("◆ Maqsad maslahati: ", "◆ Goal tip: ") + L("'" + ng.ism + "' uchun har oy summa ajrating.", "Save for '" + ng.ism + "'.")); }
+    } else tips.push(L("◆ Maqsad qo'ying: ", "◆ Set a goal: ") + L("Maqsad qo'ying — jamg'arish uchun motivatsiya beradi.", "Set a goal."));
     const aQ = qarzlar.filter(q => !q.paid);
     const meOwe = aQ.filter(q => q.tur === "olgan").reduce((s, q) => s + q.summa, 0);
-    if (meOwe > 0) tips.push("💸 " + L("Sizda " + f(meOwe, true) + " qarz bor.", "You owe " + f(meOwe, true)));
+    if (meOwe > 0) tips.push(L("◆ Majburiyatlar: ", "◆ Liabilities: ") + L("Sizda " + f(meOwe, true) + " qarz bor.", "You owe " + f(meOwe, true)));
     const genTips = [
       L("50/30/20 qoidasini qo'llang: daromadning 50% zarur xarajatlarga, 30% xohish-istaklarga, 20% jamg'armaga.", "Use 50/30/20 rule: 50% needs, 30% wants, 20% savings."),
       L("Kichik tejamkorlik — katta baraka. Har kuni ozgina tejasangiz, yiliga katta summa bo'ladi.", "Small savings add up over a year."),
@@ -1568,7 +1044,7 @@ export default function App() {
       L("Oylik daromad kelishi bilan birinchi navbatda majburiy to'lovlarni chetga oling.", "Pay mandatory bills first when income arrives."),
       L("Moliyaviy xavfsizlik yostig'i: kamida 3 oylik xarajatga teng zaxira fondi yarating.", "Build a 3-month emergency fund."),
     ];
-    tips.push("💡 " + genTips[new Date().getDate() % genTips.length]);
+    tips.push(L("◆ Maslahat: ", "◆ Practical tip: ") + genTips[new Date().getDate() % genTips.length]);
     // Motivatsion iqtibos — har kuni yangi
     const MOTIV = [
       L("Boylik bir kunda yig'ilmaydi — lekin har kungi to'g'ri qaror sizni unga yaqinlashtiradi. Siz to'g'ri yo'ldasiz!", "Wealth is built one good decision at a time."),
@@ -1580,14 +1056,14 @@ export default function App() {
       L("Sabr va izchillik — moliyaviy erkinlikning ikki qanoti. Siz uchyapsiz!", "Patience and consistency are the wings of financial freedom."),
       L("Har hisobot — bir qadam oldinga. O'zingizni tahlil qilayotganingiz allaqachon g'alaba!", "Every report is a step forward."),
     ];
-    tips.push("🌟 " + MOTIV[new Date().getDate() % MOTIV.length]);
+    tips.push(L("◆ Motivatsiya: ", "◆ Motivation: ") + MOTIV[new Date().getDate() % MOTIV.length]);
     // Shaxsiy motivatsion salomlashuv
     const salom = totX === 0 && totD === 0 ? ""
       : bal2 >= 0
-        ? L("🏆 Barakalla, " + (user?.ism || "do'stim") + "! Siz moliyangizni nazoratda tutyapsiz — bu ko'pchilikning qo'lidan kelmaydi. Keling, tahlilni ko'ramiz:", "🏆 Great job, " + (user?.ism || "") + "!")
-        : L("💪 " + (user?.ism || "Do'stim") + ", tashvishlanmang — har bir katta yutuq kichik qadamdan boshlanadi. Bu oy tahlili sizga yo'l ko'rsatadi:", "💪 Don't worry, every big win starts small.");
+        ? L("◆ Barakalla, " + (user?.ism || "do'stim") + "! Siz moliyangizni nazoratda tutyapsiz — bu ko'pchilikning qo'lidan kelmaydi. Keling, tahlilni ko'ramiz:", "◆ Great job, " + (user?.ism || "") + "!")
+        : L("◆ Diqqatli bo'ling, " + (user?.ism || "Do'stim") + ", tashvishlanmang — har bir katta yutuq kichik qadamdan boshlanadi. Bu oy tahlili sizga yo'l ko'rsatadi:", "◆ Don't worry, every big win starts small.");
     if (totX === 0 && totD === 0) return L("Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!", "No data yet. Add expenses and income.");
-    return salom + "\n\n" + L("📈 " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n");
+    return salom + "\n\n" + L("◆ " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n");
   };
 
   // Masofaviy AI API (ixtiyoriy): VITE_AI_API_URL sozlansa shu endpointga so'rov yuboriladi.
@@ -1752,23 +1228,81 @@ export default function App() {
                 </div>
             }
             <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa turi":"Task type"}</label>
-            <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, marginBottom:20 }}>
               {[
-                {e:"📚",uz:"Dars qilish",en:"Do homework"},
-                {e:"🧹",uz:"Xonani yig'ishtirish",en:"Tidy the room"},
-                {e:"🍽️",uz:"Idish yuvish",en:"Wash the dishes"},
-                {e:"🛒",uz:"Do'kondan xarid",en:"Grocery run"},
-                {e:"🌱",uz:"Gullarni sug'orish",en:"Water the plants"},
-                {e:"🐕",uz:"Hayvonni boqish",en:"Feed the pet"},
-                {e:"🚴",uz:"Velosipedni tozalash",en:"Clean the bike"},
-                {e:"🎨",uz:"Rasm chizish",en:"Draw a picture"},
-                {e:"🏃",uz:"Mashq qilish",en:"Do exercise"},
-                {e:"⚽",uz:"Sport bilan shug'ullan",en:"Play sport"},
-                {e:"🎹",uz:"Pianino mashqi",en:"Piano practice"},
-                {e:"🧺",uz:"Kir yig'ish",en:"Collect laundry"},
-              ].map(p => (
-                <button key={p.e} onClick={() => { setVEmoji(p.e); setVTitle(lg==="uz"?p.uz:p.en); }} title={lg==="uz"?p.uz:p.en} style={{ width:42, height:42, borderRadius:11, border:"2px solid "+(vEmoji===p.e?th.ac:th.bor), background:vEmoji===p.e?th.ac+"18":"transparent", fontSize:22, cursor:"pointer" }}>{p.e}</button>
-              ))}
+                {e:"📚",uz:"Kitob o'qish",en:"Reading", id:"kitob"},
+                {e:"🧹",uz:"Xona yig'ish",en:"Clean room", id:"xona"},
+                {e:"🍽️",uz:"Idish yuvish",en:"Wash dishes", id:"idish"},
+                {e:"🛒",uz:"Do'kon xarid",en:"Grocery run", id:"dokon"},
+                {e:"🌱",uz:"Gul sug'orish",en:"Water plants", id:"gul"},
+                {e:"🚮",uz:"Axlat to'kish",en:"Take out trash", id:"axlat"},
+                {e:"🛏️",uz:"O'rin yig'ish",en:"Make the bed", id:"orin"},
+                {e:"📝",uz:"Dars qilish",en:"Homework", id:"darslik"},
+                {e:"🧺",uz:"Kir yig'ish",en:"Laundry help", id:"kir"},
+                {e:"🍳",uz:"Ovqat tayyorlash",en:"Help cooking", id:"ovqat"},
+                {e:"🚴",uz:"Sport qilish",en:"Exercise", id:"sport"},
+                {e:"🎹",uz:"Musiqa mashqi",en:"Music practice", id:"musiqa"},
+                {e:"🧸",uz:"O'yinchoq yig'ish",en:"Tidy toys", id:"oyinchoq"},
+                {e:"🐕",uz:"Hayvon boqish",en:"Pet care", id:"hayvon"},
+                {e:"🪟",uz:"Deraza artish",en:"Clean windows", id:"deraza"},
+                {e:"🧠",uz:"So'z yodlash",en:"Learn words", id:"soz"},
+                {e:"🤲",uz:"Kattalarga ko'mak",en:"Help elders", id:"buvi"},
+                {e:"🎨",uz:"Rasm chizish",en:"Drawing", id:"rasm"},
+                {e:"🏃",uz:"Hovli sayri",en:"Outdoor walk", id:"sayr"},
+                {e:"✨",uz:"Boshqa",en:"Other", id:"boshqa"},
+              ].map(p => {
+                const active = vEmoji === p.e;
+                const activeColor = active ? th.ac : th.t2;
+                const lIco = {
+                  kitob:    c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 4.5C8.5 3.2 6.3 2.8 3 3v12c3.3-.2 5.5.2 7 1.5 1.5-1.3 3.7-1.7 7-1.5V3c-3.3-.2-5.5.2-7 1.5z" fill={c} opacity=".12" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M10 4.5v12" stroke={c} strokeWidth="1.3"/></svg>,
+                  xona:     c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M12.5 2l-3 8" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M9.8 9.5c-2.6-.4-4.6 1-5.3 4l-1 3.5c3.5.6 8.5 1 9.8-3l.8-2.7-4.3-1.8z" fill={c} opacity=".12" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M6.5 13.5l-.8 3.3M9.5 14l-.6 3.2" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+                  idish:    c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="11" cy="10" r="6.5" stroke={c} strokeWidth="1.4"/><circle cx="11" cy="10" r="3" stroke={c} strokeWidth="1.2" opacity=".6"/><path d="M2.5 3v5M2.5 8v9M1 3v3c0 1 .7 2 1.5 2S4 7 4 6V3" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+                  dokon:    c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M2 3h2.2l1.9 9.5h9.4l1.7-7H5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="7.3" cy="16.2" r="1.4" stroke={c} strokeWidth="1.3"/><circle cx="14.2" cy="16.2" r="1.4" stroke={c} strokeWidth="1.3"/></svg>,
+                  gul:      c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 17v-6" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M10 11C10 7 7.5 5 3.5 5c0 4 2.5 6 6.5 6zM10 9c0-3 2-4.7 5.5-4.7 0 3.5-2 4.7-5.5 4.7z" fill={c} opacity=".12" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M5 17h10" stroke={c} strokeWidth="1.3" strokeLinecap="round"/></svg>,
+                  axlat:    c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M4 5.5h12M8 5.5V3.5h4v2M5.3 5.5l.9 11h7.6l.9-11" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M8.3 8.5v5M11.7 8.5v5" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+                  orin:     c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M2 15.5V9c0-1.1.9-2 2-2h9.5c2.5 0 4.5 1.8 4.5 4.5v4" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M2 13h16M2 16.5V13M18 16.5V13" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><circle cx="6" cy="10" r="1.6" fill={c} opacity=".35"/></svg>,
+                  darslik:  c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="2.5" width="11" height="15" rx="1.8" stroke={c} strokeWidth="1.4"/><path d="M6.5 6.5h5M6.5 9.5h5" stroke={c} strokeWidth="1.2" strokeLinecap="round"/><path d="M11 15.5l5.5-5.5c.6-.6 1.5.3.9.9L12 16.4l-1.8.4.8-1.3z" fill={c} opacity=".2" stroke={c} strokeWidth="1.1" strokeLinejoin="round"/></svg>,
+                  kir:      c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M3.5 8h13l-1.2 8.5h-10.6L3.5 8z" fill={c} opacity=".1" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M6 8c0-2.3 1.8-4 4-4s4 1.7 4 4" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><path d="M6.5 11.5c1 .8 2.3 1.2 3.5 1.2s2.5-.4 3.5-1.2" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+                  ovqat:    c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="9" cy="11.5" r="5.5" stroke={c} strokeWidth="1.4"/><path d="M13.8 8.2L18 4" stroke={c} strokeWidth="1.5" strokeLinecap="round"/><circle cx="9" cy="11.5" r="2.2" stroke={c} strokeWidth="1.1" opacity=".55"/></svg>,
+                  sport:    c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="4.6" cy="13.5" r="3" stroke={c} strokeWidth="1.3"/><circle cx="15.4" cy="13.5" r="3" stroke={c} strokeWidth="1.3"/><path d="M4.6 13.5L8 7h5.5M10 13.5L8 7M12.5 4.5h2.5l.7 2" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                  musiqa:   c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M7.5 15.5V4.5L16 3v10.5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><circle cx="5.3" cy="15.5" r="2.2" stroke={c} strokeWidth="1.3"/><circle cx="13.8" cy="13.5" r="2.2" stroke={c} strokeWidth="1.3"/></svg>,
+                  oyinchoq: c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="11.5" r="5" fill={c} opacity=".1" stroke={c} strokeWidth="1.4"/><circle cx="5" cy="6" r="2.3" stroke={c} strokeWidth="1.3"/><circle cx="15" cy="6" r="2.3" stroke={c} strokeWidth="1.3"/><circle cx="8.2" cy="11" r=".9" fill={c}/><circle cx="11.8" cy="11" r=".9" fill={c}/><path d="M8.7 13.7c.8.6 1.8.6 2.6 0" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+                  hayvon:   c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 10.5c-2.6 0-4.5 1.9-4.5 4 0 1.4 1 2.3 2.3 2.3 1 0 1.5-.5 2.2-.5s1.2.5 2.2.5c1.3 0 2.3-.9 2.3-2.3 0-2.1-1.9-4-4.5-4z" fill={c} opacity=".12" stroke={c} strokeWidth="1.3"/><ellipse cx="5" cy="8" rx="1.4" ry="1.9" stroke={c} strokeWidth="1.2"/><ellipse cx="15" cy="8" rx="1.4" ry="1.9" stroke={c} strokeWidth="1.2"/><ellipse cx="8" cy="4.8" rx="1.4" ry="1.9" stroke={c} strokeWidth="1.2"/><ellipse cx="12" cy="4.8" rx="1.4" ry="1.9" stroke={c} strokeWidth="1.2"/></svg>,
+                  deraza:   c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="3.5" y="3" width="13" height="14" rx="1.5" stroke={c} strokeWidth="1.4"/><path d="M10 3v14M3.5 10h13" stroke={c} strokeWidth="1.2"/><path d="M5.5 6.5l2-2" stroke={c} strokeWidth="1.1" strokeLinecap="round" opacity=".6"/></svg>,
+                  soz:      c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 2.5a5.5 5.5 0 00-3 10.1c.7.5 1.2 1.2 1.2 2.1h3.6c0-.9.5-1.6 1.2-2.1a5.5 5.5 0 00-3-10.1z" fill={c} opacity=".12" stroke={c} strokeWidth="1.4"/><path d="M8 16.8h4M8.6 18.5h2.8" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><path d="M8.3 7.5L10 5.8l1.7 1.7" stroke={c} strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" opacity=".7"/></svg>,
+                  buvi:     c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 16.5s-5.5-3.3-5.5-7A3 3 0 0110 7.4a3 3 0 015.5 2.1c0 3.7-5.5 7-5.5 7z" fill={c} opacity=".12" stroke={c} strokeWidth="1.4" strokeLinejoin="round"/><path d="M2 12.5c1.5 2.5 4 4.5 8 6 4-1.5 6.5-3.5 8-6" stroke={c} strokeWidth="1.1" strokeLinecap="round" opacity=".5"/></svg>,
+                  rasm:     c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 2.5c-4.4 0-8 3.2-8 7.3 0 4 3.6 7.2 8 7.2 1 0 1.7-.7 1.7-1.6 0-.5-.2-.8-.4-1.1-.3-.4-.4-.7-.4-1.1 0-.9.7-1.6 1.7-1.6h1.9c2 0 3.5-1.5 3.5-3.4 0-3.2-3.6-5.7-8-5.7z" stroke={c} strokeWidth="1.4"/><circle cx="6" cy="8" r="1" fill={c}/><circle cx="10" cy="6" r="1" fill={c}/><circle cx="14" cy="8" r="1" fill={c}/></svg>,
+                  sayr:     c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><circle cx="11" cy="3.8" r="1.7" stroke={c} strokeWidth="1.3"/><path d="M8 18l2-4.5-2-2 1.2-4 3 1.5 2.8 1.2M9.2 7.5L6 9v3M10 13.5l3 1 1 3.5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
+                  boshqa:   c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><path d="M10 2.5l1.7 4.6 4.8.4-3.7 3.1 1.2 4.7L10 12.7l-4 2.6 1.2-4.7-3.7-3.1 4.8-.4L10 2.5z" fill={c} opacity=".12" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/></svg>,
+                  task:     c => <svg width="22" height="22" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="15" rx="2" stroke={c} strokeWidth="1.4"/><path d="M7.5 3.5V2h5v1.5" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><path d="M7 8.5l1.5 1.5L12 6.8M7 13.5h6" stroke={c} strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                };
+                const renderIco = lIco[p.id] || lIco.task;
+                return (
+                  <button key={p.e} className="ui-press" onClick={() => { setVEmoji(p.e); setVTitle(lg==="uz"?p.uz:p.en); }}
+                    style={{
+                      background: active ? th.ac + "18" : th.surH,
+                      border: "2px solid " + (active ? th.ac : th.bor),
+                      borderRadius: 14,
+                      padding: "10px 4px",
+                      cursor: "pointer",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      fontFamily: "inherit",
+                      minHeight: 74,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 26, height: 26, color: activeColor }}>
+                      {renderIco(activeColor)}
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: active ? th.ac : th.t2, textAlign: "center", lineHeight: 1.2, wordBreak: "break-word" }}>
+                      {lg === "uz" ? p.uz : p.en}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa nomi":"Task title"}</label>
             <input style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:14 }} value={vTitle} onChange={e => setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Xonani yig'ishtirish":"e.g. Clean the room"} />
@@ -1988,7 +1522,7 @@ export default function App() {
       {showAddModal && <AddTransactionModal th={th} STY={STY} lg={lg} t={t} f={f} ok$={ok$} buzz={buzz} user={user} oila={oila} azolar={azolar} xar={xar} dar={dar} addX={addX} addD={addD} addModalTab={addModalTab} setAddModalTab={setAddModalTab} addStep={addStep} setAddStep={setAddStep} addKat={addKat} setAddKat={setAddKat} isPremium={isPremium} setShowPremModal={setShowPremModal} prefill={scanPrefill} onVoice={startVoice} onScan={startScanner} onClose={() => { setShowAddModal(false); setScanPrefill(null); }} />}
 
       {/* Bottom Nav */}
-      <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} />
+      <BottomNav navItems={navItems} scr={scr} setScr={setScr} th={th} isKid={isKid} buzz={buzz} setShowAddModal={setShowAddModal} setAddModalTab={setAddModalTab} setAddStep={setAddStep} setAddKat={setAddKat} vazPendingCount={vazifalar.filter(v => v.status === "done").length} />
     </div>
   );
 }

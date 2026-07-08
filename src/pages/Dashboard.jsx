@@ -3,7 +3,7 @@ import { KatIco, DarIco, MoneyInput } from "../components/common/index.jsx";
 import {
   SectionHeader, AppCard, StatCard, ListItem, EmptyState, Skeleton,
   PrimaryButton, GhostButton, DangerButton, Badge, CounterBadge,
-  LinearProgress, ChartCard, UIAvatar,
+  LinearProgress, ChartCard, UIAvatar, WarningCard,
 } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, OPACITY, COMP } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
@@ -80,26 +80,26 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
   const heroBg = neg
     ? "linear-gradient(135deg," + th.rd + "," + th.rd + ")"
     : "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")";
-  const chip = { background: "rgba(255,255,255,0.13)", borderRadius: RADIUS.s + 3, padding: (SPACE.s2 + 2) + "px " + SPACE.s3 + "px", flex: 1 };
+  const chip = { background: "rgba(255,255,255,0.13)", borderRadius: RADIUS.m, padding: SPACE.s3 + "px", flex: 1 };
   const microW = { ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.75)" };
   return (
-    <div className="anim-fadeUp" style={{ background: heroBg, borderRadius: RADIUS.l, padding: SPACE.s4 + SPACE.s1, marginBottom: SPACE.s3, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(neg ? th.rd : th.ac) }}>
+    <div className="anim-fadeUp" style={{ background: heroBg, borderRadius: RADIUS.l, padding: SPACE.s4 + "px", marginBottom: SPACE.s3, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(neg ? th.rd : th.ac) }}>
       <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: -SPACE.s12, left: -SPACE.s6, width: SPACE.s16 + SPACE.s6, height: SPACE.s16 + SPACE.s6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.06)", pointerEvents: "none" }} />
       <div style={{ position: "relative" }}>
         {/* 1. Salomlashish */}
-        <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", marginBottom: 2 }}>{greet}</div>
-        <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 1, color: "#fff", marginBottom: SPACE.s4 }}>{ism || ""}</div>
+        <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", marginBottom: SPACE.s1 }}>{greet}</div>
+        <div style={{ ...TYPE.title, color: "#fff", marginBottom: SPACE.s4 }}>{ism || ""}</div>
         {/* 2. Umumiy (oila) balansi */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 }}>
-          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
-          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s - 1, padding: "3px " + (SPACE.s2 + 1) + "px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
+          <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
+          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: SPACE.s2, flexWrap: "wrap", marginBottom: neg ? SPACE.s2 : SPACE.s4 }}>
           <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{shown < 0 ? "-" : ""}{f(Math.abs(shown), true)}</div>
           {/* 5. Balans o'zgarishi (o'tgan oyga nisbatan) */}
           {!dZero && (
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 800, color: "#fff", background: dUp ? "rgba(34,197,94,0.35)" : "rgba(0,0,0,0.22)", borderRadius: RADIUS.s - 1, padding: "3px " + (SPACE.s2 + 1) + "px", display: "flex", alignItems: "center", gap: 3 }}>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 800, color: "#fff", background: dUp ? "rgba(34,197,94,0.35)" : "rgba(0,0,0,0.22)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px", display: "flex", alignItems: "center", gap: SPACE.s1 }}>
               {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: OPACITY.pressed }}>{lg === "uz" ? "o'tgan oyga nisb." : "vs last month"}</span>
             </div>
           )}
@@ -110,13 +110,13 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
           </div>
         )}
         {/* 3-4. Shu oy daromad / xarajat */}
-        <div style={{ display: "flex", gap: SPACE.s2 + 2 }}>
+        <div style={{ display: "flex", gap: SPACE.s2 }}>
           <div style={chip}>
-            <div style={{ ...microW, marginBottom: 3, display: "flex", alignItems: "center", gap: SPACE.s1 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: RADIUS.full, background: th.gr }} />{t.inc}</div>
+            <div style={{ ...microW, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}><span style={{ display: "inline-block", width: SPACE.s2, height: SPACE.s2, borderRadius: RADIUS.full, background: th.gr }} />{t.inc}</div>
             <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums" }}>+{f(jD, true)}</div>
           </div>
           <div style={chip}>
-            <div style={{ ...microW, marginBottom: 3, display: "flex", alignItems: "center", gap: SPACE.s1 }}><span style={{ display: "inline-block", width: 7, height: 7, borderRadius: RADIUS.full, background: th.rd }} />{t.exp}</div>
+            <div style={{ ...microW, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}><span style={{ display: "inline-block", width: SPACE.s2, height: SPACE.s2, borderRadius: RADIUS.full, background: th.rd }} />{t.exp}</div>
             <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums" }}>-{f(jX, true)}</div>
           </div>
         </div>
@@ -147,21 +147,21 @@ const MiniCard = memo(function MiniCard({ th, icon, iconTone, badge, border, bg,
 
 // ── Faollik grafigi — ChartCard ichida, streak Badge bilan ──
 const ActivityGraph = memo(function ActivityGraph({ th, lg, days30, streak, mx30, f, delay }) {
-  const H = [SPACE.s1, SPACE.s2 + 2, SPACE.s4 + 2, SPACE.s6 + 2]; // bar balandliklari (token arifmetikasi)
+  const H = [SPACE.s1, SPACE.s2, SPACE.s4, SPACE.s6]; // bar balandliklari (exact token values)
   return (
     <div className="anim-fadeUp" style={{ animationDelay: (delay || 0) + "ms" }}>
       <ChartCard th={th} title={lg === "uz" ? "Xarajat faolligi" : "Spending activity"}
         right={streak > 1 && <Badge th={th} type="warning" icon={DIco.bolt(th.am)}>{streak} {lg === "uz" ? "kun" : "days"}</Badge>}>
         {/* Y o'qi: maksimal qiymat ko'rsatkichi */}
-        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 3, textAlign: "right" }}>{lg === "uz" ? "maks" : "max"}: {f(mx30, true)}</div>
-        <div style={{ display: "flex", gap: 2, alignItems: "flex-end", height: SPACE.s6 + SPACE.s1, borderBottom: "1px solid " + th.bor, paddingBottom: 2 }}>
+        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s1, textAlign: "right" }}>{lg === "uz" ? "maks" : "max"}: {f(mx30, true)}</div>
+        <div style={{ display: "flex", gap: SPACE.s1, alignItems: "flex-end", height: SPACE.s8, borderBottom: "1px solid " + th.bor, paddingBottom: SPACE.s1 }}>
           {days30.map((v, i) => {
             const lvl = v === 0 ? 0 : v < mx30 * 0.34 ? 1 : v < mx30 * 0.67 ? 2 : 3;
-            return <div key={i} style={{ flex: 1, height: H[lvl], borderRadius: 2, background: lvl === 0 ? th.bor : lvl === 1 ? th.ac + ALPHA.strong : th.ac, opacity: lvl === 2 ? OPACITY.hint : 1, outline: i === 29 ? "1.5px solid " + th.ac2 : "none" }} />;
+            return <div key={i} style={{ flex: 1, height: H[lvl], borderRadius: RADIUS.s, background: lvl === 0 ? th.bor : lvl === 1 ? th.ac + ALPHA.strong : th.ac, opacity: lvl === 2 ? OPACITY.hint : 1, outline: i === days30.length - 1 ? "1px solid " + th.ac2 : "none" }} />;
           })}
         </div>
         {/* X o'qi: sana yorliqlari */}
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: SPACE.s1 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: SPACE.s2 }}>
           <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{lg === "uz" ? "30 kun oldin" : "30 days ago"}</span>
           <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.ac2, fontWeight: 700 }}>{lg === "uz" ? "Bugun" : "Today"}</span>
         </div>
@@ -176,9 +176,21 @@ const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, divider }) {
   const ki = isX ? KATS.findIndex(k => k.id === item.kategoriya) : -1;
   const di = !isX ? DARS.findIndex(d => d.id === item.tur) : -1;
   const cl = isX ? (KATS[ki]?.c || th.t2) : (DARS[di]?.c || th.t2);
+
+  let iconId = item.kategoriya;
+  if (isX) {
+    const iz = String(item.izoh || "").toLowerCase();
+    if (iz.includes("kofe") || iz.includes("coffee")) iconId = "kofe";
+    else if (iz.includes("bozor") || iz.includes("grocer") || iz.includes("продукты") || iz.includes("market")) iconId = "bozor";
+    else if (iz.includes("ovqat") || iz.includes("food") || iz.includes("еда")) iconId = "ovqat";
+    else if (iz.includes("taxi") || iz.includes("taksi") || iz.includes("transport")) iconId = "taxi";
+    else if (iz.includes("benzin") || iz.includes("fuel") || iz.includes("газ")) iconId = "benzin";
+    else if (iz.includes("dorixona") || iz.includes("pharmacy") || iz.includes("аптека") || iz.includes("dori")) iconId = "dorixona";
+  }
+
   return (
     <ListItem th={th} divider={divider} iconTone={cl}
-      icon={isX ? <KatIco id={item.kategoriya} c={cl} s={20} /> : <DarIco id={item.tur} c={cl} s={20} />}
+      icon={isX ? <KatIco id={iconId} c={cl} s={20} /> : <DarIco id={item.tur} c={cl} s={20} />}
       title={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{item.izoh}{item.repeat && Ico.repeat(th.ac)}</span>}
       sub={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 2 }}><UIAvatar th={th} src={gP(item.uid)} name={gN(item.uid)} size={14} />{gN(item.uid)} · {item.sana}</span>}
       right={
@@ -377,7 +389,7 @@ export default function DashboardPage({
       {isKid && (
         <>
           <KidHome
-            user={user} lg={lg} th={th} f={f} buzz={buzz} addStar={addStar}
+            user={user} lg={lg} th={th} f={f} buzz={buzz} addStar={addStar} fireConfetti={fireConfetti}
             vazifalar={vazifalar} kidBalances={kidBalances} stars={stars} gardenData={gardenData}
             kidGifts={kidGifts} kidLedger={kidLedger} bugun={bugun}
             vazifaDone={vazifaDone} setShowGames={setShowGames} setShowGift={setShowGift}
@@ -393,6 +405,36 @@ export default function DashboardPage({
           {/* 1-5. Hero: salomlashish, oila balansi, daromad, xarajat, o'zgarish */}
           <Hero th={th} lg={lg} t={t} f={f} ism={user?.ism} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
 
+          {/* In-App Alerts for parent */}
+          {pct >= 80 && (
+            <WarningCard 
+              th={th} 
+              tone="danger" 
+              title={lg === "uz" ? "⚠️ BYUDJET LIMITI OSHDI!" : "⚠️ BUDGET LIMIT EXCEEDED!"}
+              icon={<span style={{ fontSize: 20 }}>🚨</span>}
+              style={{ marginBottom: SPACE.s3, animation: "pulse 2s infinite" }}
+            >
+              {lg === "uz" 
+                ? `Diqqat, oylik byudjet limitining ${pct}% qismi sarflandi! Iltimos, xarajatlarni kamaytiring.` 
+                : `Warning: ${pct}% of the monthly budget has been spent! Please reduce expenses.`}
+            </WarningCard>
+          )}
+
+          {vaz.pending > 0 && (
+            <WarningCard
+              th={th}
+              tone="warning"
+              title={lg === "uz" ? "🔔 TASDIQLANMAGAN VAZIFALAR" : "🔔 UNAPPROVED TASKS"}
+              icon={<span style={{ fontSize: 20 }}>👶</span>}
+              onClick={() => { buzz(8); setScr("vazifa"); }}
+              style={{ cursor: "pointer", marginBottom: SPACE.s3 }}
+            >
+              {lg === "uz"
+                ? `Farzandingiz tomonidan bajarilgan ${vaz.pending} ta vazifa tasdiqlash uchun kutilmoqda. Tasdiqlash uchun bosing!`
+                : `There are ${vaz.pending} completed tasks waiting for your approval. Tap to approve!`}
+            </WarningCard>
+          )}
+
           {/* 10. AI Quick Insight — har safar bitta foydali maslahat */}
           {budgetAI && <QuickInsight th={th} lg={lg} f={f} insight={budgetAI.insight} />}
 
@@ -405,22 +447,96 @@ export default function DashboardPage({
             </AppCard>
           </div>
 
+          {/* Farzandlar Tarbiyasi & Faolligi — Yuqori ta'sirli va chiroyli banner/vidjet */}
+          {hasKids && (
+            <div className="anim-fadeUp" style={{ animationDelay: (STAGGER + 15) + "ms", marginTop: SPACE.s3 }}>
+              <SectionHeader th={th} right={
+                <button className="ui-press" onClick={() => { buzz(8); setScr("vazifa"); }} style={{ background: "none", border: "none", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, cursor: "pointer", padding: "4px 2px", fontWeight: 700, fontFamily: "inherit" }}>
+                  {lg === "uz" ? "Boshqarish" : "Manage"} ›
+                </button>
+              }>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>
+                  👶 {lg === "uz" ? "Farzandlar tarbiyasi & Vazifalar" : "Kids' development & Tasks"}
+                </span>
+              </SectionHeader>
+              
+              <AppCard th={th} style={{ background: `linear-gradient(135deg, ${th.am}10, ${th.ac}08)`, border: `1.5px dashed ${vaz.pending > 0 ? th.am : th.bor}`, cursor: "pointer" }} onClick={() => { buzz(8); setScr("vazifa"); }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: SPACE.s2 }}>
+                  <div>
+                    <h4 style={{ ...TYPE.body, fontWeight: 800, color: th.t1, display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
+                      {lg === "uz" ? "Vazifalar & Rag'bat" : "Chores & Motivation"}
+                      {vaz.pending > 0 && (
+                        <span style={{ width: 8, height: 8, borderRadius: "50%", background: th.rd, display: "inline-block", boxShadow: "0 0 8px " + th.rd, animation: "pulse 1.5s infinite" }} />
+                      )}
+                    </h4>
+                    <p style={{ ...TYPE.caption, color: th.t2, marginTop: 4, marginBottom: 0, fontSize: 12 }}>
+                      {lg === "uz" ? "Bolajonlarga foydali vazifalar yuklang, bajarganda yulduzcha va pullar bering!" : "Assign useful chores, award stars & real pocket money!"}
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: RADIUS.m, background: th.am + ALPHA.tint, color: th.am, flexShrink: 0 }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 120, background: th.sur, border: `1.5px solid ${vaz.pending > 0 ? th.am : th.bor}`, borderRadius: RADIUS.s, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{ ...TYPE.tiny, color: th.t2 }}>{lg === "uz" ? "Tasdiqlash kutilmoqda" : "Awaiting approval"}</span>
+                    <span style={{ ...TYPE.title, fontSize: 20, color: vaz.pending > 0 ? th.am : th.t1, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
+                      {vaz.pending}
+                      {vaz.pending > 0 && <span style={{ fontSize: 10, background: th.am + "20", color: th.am, padding: "2px 6px", borderRadius: 10, fontWeight: 700, textTransform: "uppercase" }}>NEW</span>}
+                    </span>
+                  </div>
+
+                  <div style={{ flex: 1, minWidth: 120, background: th.sur, border: `1px solid ${th.bor}`, borderRadius: RADIUS.s, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+                    <span style={{ ...TYPE.tiny, color: th.t2 }}>{lg === "uz" ? "Faol vazifalar" : "Active tasks"}</span>
+                    <span style={{ ...TYPE.title, fontSize: 20, color: th.t1, fontWeight: 800 }}>{vaz.active}</span>
+                  </div>
+                </div>
+
+                {azolar && azolar.filter(a => a.rol === "kid").length > 0 && (
+                  <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s2, flexWrap: "wrap", borderTop: "1px solid " + th.bor, paddingTop: SPACE.s2 }}>
+                    {azolar.filter(a => a.rol === "kid").map(k => (
+                      <div key={k.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: th.sur, borderRadius: RADIUS.s, padding: "4px 8px", border: "1px solid " + th.bor }}>
+                        <UIAvatar th={th} name={k.ism} size={14} />
+                        <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, fontSize: 11 }}>{k.ism}:</span>
+                        <span style={{ ...TYPE.caption, fontWeight: 800, color: th.gr, fontSize: 11, fontVariantNumeric: "tabular-nums" }}>{f(kidBalances[k.id] || 0, true)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div style={{ width: "100%", display: "flex", gap: SPACE.s2, marginTop: SPACE.s2 + 4 }}>
+                  <button className="ui-press" onClick={(e) => { e.stopPropagation(); buzz(8); setShowAddVazifa(true); }} style={{ width: "100%", background: th.ac, border: "none", color: "#fff", padding: "12px 14px", borderRadius: RADIUS.s, cursor: "pointer", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit" }}>
+                    <span>➕ {lg === "uz" ? "Yangi vazifa berish" : "Assign new task"}</span>
+                  </button>
+                </div>
+              </AppCard>
+            </div>
+          )}
+
           {/* 6. Tezkor amallar — bir qo'l uchun kattaroq target */}
           <SectionHeader th={th} right={null}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.am)}{lg === "uz" ? "Tez qo'shish" : "Quick add"}</span></SectionHeader>
           <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s1, marginBottom: quickItem ? SPACE.s2 : SPACE.s3 }}>
-            {QUICK_ADD.map((q, i) => (
-              <button key={i} className="ui-press" onClick={() => { buzz(10); setQuickItem(q); setQuickSum(""); }} style={{ flexShrink: 0, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4 + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1, minWidth: SPACE.s16 + SPACE.s3, minHeight: COMP.touchMin, fontFamily: "inherit" }}>
-                <span style={{ fontSize: 26 }}>{q.emoji}</span>
-                <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2 }}>{q[lg] || q.uz}</span>
-              </button>
-            ))}
+            {QUICK_ADD.map((q, i) => {
+              const cl = KATS.find(k => k.id === q.kat)?.c || th.ac;
+              return (
+                <button key={i} className="ui-press" onClick={() => { buzz(10); setQuickItem(q); setQuickSum(""); }} style={{ flexShrink: 0, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4 + "px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s2, minWidth: SPACE.s16 + SPACE.s3, minHeight: COMP.touchMin, fontFamily: "inherit" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: RADIUS.s, background: cl + ALPHA.tint }}>
+                    <KatIco id={q.id || q.kat} c={cl} s={22} />
+                  </div>
+                  <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2 }}>{q[lg] || q.uz}</span>
+                </button>
+              );
+            })}
           </div>
 
           {quickItem && (
             <div className="anim-scaleIn">
               <AppCard th={th} style={{ border: "1.5px solid " + th.ac + ALPHA.strong }}>
                 <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2 + 2 }}>
-                  <span style={{ fontSize: 22 }}>{quickItem.emoji}</span>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 28, height: 28, borderRadius: RADIUS.s - 2, background: (KATS.find(k => k.id === quickItem.kat)?.c || th.ac) + ALPHA.tint }}>
+                    <KatIco id={quickItem.id || quickItem.kat} c={KATS.find(k => k.id === quickItem.kat)?.c || th.ac} s={18} />
+                  </div>
                   <span style={{ ...TYPE.body, fontWeight: 700, color: th.t1 }}>{quickItem[lg] || quickItem.uz}</span>
                 </div>
                 <MoneyInput style={{ ...STY.ip, ...TYPE.title, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
@@ -487,13 +603,7 @@ export default function DashboardPage({
               sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, marginTop: 3, display: "flex", gap: SPACE.s3, flexWrap: "wrap" }}>{dbt.menga > 0 && <span style={{ color: th.gr, fontWeight: 700 }}>{lg === "uz" ? "Menga qaytariladi" : "They owe"}: +{f(dbt.menga, true)}</span>}{dbt.mendan > 0 && <span style={{ color: th.rd, fontWeight: 700 }}>{lg === "uz" ? "Men qaytaraman" : "I owe"}: -{f(dbt.mendan, true)}</span>}</div>} />
           )}
 
-          {/* Farzand vazifalari (oila klasteri) */}
-          {hasKids && (
-            <MiniCard th={th} delay={STAGGER * 5} onClick={() => { buzz(8); setScr("vazifa"); }}
-              icon={DIco.clip(th.am)} iconTone={th.am} badge={vaz.pending} border={vaz.pending > 0 ? th.am + ALPHA.strong : undefined} bg={vaz.pending > 0 ? th.am + ALPHA.faint : undefined}
-              title={lg === "uz" ? "Farzandga vazifa" : "Kids' tasks"}
-              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: vaz.pending > 0 ? th.am : th.t2, marginTop: 2, fontWeight: vaz.pending > 0 ? 700 : 400 }}>{vaz.pending > 0 ? vaz.pending + (lg === "uz" ? " ta tasdiqlash kutilmoqda" : " awaiting approval") : vaz.active > 0 ? vaz.active + (lg === "uz" ? " ta faol vazifa" : " active tasks") : (lg === "uz" ? "Topshiriq bering, mukofot belgilang" : "Assign tasks with rewards")}</div>} />
-          )}
+
 
           {/* 11. Oiladagi oxirgi faoliyat */}
           {canSeeReport && famTx.length > 0 && (

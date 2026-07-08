@@ -59,6 +59,54 @@ const DebtCard = memo(function DebtCard({ q, th, f, lg, user, markQarzPaid, send
             : <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{isLent ? (lg === "uz" ? "ular qarzli" : "they owe") : (lg === "uz" ? "men qarzman" : "I owe")}</div>}
         </div>
       </div>
+
+      {/* Qisman to'lovlar vaqt chizig'i (repayment timeline) */}
+      {((q.timeline && q.timeline.length > 0) || q.paidPart > 0) && (
+        <div style={{ marginTop: SPACE.s2, marginBottom: SPACE.s3, paddingTop: SPACE.s3, borderTop: "1px dashed " + th.bor }}>
+          <div style={{ ...TYPE.tiny, fontWeight: 700, color: th.t2, marginBottom: SPACE.s2, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            {lg === "uz" ? "⏳ To'lovlar tarixi" : "⏳ Repayment Timeline"}
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, position: "relative", paddingLeft: 14 }}>
+            {/* Timeline vertical line */}
+            <div style={{ position: "absolute", left: 3, top: 4, bottom: 4, width: 1.5, background: th.gr + ALPHA.strong }} />
+            
+            {q.timeline && q.timeline.map((p, idx) => (
+              <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+                <div style={{ position: "absolute", left: -14, top: 5, width: 7, height: 7, borderRadius: "50%", background: th.gr, boxShadow: "0 0 4px " + th.gr }} />
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 600, color: th.t1, fontSize: TYPE.tiny.fontSize + 1 }}>
+                    {p.ism}
+                  </span>
+                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontSize: 10 }}>
+                    {p.sana}
+                  </span>
+                </div>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.gr, fontVariantNumeric: "tabular-nums" }}>
+                  +{f(p.summa, true)}
+                </span>
+              </div>
+            ))}
+            {/* Fallback virtual item if there is paidPart but timeline is empty (legacy data) */}
+            {(!q.timeline || q.timeline.length === 0) && q.paidPart > 0 && (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative" }}>
+                <div style={{ position: "absolute", left: -14, top: 5, width: 7, height: 7, borderRadius: "50%", background: th.gr, boxShadow: "0 0 4px " + th.gr }} />
+                <div style={{ display: "flex", flexDirection: "column" }}>
+                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 600, color: th.t1, fontSize: TYPE.tiny.fontSize + 1 }}>
+                    {lg === "uz" ? "Qisman to'lov" : "Partial repayment"}
+                  </span>
+                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontSize: 10 }}>
+                    {q.sana}
+                  </span>
+                </div>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.gr, fontVariantNumeric: "tabular-nums" }}>
+                  +{f(q.paidPart, true)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div style={{ display: "flex", gap: SPACE.s2 }}>
         {q.payStatus === "pending"
           ? <div style={{ flex: 1, background: th.am + ALPHA.soft, border: "1px solid " + th.am + ALPHA.med, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px 0", color: th.am, fontWeight: 700, fontSize: TYPE.caption.fontSize, textAlign: "center" }}>{q.payBy === user.id ? (lg === "uz" ? "Tasdiq kutilmoqda..." : "Awaiting confirmation...") : (lg === "uz" ? "Qaytarish so'rovi keldi" : "Return requested")}</div>

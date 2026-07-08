@@ -602,56 +602,68 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         )}
       </div>
 
-      {/* ── Scope toggle ── */}
-      <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, marginBottom: SPACE.s3, gap: 3 }}>
-        {[["mine", lg==="uz"?"O'zimning":"Mine"], ["family", lg==="uz"?"Oilamning":"Family"]].map(([key, label]) => (
-          <button key={key} className="ui-press" onClick={() => { setScope(key); setSlideIdx(0); }} style={{
-            flex: 1, padding: (SPACE.s2 + 1) + "px 0", border: "none", borderRadius: RADIUS.s - 1, cursor: "pointer", fontFamily: "inherit",
-            fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
-            background: scope===key ? th.ac : "transparent",
-            color: scope===key ? "#fff" : th.t2,
-          }}>{label}</button>
-        ))}
+      {/* ── Davr va doira boshqaruvi (Compact, Airy Row) ── */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", justifyContent: "space-between" }}>
+        {/* Scope (Mine / Family) toggle */}
+        {canSeeReport ? (
+          <div style={{ display: "flex", background: "transparent", borderRadius: RADIUS.s - 2, padding: 1, border: "1px solid " + th.bor, flex: "0 0 auto" }}>
+            {[["mine", lg==="uz"?"O'zim":"Mine"], ["family", lg==="uz"?"Oila":"Family"]].map(([key, label]) => {
+              const active = scope === key;
+              return (
+                <button key={key} className="ui-press" onClick={() => { setScope(key); setSlideIdx(0); }} style={{
+                  padding: "3px 8px", border: "none", borderRadius: RADIUS.s - 3, cursor: "pointer", fontFamily: "inherit",
+                  fontWeight: active ? 700 : 500, fontSize: 10, transition: "all 0.15s ease-in-out",
+                  background: active ? th.ac : "transparent",
+                  color: active ? "#fff" : th.t2,
+                }}>{label}</button>
+              );
+            })}
+          </div>
+        ) : <div style={{ flex: "1 1 0px" }} />}
+
+        {/* Period (Week/Month/Year) toggle */}
+        {!customRange && (
+          <div style={{ display: "flex", background: "transparent", borderRadius: RADIUS.s - 2, padding: 1, border: "1px solid " + th.bor, flex: "0 0 auto" }}>
+            {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => {
+              const active = period === key;
+              return (
+                <button key={key} className="ui-press" onClick={() => setPeriod(key)} style={{
+                  padding: "3px 8px", border: "none", borderRadius: RADIUS.s - 3, cursor: "pointer", fontFamily: "inherit",
+                  fontWeight: active ? 700 : 500, fontSize: 10, transition: "all 0.15s ease-in-out",
+                  background: active ? th.ac : "transparent",
+                  color: active ? "#fff" : th.t2,
+                }}>{label}</button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* ── Davr (Hafta/Oy/Yil) — maxsus davr tanlanganda yashirinadi ── */}
+      {/* ── Davr variantlari (scroll - Compact & Airy) ── */}
       {!customRange && (
-      <div style={{ display:"flex", gap:6, marginBottom:12 }}>
-        {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => (
-          <button key={key} className="ui-press" onClick={() => setPeriod(key)} style={{
-            flex: 1, padding: (SPACE.s2 + 1) + "px 0", borderRadius: RADIUS.s, border: "none", cursor: "pointer", fontFamily: "inherit",
-            fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
-            background: period===key ? th.ac : th.sur,
-            color: period===key ? "#fff" : th.t2,
-            boxShadow: SHADOW.e0,
-          }}>{label}</button>
-        ))}
-      </div>
-      )}
-
-      {/* ── Davr variantlari (scroll) ── */}
-      {!customRange && (
-      <div ref={scrollRef} style={{ display:"flex", gap:6, overflowX:"auto", paddingBottom:10, marginBottom:4, scrollbarWidth:"none" }}>
+      <div ref={scrollRef} className="scrollhide" style={{ display:"flex", gap:4, overflowX:"auto", paddingBottom:4, marginBottom:8, scrollbarWidth:"none", borderBottom: "1px solid " + th.bor + "44" }}>
         <style>{`.scrollhide::-webkit-scrollbar{display:none}`}</style>
         {opts.map((opt, i) => (
           <button key={opt.key} className="ui-press" onClick={() => setSelIdx(i)} style={{
-            flexShrink: 0, padding: (SPACE.s2 - 1) + "px " + (SPACE.s3 + 2) + "px", border: "none", cursor: "pointer", fontFamily: "inherit",
-            fontWeight: selIdx===i ? 800 : 500, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("border-color"),
+            flexShrink: 0, padding: "3px 8px", border: "none", cursor: "pointer", fontFamily: "inherit",
+            fontWeight: selIdx===i ? 700 : 400, fontSize: 11, transition: "color 0.15s",
             background: "transparent",
-            color: selIdx===i ? th.t1 : th.t2,
+            color: selIdx===i ? th.ac : th.t3,
             borderBottom: selIdx===i ? "2px solid " + th.ac : "2px solid transparent",
             borderRadius: 0,
           }}>
-            {opt.label}
-            {opt.sub && <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, fontWeight: 400 }}>{opt.sub}</span>}
+            <span style={{ display: "flex", alignItems: "center", gap: 3 }}>
+              {opt.label}
+              {opt.sub && <span style={{ ...TYPE.tiny, fontSize: 8.5, textTransform: "none", letterSpacing: 0, color: selIdx===i ? th.ac + "bb" : th.t3, fontWeight: 400 }}>({opt.sub})</span>}
+            </span>
           </button>
         ))}
       </div>
       )}
 
-      {/* ── Tanlangan davr ko'rsatkichi ── */}
+      {/* ── Tanlangan davr ko'rsatkichi (Custom Range) ── */}
       {customRange && (
-        <button className="ui-press" onClick={() => { setRFrom(customRange.from); setRTo(customRange.to); setShowRangePicker(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s2, width: "100%", background: "transparent", border: "none", cursor: "pointer", padding: "2px 0 " + SPACE.s3 + "px", ...TYPE.body, fontWeight: 800, color: th.t1, fontFamily: "inherit" }}>
+        <button className="ui-press" onClick={() => { setRFrom(customRange.from); setRTo(customRange.to); setShowRangePicker(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s2, width: "100%", background: "transparent", border: "none", cursor: "pointer", padding: "2px 0 " + SPACE.s3 + "px", ...TYPE.body, fontSize: 13, fontWeight: 800, color: th.t1, fontFamily: "inherit" }}>
           {fmtRangeUz(customRange.from)}{RIco.chevD(th.t2, 9)}
           <span style={{ color: th.t2, fontWeight: 400 }}>~</span>
           {fmtRangeUz(customRange.to)}{RIco.chevD(th.t2, 9)}
@@ -662,7 +674,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       <div
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
-        style={{ background: th.sur, borderRadius: RADIUS.m, border: "1px solid " + th.bor, overflow: "hidden", marginBottom: SPACE.s3 }}
+        style={{ background: th.sur, borderRadius: RADIUS.m, border: "1px solid " + th.bor, overflow: "hidden", marginBottom: SPACE.s3, boxShadow: SHADOW.e1 }}
       >
         {/* Slide 0: Donut + sanalar */}
         {slideIdx === 0 && (
@@ -678,13 +690,13 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             <div style={{ flex:1, minWidth:0 }}>
               {dateData.length === 0
                 ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data this period"}</div>
-                : dateData.slice(0,5).map((d, i) => {
+                : dateData.slice(0,5).map((d) => {
                     const col = d.color || th.ac;
                     return (
                       <div key={d.sana} style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-                        <div style={{ width:18, height:18, borderRadius:"50%", background:col+"22", border:"2px solid "+col, flexShrink:0 }}/>
+                        <div style={{ width:12, height:12, borderRadius:"50%", background:col, flexShrink:0 }}/>
                         <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>
+                          <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2, fontWeight:600 }}>
                             {(() => {
                               const dt = new Date(d.sana);
                               const months = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
@@ -729,10 +741,10 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
                     <div key={cat.id} style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer" }}
                       onMouseEnter={() => setHovCat(i)} onMouseLeave={() => setHovCat(null)}
                       onTouchStart={() => setHovCat(i)} onTouchEnd={() => setHovCat(null)}>
-                      <div style={{ width:14, height:14, borderRadius:"50%", background:cat.color+"22", border:"2px solid "+cat.color, flexShrink:0 }}/>
-                      <span style={{ flex:1, fontSize: TYPE.caption.fontSize, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{cat.name}</span>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:cat.color, flexShrink:0 }}/>
+                      <span style={{ flex:1, fontSize: TYPE.caption.fontSize, color:th.t1, fontWeight:600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.name}</span>
                       <span style={{ fontSize: TYPE.caption.fontSize, fontWeight:700, color:cat.color, flexShrink:0 }}>
-                        {totalX>0?(cat.sum/totalX*100).toFixed(2):0}%
+                        {totalX>0?(cat.sum/totalX*100).toFixed(1):0}%
                       </span>
                     </div>
                   ))
@@ -764,7 +776,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 {hovMem !== null && members[hovMem]
                   ? <>
-                      <div style={{ fontSize: TYPE.tiny.fontSize, fontWeight:800, color:members[hovMem].color, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{members[hovMem].ism?.split(" ")[0]}</div>
+                      <div style={{ fontSize: TYPE.tiny.fontSize, fontWeight:800, color:members[hovMem].color, maxWidth:60, overflow:"hidden", textOverflow:"ellipsis", whiteSpace: "nowrap" }}>{members[hovMem].ism?.split(" ")[0]}</div>
                       <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:900, color:members[hovMem].color }}>{memTotal>0?(members[hovMem].sum/memTotal*100).toFixed(1):0}%</div>
                     </>
                   : <>
@@ -774,18 +786,18 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
                 }
               </div>
             </div>
-            <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:8 }}>
+            <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6 }}>
               {members.length === 0
                 ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"Bu davrda ma'lumot yo'q":"No data this period"}</div>
                 : members.slice(0,6).map((m, i) => (
                     <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}
                       onMouseEnter={() => setHovMem(i)} onMouseLeave={() => setHovMem(null)}
                       onTouchStart={() => setHovMem(i)} onTouchEnd={() => setHovMem(null)}>
-                      <div style={{ width:15, height:15, borderRadius:"50%", background:m.color+"22", border:"2px solid "+m.color, flexShrink:0 }}/>
-                      <span style={{ flex:1, fontSize: TYPE.caption.fontSize, color:th.t1, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{m.ism}</span>
-                      <div style={{ textAlign:"right", flexShrink:0 }}>
-                        <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:800, color:m.color }}>{memTotal>0?(m.sum/memTotal*100).toFixed(1):0}%</div>
-                        <div style={{ fontSize: TYPE.tiny.fontSize - 1, color:th.t2 }}>{m.sum.toLocaleString("uz-UZ")}</div>
+                      <div style={{ width:10, height:10, borderRadius:"50%", background:m.color, flexShrink:0 }}/>
+                      <span style={{ flex:1, fontSize: TYPE.caption.fontSize, color:th.t1, fontWeight:600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.ism}</span>
+                      <div style={{ textAlign:"right", flexShrink:0, display: "flex", alignItems: "baseline", gap: 4 }}>
+                        <span style={{ fontSize: TYPE.caption.fontSize, fontWeight:800, color:m.color }}>{memTotal>0?(m.sum/memTotal*100).toFixed(1):0}%</span>
+                        <span style={{ fontSize: TYPE.tiny.fontSize, color:th.t2 }}>({m.sum.toLocaleString("uz-UZ")})</span>
                       </div>
                     </div>
                   ))
@@ -794,15 +806,35 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           </div>
         )}
 
-        {/* Slide dots */}
-        <div style={{ display: "flex", justifyContent: "center", gap: SPACE.s2, padding: (SPACE.s2 + 2) + "px 0 " + (SPACE.s3 + 2) + "px" }}>
-          {Array.from({ length: maxSlide + 1 }, (_, i) => (
-            <div key={i} onClick={() => setSlideIdx(i)} style={{
-              width: slideIdx===i ? SPACE.s4 + SPACE.s1 : SPACE.s2 - 1, height: SPACE.s2 - 1, borderRadius: RADIUS.pill,
-              background: slideIdx===i ? th.ac : th.t3 + ALPHA.strong,
-              transition: MOTION.tr(), cursor: "pointer",
-            }}/>
-          ))}
+        {/* Slide Indicator with Swipe Hint & Apple Style Pills */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 0 12px 0", borderTop: "1px solid " + th.bor + "22", background: th.surH + "22" }}>
+          {/* Subtle Dynamic Caption describing the active slide */}
+          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0.2, fontSize: 10.5, color: th.t2, fontWeight: 700, transition: "all 0.2s" }}>
+            {slideIdx === 0 && (lg === "uz" ? "Kunlik taqsimot tahlili" : "Daily distribution analysis")}
+            {slideIdx === 1 && (lg === "uz" ? "Kategoriya ulushlari (%)" : "Category shares (%)")}
+            {slideIdx === 2 && (lg === "uz" ? "Dinamika grafigi" : "Trend graph")}
+            {slideIdx === 3 && (lg === "uz" ? "Oila a'zolari hissasi" : "Family contribution")}
+          </div>
+
+          {/* Swipe indicator dots */}
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+            {Array.from({ length: maxSlide + 1 }, (_, i) => (
+              <div key={i} onClick={() => setSlideIdx(i)} style={{
+                width: slideIdx === i ? 18 : 6,
+                height: 6,
+                borderRadius: RADIUS.pill,
+                background: slideIdx === i ? th.ac : th.t3 + ALPHA.strong,
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                cursor: "pointer",
+              }}/>
+            ))}
+          </div>
+
+          {/* Micro Swipe Invitation */}
+          <div style={{ ...TYPE.tiny, textTransform: "none", fontSize: 9, color: th.t3, fontStyle: "italic", opacity: 0.8, marginTop: 2, display: "flex", alignItems: "center", gap: 3 }}>
+            <svg width="8" height="8" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.5 }}><path d="M4 10L1 6l3-4M8 2l3 4-3 4" stroke={th.t3} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            {lg === "uz" ? "Slaydlarni suring" : "Swipe to change"}
+          </div>
         </div>
       </div>
 

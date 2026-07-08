@@ -1,10 +1,27 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { KATS, KN, DARS, DN } from "../utils/constants.js";
+import { KatIco, DarIco } from "../components/common/index.jsx";
 
 // ── Konstantalar ───────────────────────────────────────────────
-const KAT_EMOJI = { oziq:"🛒", transport:"🚗", kiyim:"👕", sog:"💊",
-  kommunal:"🏠", konil:"🎬", talim:"📚", hadya:"🎁", qarz:"💸", boshqa:"💳" };
-const DAR_EMOJI = { oylik:"💼", qoshimcha:"⚡", biznes:"🏢", sovga:"🎁", boshqa:"💰" };
+const RIco = {
+  hand: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="1.5" y="4" width="13" height="9" rx="1.8" fill={c} opacity=".12" stroke={c} strokeWidth="1.2"/><circle cx="8" cy="8.5" r="2" stroke={c} strokeWidth="1.1"/></svg>,
+  target: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" stroke={c} strokeWidth="1.2" opacity=".4"/><circle cx="8" cy="8" r="3.8" stroke={c} strokeWidth="1.2" opacity=".7"/><circle cx="8" cy="8" r="1.4" fill={c}/></svg>,
+  box: (c, s=18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M2.5 5L8 2l5.5 3v6L8 14l-5.5-3V5z" fill={c} opacity=".1" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/><path d="M2.5 5L8 8l5.5-3M8 8v6" stroke={c} strokeWidth="1.1"/></svg>,
+};
+
+const catIco = (id, c, sz=20) => {
+  if (id === "qarz") return RIco.hand(c, sz);
+  if (id === "maqsad") return RIco.target(c, sz);
+  if (id === "__other") return RIco.box(c, sz);
+  return <KatIco id={id} c={c} s={sz} />;
+};
+
+const darIco = (id, c, sz=20) => {
+  if (id === "qarz") return RIco.hand(c, sz);
+  if (id === "__other") return RIco.box(c, sz);
+  return <DarIco id={id} c={c} s={sz} />;
+};
+
 const M_UZ = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
 const M_SH  = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
 const DAYS  = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba=0 ... Yakshanba=6
@@ -258,27 +275,27 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
   const cats=useMemo(()=>{
     if(type==="xarajat"){
       const base=KATS.map((k,i)=>({
-        id:k.id,name:KN[lg]?.[i]||k.id,color:k.c,icon:KAT_EMOJI[k.id]||"💳",
+        id:k.id,name:KN[lg]?.[i]||k.id,color:k.c,icon:catIco(k.id, k.c, 20),
         sum:filtX.filter(x=>x.kategoriya===k.id).reduce((s,x)=>s+Number(x.summa||0),0)
       }));
       const qzX=filtX.filter(x=>x.kategoriya==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
-      if(qzX>0) base.push({id:"qarz",name:lg==="uz"?"Qarz berildi":"Loan given",color:"#F97316",icon:"🤝",sum:qzX});
+      if(qzX>0) base.push({id:"qarz",name:lg==="uz"?"Qarz berildi":"Loan given",color:"#F97316",icon:catIco("qarz", "#F97316", 20),sum:qzX});
       const mqX=filtX.filter(x=>x.kategoriya==="maqsad").reduce((s,x)=>s+Number(x.summa||0),0);
-      if(mqX>0) base.push({id:"maqsad",name:lg==="uz"?"Jamg'arma (maqsad)":"Goal savings",color:"#EAB308",icon:"🎯",sum:mqX});
+      if(mqX>0) base.push({id:"maqsad",name:lg==="uz"?"Jamg'arma (maqsad)":"Goal savings",color:"#EAB308",icon:catIco("maqsad", "#EAB308", 20),sum:mqX});
       const knownX=new Set([...KATS.map(k=>k.id),"qarz","maqsad"]);
       const otherX=filtX.filter(x=>!knownX.has(x.kategoriya)).reduce((s,x)=>s+Number(x.summa||0),0);
-      if(otherX>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:"📦",sum:otherX});
+      if(otherX>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:catIco("__other", "#94A3B8", 20),sum:otherX});
       return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
     }
     const base=DARS.map((d,i)=>({
-      id:d.id,name:DN[lg]?.[i]||d.id,color:d.c,icon:DAR_EMOJI[d.id]||"💰",
+      id:d.id,name:DN[lg]?.[i]||d.id,color:d.c,icon:darIco(d.id, d.c, 20),
       sum:filtD.filter(x=>x.tur===d.id).reduce((s,x)=>s+Number(x.summa||0),0)
     }));
     const qzD=filtD.filter(x=>x.tur==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
-    if(qzD>0) base.push({id:"qarz",name:lg==="uz"?"Qarz olindi":"Loan received",color:"#14B8A6",icon:"🤝",sum:qzD});
+    if(qzD>0) base.push({id:"qarz",name:lg==="uz"?"Qarz olindi":"Loan received",color:"#14B8A6",icon:darIco("qarz", "#14B8A6", 20),sum:qzD});
     const knownD=new Set([...DARS.map(d=>d.id),"qarz"]);
     const otherD=filtD.filter(x=>!knownD.has(x.tur)).reduce((s,x)=>s+Number(x.summa||0),0);
-    if(otherD>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:"📦",sum:otherD});
+    if(otherD>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:darIco("__other", "#94A3B8", 20),sum:otherD});
     return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
   },[filtX,filtD,type,lg]);
 
@@ -381,18 +398,25 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       {/* ── Xarajat / Daromad ── */}
       <div style={{display:"flex",background:th.surH,borderRadius:12,padding:3,gap:3,
         marginBottom:10,border:`1.5px solid ${th.bor}`}}>
-        {[["xarajat","💸 "+(lg==="uz"?"Xarajat":"Expenses")],
-          ["daromad","💰 "+(lg==="uz"?"Daromad":"Income")]].map(([k,l])=>{
+        {[
+          { key: "xarajat", label: lg === "uz" ? "Xarajat" : "Expenses", icon: (c) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:6}}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg> },
+          { key: "daromad", label: lg === "uz" ? "Daromad" : "Income", icon: (c) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:6}}><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg> }
+        ].map(({ key: k, label, icon }) => {
           const active=type===k;
           const ac=k==="xarajat"?th.rd:th.gr;
+          const strokeColor=active?ac:(th.dark?"#D1D5DB":th.t2);
           return(
             <button key={k} onClick={()=>{setType(k);setSlide(0);setHov(null);}} style={{
               flex:1,padding:"9px 0",borderRadius:9,cursor:"pointer",
               fontWeight:700,fontSize:13,transition:"all .22s",
               border:`1.5px solid ${active?ac:(th.dark?"#4B5563":th.bor)}`,
               background:active?ac+"28":(th.dark?"#374151":"transparent"),
-              color:active?ac:(th.dark?"#D1D5DB":th.t2),
-            }}>{l}</button>
+              color:strokeColor,
+              display:"flex",alignItems:"center",justifyContent:"center"
+            }}>
+              {icon(strokeColor)}
+              {label}
+            </button>
           );
         })}
       </div>
@@ -648,7 +672,13 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
 
       {cats.length===0&&total===0&&(
         <div style={{textAlign:"center",padding:"40px 20px"}}>
-          <div style={{fontSize:44,marginBottom:12}}>{type==="xarajat"?"📊":"💹"}</div>
+          <div style={{marginBottom:16, display:"flex", justifyContent:"center"}}>
+            {type === "xarajat" ? (
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={th.rd} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            ) : (
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke={th.gr} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            )}
+          </div>
           <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",marginBottom:6}}>
             {lg==="uz"?"Ma'lumot yo'q":"No data"}
           </div>

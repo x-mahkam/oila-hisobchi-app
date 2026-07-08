@@ -38,7 +38,10 @@ export default function LoginPage({
       <div style={{display:"flex",gap:6,marginBottom:18}}>
         <button onClick={()=>switchAuthMode(false,false)} style={{...STY.tb(!reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>
         <button onClick={()=>switchAuthMode(true,false)} style={{...STY.tb(reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Ro'yxat":lg==="ru"?"\u0420\u0435\u0433\u0438\u0441\u0442\u0440\u0430\u0446\u0438\u044f":"Register"}</button>
-        <button onClick={()=>switchAuthMode(false,true)} style={{...STY.tb(kidLoginMode),fontSize:13,padding:"11px 6px"}}>👶 {lg==="uz"?"Bola":lg==="ru"?"\u0420\u0435\u0431\u0451\u043d\u043e\u043a":"Kid"}</button>
+        <button onClick={()=>switchAuthMode(false,true)} style={{...STY.tb(kidLoginMode),fontSize:13,padding:"11px 6px",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          {lg==="uz"?"Bola":lg==="ru"?"\u0420\u0435\u0431\u0451\u043d\u043e\u043a":"Kid"}
+        </button>
       </div>
       <div style={STY.cd}>
         {reg&&<><label style={STY.lb}>{lg==="uz"?"Ism familiya":lg==="ru"?"Имя и фамилия":"Full name"}</label><input style={STY.ip} value={fIsm} onChange={e=>setFIsm(e.target.value)} placeholder={lg==="uz"?"Ism familiyangiz":lg==="ru"?"Имя Фамилия":"First and last name"}/>
@@ -61,9 +64,19 @@ export default function LoginPage({
           </div>
           <input style={{...STY.ip,marginBottom:0,flex:1}} type="tel" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^0-9 ]/g,""))} placeholder="90 123 45 67"/>
         </div>
-        {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><span style={{fontSize:18}}>🎁</span><div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div></div>}</>}
+        {fRefCode&&<div style={{background:th.gr+"11",border:"1px solid "+th.gr+"33",borderRadius:11,padding:"10px 13px",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+          <span style={{display:"flex",alignItems:"center",justifyContent:"center",color:th.gr}}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="8" width="18" height="12" rx="2" ry="2"/><line x1="12" y1="20" x2="12" y2="8"/><line x1="3" y1="12" x2="21" y2="12"/><path d="M12 8c0-3.5-3.5-3.5-3.5-1.5s3.5 1.5 3.5 1.5 3.5.5 3.5-1.5S12 4.5 12 8z"/></svg>
+          </span>
+          <div style={{flex:1}}><div style={{fontSize:12,fontWeight:600,color:th.gr}}>{lg==="uz"?"Taklif havolasi orqali":lg==="ru"?"По реферальной ссылке":"Via referral link"}</div><div style={{fontSize:10,color:th.t2}}>{lg==="uz"?"Do'stingiz sizni taklif qildi":"Your friend invited you"}</div></div>
+        </div>}</>}
         {/* BOLA KIRISHI: faqat login + parol */}
-        {kidLoginMode&&<><div style={{textAlign:"center",marginBottom:14}}><div style={{fontSize:36,marginBottom:6}}>👶</div><div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ota-onang bergan login va parolni yoz":lg==="ru"?"Введи логин от родителей":"Enter the login your parent gave you"}</div></div>
+        {kidLoginMode&&<><div style={{textAlign:"center",marginBottom:14,display:"flex",flexDirection:"column",alignItems:"center"}}>
+          <div style={{width:54,height:54,borderRadius:16,background:th.ac+"14",color:th.ac,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:10}}>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ota-onang bergan login va parolni yoz":lg==="ru"?"Введи логин от родителей":"Enter the login your parent gave you"}</div>
+        </div>
         <label style={STY.lb}>{lg==="uz"?"Logining":"Your login"}</label>
         <input style={STY.ip} type="text" value={fTel} onChange={e=>setFTel(e.target.value.replace(/[^a-zA-Z0-9_]/g,"").toLowerCase())} placeholder="mohichehra25" autoFocus/></>}
         {/* ODDIY KIRISH: telefon */}

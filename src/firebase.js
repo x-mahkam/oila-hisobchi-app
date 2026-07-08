@@ -1,20 +1,37 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
-  authDomain: "oila-hisobchi.firebaseapp.com",
-  projectId: "oila-hisobchi",
-  storageBucket: "oila-hisobchi.firebasestorage.app",
-  messagingSenderId: "571641132083",
-  appId: "1:571641132083:web:31c9790b4c92a8d05ddf46",
-  measurementId: "G-446VWEM9XZ"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "oila-hisobchi.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "oila-hisobchi",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "oila-hisobchi.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "571641132083",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:571641132083:web:31c9790b4c92a8d05ddf46",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-446VWEM9XZ"
 };
 
 const app = initializeApp(firebaseConfig);
 export const fbDB = getFirestore(app);
 export const fbAuth = getAuth(app);
+
+// Enable Firestore offline persistence (IndexedDB cache)
+if (typeof window !== "undefined") {
+  enableMultiTabIndexedDbPersistence(fbDB)
+    .catch((err) => {
+      if (err.code === "failed-precondition") {
+        // Multiple tabs open, persistence can only be enabled in one tab at a time.
+        return enableIndexedDbPersistence(fbDB);
+      } else if (err.code === "unimplemented") {
+        // The current browser does not support all of the features required to enable persistence.
+        console.warn("Firestore offline persistence is not supported by this browser.");
+      }
+    })
+    .catch((err) => {
+      console.error("Error enabling Firestore offline persistence:", err);
+    });
+}
 
 // ===== AUTHENTICATION (email + parol) =====
 export const auth = {

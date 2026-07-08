@@ -67,8 +67,8 @@ export function AppProvider({ children }) {
   const addStar = useCallback(async (count = 1, reason = "") => {
     if (!user?.oilaId) return;
     try {
-      const cur = (await db.g("stars_" + user.oilaId)) || 0;
-      const next = cur + count;
+      const cur = Math.max(0, (await db.g("stars_" + user.oilaId)) || 0);
+      const next = Math.max(0, cur + count);
       await db.s("stars_" + user.oilaId, next);
       setStars(next);
       const coinMap = { "Xarajat kiritildi": 5, "Expense added": 5, "Daromad kiritildi": 10, "Income added": 10, "Vazifa bajarildi": 15, "Task completed": 15, "Maqsadga yetildi": 50, "Goal reached": 50 };

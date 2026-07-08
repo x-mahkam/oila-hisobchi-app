@@ -831,7 +831,7 @@ export default function ProfilePage({
         </div>
       )}
 
-      {pTab === "garden" && <Garden user={user} lg={lg} dark={dark} onBack={backToMain} addCoin={addStar} />}
+      {pTab === "garden" && <Garden user={user} lg={lg} dark={dark} onBack={backToMain} addCoin={addStar} stars={stars} />}
 
       {/* ═══════════════ BOLA AKKAUNTI — BottomSheet ═══════════════ */}
       <BottomSheet th={th} open={!!showAddKid} onClose={closeAddKid} title={uz ? "Bola akkaunti yaratish" : "Create kid account"}>

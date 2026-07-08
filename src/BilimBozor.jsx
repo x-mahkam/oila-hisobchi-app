@@ -2,6 +2,26 @@ import { useState, useEffect, useRef } from "react";
 import { db } from "./firebase.js";
 import { td, nt, f } from "./utils/formatters.js";
 
+// ── Outline SVG ikonkalar (emoji o'rniga) ──
+const BIco = {
+  coin: (c, s=16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="8" cy="8" r="6.2" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><circle cx="8" cy="8" r="3.2" stroke={c} strokeWidth="1.1"/><path d="M8 3v10M6 4.5h4" stroke={c} strokeWidth="1" strokeLinecap="round"/></svg>,
+  book: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
+  fire: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
+  check: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polyline points="20 6 9 17 4 12"/></svg>,
+  cross: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  game: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><rect x="2" y="6" width="20" height="12" rx="2"/><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/></svg>,
+  store: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  chart: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  trophy: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"/><path d="M12 2a6 6 0 0 1 6 6v3.5c0 1.66-1.34 3-3 3H9a3 3 0 0 1-3-3V8a6 6 0 0 1 6-6z"/></svg>,
+  star: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  target: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  leaf: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 3.58-1 8-1.7 2.5-4.5 4.7-7 10z"/><path d="M9 22v-4"/></svg>,
+  plus: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  info: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>,
+  user: (c, s=16) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  empty: (c, s=48) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle"}}><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>,
+};
+
 // ═══════════════════════════════════════════════════════════
 //  BILIM BOZORI v2 — So'z o'rganish + Eskirish tizimi
 // ═══════════════════════════════════════════════════════════
@@ -76,9 +96,9 @@ const WORDS = {
 };
 
 const LEVELS = [
-  { id:1, name:"Boshlang'ich", emoji:"🌱", color:"#22c55e", baseCoins:5,  wordsPerSession:10 },
-  { id:2, name:"O'rta",        emoji:"🌟", color:"#f59e0b", baseCoins:10, wordsPerSession:10 },
-  { id:3, name:"Yuqori",       emoji:"🏆", color:"#8b5cf6", baseCoins:15, wordsPerSession:10 },
+  { id:1, name:"Boshlang'ich", color:"#22c55e", baseCoins:5,  wordsPerSession:10 },
+  { id:2, name:"O'rta",        color:"#f59e0b", baseCoins:10, wordsPerSession:10 },
+  { id:3, name:"Yuqori",       color:"#8b5cf6", baseCoins:15, wordsPerSession:10 },
 ];
 
 // Eskirish koeffitsienti: necha marta ko'rilgan → coin multiplier
@@ -93,7 +113,7 @@ const shuffle = arr => [...arr].sort(() => Math.random() - 0.5);
 
 export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, embedded=false, gameTitle }) {
   const isKid  = user?.rol === "kid";
-  const isBosh = user?.rol === "bosh";
+  const isBosh = user?.rol === "bosh" || user?.rol === "azo";
   const oilaId = user?.oilaId;
   const L = (uz, ru=uz) => lg==="ru" ? ru : uz;
 
@@ -348,8 +368,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
 
       {/* Coin animatsiya */}
       {flyCoins.map(c => (
-        <div key={c.id} style={{position:"fixed",top:"40%",left:"50%",transform:"translateX(-50%)",fontSize:18,fontWeight:900,color:"#f59e0b",zIndex:998,animation:"coinUp 1.2s ease forwards",pointerEvents:"none"}}>
-          +{c.amount}🪙
+        <div key={c.id} style={{position:"fixed",top:"40%",left:"50%",transform:"translateX(-50%)",fontSize:18,fontWeight:900,color:"#f59e0b",zIndex:998,animation:"coinUp 1.2s ease forwards",pointerEvents:"none",display:"inline-flex",alignItems:"center",gap:4}}>
+          +{c.amount} {BIco.coin("#f59e0b", 18)}
         </div>
       ))}
 
@@ -360,26 +380,30 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         </button>
         <div style={{textAlign:"center"}}>
           <div style={{fontSize:17,fontWeight:900,color:"#fff"}}>{embedded ? (gameTitle || L("So'z o'rgan","Учи слова")) : L("Bilim Bozori","Рынок знаний")}</div>
-          <div style={{fontSize:12,color:"rgba(255,255,255,0.85)",marginTop:2}}>
-            🪙 {bilimCoins} {L("Bilim Coin","монет")}
-            {streak>1 && <span style={{marginLeft:8}}>🔥{streak}</span>}
+          <div style={{fontSize:12,color:"rgba(255,255,255,0.85)",marginTop:2,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+            {BIco.coin("#fff", 14)} {bilimCoins} {L("Bilim Coin","монет")}
+            {streak>1 && <span style={{marginLeft:8,display:"inline-flex",alignItems:"center",gap:2}}>{BIco.fire("#ef4444", 12)} {streak}</span>}
           </div>
         </div>
         <div style={{width:38}}/>
       </div>
 
-      {/* Tabs (embedded rejimda yashiriladi — platforma navigatsiyasi tashqarida) */}
-      {!embedded && <div style={{display:"flex",background:dark?"#1e293b":"#fff",borderBottom:`2px solid ${dark?"#334155":"#e2e8f0"}`}}>
+      {/* Tabs (embedded va ota-onalar rejimida yashiriladi — platforma navigatsiyasi tashqarida, ota-ona faqat bozorda) */}
+      {!embedded && !isBosh && <div style={{display:"flex",background:dark?"#1e293b":"#fff",borderBottom:`2px solid ${dark?"#334155":"#e2e8f0"}`}}>
         {[
-          {id:"oyin",   label:L("🎮 O'yin","🎮 Игра")},
-          {id:"bozor",  label:L("🛒 Bozor","🛒 Рынок")},
-          {id:"natija", label:L("📊 Natija","📊 Итоги")},
-        ].map(t => (
-          <button key={t.id} onClick={()=>setTab(t.id)}
-            style={{flex:1,padding:"12px 4px",border:"none",background:"none",cursor:"pointer",fontSize:13,fontWeight:tab===t.id?800:500,color:tab===t.id?"#3b82f6":dark?"#94a3b8":"#64748b",borderBottom:tab===t.id?"3px solid #3b82f6":"3px solid transparent"}}>
-            {t.label}
-          </button>
-        ))}
+          {id:"oyin",   label:<span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.game(tab==="oyin"?"#3b82f6":dark?"#94a3b8":"#64748b",14)} {L("O'yin","Игра")}</span>},
+          {id:"bozor",  label:<span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.store(tab==="bozor"?"#3b82f6":dark?"#94a3b8":"#64748b",14)} {L("Bozor","Рынок")}</span>},
+          {id:"natija", label:<span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.chart(tab==="natija"?"#3b82f6":dark?"#94a3b8":"#64748b",14)} {L("Natija","Итоги")}</span>},
+        ].map((t, idx) => {
+          const ids = ["oyin", "bozor", "natija"];
+          const currentId = ids[idx];
+          return (
+            <button key={currentId} onClick={()=>setTab(currentId)}
+              style={{flex:1,padding:"12px 4px",border:"none",background:"none",cursor:"pointer",fontSize:13,fontWeight:tab===currentId?800:500,color:tab===currentId?"#3b82f6":dark?"#94a3b8":"#64748b",borderBottom:tab===currentId?"3px solid #3b82f6":"3px solid transparent"}}>
+              {t.label}
+            </button>
+          );
+        })}
       </div>}
 
       {/* ══════════ O'YIN ══════════════════════════════════════ */}
@@ -390,11 +414,11 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           {myVazifaActive && (
             <div style={{background:"linear-gradient(135deg,#f59e0b15,#f59e0b08)",border:"2px solid #f59e0b55",borderRadius:16,padding:"12px 16px",marginBottom:14}}>
               <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-                <span style={{fontSize:22}}>🎯</span>
+                <span style={{display:"inline-flex"}}>{BIco.target("#f59e0b", 22)}</span>
                 <div style={{flex:1}}>
                   <div style={{fontSize:13,fontWeight:700,color:dark?"#fbbf24":"#92400e"}}>{myVazifaActive.desc}</div>
-                  <div style={{fontSize:12,color:dark?"#94a3b8":"#666"}}>
-                    {bilimCoins}/{myVazifaActive.targetCoins}🪙 → 💰{myVazifaActive.reward.toLocaleString()} so'm
+                  <div style={{fontSize:12,color:dark?"#94a3b8":"#666",display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+                    {bilimCoins}/{myVazifaActive.targetCoins} {BIco.coin("#f59e0b", 12)} → {BIco.coin("#22c55e", 12)} {myVazifaActive.reward.toLocaleString()} so'm
                   </div>
                 </div>
               </div>
@@ -417,14 +441,14 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 return (
                   <button key={lvl.id} onClick={()=>startSession(lvl.id)}
                     style={{width:"100%",background:dark?"#1e293b":"#fff",border:`2px solid ${lvl.color}`,borderRadius:18,padding:"16px 18px",cursor:"pointer",display:"flex",alignItems:"center",gap:14,marginBottom:12,textAlign:"left"}}>
-                    <div style={{width:50,height:50,borderRadius:14,background:lvl.color+"22",display:"flex",alignItems:"center",justifyContent:"center",fontSize:26,flexShrink:0}}>
-                      {lvl.emoji}
+                    <div style={{width:50,height:50,borderRadius:14,background:lvl.color+"22",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      {lvl.id===1 ? BIco.leaf(lvl.color, 24) : lvl.id===2 ? BIco.star(lvl.color, 24) : BIco.trophy(lvl.color, 24)}
                     </div>
                     <div style={{flex:1}}>
                       <div style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b"}}>{lvl.name}</div>
                       <div style={{display:"flex",gap:10,marginTop:4,flexWrap:"wrap"}}>
-                        <span style={{fontSize:11,color:"#22c55e",fontWeight:700}}>🆕 {newCount} yangi +{lvl.baseCoins}🪙</span>
-                        <span style={{fontSize:11,color:"#f59e0b",fontWeight:700}}>🔄 {seenCount} takror +{Math.round(lvl.baseCoins*0.6)}🪙</span>
+                        <span style={{fontSize:11,color:"#22c55e",fontWeight:700,display:"inline-flex",alignItems:"center",gap:3}}>{BIco.star("#22c55e", 12)} {newCount} yangi +{lvl.baseCoins} {BIco.coin("#22c55e", 11)}</span>
+                        <span style={{fontSize:11,color:"#f59e0b",fontWeight:700,display:"inline-flex",alignItems:"center",gap:3}}>{BIco.fire("#f59e0b", 12)} {seenCount} takror +{Math.round(lvl.baseCoins*0.6)} {BIco.coin("#f59e0b", 11)}</span>
                       </div>
                       {/* Progress */}
                       <div style={{display:"flex",alignItems:"center",gap:6,marginTop:6}}>
@@ -460,8 +484,10 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 return (
                   <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
                     <div style={{background:seen===0?"#22c55e22":seen===1?"#f59e0b22":"#ef444422",border:`1.5px solid ${seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444"}`,borderRadius:20,padding:"4px 14px",display:"inline-flex",alignItems:"center",gap:6,fontSize:13,fontWeight:700,color:seen===0?"#15803d":seen===1?"#92400e":"#991b1b"}}>
-                      {seen===0?"🆕 Yangi so'z":seen===1?"🔄 1 marta ko'rilgan":"🔁 Ko'p ko'rilgan"}
-                      <span style={{color:seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444"}}>+{coinAmt}🪙</span>
+                      {seen===0 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.star("#22c55e",12)} {L("Yangi so'z","Новое слово")}</span>}
+                      {seen===1 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",12)} {L("1 marta ko'rilgan","Видел 1 раз")}</span>}
+                      {seen>1 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#ef4444",12)} {L("Ko'p ko'rilgan","Повторение")}</span>}
+                      <span style={{color:seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444",display:"inline-flex",alignItems:"center",gap:2}}>+{coinAmt} {BIco.coin(seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444", 12)}</span>
                     </div>
                   </div>
                 );
@@ -471,7 +497,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               <div style={{background:`linear-gradient(135deg,${curLvl?.color}22,${curLvl?.color}0a)`,border:`2px solid ${curLvl?.color}44`,borderRadius:24,padding:"30px 20px",textAlign:"center",marginBottom:18}}>
                 <div style={{fontSize:11,fontWeight:700,color:dark?"#94a3b8":"#64748b",letterSpacing:2,marginBottom:8}}>ENGLISH</div>
                 <div style={{fontSize:38,fontWeight:900,color:dark?"#f1f5f9":"#1e293b",letterSpacing:1}}>{curWord.en}</div>
-                {streak>2 && <div style={{marginTop:8,fontSize:13,color:"#f59e0b",fontWeight:700,animation:"pulse 1s ease-in-out infinite"}}>🔥 {streak} ketma-ket!</div>}
+                {streak>2 && <div style={{marginTop:8,fontSize:13,color:"#f59e0b",fontWeight:700,animation:"pulse 1s ease-in-out infinite",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",14)} {streak} ketma-ket!</div>}
               </div>
 
               {/* Variantlar */}
@@ -492,9 +518,9 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                         {["A","B","C","D"][i]}
                       </span>
                       <span style={{flex:1}}>{ch}</span>
-                      {isSel && isCorrect===true  && <span>✅</span>}
-                      {isSel && isCorrect===false && <span>❌</span>}
-                      {!isSel && selected!==null && isRight && <span>✅</span>}
+                      {isSel && isCorrect===true  && <span>{BIco.check("#22c55e", 16)}</span>}
+                      {isSel && isCorrect===false && <span>{BIco.cross("#ef4444", 16)}</span>}
+                      {!isSel && selected!==null && isRight && <span>{BIco.check("#22c55e", 16)}</span>}
                     </button>
                   );
                 })}
@@ -505,22 +531,24 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           {/* Natija */}
           {showResult && (
             <div style={{textAlign:"center",animation:"slideUp .4s ease"}}>
-              <div style={{fontSize:60,marginBottom:8}}>
-                {sessionScore.right>=8?"🏆":sessionScore.right>=5?"⭐":"💪"}
+              <div style={{height:60,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:8}}>
+                {sessionScore.right>=8 ? BIco.trophy("#8b5cf6", 48) : sessionScore.right>=5 ? BIco.star("#f59e0b", 48) : BIco.fire("#ef4444", 48)}
               </div>
               <div style={{fontSize:22,fontWeight:900,color:dark?"#f1f5f9":"#1e293b",marginBottom:6}}>
                 {L("Sessiya tugadi!","Сессия завершена!")}
               </div>
-              <div style={{fontSize:15,color:dark?"#94a3b8":"#64748b",marginBottom:16}}>
-                ✅ {sessionScore.right} to'g'ri / ❌ {sessionScore.wrong} xato
+              <div style={{fontSize:15,color:dark?"#94a3b8":"#64748b",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.check("#22c55e", 14)} {sessionScore.right} {L("to'g'ri","верно")}</span>
+                <span>/</span>
+                <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.cross("#ef4444", 14)} {sessionScore.wrong} {L("xato","ошибка")}</span>
               </div>
               <div style={{background:`linear-gradient(135deg,${curLvl?.color}22,${curLvl?.color}0a)`,border:`2px solid ${curLvl?.color}44`,borderRadius:20,padding:"18px",marginBottom:20}}>
                 <div style={{fontSize:13,color:dark?"#94a3b8":"#64748b"}}>{L("Bu sessiyada:","Заработано:")}</div>
-                <div style={{fontSize:30,fontWeight:900,color:"#f59e0b",margin:"6px 0"}}>+{sessionScore.earned}🪙</div>
-                <div style={{fontSize:13,color:dark?"#64748b":"#94a3b8"}}>{L("Jami:","Всего:")} {bilimCoins}🪙</div>
+                <div style={{fontSize:30,fontWeight:900,color:"#f59e0b",margin:"6px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>+{sessionScore.earned} {BIco.coin("#f59e0b", 24)}</div>
+                <div style={{fontSize:13,color:dark?"#64748b":"#94a3b8",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{L("Jami:","Всего:")} {bilimCoins} {BIco.coin("#64748b", 12)}</div>
                 {sessionScore.right>0 && (
-                  <div style={{fontSize:12,color:dark?"#64748b":"#94a3b8",marginTop:6}}>
-                    💡 {L("Yangi so'zlar ko'proq coin beradi","Новые слова дают больше монет")}
+                  <div style={{fontSize:12,color:dark?"#64748b":"#94a3b8",marginTop:6,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                    {BIco.info("#3b82f6", 12)} {L("Yangi so'zlar ko'proq coin beradi","Новые слова дают больше монет")}
                   </div>
                 )}
               </div>
@@ -528,8 +556,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 <button onClick={()=>setSessionWords([])} style={{flex:1,padding:"14px",borderRadius:16,border:"none",background:dark?"#334155":"#f1f5f9",color:dark?"#94a3b8":"#64748b",fontWeight:700,fontSize:15,cursor:"pointer"}}>
                   {L("Orqaga","Назад")}
                 </button>
-                <button onClick={()=>startSession(level)} style={{flex:1,padding:"14px",borderRadius:16,border:"none",background:`linear-gradient(135deg,${curLvl?.color},${curLvl?.color}cc)`,color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer"}}>
-                  🔄 {L("Yana o'ynash","Ещё раз")}
+                <button onClick={()=>startSession(level)} style={{flex:1,padding:"14px",borderRadius:16,border:"none",background:`linear-gradient(135deg,${curLvl?.color},${curLvl?.color}cc)`,color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                  {BIco.fire("#fff", 14)} {L("Yana o'ynash","Ещё раз")}
                 </button>
               </div>
             </div>
@@ -540,11 +568,24 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       {/* ══════════ BOZOR ══════════════════════════════════════ */}
       {tab==="bozor" && (
         <div style={{flex:1,padding:"16px",overflow:"auto"}}>
-          <div style={{background:"linear-gradient(135deg,#1e40af15,#3b82f608)",border:"2px solid #3b82f633",borderRadius:16,padding:"12px 16px",marginBottom:14,fontSize:13,color:dark?"#93c5fd":"#1e40af",lineHeight:1.7}}>
-            💡 {L(
-              "Ota-ona 'Bilim Vazifasi' qo'shadi. Masalan: '200 Bilim Coin yig' = 50 000 so'm'. Bola coin yig'sa pul avtomatik tushadi!",
-              "Родитель добавляет задание. Например: '200 монет = 50 000 сум'. Ребёнок копит — получает деньги!"
-            )}
+          {isBosh && (
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <span style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",display:"flex",alignItems:"center",gap:6}}>{BIco.store("#3b82f6", 16)} {L("Bozor do'koni","Рынок")}</span>
+              <button onClick={()=>setTab("natija")}
+                style={{display:"flex",alignItems:"center",gap:6,background:dark?"#1e293b":"#fff",border:`1.5px solid ${dark?"#334155":"#cbd5e1"}`,borderRadius:12,padding:"6px 12px",fontSize:12,fontWeight:700,color:"#3b82f6",cursor:"pointer"}}>
+                {BIco.chart("#3b82f6", 14)} {L("Natijalar","Результаты")}
+              </button>
+            </div>
+          )}
+
+          <div style={{background:"linear-gradient(135deg,#1e40af15,#3b82f608)",border:"2px solid #3b82f633",borderRadius:16,padding:"12px 16px",marginBottom:14,fontSize:13,color:dark?"#93c5fd":"#1e40af",lineHeight:1.7,display:"flex",alignItems:"flex-start",gap:8}}>
+            <span>{BIco.info("#3b82f6", 16)}</span>
+            <span>
+              {L(
+                "Ota-ona 'Bilim Vazifasi' qo'shadi. Masalan: '200 Bilim Coin yig' = 50 000 so'm'. Bola coin yig'sa pul avtomatik tushadi!",
+                "Родитель добавляет задание. Например: '200 монет = 50 000 сум'. Ребёнок копит — получает деньги!"
+              )}
+            </span>
           </div>
 
           {/* Ota-ona: bola tanlash + vazifa qo'shish */}
@@ -554,15 +595,15 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
                   {kids.map(k => (
                     <button key={k.id} onClick={()=>setVKidId(k.id)}
-                      style={{padding:"8px 16px",borderRadius:20,border:`2px solid ${vKidId===k.id?"#3b82f6":dark?"#334155":"#e2e8f0"}`,background:vKidId===k.id?"#3b82f6":dark?"#1e293b":"#fff",color:vKidId===k.id?"#fff":dark?"#94a3b8":"#64748b",fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                      👤 {k.ism}
+                      style={{padding:"8px 16px",borderRadius:20,border:`2px solid ${vKidId===k.id?"#3b82f6":dark?"#334155":"#e2e8f0"}`,background:vKidId===k.id?"#3b82f622":"none",color:vKidId===k.id?"#3b82f6":dark?"#94a3b8":"#64748b",fontWeight:700,fontSize:13,cursor:"pointer"}}>
+                      <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.user(vKidId===k.id?"#fff":"#3b82f6", 12)} {k.ism}</span>
                     </button>
                   ))}
                 </div>
               )}
               <button onClick={()=>setShowAddV(true)}
                 style={{width:"100%",padding:"15px",borderRadius:16,border:"2px dashed #3b82f6",background:"none",cursor:"pointer",fontSize:15,fontWeight:700,color:"#3b82f6",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                ➕ {L("Yangi bilim vazifasi","Новое задание")}
+                <span style={{display:"inline-flex",alignItems:"center",gap:6}}>{BIco.plus("#3b82f6", 16)} {L("Yangi bilim vazifasi","Новое задание")}</span>
               </button>
             </>
           )}
@@ -570,7 +611,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           {/* Vazifalar */}
           {(isBosh ? vazifalar : vazifalar.filter(v=>v.uid===user?.id)).length===0 ? (
             <div style={{textAlign:"center",padding:"40px 20px",color:dark?"#64748b":"#94a3b8"}}>
-              <div style={{fontSize:48,marginBottom:10}}>📭</div>
+              <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>{BIco.empty(dark?"#475569":"#cbd5e1", 48)}</div>
               <div style={{fontSize:14}}>{L("Hozircha vazifa yo'q","Заданий нет")}</div>
               {isKid && <div style={{fontSize:12,marginTop:8}}>{L("Ota-onangizdan vazifa so'rang","Попросите родителя добавить задание")}</div>}
             </div>
@@ -582,31 +623,31 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 return (
                   <div key={v.id} style={{background:dark?"#1e293b":"#fff",border:`2px solid ${v.paid?"#22c55e":v.done?"#f59e0b":dark?"#334155":"#e2e8f0"}`,borderRadius:18,padding:"16px"}}>
                     <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8}}>
-                      <div style={{flex:1,fontSize:14,fontWeight:700,color:dark?"#f1f5f9":"#1e293b",paddingRight:8}}>
-                        📚 {v.desc}
+                      <div style={{flex:1,fontSize:14,fontWeight:700,color:dark?"#f1f5f9":"#1e293b",paddingRight:8,display:"flex",alignItems:"center",gap:6}}>
+                        {BIco.book("#3b82f6", 14)} {v.desc}
                       </div>
-                      <div style={{flexShrink:0,fontSize:11,fontWeight:700,borderRadius:10,padding:"3px 8px",background:v.paid?"#22c55e22":v.done?"#f59e0b22":"transparent",color:v.paid?"#22c55e":v.done?"#f59e0b":"transparent",border:`1px solid ${v.paid?"#22c55e":v.done?"#f59e0b":"transparent"}`}}>
-                        {v.paid?"✅ To'landi":v.done?"⏳ Tasdiqlash":""}
+                      <div style={{flexShrink:0,fontSize:11,fontWeight:700,borderRadius:10,padding:"3px 8px",background:v.paid?"#22c55e22":v.done?"#f59e0b22":"transparent",color:v.paid?"#22c55e":v.done?"#f59e0b":"transparent",border:`1px solid ${v.paid?"#22c55e":v.done?"#f59e0b":"transparent"}`,display:"inline-flex",alignItems:"center",gap:4}}>
+                        {v.paid ? <><span style={{display:"inline-flex"}}>{BIco.check("#22c55e", 10)}</span> {L("To'landi","Выплачено")}</> : v.done ? <><span style={{display:"inline-flex"}}>{BIco.fire("#f59e0b", 10)}</span> {L("Kutilmoqda","Ожидает")}</> : ""}
                       </div>
                     </div>
-                    {isBosh && <div style={{fontSize:12,color:dark?"#94a3b8":"#64748b",marginBottom:6}}>👤 {v.kidName}</div>}
+                    {isBosh && <div style={{fontSize:12,color:dark?"#94a3b8":"#64748b",marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{BIco.user(dark?"#94a3b8":"#64748b", 12)} {v.kidName}</div>}
                     <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:progress!==null&&!v.done?10:0}}>
-                      <span style={{fontSize:13,fontWeight:700,color:"#f59e0b"}}>🪙 {v.targetCoins} Coin</span>
+                      <span style={{fontSize:13,fontWeight:700,color:"#f59e0b",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.coin("#f59e0b", 14)} {v.targetCoins} Coin</span>
                       <span style={{color:dark?"#475569":"#94a3b8"}}>→</span>
-                      <span style={{fontSize:13,fontWeight:700,color:"#22c55e"}}>💰 {v.reward.toLocaleString()} so'm</span>
+                      <span style={{fontSize:13,fontWeight:700,color:"#22c55e",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.coin("#22c55e", 14)} {v.reward.toLocaleString()} so'm</span>
                     </div>
                     {progress!==null && !v.done && (
                       <>
                         <div style={{background:dark?"#0f172a":"#f1f5f9",borderRadius:20,height:7,overflow:"hidden",marginBottom:4}}>
                           <div style={{width:`${progress}%`,height:"100%",background:"#3b82f6",borderRadius:20,transition:"width .4s"}}/>
                         </div>
-                        <div style={{fontSize:11,color:dark?"#64748b":"#94a3b8"}}>{bilimCoins}/{v.targetCoins}🪙</div>
+                        <div style={{fontSize:11,color:dark?"#64748b":"#94a3b8",display:"flex",alignItems:"center",gap:4}}>{bilimCoins}/{v.targetCoins} {BIco.coin(dark?"#64748b":"#94a3b8", 10)}</div>
                       </>
                     )}
                     {isBosh && v.done && !v.paid && (
                       <button onClick={()=>payVazifa(v)}
-                        style={{marginTop:10,width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#15803d)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer"}}>
-                        💰 {L(`${v.reward.toLocaleString()} so'm to'lash`,`Выплатить ${v.reward.toLocaleString()} сум`)}
+                        style={{marginTop:10,width:"100%",padding:"12px",borderRadius:12,border:"none",background:"linear-gradient(135deg,#22c55e,#15803d)",color:"#fff",fontWeight:800,fontSize:14,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                        {BIco.coin("#fff", 14)} {L(`${v.reward.toLocaleString()} so'm to'lash`,`Выплатить ${v.reward.toLocaleString()} сум`)}
                       </button>
                     )}
                   </div>
@@ -620,16 +661,26 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       {/* ══════════ NATIJA ══════════════════════════════════════ */}
       {tab==="natija" && (
         <div style={{flex:1,padding:"16px",overflow:"auto"}}>
+          {isBosh && (
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
+              <span style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",display:"flex",alignItems:"center",gap:6}}>{BIco.chart("#3b82f6", 16)} {L("Bola natijalari","Результаты ребёнка")}</span>
+              <button onClick={()=>setTab("bozor")}
+                style={{display:"flex",alignItems:"center",gap:6,background:dark?"#1e293b":"#fff",border:`1.5px solid ${dark?"#334155":"#cbd5e1"}`,borderRadius:12,padding:"6px 12px",fontSize:12,fontWeight:700,color:"#3b82f6",cursor:"pointer"}}>
+                {BIco.store("#3b82f6", 14)} {L("Bozorga qaytish","Назад в маркет")}
+              </button>
+            </div>
+          )}
+
           {/* Umumiy */}
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
             {[
-              {label:"Bilim Coin", val:bilimCoins, ico:"🪙", color:"#f59e0b"},
-              {label:L("O'rganilgan","Изучено"), val:Object.keys(wordStats).length, ico:"📚", color:"#3b82f6"},
-              {label:L("Ketma-ket","Серия"), val:streak, ico:"🔥", color:"#ef4444"},
-              {label:L("Bajarilgan","Выполнено"), val:vazifalar.filter(v=>v.uid===user?.id&&v.paid).length, ico:"✅", color:"#22c55e"},
+              {label:"Bilim Coin", val:bilimCoins, ico:BIco.coin("#f59e0b", 28), color:"#f59e0b"},
+              {label:L("O'rganilgan","Изучено"), val:Object.keys(wordStats).length, ico:BIco.book("#3b82f6", 28), color:"#3b82f6"},
+              {label:L("Ketma-ket","Серия"), val:streak, ico:BIco.fire("#ef4444", 28), color:"#ef4444"},
+              {label:L("Bajarilgan","Выполнено"), val:vazifalar.filter(v=>v.uid===user?.id&&v.paid).length, ico:BIco.check("#22c55e", 28), color:"#22c55e"},
             ].map((s,i) => (
               <div key={i} style={{background:dark?"#1e293b":"#fff",border:`1px solid ${dark?"#334155":"#e2e8f0"}`,borderRadius:16,padding:"16px",textAlign:"center"}}>
-                <div style={{fontSize:28}}>{s.ico}</div>
+                <div style={{height:32,display:"flex",alignItems:"center",justifyContent:"center"}}>{s.ico}</div>
                 <div style={{fontSize:22,fontWeight:900,color:s.color,margin:"4px 0"}}>{s.val}</div>
                 <div style={{fontSize:11,color:dark?"#64748b":"#94a3b8"}}>{s.label}</div>
               </div>
@@ -638,8 +689,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
 
           {/* Daraja progressi */}
           <div style={{background:dark?"#1e293b":"#fff",border:`1px solid ${dark?"#334155":"#e2e8f0"}`,borderRadius:18,padding:"16px",marginBottom:12}}>
-            <div style={{fontSize:14,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",marginBottom:14}}>
-              📊 {L("Daraja progressi","Прогресс по уровням")}
+            <div style={{fontSize:14,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",marginBottom:14,display:"flex",alignItems:"center",gap:6}}>
+              {BIco.chart("#3b82f6", 16)} {L("Daraja progressi","Прогресс по уровням")}
             </div>
             {LEVELS.map(lvl => {
               const allW = WORDS[lvl.id]||[];
@@ -648,7 +699,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               return (
                 <div key={lvl.id} style={{marginBottom:14}}>
                   <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
-                    <span style={{fontSize:13,fontWeight:700,color:dark?"#f1f5f9":"#1e293b"}}>{lvl.emoji} {lvl.name}</span>
+                    <span style={{fontSize:13,fontWeight:700,color:dark?"#f1f5f9":"#1e293b",display:"inline-flex",alignItems:"center",gap:4}}>{lvl.id===1 ? BIco.leaf(lvl.color, 14) : lvl.id===2 ? BIco.star(lvl.color, 14) : BIco.trophy(lvl.color, 14)} {lvl.name}</span>
                     <span style={{fontSize:11,color:dark?"#64748b":"#94a3b8"}}>{seen}/{allW.length} ko'rildi · {mastered} o'rganildi</span>
                   </div>
                   <div style={{background:dark?"#0f172a":"#f1f5f9",borderRadius:20,height:8,overflow:"hidden",position:"relative"}}>
@@ -662,17 +713,17 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
 
           {/* Eskirish tushuntirish */}
           <div style={{background:dark?"#1e293b":"#fff",border:`1px solid ${dark?"#334155":"#e2e8f0"}`,borderRadius:16,padding:"14px"}}>
-            <div style={{fontSize:13,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",marginBottom:10}}>
-              💡 {L("Coin tizimi qanday ishlaydi?","Как работает система монет?")}
+            <div style={{fontSize:13,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",marginBottom:10,display:"flex",alignItems:"center",gap:6}}>
+              {BIco.info("#3b82f6", 16)} {L("Coin tizimi qanday ishlaydi?","Как работает система монет?")}
             </div>
             {[
-              {ico:"🆕", label:L("Yangi so'z (birinchi marta)","Новое слово"), coins:"to'liq coin", color:"#22c55e"},
-              {ico:"🔄", label:L("1 marta ko'rilgan","Видел 1 раз"),           coins:"60% coin",   color:"#f59e0b"},
-              {ico:"🔁", label:L("2 marta ko'rilgan","Видел 2 раза"),          coins:"30% coin",   color:"#f97316"},
-              {ico:"♻️", label:L("3+ marta ko'rilgan","Видел 3+ раз"),         coins:"10% coin",   color:"#ef4444"},
+              {ico:BIco.star("#22c55e", 18), label:L("Yangi so'z (birinchi marta)","Новое слово"), coins:"to'liq coin", color:"#22c55e"},
+              {ico:BIco.fire("#f59e0b", 18), label:L("1 marta ko'rilgan","Видел 1 раз"),           coins:"60% coin",   color:"#f59e0b"},
+              {ico:BIco.fire("#f97316", 18), label:L("2 marta ko'rilgan","Видел 2 раза"),          coins:"30% coin",   color:"#f97316"},
+              {ico:BIco.fire("#ef4444", 18), label:L("3+ marta ko'rilgan","Видел 3+ раз"),         coins:"10% coin",   color:"#ef4444"},
             ].map((r,i) => (
               <div key={i} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:i<3?`1px solid ${dark?"#334155":"#f3f4f6"}`:"none"}}>
-                <span style={{fontSize:20}}>{r.ico}</span>
+                <span style={{display:"inline-flex"}}>{r.ico}</span>
                 <span style={{flex:1,fontSize:13,color:dark?"#cbd5e1":"#444"}}>{r.label}</span>
                 <span style={{fontSize:13,fontWeight:800,color:r.color,background:r.color+"22",borderRadius:10,padding:"2px 10px"}}>{r.coins}</span>
               </div>
@@ -685,12 +736,12 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       {showAddV && (
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowAddV(false)}>
           <div style={{background:dark?"#1e293b":"#fff",borderRadius:"28px 28px 0 0",padding:"24px 22px 40px",width:"100%"}} onClick={e=>e.stopPropagation()}>
-            <div style={{fontSize:17,fontWeight:800,color:dark?"#f1f5f9":"#111",marginBottom:6,textAlign:"center"}}>
-              ➕ {L("Bilim Vazifasi","Добавить задание")}
+            <div style={{fontSize:17,fontWeight:800,color:dark?"#f1f5f9":"#111",marginBottom:6,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+              {BIco.plus("#3b82f6", 16)} {L("Bilim Vazifasi","Добавить задание")}
             </div>
             {kids.length>1 && (
               <div style={{marginBottom:12}}>
-                <div style={{fontSize:12,fontWeight:700,color:dark?"#94a3b8":"#64748b",marginBottom:6}}>👤 {L("Bola tanlang","Выберите ребёнка")}</div>
+                <div style={{fontSize:12,fontWeight:700,color:dark?"#94a3b8":"#64748b",marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{BIco.user(dark?"#94a3b8":"#64748b", 12)} {L("Bola tanlang","Выберите ребёнка")}</div>
                 <div style={{display:"flex",gap:8}}>
                   {kids.map(k => (
                     <button key={k.id} onClick={()=>setVKidId(k.id)}
@@ -713,8 +764,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               </div>
             ))}
             {vCoins && vPul && (
-              <div style={{background:"#f0fdf4",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#15803d",fontWeight:600}}>
-                🎯 {L(`Bola ${vCoins}🪙 yig'sa → ${Number(vPul).toLocaleString()} so'm oladi`,`Ребёнок наберёт ${vCoins}🪙 → получит ${Number(vPul).toLocaleString()} сум`)}
+              <div style={{background:"#f0fdf4",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:"#15803d",fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
+                {BIco.target("#15803d", 14)} {L(`Bola ${vCoins} yig'sa → ${Number(vPul).toLocaleString()} so'm oladi`,`Ребёнок наберёт ${vCoins} → получит ${Number(vPul).toLocaleString()} сум`)}
               </div>
             )}
             <div style={{display:"flex",gap:10}}>

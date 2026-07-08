@@ -58,18 +58,23 @@ export default function AddTransactionModal({
       {step === "kat" && !isKid && (
         <div style={{ background: th.sur, padding: "10px 16px 12px", flexShrink: 0, borderBottom: "1px solid " + th.bor }}>
           <div style={{ display: "flex", background: th.bg, borderRadius: 14, padding: 3, gap: 3 }}>
-            <button onClick={() => { setTab("xarajat"); setKat(null); }} style={{ flex: 1, padding: "11px", borderRadius: 11, border: "none", background: tab === "xarajat" ? th.rd : "transparent", color: tab === "xarajat" ? "#fff" : th.t2, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all .2s" }}>
-              {lg === "uz" ? "💸 Xarajat" : "💸 Expense"}
+            <button onClick={() => { setTab("xarajat"); setKat(null); }} style={{ flex: 1, padding: "11px", borderRadius: 11, border: "none", background: tab === "xarajat" ? th.rd : "transparent", color: tab === "xarajat" ? "#fff" : th.t2, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+              {lg === "uz" ? "Xarajat" : "Expense"}
             </button>
-            <button onClick={() => { setTab("daromad"); setKat(null); }} style={{ flex: 1, padding: "11px", borderRadius: 11, border: "none", background: tab === "daromad" ? th.gr : "transparent", color: tab === "daromad" ? "#fff" : th.t2, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all .2s" }}>
-              {lg === "uz" ? "💰 Daromad" : "💰 Income"}
+            <button onClick={() => { setTab("daromad"); setKat(null); }} style={{ flex: 1, padding: "11px", borderRadius: 11, border: "none", background: tab === "daromad" ? th.gr : "transparent", color: tab === "daromad" ? "#fff" : th.t2, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg>
+              {lg === "uz" ? "Daromad" : "Income"}
             </button>
           </div>
         </div>
       )}
       {step === "kat" && isKid && (
         <div style={{ background: th.sur, padding: "10px 16px 12px", flexShrink: 0, borderBottom: "1px solid " + th.bor }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: th.gr, textAlign: "center" }}>💰 {lg === "uz" ? "Daromad qo'shish" : "Add income"}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: th.gr, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg>
+            {lg === "uz" ? "Daromad qo'shish" : "Add income"}
+          </div>
         </div>
       )}
       {/* Content */}
@@ -78,8 +83,8 @@ export default function AddTransactionModal({
         {/* ── Ovoz va Chek skaneri ── */}
         {step === "kat" && tab === "xarajat" && !isKid && (onVoice || onScan) && (
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            {onVoice && <button onClick={() => { onClose(); onVoice(); }} style={{ flex: 1, background: "linear-gradient(135deg,#8b5cf620,#6366f115)", border: "1.5px solid #8b5cf655", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#a78bfa", fontWeight: 700, fontSize: 12.5 }}>{"\ud83c\udfa4"} {lg === "uz" ? "Ovoz bilan" : "Voice"}</button>}
-            {onScan && <button onClick={() => { onClose(); onScan(); }} style={{ flex: 1, background: "linear-gradient(135deg,#10b98120,#05966915)", border: "1.5px solid #10b98155", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#34d399", fontWeight: 700, fontSize: 12.5 }}>{"\ud83d\udcf7"} {lg === "uz" ? "Chek skaneri" : "Scan receipt"}</button>}
+            {onVoice && <button onClick={() => { onClose(); onVoice(); }} style={{ flex: 1, background: "linear-gradient(135deg,#8b5cf620,#6366f115)", border: "1.5px solid #8b5cf655", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#a78bfa", fontWeight: 700, fontSize: 12.5 }}>{Ico.mic("#a78bfa")} {lg === "uz" ? "Ovoz bilan" : "Voice"}</button>}
+            {onScan && <button onClick={() => { onClose(); onScan(); }} style={{ flex: 1, background: "linear-gradient(135deg,#10b98120,#05966915)", border: "1.5px solid #10b98155", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#34d399", fontWeight: 700, fontSize: 12.5 }}>{Ico.camera("#34d399")} {lg === "uz" ? "Chek skaneri" : "Scan receipt"}</button>}
           </div>
         )}
         {step === "kat" && tab === "xarajat" && !isKid && (

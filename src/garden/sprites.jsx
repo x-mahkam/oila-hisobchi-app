@@ -180,16 +180,64 @@ export const GemSVG = memo(function GemSVG({ size = 20 }) {
 // ── Sug'orish idishi ────────────────────────────────────────
 export const CanSVG = memo(function CanSVG({ size = 46 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 60 60">
-      <ellipse cx="33" cy="50" rx="17" ry="5" fill={ART.trunkLo} opacity="0.3" />
-      <path d="M20 26 Q 33 18 46 26 L 44 48 Q 33 53 22 48 Z" fill="url(#gdCan)" stroke={ART.waterLo} strokeWidth="1.5" />
-      <path d="M24 26 Q 33 21 42 26" stroke={ART.cloudHi} strokeWidth="2.5" fill="none" strokeLinecap="round" />
-      <path d="M30 15 Q 33 8 40 12 Q 45 15 44 22" stroke={ART.waterLo} strokeWidth="4.5" fill="none" strokeLinecap="round" />
-      <path d="M21 32 Q 8 30 7 20" stroke={ART.water} strokeWidth="5" fill="none" strokeLinecap="round" />
-      <circle cx="7" cy="18" r="5" fill={ART.water} stroke={ART.waterLo} strokeWidth="1.2" />
-      <circle cx="5.5" cy="16" r="1" fill={ART.waterHi} /><circle cx="8.5" cy="15.5" r="1" fill={ART.waterHi} /><circle cx="7" cy="19" r="1" fill={ART.waterHi} />
-      <circle cx="27" cy="34" r="2.6" fill={ART.trunk} /><circle cx="34" cy="37" r="2.2" fill={ART.trunk} /><circle cx="31" cy="42" r="1.9" fill={ART.trunk} />
-      <ellipse cx="26" cy="30" rx="4" ry="6" fill={ART.cloud} opacity="0.35" transform="rotate(-15 26 30)" />
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <defs>
+        {/* Sky-blue glossy metallic gradient for watering can body */}
+        <linearGradient id="canBodyGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="30%" stopColor="#0ea5e9" />
+          <stop offset="70%" stopColor="#0284c7" />
+          <stop offset="100%" stopColor="#0369a1" />
+        </linearGradient>
+        {/* Gold premium gradient for accents */}
+        <linearGradient id="canGoldGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fef08a" />
+          <stop offset="40%" stopColor="#facc15" />
+          <stop offset="100%" stopColor="#ca8a04" />
+        </linearGradient>
+        {/* Soft highlight reflection */}
+        <linearGradient id="canGlint" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.6" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Shadow */}
+      <ellipse cx="32" cy="54" rx="20" ry="4" fill="#000" opacity="0.15" />
+
+      {/* Main Golden Back-Handle */}
+      <path d="M42 22 C 54 22, 54 44, 40 44" stroke="url(#canGoldGrad)" strokeWidth="4.5" strokeLinecap="round" fill="none" />
+      <path d="M42 22 C 54 22, 54 44, 40 44" stroke="#eab308" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.5" />
+
+      {/* Spout (Sug'orish naychasi) - elegant curved */}
+      <path d="M22 38 Q 6 36 6 22" stroke="url(#canBodyGrad)" strokeWidth="6" strokeLinecap="round" fill="none" />
+      <path d="M22 38 Q 6 36 6 22" stroke="#e0f2fe" strokeWidth="1" strokeLinecap="round" fill="none" opacity="0.3" />
+
+      {/* Golden Sprinkle Head */}
+      <path d="M3 24 L 9 20 L 7 16 L 1 20 Z" fill="url(#canGoldGrad)" stroke="#ca8a04" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+      
+      {/* Dynamic Water Sprays / Droplets coming out */}
+      <circle cx="-1" cy="15" r="1.5" fill="#38bdf8" opacity="0.8" />
+      <circle cx="2" cy="11" r="1.2" fill="#7dd3fc" opacity="0.9" />
+      <circle cx="-3" cy="22" r="1.8" fill="#0ea5e9" opacity="0.75" />
+
+      {/* Main Body Cylindrical Shape with rounded bottom */}
+      <path d="M20 26 C 20 22, 44 22, 44 26 L 42 48 C 42 52, 22 52, 22 48 Z" fill="url(#canBodyGrad)" stroke="#0284c7" strokeWidth="1.5" />
+      
+      {/* Glossy Reflection Highlight */}
+      <path d="M22 27 C 22 24, 42 24, 42 27 L 41 33 C 41 31, 23 31, 23 33 Z" fill="url(#canGlint)" />
+
+      {/* Golden Star Emblem on the side (Symbolizing "Baraka" / Blessing) */}
+      <path d="M32 30 L 33.8 33.6 L 37.8 34.2 L 34.9 37 L 35.6 41 L 32 39.1 L 28.4 41 L 29.1 37 L 26.2 34.2 L 30.2 33.6 Z" fill="url(#canGoldGrad)" stroke="#eab308" strokeWidth="0.8" />
+      {/* Star sparkle core */}
+      <circle cx="32" cy="35.5" r="1.5" fill="#fff" />
+
+      {/* Top Handle (Sleek curve) */}
+      <path d="M25 23 C 25 12, 39 12, 39 23" stroke="url(#canGoldGrad)" strokeWidth="3.5" strokeLinecap="round" fill="none" />
+
+      {/* Magic Sparkle Stars around the can */}
+      <path d="M12 12 L 13 14 L 15 15 L 13 16 L 12 18 L 11 16 L 9 15 L 11 14 Z" fill="#fef08a" opacity="0.9" transform="scale(0.8)" />
+      <path d="M52 14 L 53 16 L 55 17 L 53 18 L 52 20 L 51 18 L 49 17 L 51 16 Z" fill="#fef08a" opacity="0.8" transform="scale(0.7) translate(10, 10)" />
     </svg>
   );
 });
@@ -210,14 +258,59 @@ export const LockSVG = memo(function LockSVG({ size = 30, tone }) {
 // ── Raketa (tezlashtirish) ──────────────────────────────────
 export const RocketSVG = memo(function RocketSVG({ size = 34 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 34 34">
-      <path d="M13 26 Q 11 30 8 31 Q 9 27 10 25 Z" fill={ART.sunLo} />
-      <path d="M14 25 Q 13 31 15 33 Q 17 30 16.5 26 Z" fill={ART.fruit} />
-      <path d="M17 3 Q 24 8 24 17 L 24 24 L 10 24 L 10 17 Q 10 8 17 3 Z" fill={ART.cloud} stroke={ART.cloudLo} strokeWidth="0.8" />
-      <path d="M10 18 L 5 24 L 10 24 Z" fill={ART.fruit} />
-      <path d="M24 18 L 29 24 L 24 24 Z" fill={ART.fruit} />
-      <circle cx="17" cy="14" r="3.6" fill={ART.waterHi} stroke={ART.water} strokeWidth="1.2" />
-      <path d="M17 3 Q 21 6 22.5 10 L 11.5 10 Q 13 6 17 3 Z" fill={ART.fruit} />
+    <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
+      <defs>
+        {/* Sleek fiery body gradient */}
+        <linearGradient id="rocketBody" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#f43f5e" />
+          <stop offset="50%" stopColor="#e11d48" />
+          <stop offset="100%" stopColor="#9f1239" />
+        </linearGradient>
+        {/* Vibrant orange golden fin gradient */}
+        <linearGradient id="rocketFins" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#fbbf24" />
+          <stop offset="100%" stopColor="#ea580c" />
+        </linearGradient>
+        {/* Cockpit window sky reflection */}
+        <linearGradient id="rocketWindow" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#38bdf8" />
+          <stop offset="100%" stopColor="#0284c7" />
+        </linearGradient>
+        {/* Dynamic engine thruster flame gradient */}
+        <linearGradient id="rocketFlame" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#fef08a" />
+          <stop offset="40%" stopColor="#f97316" />
+          <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      {/* Fiery engine jet flame plume */}
+      <path d="M22 44 Q32 63 32 63 Q32 63 42 44 Q32 49 22 44 Z" fill="url(#rocketFlame)" />
+      <path d="M26 44 Q32 55 32 55 Q32 55 38 44 Q32 47 26 44 Z" fill="#fff" opacity="0.9" />
+
+      {/* Aerodynamic side stabilizers (fins) */}
+      <path d="M20 34 L8 45 C8 45 10 32 16 28 Z" fill="url(#rocketFins)" stroke="#9a3412" strokeWidth="1" />
+      <path d="M44 34 L56 45 C56 45 54 32 48 28 Z" fill="url(#rocketFins)" stroke="#9a3412" strokeWidth="1" />
+
+      {/* Main Rocket fuselage (body) */}
+      <path d="M32 4 C32 4 45 18 43 41 L21 41 C19 18 32 4 32 4 Z" fill="url(#rocketBody)" stroke="#9f1239" strokeWidth="1" />
+
+      {/* Sleek metallic nose cone */}
+      <path d="M32 4 C32 4 38 12 38 17 L26 17 C26 12 32 4 32 4 Z" fill="url(#rocketFins)" stroke="#c2410c" strokeWidth="0.8" />
+
+      {/* Engine exhaust ring */}
+      <rect x="25" y="41" width="14" height="4" rx="2" fill="#475569" stroke="#1e293b" strokeWidth="1" />
+
+      {/* Futuristic cockpit glass porthole */}
+      <circle cx="32" cy="25" r="7.5" fill="url(#rocketWindow)" stroke="#fef08a" strokeWidth="1.5" />
+      {/* Glossy window highlight */}
+      <path d="M28.5 22.5 A 5 5 0 0 1 35.5 22.5" stroke="#fff" strokeWidth="1.2" fill="none" strokeLinecap="round" opacity="0.8" />
+
+      {/* Sparkles, glints, and energetic speed particles */}
+      <circle cx="14" cy="16" r="1.5" fill="#fef08a" opacity="0.85" />
+      <circle cx="50" cy="18" r="1.2" fill="#fff" opacity="0.9" />
+      <circle cx="16" cy="52" r="1.5" fill="#f97316" opacity="0.7" />
+      <circle cx="48" cy="54" r="1.8" fill="#fde047" opacity="0.75" />
     </svg>
   );
 });

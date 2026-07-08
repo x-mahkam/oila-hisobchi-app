@@ -74,12 +74,12 @@ export const COUNTRIES = [
 ];
 
 export const QUICK_ADD = [
-  {emoji:"🍔",kat:"oziq",    uz:"Ovqat",    ru:"Еда",        en:"Food"},
-  {emoji:"🚕",kat:"transport",uz:"Transport",ru:"Транспорт",  en:"Transport"},
-  {emoji:"☕",kat:"oziq",    uz:"Kofe",     ru:"Кофе",       en:"Coffee"},
-  {emoji:"🛒",kat:"oziq",    uz:"Bozor",    ru:"Продукты",   en:"Groceries"},
-  {emoji:"⛽",kat:"transport",uz:"Benzin",   ru:"Бензин",     en:"Fuel"},
-  {emoji:"💊",kat:"sog",     uz:"Dorixona", ru:"Аптека",     en:"Pharmacy"},
+  {id:"ovqat",    emoji:"🍔",kat:"oziq",    uz:"Ovqat",    ru:"Еда",        en:"Food"},
+  {id:"taxi",     emoji:"🚕",kat:"transport",uz:"Transport",ru:"Транспорт",  en:"Transport"},
+  {id:"kofe",     emoji:"☕",kat:"oziq",    uz:"Kofe",     ru:"Кофе",       en:"Coffee"},
+  {id:"bozor",    emoji:"🛒",kat:"oziq",    uz:"Bozor",    ru:"Продукты",   en:"Groceries"},
+  {id:"benzin",   emoji:"⛽",kat:"transport",uz:"Benzin",   ru:"Бензин",     en:"Fuel"},
+  {id:"dorixona", emoji:"💊",kat:"sog",     uz:"Dorixona", ru:"Аптека",     en:"Pharmacy"},
 ];
 
 export const VAZIFA_PRESETS = [

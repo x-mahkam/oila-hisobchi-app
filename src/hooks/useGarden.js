@@ -13,9 +13,9 @@ export function useGarden() {
       return;
     }
     try {
-      const cur = (await db.g("stars_" + user.oilaId)) || 0;
+      const cur = Math.max(0, (await db.g("stars_" + user.oilaId)) || 0);
       if (cur < cost) { ok$(lg === "uz" ? "Yetarli yulduzcha yo'q" : "Not enough stars", "warn"); return; }
-      const newStars = cur - cost;
+      const newStars = Math.max(0, cur - cost);
       const today = new Date().toISOString().slice(0, 10);
       const g = (await db.g("garden_" + user.oilaId)) || { level: 0, watered: null, totalStars: 0, wateredBy: [] };
       if (g.watered === today) {

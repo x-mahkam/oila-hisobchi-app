@@ -54,17 +54,20 @@ export const InfoCard = memo(function InfoCard({ th, icon, title, children, styl
 });
 
 /** Ogohlantirish. tone="danger" kritik holat uchun. */
-export const WarningCard = memo(function WarningCard({ th, icon, title, children, tone, style }) {
+export const WarningCard = memo(function WarningCard({ th, icon, title, children, tone, onClick, style }) {
   const c = tone === "danger" ? th.rd : th.am;
-  return (
-    <div style={{ background: c + ALPHA.faint, border: "1.5px solid " + c + ALPHA.strong, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4 + "px", marginBottom: SPACE.s3, display: "flex", gap: SPACE.s3, alignItems: "flex-start", ...style }}>
+  const s = { background: c + ALPHA.faint, border: "1.5px solid " + c + ALPHA.strong, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4 + "px", marginBottom: SPACE.s3, display: "flex", gap: SPACE.s3, alignItems: "flex-start", ...style };
+  const inner = (
+    <>
       {icon && <span style={{ flexShrink: 0, marginTop: 2 }}>{icon}</span>}
       <div style={{ minWidth: 0 }}>
         {title && <div style={{ ...TYPE.caption, fontWeight: 700, color: c, marginBottom: SPACE.s1 - 1 }}>{title}</div>}
         <div style={{ ...TYPE.caption, color: th.t2, lineHeight: 1.5 }}>{children}</div>
       </div>
-    </div>
+    </>
   );
+  if (onClick) return <button className="ui-press" onClick={onClick} style={{ ...s, width: "100%", cursor: "pointer", textAlign: "left", fontFamily: "inherit" }}>{inner}</button>;
+  return <div style={s}>{inner}</div>;
 });
 
 /** Premium taklif kartasi. Faqat monetizatsiya kontekstida. */

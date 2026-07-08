@@ -81,7 +81,34 @@ const TIco = {
 };
 
 // Data emoji → preset id (kartadagi ikonkani SVG'da chizish uchun)
-const EMOJI2ID = VAZIFA_PRESETS.reduce((m, p) => { m[p.e] = p.id; return m; }, {});
+const EMOJI2ID = {
+  "📚": "kitob",
+  "📖": "kitob",
+  "🧹": "xona",
+  "🛏️": "orin",
+  "🍽️": "idish",
+  "🛒": "dokon",
+  "🌱": "gul",
+  "🚮": "axlat",
+  "🗑️": "axlat",
+  "📝": "darslik",
+  "🎓": "darslik",
+  "🧺": "kir",
+  "🍳": "ovqat",
+  "🚴": "sport",
+  "🏃": "sayr",
+  "⚽": "sport",
+  "🎹": "musiqa",
+  "🧸": "oyinchoq",
+  "🐕": "hayvon",
+  "🪟": "deraza",
+  "🧠": "soz",
+  "🦷": "soz",
+  "🤲": "buvi",
+  "🎨": "rasm",
+  "✨": "boshqa",
+  "🕌": "boshqa"
+};
 const taskIco = (emoji, c, s) => (TIco[EMOJI2ID[emoji]] || TIco.task)(c, s);
 
 // ── Status meta: rang + badge turi + matn (kit Badge orqali) ──

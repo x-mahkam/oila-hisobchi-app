@@ -6,6 +6,7 @@
 import { memo } from "react";
 import { SPACE, RADIUS, TYPE, ALPHA } from "../utils/tokens.js";
 import { T } from "./i18n.js";
+import { EM_GOAL_ICONS } from "../utils/icons.jsx";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 const addMonthsStr = (m) => {
@@ -58,6 +59,11 @@ export function GoalMedia({ img, rang, size = SPACE.s8 + SPACE.s2, fallback }) {
   const isUrl = typeof img === "string" && /^https?:\/\//.test(img);
   const box = { width: size, height: size, borderRadius: RADIUS.s + 2, background: rang + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" };
   if (isUrl) return <div style={box}><img src={img} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.currentTarget.style.display = "none"; }} /></div>;
-  if (img) return <div style={box}><span style={{ fontSize: Math.round(size * 0.5), lineHeight: 1 }}>{img}</span></div>;
+  if (img) {
+    if (EM_GOAL_ICONS[img]) {
+      return <div style={box}><div style={{ color: rang, display: "flex" }}>{EM_GOAL_ICONS[img](rang, Math.round(size * 0.55))}</div></div>;
+    }
+    return <div style={box}><span style={{ fontSize: Math.round(size * 0.5), lineHeight: 1 }}>{img}</span></div>;
+  }
   return <div style={box}>{fallback}</div>;
 }

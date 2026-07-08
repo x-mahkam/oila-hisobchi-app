@@ -288,7 +288,8 @@ export function useDebts() {
     }
     // Bog'lanmagan qarz: darhol qo'llanadi + balansga AVTOMATIK yoziladi
     const paidSoFar = (q.paidPart || 0) + pay;
-    const upd = (await freshQarz()).map(x => (x.id === q.id && (!x.uid || x.uid === user.id)) ? { ...x, summa: x.summa - pay, paidPart: paidSoFar, asl: x.asl || q.summa + (q.paidPart || 0) } : x);
+    const newTimeline = [...(q.timeline || []), { sana: td(), summa: pay, ism: user.ism || (lg === "uz" ? "Men" : "Me") }];
+    const upd = (await freshQarz()).map(x => (x.id === q.id && (!x.uid || x.uid === user.id)) ? { ...x, summa: x.summa - pay, paidPart: paidSoFar, asl: x.asl || q.summa + (q.paidPart || 0), timeline: newTimeline } : x);
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     if (q.tur === "bergan") {
@@ -383,11 +384,15 @@ export function useDebts() {
         "err"
       );
     }
-    const upd = list.map(q => (q.id === req.debtId && (!q.uid || q.uid === user.id))
-      ? (closeIt
-          ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed" }
-          : { ...q, summa: Number(q.summa) - paySum, paidPart: (q.paidPart || 0) + paySum, asl: q.asl || Number(q.summa) + (q.paidPart || 0), payStatus: null, payBy: null })
-      : q);
+    const upd = list.map(q => {
+      if (q.id === req.debtId && (!q.uid || q.uid === user.id)) {
+        const newTimeline = [...(q.timeline || []), { sana: td(), summa: paySum, ism: req.fromIsm || (lg === "uz" ? "Hamkor" : "Partner") }];
+        return closeIt
+          ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed", timeline: newTimeline }
+          : { ...q, summa: Number(q.summa) - paySum, paidPart: (q.paidPart || 0) + paySum, asl: q.asl || Number(q.summa) + (q.paidPart || 0), payStatus: null, payBy: null, timeline: newTimeline };
+      }
+      return q;
+    });
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     // MENING balansimga avtomatik yozuv (hech qanday qo'shimcha so'rovsiz)

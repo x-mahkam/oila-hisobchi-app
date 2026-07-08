@@ -70,9 +70,15 @@ export function useAuth() {
       // Garden
       try {
         const g = await db.g("garden_" + oilaId);
-        const s = await db.g("stars_" + oilaId);
+        let s = await db.g("stars_" + oilaId);
         if (g) setGardenData(g);
-        if (s != null) setStars(s);
+        if (s != null) {
+          if (s < 0) {
+            s = 0;
+            await db.s("stars_" + oilaId, 0);
+          }
+          setStars(s);
+        }
       } catch {}
 
     } catch (e) {
