@@ -18,7 +18,7 @@ export const tm = () => new Date().toISOString().slice(0, 7);
 /** Summani formatlash: 1234567 → "1 234 567 so'm" */
 export const f = (n, showUnit = false) => {
   const num = Math.abs(Math.round(Number(n) || 0));
-  const formatted = num.toLocaleString("uz-UZ");
+  const formatted = String(num).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
   return showUnit ? formatted + " so'm" : formatted;
 };
 

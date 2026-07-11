@@ -32,5 +32,8 @@ export const canCompleteTask = (user, v) =>
  *  Eski yozuvlarda createdBy bo'lmasligi mumkin — u holda katta
  *  a'zolarga ruxsat (regressiya bo'lmasligi uchun). */
 export const canDeleteTask = (user, v) =>
-  !!(user && user.rol !== "kid" &&
-  (user.rol === "bosh" || !v?.createdBy || v.createdBy === user.id));
+  !!(user && (
+    user.rol !== "kid"
+      ? (user.rol === "bosh" || !v?.createdBy || v.createdBy === user.id)
+      : (v?.status === "proposed" && v?.createdBy === user.id)
+  ));

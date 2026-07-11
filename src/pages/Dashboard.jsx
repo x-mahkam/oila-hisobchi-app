@@ -3,7 +3,7 @@ import { KatIco, DarIco, MoneyInput } from "../components/common/index.jsx";
 import {
   SectionHeader, AppCard, StatCard, ListItem, EmptyState, Skeleton,
   PrimaryButton, GhostButton, DangerButton, Badge, CounterBadge,
-  LinearProgress, ChartCard, UIAvatar, WarningCard,
+  LinearProgress, ChartCard, UIAvatar, WarningCard, BottomSheet,
 } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, OPACITY, COMP } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
@@ -171,7 +171,7 @@ const ActivityGraph = memo(function ActivityGraph({ th, lg, days30, streak, mx30
 });
 
 // ── Tranzaksiya qatori adapteri: item → kit ListItem (delete saqlanadi) ──
-const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, divider }) {
+const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, onEdit, divider }) {
   const isX = !!item.kategoriya;
   const ki = isX ? KATS.findIndex(k => k.id === item.kategoriya) : -1;
   const di = !isX ? DARS.findIndex(d => d.id === item.tur) : -1;
@@ -188,16 +188,19 @@ const Tx = memo(function Tx({ item, th, gN, gP, f, user, onDelete, divider }) {
     else if (iz.includes("dorixona") || iz.includes("pharmacy") || iz.includes("аптека") || iz.includes("dori")) iconId = "dorixona";
   }
 
+  const canEdit = item.uid === user?.id;
+
   return (
     <ListItem th={th} divider={divider} iconTone={cl}
+      onClick={canEdit && onEdit ? () => onEdit(item) : null}
       icon={isX ? <KatIco id={iconId} c={cl} s={20} /> : <DarIco id={item.tur} c={cl} s={20} />}
       title={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{item.izoh}{item.repeat && Ico.repeat(th.ac)}</span>}
       sub={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 2 }}><UIAvatar th={th} src={gP(item.uid)} name={gN(item.uid)} size={14} />{gN(item.uid)} · {item.sana}</span>}
       right={
         <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, flexShrink: 0 }}>
           <span style={{ ...TYPE.caption, fontWeight: 700, color: isX ? th.rd : th.gr, whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{isX ? "-" : "+"}{f(item.summa, true)}</span>
-          {isX && item.uid === user?.id && onDelete && (
-            <button className="ui-press" onClick={() => onDelete(item)} aria-label="O'chirish" style={{ background: "none", border: "none", cursor: "pointer", flexShrink: 0, display: "flex", padding: 2 }}>{Ico.trash(th.t2)}</button>
+          {canEdit && onEdit && (
+            <span style={{ color: th.ac, fontSize: 13, marginLeft: 6, opacity: 0.8, cursor: "pointer" }}>✎</span>
           )}
         </span>
       } />
@@ -212,7 +215,7 @@ export default function DashboardPage({
   th, t, f, ok$, buzz, addStar, fireConfetti,
   gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng, canSeeReport,
   srch, srchR, showS,
-  delX, acceptXReq, rejectXReq,
+  delX, acceptXReq, rejectXReq, delTx, editTx,
   vazifaDone, vazifaApprove,
   fetchRates, rateL,
   setShowGift, setShowBilim, setShowAddVazifa, setPTab,
@@ -220,6 +223,28 @@ export default function DashboardPage({
   const STY = useMemo(() => makeS(th), [th]);
   const [quickItem, setQuickItem] = useState(null);
   const [showGames, setShowGames] = useState(false);
+
+  // Sana bo'yicha filtrlar (Date filtering)
+  const [filterStart, setFilterStart] = useState("");
+  const [filterEnd, setFilterEnd] = useState("");
+
+  // Tahrirlash va o'chirish holatlari (Transaction edit & delete)
+  const [editingItem, setEditingItem] = useState(null);
+  const [editSum, setEditSum] = useState("");
+  const [editIzoh, setEditIzoh] = useState("");
+  const [editSana, setEditSana] = useState("");
+  const [editKat, setEditKat] = useState(""); // Kategoriya yoki Daromad turi
+  const [showDelConfirm, setShowDelConfirm] = useState(false);
+
+  const handleStartEdit = (item) => {
+    buzz(8);
+    setEditingItem(item);
+    setEditSum(String(item.summa || ""));
+    setEditIzoh(item.izoh || "");
+    setEditSana(item.sana || "");
+    setEditKat(item.kategoriya || item.tur || "");
+    setShowDelConfirm(false);
+  };
   // Bola: sovg'a tarixi va sarflar daftari (bo'lib ko'rsatish uchun)
   const [kidGifts, setKidGifts] = useState([]);
   const [kidLedger, setKidLedger] = useState([]);
@@ -251,10 +276,24 @@ export default function DashboardPage({
   }, [xar, dar, heroBal, canSeeReport, user?.id]);
 
   // 7. Oxirgi tranzaksiyalar (o'zimniki)
-  const recentTx = useMemo(() => [
-    ...xar.filter(x => x.uid === user?.id).slice(0, 12).map(x => ({ ...x, tp: "x" })),
-    ...dar.filter(d => d.uid === user?.id).slice(0, 8).map(d => ({ ...d, tp: "d" })),
-  ].sort((a, b) => b.id - a.id).slice(0, 6), [xar, dar, user?.id]);
+  const recentTx = useMemo(() => {
+    let list = [
+      ...xar.filter(x => x.uid === user?.id).map(x => ({ ...x, tp: "x" })),
+      ...dar.filter(d => d.uid === user?.id).map(d => ({ ...d, tp: "d" })),
+    ].sort((a, b) => b.id - a.id);
+
+    if (filterStart) {
+      list = list.filter(item => item.sana >= filterStart);
+    }
+    if (filterEnd) {
+      list = list.filter(item => item.sana <= filterEnd);
+    }
+
+    if (!filterStart && !filterEnd) {
+      return list.slice(0, 6);
+    }
+    return list;
+  }, [xar, dar, user?.id, filterStart, filterEnd]);
 
   // 11. Oiladagi oxirgi faoliyat (boshqa a'zolar) — mavjud ma'lumotdan
   const famTx = useMemo(() => [
@@ -344,7 +383,7 @@ export default function DashboardPage({
         {srchR.length > 0 && (
           <AppCard th={th} pad={0}>
             {srchR.map((item, i) => (
-              <Tx key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} divider={i < srchR.length - 1} />
+              <Tx key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} onEdit={handleStartEdit} divider={i < srchR.length - 1} />
             ))}
           </AppCard>
         )}
@@ -394,6 +433,7 @@ export default function DashboardPage({
             kidGifts={kidGifts} kidLedger={kidLedger} bugun={bugun}
             vazifaDone={vazifaDone} setShowGames={setShowGames} setShowGift={setShowGift}
             setShowBilim={setShowBilim} setScr={setScr} setPTab={setPTab}
+            setShowAddVazifa={setShowAddVazifa}
           />
           {showGames && <KidsGames user={user} lg={lg} addStar={addStar} onClose={() => setShowGames(false)} />}
         </>
@@ -507,7 +547,8 @@ export default function DashboardPage({
 
                 <div style={{ width: "100%", display: "flex", gap: SPACE.s2, marginTop: SPACE.s2 + 4 }}>
                   <button className="ui-press" onClick={(e) => { e.stopPropagation(); buzz(8); setShowAddVazifa(true); }} style={{ width: "100%", background: th.ac, border: "none", color: "#fff", padding: "12px 14px", borderRadius: RADIUS.s, cursor: "pointer", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit" }}>
-                    <span>➕ {lg === "uz" ? "Yangi vazifa berish" : "Assign new task"}</span>
+                    {Ico.add("#fff")}
+                    <span>{lg === "uz" ? "Yangi vazifa berish" : "Assign new task"}</span>
                   </button>
                 </div>
               </AppCard>
@@ -550,14 +591,81 @@ export default function DashboardPage({
 
           {/* 7. Oxirgi tranzaksiyalar */}
           <SectionHeader th={th} right={recentTx.length > 0 && <button className="ui-press" onClick={() => setScr("hisobot")} style={{ background: "none", border: "none", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, cursor: "pointer", padding: SPACE.s1 + "px 2px", fontWeight: 700, fontFamily: "inherit" }}>{lg === "uz" ? "Hammasi" : "See all"} ›</button>}>{lg === "uz" ? "Oxirgi operatsiyalar" : "Recent transactions"}</SectionHeader>
+          
+          {/* Sana tanlash filtri (Date picker filter) */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", background: th.sur, padding: "10px 14px", borderRadius: RADIUS.m, border: "1px solid " + th.bor }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ ...TYPE.tiny, color: th.t2, display: "block", marginBottom: 3, fontSize: 10, fontWeight: 700 }}>{lg === "uz" ? "DAN" : "FROM"}</span>
+              <input
+                type="date"
+                style={{
+                  width: "100%",
+                  padding: "6px 8px",
+                  borderRadius: 8,
+                  background: th.bg,
+                  border: "1px solid " + th.bor,
+                  color: th.t1,
+                  fontSize: 12,
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+                value={filterStart}
+                onChange={e => { buzz(5); setFilterStart(e.target.value); }}
+              />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ ...TYPE.tiny, color: th.t2, display: "block", marginBottom: 3, fontSize: 10, fontWeight: 700 }}>{lg === "uz" ? "GACHA" : "TO"}</span>
+              <input
+                type="date"
+                style={{
+                  width: "100%",
+                  padding: "6px 8px",
+                  borderRadius: 8,
+                  background: th.bg,
+                  border: "1px solid " + th.bor,
+                  color: th.t1,
+                  fontSize: 12,
+                  outline: "none",
+                  boxSizing: "border-box"
+                }}
+                value={filterEnd}
+                onChange={e => { buzz(5); setFilterEnd(e.target.value); }}
+              />
+            </div>
+            {(filterStart || filterEnd) && (
+              <button
+                className="ui-press"
+                onClick={() => { buzz(8); setFilterStart(""); setFilterEnd(""); }}
+                style={{
+                  background: th.sur,
+                  border: "1.5px solid " + th.bor,
+                  borderRadius: 8,
+                  padding: "6px 10px",
+                  cursor: "pointer",
+                  color: th.rd,
+                  fontWeight: 800,
+                  fontSize: 11,
+                  alignSelf: "flex-end",
+                  height: 30,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontFamily: "inherit"
+                }}
+              >
+                {lg === "uz" ? "Tozalash" : "Clear"}
+              </button>
+            )}
+          </div>
+
           {recentTx.length === 0 ? (
             <EmptyState th={th} preset="transaction"
-              title={lg === "uz" ? "Hali xarajat kiritilmagan" : "No transactions yet"}
-              message={lg === "uz" ? "Yuqoridagi tez qo'shish tugmalaridan foydalaning yoki pastdagi + tugmasini bosing" : "Use quick add buttons above or tap + below"}
+              title={lg === "uz" ? "Amallar topilmadi" : "No transactions found"}
+              message={lg === "uz" ? "Tanlangan sana bo'yicha yoki umumiy amallar yo'q" : "No transactions found for the selected period"}
               actionText={lg === "uz" ? "Xarajat qo'shish" : "Add expense"} onAction={() => setScr("qoshish")} />
           ) : (
             <AppCard th={th} pad={0}>
-              {recentTx.map((item, i) => <Tx key={item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} divider={i < recentTx.length - 1} />)}
+              {recentTx.map((item, i) => <Tx key={item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} onEdit={handleStartEdit} divider={i < recentTx.length - 1} />)}
             </AppCard>
           )}
 
@@ -610,7 +718,7 @@ export default function DashboardPage({
             <div>
               <SectionHeader th={th}>{lg === "uz" ? "Oiladagi oxirgi faoliyat" : "Family activity"}</SectionHeader>
               <AppCard th={th} pad={0}>
-                {famTx.map((item, i) => <Tx key={"fam" + item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} divider={i < famTx.length - 1} />)}
+                {famTx.map((item, i) => <Tx key={"fam" + item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} onEdit={handleStartEdit} divider={i < famTx.length - 1} />)}
               </AppCard>
             </div>
           )}
@@ -654,6 +762,119 @@ export default function DashboardPage({
           </div>
         </div>
       )}
+
+      {/* ═══════════════ TAHRIRLASH / O'CHIRISH — BottomSheet ═══════════════ */}
+      <BottomSheet
+        th={th}
+        open={!!editingItem}
+        onClose={() => setEditingItem(null)}
+        title={lg === "uz" ? "Tahrirlash va o'chirish" : "Edit & Delete"}
+      >
+        {editingItem && (
+          <div style={{ padding: "0 16px 24px" }}>
+            {showDelConfirm ? (
+              <div style={{ textAlign: "center", padding: "16px 0" }}>
+                <div style={{ ...TYPE.body, fontWeight: 700, color: th.rd, marginBottom: 16 }}>
+                  {lg === "uz" ? "Ushbu amalni o'chirishni tasdiqlaysizmi?" : "Are you sure you want to delete this transaction?"}
+                </div>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <GhostButton th={th} onClick={() => setShowDelConfirm(false)} style={{ flex: 1 }}>
+                    {lg === "uz" ? "Yo'q, bekor qilish" : "No, cancel"}
+                  </GhostButton>
+                  <DangerButton th={th} onClick={async () => {
+                    await delTx(editingItem);
+                    setEditingItem(null);
+                  }} style={{ flex: 1 }}>
+                    {lg === "uz" ? "Ha, o'chirish" : "Yes, delete"}
+                  </DangerButton>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, background: th.sur, borderRadius: 16, padding: "12px 16px", marginBottom: 16 }}>
+                  {editingItem.kategoriya ? (
+                    <div style={{ width: 42, height: 42, borderRadius: 12, background: (KATS.find(k => k.id === editKat)?.c || th.ac) + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <KatIco id={editKat} c={KATS.find(k => k.id === editKat)?.c || th.ac} s={22} />
+                    </div>
+                  ) : (
+                    <div style={{ width: 42, height: 42, borderRadius: 12, background: (DARS.find(d => d.id === editKat)?.c || th.gr) + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <DarIco id={editKat} c={DARS.find(d => d.id === editKat)?.c || th.gr} s={22} />
+                    </div>
+                  )}
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>
+                      {editingItem.kategoriya 
+                        ? (KN[lg] || KN.uz)[KATS.findIndex(k => k.id === editKat)]
+                        : (DN[lg] || DN.uz)[DARS.findIndex(d => d.id === editKat)]
+                      }
+                    </div>
+                    <div style={{ fontSize: 11, color: th.t2 }}>
+                      {editingItem.kategoriya ? (lg === "uz" ? "Xarajat kategoriyasi" : "Expense category") : (lg === "uz" ? "Daromad turi" : "Income type")}
+                    </div>
+                  </div>
+                </div>
+
+                <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+                <MoneyInput style={{ ...STY.ip, fontSize: 24, fontWeight: 800, textAlign: "center" }} value={editSum} onChange={setEditSum} placeholder="0" th={th} />
+
+                <label style={STY.lb}>{lg === "uz" ? "Izoh" : "Note"}</label>
+                <input style={STY.ip} value={editIzoh} onChange={e => setEditIzoh(e.target.value)} placeholder={lg === "uz" ? "Nima uchun?" : "What for?"} />
+
+                <label style={STY.lb}>{lg === "uz" ? "Sana" : "Date"}</label>
+                <input type="date" style={STY.ip} value={editSana} onChange={e => setEditSana(e.target.value)} />
+
+                <div style={{ marginTop: 12, marginBottom: 16 }}>
+                  <label style={{ ...STY.lb, marginBottom: 6, display: "block" }}>
+                    {editingItem.kategoriya ? (lg === "uz" ? "Kategoriyani o'zgartirish" : "Change category") : (lg === "uz" ? "Daromad turini o'zgartirish" : "Change income type")}
+                  </label>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, maxHeight: 150, overflowY: "auto", padding: 2 }}>
+                    {editingItem.kategoriya ? (
+                      KATS.map((k, i) => (
+                        <button key={k.id} onClick={() => setEditKat(k.id)} style={{ background: editKat === k.id ? k.c + "22" : th.sur, border: editKat === k.id ? "1.5px solid " + k.c : "1.5px solid " + th.bor, borderRadius: 12, padding: "8px 4px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                          <KatIco id={k.id} c={k.c} s={16} />
+                          <span style={{ fontSize: 9, fontWeight: 600, color: th.t1, textAlign: "center" }}>{(KN[lg] || KN.uz)[i]}</span>
+                        </button>
+                      ))
+                    ) : (
+                      DARS.map((d, i) => (
+                        <button key={d.id} onClick={() => setEditKat(d.id)} style={{ background: editKat === d.id ? d.c + "22" : th.sur, border: editKat === d.id ? "1.5px solid " + d.c : "1.5px solid " + th.bor, borderRadius: 12, padding: "8px 4px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                          <DarIco id={d.id} c={d.c} s={16} />
+                          <span style={{ fontSize: 9, fontWeight: 600, color: th.t1, textAlign: "center" }}>{(DN[lg] || DN.uz)[i]}</span>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                  <DangerButton th={th} onClick={() => setShowDelConfirm(true)} style={{ flex: 1, margin: 0, padding: "10px" }}>
+                    {lg === "uz" ? "O'chirish" : "Delete"}
+                  </DangerButton>
+                  <PrimaryButton th={th} onClick={async () => {
+                    if (!editSum || Number(editSum) <= 0) {
+                      return ok$(lg === "uz" ? "Summa kiriting" : "Enter amount", "err");
+                    }
+                    const updateData = {
+                      summa: Number(editSum),
+                      izoh: editIzoh,
+                      sana: editSana,
+                    };
+                    if (editingItem.kategoriya) {
+                      updateData.kategoriya = editKat;
+                    } else {
+                      updateData.tur = editKat;
+                    }
+                    await editTx(editingItem, updateData);
+                    setEditingItem(null);
+                  }} style={{ flex: 2, margin: 0, padding: "10px" }}>
+                    {lg === "uz" ? "Saqlash" : "Save"}
+                  </PrimaryButton>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </BottomSheet>
     </div>
   );
 }

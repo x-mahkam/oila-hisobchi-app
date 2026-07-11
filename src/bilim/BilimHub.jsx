@@ -8,6 +8,7 @@
 // ═══════════════════════════════════════════════════════════
 import { memo, useMemo, useState, useEffect, useCallback } from "react";
 import { db } from "../firebase.js";
+import { useApp } from "../context/AppContext.jsx";
 import { PageHeader, SectionHeader, AppCard, StatCard, Badge, EmptyState, PrimaryButton, LinearProgress, UIAvatar } from "../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
@@ -49,10 +50,23 @@ const GameCard = memo(function GameCard({ th, lg, game, onOpen }) {
   );
 });
 
-export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack, gardenData = {}, onGarden }) {
+export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack, gardenData = {}, onGarden, initialView }) {
+  const { setBilimInitialView } = useApp();
   const uz = lg === "uz";
   const isKid = user?.rol === "kid";
-  const [view, setView] = useState("cats");      // cats | games | detail | play | parent
+  const [view, setView] = useState(() => (typeof initialView === "string" ? initialView : "cats"));      // cats | games | detail | play | parent | market
+
+  useEffect(() => {
+    if (typeof initialView === "string") {
+      setView(initialView);
+    }
+  }, [initialView]);
+
+  useEffect(() => {
+    return () => {
+      setBilimInitialView("cats");
+    };
+  }, [setBilimInitialView]);
   const [cat, setCat] = useState(null);
   const [game, setGame] = useState(null);
 
@@ -103,8 +117,11 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     if (view === "play") { setView("detail"); }
     else if (view === "detail") { setView("games"); }
     else if (view === "games" || view === "parent") { setView("cats"); setCat(null); }
-    else onBack && onBack();
-  }, [view, onBack]);
+    else {
+      setBilimInitialView("cats");
+      onBack && onBack();
+    }
+  }, [view, onBack, setBilimInitialView]);
 
   const startGame = useCallback(() => {
     if (game && isAvailable(game)) setView("play");
@@ -130,7 +147,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
 
   // ═══ MUKOFOT / SAVDO — ota-ona coin→mukofot qo'yadi (BilimBozor "Bozor" tabi) ═══
   if (view === "market") {
-    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => setView(isKid ? "cats" : "cats")} />;
+    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} onBack={() => { setView(isKid ? "cats" : "parent"); setBilimInitialView("cats"); }} />;
   }
 
   // ═══ PARENT PREVIEW — o'yin ko'rinmaydi, faqat natija ═══
@@ -230,6 +247,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
         level={lv.level} rankLabel={rankLabel} rankColor={rankObj.color}
         xpPct={lv.pct} xpToNext={lv.toNext} maxLevel={lv.max}
         openGame={openGame} openCat={openCat} onProfile={openProfile} onGarden={onGarden} onBack={onBack}
+        onMarket={() => setView("market")}
       />
     </div>
   );

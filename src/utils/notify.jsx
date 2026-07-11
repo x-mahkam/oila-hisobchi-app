@@ -48,6 +48,7 @@ const TYPE_CAT = {
   debt_new: "debt", debt_confirmed: "debt", debt_repaid: "debt",
   garden_harvest: "garden", garden_energy: "garden", garden_daily: "garden",
   family_member: "family", family_kid: "family", family_task_sent: "family", family_task_done: "family",
+  bilim_proposal: "family", bilim_approved: "family", bilim_done: "family",
   premium_ended: "premium", trial_ended: "premium",
   ai_weekly: "ai", ai_monthly: "ai",
   reminder: "reminder", daily_reminder: "reminder",
@@ -58,6 +59,7 @@ export const catOf = (n) => (n && (n.cat || TYPE_CAT[n.type])) || "reminder";
 const TYPE_PRIO = {
   budget_over: "critical", budget_100: "critical", premium_ended: "critical", trial_ended: "high",
   debt_new: "high", goal_deadline: "high", budget_80: "high", family_kid: "high",
+  bilim_proposal: "high", bilim_approved: "high", bilim_done: "high",
   goal_behind: "normal", debt_confirmed: "normal", debt_repaid: "normal",
   goal_done: "normal", family_member: "normal", family_task_sent: "normal", family_task_done: "normal",
   garden_harvest: "normal", garden_energy: "low", garden_daily: "low",

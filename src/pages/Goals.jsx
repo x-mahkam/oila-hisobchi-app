@@ -214,7 +214,6 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
 export default function GoalsPage({
   user, maq, isKid, gN, gP,
   th, t, f, lg,
-  addM, setAddM, maqTab, setMaqTab,
   canSeeReport, isBosh,
   tupId, setTupId, tupS, setTupS,
   editMq, setEditMq, editMqN, setEditMqN, editMqS, setEditMqS,
@@ -222,6 +221,8 @@ export default function GoalsPage({
   parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad,
   ok$,
 }) {
+  const [addM, setAddM] = useState(false);
+  const [maqTab, setMaqTab] = useState("mine");
   const STY = useMemo(() => makeS(th), [th]);
   const [showToy, setShowToy] = useState(false);
   // Tahrirlashda muddat/rasm (SMART meta — App state'ga tegmaydi)
@@ -284,7 +285,7 @@ export default function GoalsPage({
       )}
 
       <PageHeader th={th} title={isKid ? (lg === "uz" ? "Orzularim" : "My dreams") : t.goal} style={{ marginBottom: SPACE.s3 }}
-        right={maqTab === "mine" && <IconButton th={th} label={lg === "uz" ? "Maqsad qo'shish" : "Add goal"} icon={Ico.add(th.ac)} onClick={() => setAddM(v => !v)} />} />
+        right={<IconButton th={th} label={lg === "uz" ? "Maqsad qo'shish" : "Add goal"} icon={Ico.add(th.ac)} onClick={() => setAddM(v => !v)} />} />
 
       {!isKid && canSeeReport && (
         <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, marginBottom: SPACE.s3 + 2, gap: 3 }}>
@@ -297,7 +298,7 @@ export default function GoalsPage({
       )}
 
       {addM && (
-        <GoalForm th={th} STY={STY} lg={lg} isKid={isKid} f={f} t={t} submitGoal={submitGoal} setAddM={setAddM} />
+        <GoalForm th={th} STY={STY} lg={lg} isKid={isKid} f={f} t={t} submitGoal={submitGoal} setAddM={setAddM} defaultShared={maqTab === "oila"} />
       )}
 
       {tupId && (
@@ -367,11 +368,11 @@ export default function GoalsPage({
 }
 
 // ── Separate, self-contained "new goal" form (has its own state) ──
-function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM }) {
+function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM, defaultShared = false }) {
   const [mN, setMN] = useState("");
   const [mS, setMS] = useState("");
   const [mR, setMR] = useState(th.gr);
-  const [mShared, setMShared] = useState(false);
+  const [mShared, setMShared] = useState(defaultShared);
   const [mDeadline, setMDeadline] = useState(""); // SMART: majburiy muddat
   const [mImg, setMImg] = useState("");           // SMART: ixtiyoriy rasm
   const [dlErr, setDlErr] = useState(false);

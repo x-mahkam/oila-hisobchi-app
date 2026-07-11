@@ -142,24 +142,97 @@ export default function ReportsPage({
           hD = sDar.reduce((s, d) => s + Number(d.summa || 0), 0);
           hFb = true;
         }
-        let score = 50;
+        let score = 40; // Base score
         const checks = [];
-        if (hD >= hX) { score += 20; checks.push({ ok: true, t: lg === "uz" ? "Daromad xarajatdan ko'p" : "Income exceeds expenses" }); }
-        else { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Xarajat daromaddan ko'p" : "Expenses exceed income" }); }
-        if (sBdj > 0 && hX <= sBdj) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Budjetdan chiqmagansiz" : "Within budget" }); }
-        else if (sBdj > 0) { score -= 15; checks.push({ ok: false, t: lg === "uz" ? "Budjetdan oshib ketdingiz" : "Over budget" }); }
-        const savePct = hD > 0 ? (hD - hX) / hD * 100 : 0;
-        if (savePct >= 20) { score += 15; checks.push({ ok: true, t: lg === "uz" ? "Yaxshi jamg'arma (20%+)" : "Good savings (20%+)" }); }
-        else if (savePct > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Ozgina jamg'arma bor" : "Some savings" }); }
-        else { checks.push({ ok: false, t: lg === "uz" ? "Jamg'arma yo'q" : "No savings" }); }
-        const topKat = KATS.map((k, i) => ({ nom: KN[lg][i], sum: hSrc.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).sort((a, b) => b.sum - a.sum)[0];
-        if (topKat && hX > 0 && topKat.sum / hX > 0.5) { score -= 5; checks.push({ ok: false, t: topKat.nom + " " + (lg === "uz" ? "xarajati yuqori" : "spending high") }); }
-        if (sMaq.length > 0) { score += 5; checks.push({ ok: true, t: lg === "uz" ? "Moliyaviy maqsadingiz bor" : "You have goals" }); }
+
+        // 1. Income vs Expense (Max 25 pts)
+        if (hD > hX) {
+          const ratio = hX > 0 ? hD / hX : 2;
+          const pts = ratio >= 1.5 ? 25 : Math.round(15 + (ratio - 1) * 20);
+          score += pts;
+          checks.push({ ok: true, t: lg === "uz" ? `Daromad xarajatdan ko'p (+${pts} ball)` : `Income exceeds expenses (+${pts} pts)` });
+        } else {
+          const lossRatio = hD > 0 ? (hX - hD) / hD : 1;
+          const penalty = Math.min(25, Math.round(10 + lossRatio * 15));
+          score -= penalty;
+          checks.push({ ok: false, t: lg === "uz" ? `Xarajat daromaddan ko'p (-${penalty} ball)` : `Expenses exceed income (-${penalty} pts)` });
+        }
+
+        // 2. Budget Control (Max 20 pts)
+        if (sBdj > 0) {
+          if (hX <= sBdj) {
+            const usagePct = hX / sBdj;
+            const pts = Math.max(5, Math.round((1 - usagePct) * 20));
+            score += pts;
+            checks.push({ ok: true, t: lg === "uz" ? `Budjet limiti doirasida (+${pts} ball)` : `Within budget limit (+${pts} pts)` });
+          } else {
+            const overPct = (hX - sBdj) / sBdj;
+            const penalty = Math.min(20, Math.round(10 + overPct * 20));
+            score -= penalty;
+            checks.push({ ok: false, t: lg === "uz" ? `Budjet limitidan oshib ketdingiz (-${penalty} ball)` : `Exceeded budget limit (-${penalty} pts)` });
+          }
+        }
+
+        // 3. Savings Rate (Max 20 pts)
+        const savePct = hD > 0 ? ((hD - hX) / hD) * 100 : 0;
+        if (savePct >= 30) {
+          score += 20;
+          checks.push({ ok: true, t: lg === "uz" ? "Ajoyib jamg'arma sur'ati: 30%+ (+20 ball)" : "Outstanding savings rate: 30%+ (+20 pts)" });
+        } else if (savePct >= 10) {
+          const pts = Math.round(10 + (savePct - 10) * 0.5);
+          score += pts;
+          checks.push({ ok: true, t: lg === "uz" ? `Yaxshi jamg'arma sur'ati: ${Math.round(savePct)}% (+${pts} ball)` : `Good savings rate: ${Math.round(savePct)}% (+${pts} pts)` });
+        } else if (savePct > 0) {
+          score += 5;
+          checks.push({ ok: true, t: lg === "uz" ? "Ozgina jamg'arma bor (+5 ball)" : "Some savings (+5 pts)" });
+        } else {
+          checks.push({ ok: false, t: lg === "uz" ? "Jamg'arma ko'rsatkichi past" : "No savings rate" });
+        }
+
+        // 4. Category Diversification (Max 15 pts)
+        if (hX > 0) {
+          const catSums = KATS.map((k, i) => ({
+            id: k.id,
+            nom: KN[lg][i],
+            sum: hSrc.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0)
+          })).sort((a, b) => b.sum - a.sum);
+          const topKat = catSums[0];
+          const topRatio = topKat ? topKat.sum / hX : 0;
+          if (topRatio < 0.4) {
+            score += 15;
+            checks.push({ ok: true, t: lg === "uz" ? "Sog'lom va muvozanatli xarajatlar (+15 ball)" : "Balanced expenditures (+15 pts)" });
+          } else if (topRatio <= 0.6) {
+            score += 5;
+            checks.push({ ok: true, t: lg === "uz" ? `${topKat.nom} ulushi bir oz yuqori (+5 ball)` : `${topKat.nom} share slightly high (+5 pts)` });
+          } else if (topKat) {
+            score -= 5;
+            checks.push({ ok: false, t: lg === "uz" ? `${topKat.nom} xarajati juda baland (-5 ball)` : `${topKat.nom} spending too high (-5 pts)` });
+          }
+        }
+
+        // 5. Goals / Dreams (Max 10 pts)
+        if (sMaq.length > 0) {
+          score += 10;
+          checks.push({ ok: true, t: lg === "uz" ? "Moliyaviy reja va maqsadlar bor (+10 ball)" : "Have financial goals (+10 pts)" });
+        } else {
+          checks.push({ ok: false, t: lg === "uz" ? "Maqsadlar belgilanmagan" : "No goals set" });
+        }
+
+        // 6. Active Debt Burden (Penalty up to 10 pts)
         const activeDebt = sQarz.filter(q => !q.paid && q.tur === "olgan").reduce((s, q) => s + Number(q.summa || 0), 0);
-        if (activeDebt > 0 && hD > 0 && activeDebt > hD) { score -= 10; checks.push({ ok: false, t: lg === "uz" ? "Qarzingiz daromaddan ko'p" : "Debt exceeds income" }); }
+        if (activeDebt > 0 && hD > 0) {
+          if (activeDebt > hD * 2) {
+            score -= 10;
+            checks.push({ ok: false, t: lg === "uz" ? "Qarz yuki o'ta yuqori (-10 ball)" : "Extremely high debt load (-10 pts)" });
+          } else if (activeDebt > hD) {
+            score -= 5;
+            checks.push({ ok: false, t: lg === "uz" ? "Qarz oylik daromaddan yuqori (-5 ball)" : "Debt exceeds monthly income (-5 pts)" });
+          }
+        }
+
         score = Math.max(0, Math.min(100, Math.round(score)));
-        const sColor = score >= 75 ? th.gr : score >= 50 ? th.am : th.rd;
-        const sLabel = score >= 75 ? (lg === "uz" ? "Zo'r!" : "Excellent!") : score >= 50 ? (lg === "uz" ? "Yaxshi" : "Good") : (lg === "uz" ? "Yaxshilash kerak" : "Needs work");
+        const sColor = score >= 80 ? th.gr : score >= 55 ? th.am : th.rd;
+        const sLabel = score >= 80 ? (lg === "uz" ? "Zo'r!" : "Excellent!") : score >= 55 ? (lg === "uz" ? "Yaxshi" : "Good") : (lg === "uz" ? "Yaxshilash kerak" : "Needs work");
         if (hX === 0 && hD === 0) return (
           <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s4 + 2 }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s1 + 2 }}>{Ico.brain(th.t3)}</div>
@@ -180,7 +253,7 @@ export default function ReportsPage({
               </div>
             </div>
             <div style={{ borderTop: "1px solid " + th.bor, paddingTop: SPACE.s3 }}>
-              {checks.slice(0, 5).map((c, i) => (
+              {checks.map((c, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2 - 1, ...TYPE.caption, color: th.t1 }}>
                   <span style={{ flexShrink: 0, display: "flex" }}>{c.ok ? RIco.check(th.gr) : RIco.warn(th.am)}</span>{c.t}
                 </div>
@@ -518,6 +591,18 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
 
   // ── Swipe ────────────────────────────────────────────────
   const maxSlide = customRange ? 1 : ((scope === "family" && canSeeReport) ? 3 : 2);
+
+  // Har 5 soniyada slaydlar avtomatik ravishda chapga surilib turadi (0 -> 1 -> 2 -> 3 -> 0)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSlideIdx(current => {
+        if (current >= maxSlide) return 0;
+        return current + 1;
+      });
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [maxSlide]);
+
   const touchStart = useRef(null);
   const onTouchStart = e => { touchStart.current = e.touches[0].clientX; };
   const onTouchEnd = e => {
@@ -579,64 +664,83 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   return (
     <div style={{ marginBottom: 18 }}>
 
-      {/* ── Sarlavha: tur (dropdown) + kalendar ── */}
-      <div style={{ position:"relative", display:"flex", alignItems:"center", marginBottom:12 }}>
-        {customRange
-          ? <button className="ui-press" onClick={() => { setCustomRange(null); setSlideIdx(0); }} aria-label="Orqaga" style={{ width: SPACE.s8 + SPACE.s1 + 2, height: SPACE.s8 + SPACE.s1 + 2, borderRadius: RADIUS.s, background: th.surH, border: "1px solid " + th.bor, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke={th.t1} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg></button>
-          : <div style={{ width: SPACE.s8 + SPACE.s1 + 2, flexShrink: 0 }}/>}
-        <div style={{ flex:1, display:"flex", justifyContent:"center" }}>
-          <button className="ui-press" onClick={() => setTypeMenu(v => !v)} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: "transparent", border: "none", cursor: "pointer", ...TYPE.heading, fontSize: TYPE.heading.fontSize - 1, color: th.t1, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px", fontFamily: "inherit" }}>
-            {type==="xarajat" ? (lg==="uz"?"Xarajatlar":"Expenses") : (lg==="uz"?"Daromadlar":"Income")}
-            {RIco.chevD(th.t2, 12, typeMenu)}
+      {/* ── Sarlavha / Orqaga qaytish (agar customRange bo'lsa) ── */}
+      {customRange && (
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+          <button className="ui-press" onClick={() => { setCustomRange(null); setSlideIdx(0); }} aria-label="Orqaga" style={{ width: 36, height: 36, borderRadius: RADIUS.s, background: th.surH, border: "1.5px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke={th.t1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
+          <span style={{ ...TYPE.body, fontWeight: 700, marginLeft: 10, color: th.t1 }}>{lg === "uz" ? "Asosiy davrga qaytish" : "Back to default period"}</span>
         </div>
-        <button className="ui-press" onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} aria-label={lg==="uz"?"Davr tanlash":"Pick range"} style={{ width: SPACE.s8 + SPACE.s1 + 2, height: SPACE.s8 + SPACE.s1 + 2, borderRadius: RADIUS.s, background: th.surH, border: "1px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          {RIco.cal(th.t1)}
-        </button>
-        {typeMenu && (
-          <div className="ui-fadeUp" style={{ position: "absolute", top: SPACE.s12 - SPACE.s1, left: "50%", transform: "translateX(-50%)", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s1 + 2, zIndex: Z.dropdown, boxShadow: SHADOW.e2, minWidth: SPACE.s16 * 3 }}>
-            {[["xarajat", lg==="uz"?"Xarajatlar":"Expenses"], ["daromad", lg==="uz"?"Daromadlar":"Income"]].map(([key, label]) => (
-              <button key={key} className="ui-press" onClick={() => { setType(key); setTypeMenu(false); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, width: "100%", textAlign: "left", padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", background: type===key ? th.ac + ALPHA.tint : "transparent", border: "none", borderRadius: RADIUS.s, cursor: "pointer", ...TYPE.body, fontWeight: 700, color: type===key ? th.ac : th.t1, fontFamily: "inherit" }}>{key === "xarajat" ? RIco.hand(type===key ? th.ac : th.t2, 16) : RIco.coin(type===key ? th.ac : th.t2)}<span style={{ flex: 1 }}>{label}</span>{type===key && RIco.check(th.ac)}</button>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* ── Davr va doira boshqaruvi (Compact, Airy Row) ── */}
-      <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", justifyContent: "space-between" }}>
-        {/* Scope (Mine / Family) toggle */}
-        {canSeeReport ? (
-          <div style={{ display: "flex", background: "transparent", borderRadius: RADIUS.s - 2, padding: 1, border: "1px solid " + th.bor, flex: "0 0 auto" }}>
-            {[["mine", lg==="uz"?"O'zim":"Mine"], ["family", lg==="uz"?"Oila":"Family"]].map(([key, label]) => {
-              const active = scope === key;
+      {/* ── YANGI: Filtirlar bloki (Xarajat/Daromad, O'zim/Oila va Hafta/Oy/Yil) ── */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+        
+        {/* Row 1: [Xarajat / Daromad] va [O'zim / Oila] */}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          
+          {/* Xarajat / Daromad Toggle */}
+          <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s, padding: 2, border: "1.5px solid " + th.bor, flex: 1.2 }}>
+            {[["xarajat", lg==="uz"?"Xarajat":"Expense"], ["daromad", lg==="uz"?"Daromad":"Income"]].map(([key, label]) => {
+              const active = type === key;
               return (
-                <button key={key} className="ui-press" onClick={() => { setScope(key); setSlideIdx(0); }} style={{
-                  padding: "3px 8px", border: "none", borderRadius: RADIUS.s - 3, cursor: "pointer", fontFamily: "inherit",
-                  fontWeight: active ? 700 : 500, fontSize: 10, transition: "all 0.15s ease-in-out",
+                <button key={key} className="ui-press" onClick={() => { setType(key); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{
+                  flex: 1, padding: "7px 10px", border: "none", borderRadius: RADIUS.s - 2, cursor: "pointer", fontFamily: "inherit",
+                  fontWeight: active ? 800 : 600, fontSize: 12.5, transition: "all 0.15s ease-in-out",
                   background: active ? th.ac : "transparent",
                   color: active ? "#fff" : th.t2,
                 }}>{label}</button>
               );
             })}
           </div>
-        ) : <div style={{ flex: "1 1 0px" }} />}
 
-        {/* Period (Week/Month/Year) toggle */}
+          {/* O'zim / Oila Toggle (Faqat ruxsat bo'lsa) */}
+          {canSeeReport && azolar.length > 1 ? (
+            <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s, padding: 2, border: "1.5px solid " + th.bor, flex: 1 }}>
+              {[["mine", lg==="uz"?"O'zim":"Mine"], ["family", lg==="uz"?"Oila":"Family"]].map(([key, label]) => {
+                const active = scope === key;
+                return (
+                  <button key={key} className="ui-press" onClick={() => { setScope(key); setSlideIdx(0); }} style={{
+                    flex: 1, padding: "7px 10px", border: "none", borderRadius: RADIUS.s - 2, cursor: "pointer", fontFamily: "inherit",
+                    fontWeight: active ? 800 : 600, fontSize: 12.5, transition: "all 0.15s ease-in-out",
+                    background: active ? th.ac : "transparent",
+                    color: active ? "#fff" : th.t2,
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+          ) : null}
+
+        </div>
+
+        {/* Row 2: [Hafta / Oy / Yil] va Kalendar */}
         {!customRange && (
-          <div style={{ display: "flex", background: "transparent", borderRadius: RADIUS.s - 2, padding: 1, border: "1px solid " + th.bor, flex: "0 0 auto" }}>
-            {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => {
-              const active = period === key;
-              return (
-                <button key={key} className="ui-press" onClick={() => setPeriod(key)} style={{
-                  padding: "3px 8px", border: "none", borderRadius: RADIUS.s - 3, cursor: "pointer", fontFamily: "inherit",
-                  fontWeight: active ? 700 : 500, fontSize: 10, transition: "all 0.15s ease-in-out",
-                  background: active ? th.ac : "transparent",
-                  color: active ? "#fff" : th.t2,
-                }}>{label}</button>
-              );
-            })}
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            
+            {/* Hafta / Oy / Yil Toggle */}
+            <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s, padding: 2, border: "1.5px solid " + th.bor, flex: 1 }}>
+              {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => {
+                const active = period === key;
+                return (
+                  <button key={key} className="ui-press" onClick={() => setPeriod(key)} style={{
+                    flex: 1, padding: "7px 10px", border: "none", borderRadius: RADIUS.s - 2, cursor: "pointer", fontFamily: "inherit",
+                    fontWeight: active ? 800 : 600, fontSize: 12.5, transition: "all 0.15s ease-in-out",
+                    background: active ? th.ac : "transparent",
+                    color: active ? "#fff" : th.t2,
+                  }}>{label}</button>
+                );
+              })}
+            </div>
+
+            {/* Kalendar tugmasi */}
+            <button className="ui-press" onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} aria-label={lg==="uz"?"Davr tanlash":"Pick range"} style={{ width: 38, height: 38, borderRadius: RADIUS.s, background: th.surH, border: "1.5px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {RIco.cal(th.t1, 18)}
+            </button>
+
           </div>
         )}
+
       </div>
 
       {/* ── Davr variantlari (scroll - Compact & Airy) ── */}

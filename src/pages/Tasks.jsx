@@ -118,6 +118,7 @@ const statusMeta = (st, th, lg) => {
     case "done":     return { c: th.am, type: "warning", label: lg === "uz" ? "Tekshirilmoqda" : "Pending review", prog: 66 };
     case "rejected": return { c: th.rd, type: "danger",  label: lg === "uz" ? "Rad etildi" : "Rejected",        prog: 0 };
     case "expired":  return { c: th.t3, type: "status",  tone: th.t3, label: lg === "uz" ? "Muddati o'tgan" : "Expired", prog: 0 };
+    case "proposed": return { c: th.ac2 || th.ac, type: "info", label: lg === "uz" ? "Taklif qilindi" : "Proposed", prog: 15 };
     default:         return { c: th.ac, type: "info",    label: lg === "uz" ? "Bajarilmagan" : "To do",         prog: 8 };
   }
 };
@@ -145,10 +146,27 @@ const StatusBadge = memo(function StatusBadge({ th, lg, status }) {
 
 // ═══ TaskCard — bitta vazifa kartasi (AppCard ichida, React.memo) ═══
 // Tuzilishi: Icon → Title → (kid) → Reward → Sana → Progress → Status → Actions
-const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAskDelete }) {
+const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAcceptProposed, onAskDelete }) {
+  const formatWithSpaces = (val) => {
+    const s = String(val).replace(/\D/g, "");
+    if (!s) return "";
+    let r = "";
+    for (let i = 0; i < s.length; i++) {
+      if (i > 0 && (s.length - i) % 3 === 0) r += " ";
+      r += s[i];
+    }
+    return r;
+  };
+
   const st = effStatus(v);
   const m = statusMeta(st, th, lg);
   const dlPast = v.deadline && TODAY_STR() > v.deadline && st !== "approved";
+  const [customReward, setCustomReward] = useState(formatWithSpaces(v.reward || ""));
+
+  useEffect(() => {
+    setCustomReward(formatWithSpaces(v.reward || ""));
+  }, [v.id, v.reward]);
+
   return (
     <AppCard th={th} style={{ position: "relative", overflow: "hidden", paddingLeft: SPACE.s4 + SPACE.s1 }}>
       {/* chap status chizig'i */}
@@ -165,7 +183,9 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
           {v.desc && <div style={{ ...TYPE.caption, color: th.t2, marginBottom: 2 }}>{v.desc}</div>}
           {/* Reward + kim uchun + Status badge */}
           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, flexWrap: "wrap" }}>
-            <RewardChip th={th} amount={v.reward} />
+            {st !== "proposed" || isKid ? (
+              <RewardChip th={th} amount={v.reward} />
+            ) : null}
             {!isKid && kidName && (
               <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>
                 {Ico.user(th.t2)}{kidName}
@@ -188,8 +208,62 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
       <div style={{ marginTop: SPACE.s2 + 2 }}>
         <LinearProgress th={th} value={m.prog} tone={m.c} height={SPACE.s2 - 2} />
       </div>
+
+      {/* Parent Negotiation for Proposed Tasks */}
+      {!isKid && st === "proposed" && (
+        <div style={{ marginTop: SPACE.s3, background: th.surH, borderRadius: RADIUS.s, padding: SPACE.s3, border: "1px dashed " + th.bor }}>
+          <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700, marginBottom: SPACE.s2 }}>
+            {lg === "uz" ? "Farzand taklif qilgan mukofotni kelishish:" : "Negotiate child's proposed reward:"}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+            <input
+              type="text"
+              inputMode="numeric"
+              value={customReward}
+              onChange={e => {
+                const raw = e.target.value.replace(/\D/g, "");
+                setCustomReward(formatWithSpaces(raw));
+              }}
+              style={{
+                background: th.bg,
+                border: "1px solid " + th.bor,
+                borderRadius: RADIUS.s - 2,
+                padding: "8px 12px",
+                color: th.t1,
+                fontSize: 15,
+                fontWeight: 700,
+                width: "100%",
+                maxWidth: 150,
+                outline: "none"
+              }}
+            />
+            <span style={{ ...TYPE.caption, color: th.t2 }}>{lg === "uz" ? "so'm" : "UZS"}</span>
+          </div>
+          <div style={{ display: "flex", gap: SPACE.s2 }}>
+            <PrimaryButton th={th} onClick={() => onAcceptProposed && onAcceptProposed(v.id, customReward)} style={{ flex: 1, padding: "8px", background: th.gr }}>
+              {Ico.check("#fff")}{lg === "uz" ? "Tasdiqlash" : "Approve"}
+            </PrimaryButton>
+            <DangerButton th={th} onClick={onAskDelete} style={{ flex: 1, padding: "8px" }}>
+              {Ico.trash(th.rd)}{lg === "uz" ? "Rad etish" : "Reject"}
+            </DangerButton>
+          </div>
+        </div>
+      )}
+
       {/* Action buttons — kit tugmalar */}
       <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3 }}>
+        {isKid && st === "proposed" && (
+          <div style={{ flex: 1 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, padding: (SPACE.s2 + 2) + "px", ...TYPE.caption, fontWeight: 600, color: th.ac }}>
+              {TIco.clock(th.ac)}{lg === "uz" ? "Taklif yuborildi. Ota-ona tasdiqlashi kutilmoqda" : "Proposal sent. Awaiting parent approval"}
+            </div>
+            {canDelete && (
+              <DangerButton th={th} onClick={onAskDelete} style={{ padding: "8px 12px", fontSize: TYPE.caption.fontSize, width: "auto", alignSelf: "flex-start", marginTop: 4 }}>
+                {Ico.trash(th.rd)}{lg === "uz" ? "Taklifni o'chirish" : "Cancel proposal"}
+              </DangerButton>
+            )}
+          </div>
+        )}
         {isKid && st === "pending" && (
           <PrimaryButton th={th} onClick={onDone} style={{ padding: (SPACE.s2 + 2) + "px" }}>
             {Ico.check("#fff")}{lg === "uz" ? "Bajardim" : "Done"}
@@ -217,7 +291,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
             )}
           </>
         )}
-        {!isKid && canDelete && st !== "done" && (
+        {!isKid && canDelete && st !== "done" && st !== "proposed" && (
           <DangerButton th={th} onClick={onAskDelete} style={{ padding: (SPACE.s2 + 1) + "px", fontSize: TYPE.caption.fontSize }}>
             {Ico.trash(th.rd)}{lg === "uz" ? "O'chirish" : "Delete"}
           </DangerButton>
@@ -276,7 +350,7 @@ export default function TasksPage({
   vTitle, setVTitle, vReward, setVReward, vAssignee, setVAssignee, vEmoji, setVEmoji,
   vDeadline, setVDeadline,
   addVazifa,
-  vazifaDone, vazifaApprove, vazifaReject, delVazifa,
+  vazifaDone, vazifaApprove, vazifaReject, vazifaAcceptProposed, delVazifa,
   cleanupKidDuplicates, isBosh,
 }) {
   // Dublikat bola yozuvlaridan (qayta yaratilgan akkauntlar) eng yangisi olinadi
@@ -520,10 +594,10 @@ export default function TasksPage({
         </AppCard>
       )}
 
-      {/* ── Katta a'zolar: vazifa qo'shish (PERMISSION: canAssignTask) ── */}
-      {canAssignTask(user) && (
+      {/* ── Katta a'zolar: vazifa qo'shish yoki farzand uchun taklif qilish ── */}
+      {(canAssignTask(user) || isKid) && (
         <PrimaryButton th={th} onClick={openAdd} style={{ marginBottom: SPACE.s4 }}>
-          {Ico.add("#fff")}{lg === "uz" ? "Yangi vazifa berish" : "New task"}
+          {Ico.add("#fff")}{isKid ? (lg === "uz" ? "Vazifa taklif qilish" : "Propose a task") : (lg === "uz" ? "Yangi vazifa berish" : "New task")}
         </PrimaryButton>
       )}
 
@@ -563,9 +637,9 @@ export default function TasksPage({
       ) : myTasks.length === 0 ? (
         <EmptyState th={th} icon={isKid ? TIco.taskBig(th.t3) : undefined} preset={isKid ? undefined : "goal"}
           title={isKid ? (lg === "uz" ? "Hali vazifa yo'q" : "No tasks yet") : (lg === "uz" ? "Hali vazifa bermadingiz" : "No tasks created")}
-          message={isKid ? (lg === "uz" ? "Ota-onangiz tez orada vazifa beradi" : "Your parent will add tasks soon") : (lg === "uz" ? "Bolalaringizga vazifa berib, ularni rag'batlantiring" : "Add tasks to motivate your kids")}
-          actionText={!isKid ? (lg === "uz" ? "Vazifa berish" : "Add task") : undefined}
-          onAction={!isKid ? openAdd : undefined} />
+          message={isKid ? (lg === "uz" ? "Ota-onangiz tez orada vazifa beradi, yoki o'zingiz vazifa taklif qilishingiz mumkin." : "Your parent will add tasks soon, or you can propose a task yourself.") : (lg === "uz" ? "Bolalaringizga vazifa berib, ularni rag'batlantiring" : "Add tasks to motivate your kids")}
+          actionText={isKid ? (lg === "uz" ? "Vazifa taklif qilish" : "Propose a task") : (lg === "uz" ? "Vazifa berish" : "Add task")}
+          onAction={openAdd} />
       ) : (
         myTasks.map(v => (
           <TaskCard key={v.id} th={th} lg={lg} v={v}
@@ -575,6 +649,7 @@ export default function TasksPage({
             onDone={() => vazifaDone(v.id)}
             onApprove={() => vazifaApprove(v.id)}
             onReject={vazifaReject ? () => vazifaReject(v.id) : null}
+            onAcceptProposed={vazifaAcceptProposed}
             onAskDelete={() => askDelete(v.id)} />
         ))
       )}

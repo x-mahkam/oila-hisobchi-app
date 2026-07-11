@@ -292,6 +292,29 @@ export const GardenLink = memo(function GardenLink({ th, lg, level, wateredToday
 });
 
 // ─────────────────────────────────────────────────────────────
+//  7) BILIM BOZORI (MARKET) — Do'kon/mukofotlar havolasi
+// ─────────────────────────────────────────────────────────────
+export const MarketLink = memo(function MarketLink({ th, lg, onOpen }) {
+  const uz = lg === "uz";
+  return (
+    <button className="ui-press" onClick={onOpen}
+      style={{ width: "100%", background: "linear-gradient(135deg," + PREMIUM.gold + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + PREMIUM.gold + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3, fontFamily: "inherit", boxSizing: "border-box" }}>
+      <span style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.m, background: PREMIUM.gold + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+          <path d="M3.5 8.5V16a1 1 0 001 1h11a1 1 0 001-1V8.5" stroke={PREMIUM.gold} strokeWidth="1.5" strokeLinejoin="round"/>
+          <path d="M2.5 4.5h15l-.8 3.2a2 2 0 01-3.9.1 2 2 0 01-3.9 0 2 2 0 01-3.9 0 2 2 0 01-3.9-.1L2.5 4.5z" stroke={PREMIUM.gold} strokeWidth="1.5" strokeLinejoin="round"/>
+        </svg>
+      </span>
+      <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
+        <span style={{ display: "block", ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1 }}>{uz ? "Bilim Bozori (Mukofotlar)" : lg === "ru" ? "Магазин наград" : "Reward Shop"}</span>
+        <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, marginTop: 1, fontWeight: 700, color: PREMIUM.gold }}>{uz ? "Coinlarni ajoyib mukofotlarga almashtiring!" : lg === "ru" ? "Обменяйте монеты на награды!" : "Exchange your coins for awesome rewards!"}</span>
+      </span>
+      {DI.chev(PREMIUM.gold, 16)}
+    </button>
+  );
+});
+
+// ─────────────────────────────────────────────────────────────
 //  BILIM DASHBOARD — bola bosh ekrani (kompozitsiya + hosila)
 //  Firebase yo'q: ma'lumot BilimHub'da o'qiladi va props sifatida
 //  keladi. Hosila (stats/fanlar/continue) — SOF, useMemo bilan.
@@ -301,7 +324,7 @@ const DIFF_ORDER = { easy: 0, medium: 1, hard: 2 };
 export const BilimDashboard = memo(function BilimDashboard({
   th, lg, name, photo, coins = 0, xp = 0, streak = 0, sessions = [], learnedWords = 0, gardenData = {},
   level, rankLabel, rankColor, xpPct, xpToNext, maxLevel,
-  openGame, openCat, onProfile, onGarden, onBack,
+  openGame, openCat, onProfile, onGarden, onBack, onMarket,
 }) {
   const stats = useMemo(() => deriveLearningStats(sessions), [sessions]);
   const analysis = useMemo(() => analyzeLearning(sessions, lg, name, 3650), [sessions, lg, name]);
@@ -339,6 +362,8 @@ export const BilimDashboard = memo(function BilimDashboard({
         coins={coins} xp={xp} xpPct={xpPct} xpToNext={xpToNext} maxLevel={maxLevel}
         todayMin={stats.today.minutes} todayGames={stats.today.games} streak={streak}
         onContinue={onContinue} onProfile={onProfile} />
+
+      <MarketLink th={th} lg={lg} onOpen={onMarket} />
 
       <ContinueCard th={th} lg={lg} cat={contCat} game={contGame} pct={last ? last.pct : 0} isNew={!lastGame} onOpen={openGame} />
 

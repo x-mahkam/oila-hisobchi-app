@@ -9,6 +9,11 @@
 // ═══════════════════════════════════════════════════════════
 import { useMemo, useState, useEffect, useRef, useCallback, memo } from "react";
 import { KatIco } from "../components/common/index.jsx";
+import { useApp } from "../context/AppContext.jsx";
+import { useFamily } from "../hooks/useFamily.js";
+import { db } from "../firebase.js";
+import { normTel } from "../utils/formatters.js";
+import KidCreatedModal from "../components/modals/KidCreatedModal.jsx";
 import {
   PageHeader, SectionHeader, SubHeader,
   AppCard, StatCard, WarningCard, PremiumCard,
@@ -45,6 +50,8 @@ const PIco = {
   bulb: (c, s = 16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 1.5a4.5 4.5 0 00-2.5 8.2c.6.5 1 1 1 1.8h3c0-.8.4-1.3 1-1.8A4.5 4.5 0 008 1.5z" fill={c} opacity=".15" stroke={c} strokeWidth="1.2"/><path d="M6.5 13.5h3M7 15h2" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
   warn: (c, s = 16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 2L14.5 13.5h-13L8 2z" fill={c} opacity=".15" stroke={c} strokeWidth="1.2" strokeLinejoin="round"/><path d="M8 6.5v3.2" stroke={c} strokeWidth="1.3" strokeLinecap="round"/><circle cx="8" cy="11.7" r=".8" fill={c}/></svg>,
   family: (c, s = 16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="5.5" cy="5" r="2.2" stroke={c} strokeWidth="1.2"/><circle cx="11" cy="5.8" r="1.7" stroke={c} strokeWidth="1.2"/><path d="M1.5 13.5c0-2.4 1.8-4 4-4s4 1.6 4 4M9.5 13.5c.2-1.9 1.3-3 2.8-3 1.4 0 2.4 1 2.7 3" stroke={c} strokeWidth="1.2" strokeLinecap="round"/></svg>,
+  coin: (c, s = 16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" fill={c} opacity=".15" stroke={c} strokeWidth="1.2"/><path d="M8 4.5v7M9.5 6H7a1.5 1.5 0 000 3h2a1.5 1.5 0 010 3H5.5" stroke={c} strokeWidth="1.1" strokeLinecap="round"/></svg>,
+  checkCircle: (c, s = 16) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6.5" fill={c} opacity=".15" stroke={c} strokeWidth="1.2"/><path d="M5.5 8l1.7 1.7 3.3-3.4" stroke={c} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
 };
 
 // ═══ Count-up animatsiya (Dashboard bilan bir xil naqsh; reduced-motion hurmati) ═══
@@ -113,40 +120,226 @@ const ChoiceChip = memo(function ChoiceChip({ th, on, onClick, children, style }
 });
 
 export default function ProfilePage({
-  user, oila, azolar, xar, qarzlar, maq,
-  isPremium, isKid, isAdmin,
-  th, t, f, lg, dark, val, setVal, setLg, setDark,
-  bX, bD,
-  ok$, buzz, addStar,
   pTab, setPTab,
-  edN, setEdN, newN, setNewN, newF, setNewF, updName,
-  edT, setEdT, newT, setNewT, saveTel,
-  fBj, setFBj, fKL, setFKL, saveBj,
-  faqO, setFaqO,
-  pinStep, setPinStep, pinVal, setPinVal, pinCfm, setPinCfm,
-  finger, setFinger,
-  showAddKid, setShowAddKid, kidName, setKidName, kidSurname, setKidSurname, kidBirthYear, setKidBirthYear, kidGender, setKidGender, kidGrade, setKidGrade, kidLogin, setKidLogin, kidPw, setKidPw, addKidAccount, delKidAccount, purgeData,
-  showReferral, setShowReferral, refCount,
-  fbRating, setFbRating, fbText, setFbText, fbType, setFbType, fbSending, sendFeedback,
-  adminStats, adminLoad, loadAdminStats,
-  waterGarden, gardenData, stars,
+  waterGarden,
   activatePremium, setShowPremModal,
-  logout,
-  fRef, doPhoto, rmPhoto,
-  toggleReportAccess,
   notifEnabled, toggleNotif, notifTime, saveNotifTime,
   APP_VER,
-  showValDD, setShowValDD,
   showBilim, setShowBilim,
+  f,
+  setBilimInitialView,
+  vazifalar, kidBalances,
+  setVazifalar, setKidBalances, setXar,
+  vazifaApprove,
 }) {
+  const {
+    user, setUser, oila, setOila, azolar, setAzolar,
+    isPremium, xar, dar, maq, qarzlar, stars, gardenData,
+    dark, setDark, lg, setLg, val, setVal,
+    th, t, ok$, buzz, addStar, logout,
+  } = useApp();
+
+  const [showValDD, setShowValDD] = useState(false);
   const STY = useMemo(() => makeS(th), [th]);
   const uz = lg === "uz";
+
+  // Local Settings/Profile State
+  const [edN, setEdN] = useState(false);
+  const [newN, setNewN] = useState("");
+  const [newF, setNewF] = useState("");
+  const [edT, setEdT] = useState(false);
+  const [newT, setNewT] = useState("");
+  const [fBj, setFBj] = useState("2000000");
+  const [fKL, setFKL] = useState({});
+  const [faqO, setFaqO] = useState(null);
+  const [pinStep, setPinStep] = useState("idle");
+  const [pinVal, setPinVal] = useState("");
+  const [pinCfm, setPinCfm] = useState("");
+  const [finger, setFinger] = useState(false);
+  const [showReferral, setShowReferral] = useState(false);
+  const [fbRating, setFbRating] = useState(0);
+  const [fbText, setFbText] = useState("");
+  const [fbType, setFbType] = useState("taklif");
+  const [fbSending, setFbSending] = useState(false);
+  const [askTel, setAskTel] = useState(false);
+  const [parentalConsent, setParentalConsent] = useState(false);
+  const [parentalConsentErr, setParentalConsentErr] = useState("");
+
+  // Farzand batafsil ko'rinishi va formalar uchun statelar
+  const [selectedKid, setSelectedKid] = useState(null);
+  const [kidTab, setKidTab] = useState("vazifalar"); // "vazifalar" | "bilim"
+  const [kidCoins, setKidCoins] = useState(0);
+  const [kidStreak, setKidStreak] = useState(0);
+  const [kidLearnStats, setKidLearnStats] = useState({ games: 0, xp: 0 });
+  const [kidBilimVazifalar, setKidBilimVazifalar] = useState([]);
+
+  // Vazifa qo'shish formasi uchun local statelar
+  const [newVTitle, setNewVTitle] = useState("");
+  const [newVReward, setNewVReward] = useState("");
+  const [newVDeadline, setNewVDeadline] = useState("");
+
+  // Bilim mukofoti qo'shish formasi uchun local statelar
+  const [newBDesc, setNewBDesc] = useState("");
+  const [newBCoins, setNewBCoins] = useState("");
+  const [newBPul, setNewBPul] = useState("");
+
+  // Farzand tafsiloti o'zgarganda bilim ma'lumotlarini yuklash
+  useEffect(() => {
+    if (selectedKid) {
+      db.g("bilim_coins_" + selectedKid.id).then(c => setKidCoins(Number(c) || 0)).catch(() => {});
+      db.g("bilim_streak_" + selectedKid.id).then(s => setKidStreak(Number(s) || 0)).catch(() => {});
+      db.g("bilim_stats_" + selectedKid.id).then(st => {
+        if (st && typeof st === "object") {
+          setKidLearnStats({ games: Number(st.games) || 0, xp: Number(st.xp) || 0 });
+        }
+      }).catch(() => {});
+      db.g("bilim_vazifa_" + (user?.oilaId || oila?.id)).then(v => {
+        if (Array.isArray(v)) {
+          setKidBilimVazifalar(v.filter(x => x.uid === selectedKid.id));
+        }
+      }).catch(() => {});
+    }
+  }, [selectedKid, user?.oilaId, oila?.id]);
+
+  // useFamily Hook instantiation for kid accounts
+  const {
+    showAddKid, setShowAddKid, kidName, setKidName, kidSurname, setKidSurname,
+    kidBirthYear, setKidBirthYear, kidGender, setKidGender, kidGrade, setKidGrade,
+    kidLogin, setKidLogin, kidPw, setKidPw, addKidAccount, delKidAccount,
+    kidCreated, setKidCreated, purgeData
+  } = useFamily();
+
+  // local file ref for photo upload
+  const fRef = useRef(null);
+
+  // Profile update and photo handlers
+  const doPhoto = useCallback((e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const r = new FileReader();
+    r.onload = async ev => {
+      const p = ev.target.result;
+      const u2 = { ...user, photo: p };
+      await db.s("user_" + user.id, u2); setUser(u2);
+      setAzolar(azolar.map(a => a.id === user.id ? { ...a, photo: p } : a));
+      ok$(t.ua);
+    };
+    r.readAsDataURL(file);
+  }, [user, setUser, azolar, setAzolar, ok$, t.ua]);
+
+  const rmPhoto = useCallback(async () => {
+    const u2 = { ...user, photo: null };
+    await db.s("user_" + user.id, u2); setUser(u2);
+    setAzolar(azolar.map(a => a.id === user.id ? { ...a, photo: null } : a));
+    ok$(t.ua);
+  }, [user, setUser, azolar, setAzolar, ok$, t.ua]);
+
+  const saveTel = useCallback(async (rawTel) => {
+    const raw = (rawTel || "").trim();
+    if (!raw) return ok$(lg === "uz" ? "Telefon raqamni kiriting" : "Enter phone number", "err");
+    const tel = raw.replace(/[^0-9+]/g, "");
+    const n9 = normTel(raw);
+    if (!n9 || n9.length < 7) return ok$(lg === "uz" ? "Telefon raqam noto'g'ri" : "Invalid phone number", "err");
+    try {
+      const owner = await db.gFresh("tel9_" + n9);
+      if (owner && owner !== user.id) return ok$(lg === "uz" ? "Bu raqam boshqa akkauntga bog'langan" : "Number linked to another account", "err");
+    } catch (e) {}
+    const u2 = { ...user, tel };
+    await db.s("user_" + user.id, u2);
+    await db.s("tel9_" + n9, user.id); await db.s("tel_" + tel, user.id);
+    if (user.email) await db.s("tphone_" + n9, user.email);
+    setUser(u2); setAzolar(azolar.map(a => a.id === user.id ? { ...a, tel } : a));
+    setAskTel(false); setEdT(false); setNewT("");
+    ok$(lg === "uz" ? "Telefon raqam saqlandi ✓" : "Phone saved ✓");
+  }, [user, setUser, azolar, setAzolar, ok$, lg]);
+
+  const updName = useCallback(async () => {
+    if (!newN.trim()) return;
+    const fam = (newF || "").trim();
+    const u2 = { ...user, ism: newN.trim(), familya: fam };
+    await db.s("user_" + user.id, u2); setUser(u2);
+    setAzolar(azolar.map(a => a.id === user.id ? { ...a, ism: newN.trim(), familya: fam } : a));
+    setEdN(false); ok$(t.ua);
+  }, [newN, newF, user, setUser, azolar, setAzolar, ok$, t.ua]);
+
+  const saveBj = useCallback(async () => {
+    const v = Number(fBj); if (!v || v <= 0) return ok$(t.ec, "err");
+    const u = { ...oila, budjet: v, katLimits: fKL };
+    await db.s("oila_" + oila.id, u); await db.s("fam_" + oila.id, u); setOila(u); ok$(t.sa);
+  }, [fBj, fKL, oila, setOila, ok$, t.sa, t.ec]);
+
+  const toggleReportAccess = useCallback(async (memberId) => {
+    if (user?.rol !== "bosh" || !oila) return;
+    const cur = oila.reportAccess || [];
+    const upd = cur.includes(memberId) ? cur.filter(x => x !== memberId) : [...cur, memberId];
+    const o2 = { ...oila, reportAccess: upd };
+    await db.s("oila_" + oila.id, o2); await db.s("fam_" + oila.id, o2); setOila(o2);
+    ok$(lg === "uz" ? "Ruxsat yangilandi" : "Access updated");
+  }, [user, oila, setOila, ok$, lg]);
+
+  const sendFeedback = useCallback(async () => {
+    if (!fbText.trim() && fbRating === 0) return ok$(lg === "uz" ? "Baho yoki izoh kiriting" : "Add rating or text", "err");
+    setFbSending(true);
+    try {
+      const fb = { id: Date.now(), uid: user?.id || "anon", ism: user?.ism || "", type: fbType, rating: fbRating, text: fbText.trim(), sana: new Date().toISOString() };
+      await db.s("fb_" + fb.id + "_" + (user?.id || "anon"), fb, { c: "fb" });
+      setFbRating(0); setFbText(""); setFbType("taklif");
+      ok$(lg === "uz" ? "Rahmat! Fikringiz yuborildi." : "Thank you!");
+    } catch { ok$(lg === "uz" ? "Xatolik" : "Error", "err"); }
+    setFbSending(false);
+  }, [fbText, fbRating, fbType, user, ok$, lg]);
+
+  const tm = () => {
+    const d = new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0");
+  };
+  const bX = useMemo(() => (xar || []).filter(x => x.sana?.startsWith(tm())), [xar]);
+  const bD = useMemo(() => (dar || []).filter(d => d.sana?.startsWith(tm())), [dar]);
+
+  const isKid = user?.rol === "kid";
+  const isAdmin = false;
+  const refCount = 0;
+  const adminStats = null;
+  const adminLoad = false;
+  const loadAdminStats = () => {};
+
   // To'liq ism: ism + familya (familya bo'lsa). Barcha ko'rsatishlar shu orqali.
   const fullName = (p) => p ? (p.familya ? (p.familya + " " + (p.ism || "")) : (p.ism || "")).trim() : "";
+
+  const adults = useMemo(() => (azolar || []).filter(a => a.rol !== "kid"), [azolar]);
+  const kids = useMemo(() => (azolar || []).filter(a => a.rol === "kid"), [azolar]);
+
+  const kidsData = useMemo(() => {
+    return kids.map(kid => {
+      const kidTasks = (vazifalar || []).filter(v => 
+        v.assignedTo === kid.id || 
+        (v.assignedLogin && v.assignedLogin === kid.login) ||
+        (v.assignedName && v.assignedName.toLowerCase() === kid.ism.toLowerCase())
+      );
+      const doneThisWeek = kidTasks.filter(v => v.status === "approved" || v.status === "done").length;
+      const earnedAmount = kidBalances?.[kid.id] || 0;
+      const kidGoals = (maq || []).filter(m => m.uid === kid.id && m.status !== "completed");
+      const activeGoal = kidGoals[0];
+      const goalPct = activeGoal ? Math.round((activeGoal.jamg / activeGoal.maqsad) * 100) : 0;
+      return {
+        ...kid,
+        doneThisWeek,
+        earnedAmount,
+        activeGoal,
+        goalPct,
+        kidTasks
+      };
+    });
+  }, [kids, vazifalar, kidBalances, maq]);
 
   // ═══ Statistika — faqat mavjud ma'lumotlardan, og'ir hisob memoizatsiya qilingan ═══
   const pStats = useMemo(() => {
     const myXar = (xar || []).filter(x => x.uid === user?.id);
+    const myXarSum = myXar.reduce((s, x) => s + Number(x.summa || 0), 0);
+    const myDarSum = (dar || []).filter(d => d.uid === user?.id).reduce((s, d) => s + Number(d.summa || 0), 0);
+    const savingsRate = myDarSum > 0 ? Math.round(((myDarSum - myXarSum) / myDarSum) * 100) : 0;
+
+    const childGoalsCompleted = (maq || []).filter(m => m.uid !== user?.id && m.status === "completed").length;
+
     // Foydalanish kunlari: registeredAt (Google) yoki eng birinchi o'z yozuvi sanasi
     let firstTs = user?.registeredAt ? Date.parse(user.registeredAt) : NaN;
     for (const x of myXar) {
@@ -160,18 +353,62 @@ export default function ProfilePage({
       goalCount: (maq || []).filter(m => m.uid === user?.id || m.shared).length,
       debtCount: (qarzlar || []).filter(q => !q.done).length,
       gardenLevel: gardenData?.level || 0,
+      savingsRate,
+      childGoalsCompleted,
     };
-  }, [xar, maq, qarzlar, gardenData, user?.id, user?.registeredAt]);
+  }, [xar, dar, maq, qarzlar, gardenData, user?.id, user?.registeredAt]);
 
   // ═══ Yutuqlar — mavjud real ko'rsatkichlardan hosilaviy (persist YO'Q) ═══
-  const achievements = useMemo(() => [
-    { id: "first",  icon: PIco.list,   title: uz ? "Ilk qadam" : "First step",       desc: uz ? "Birinchi yozuv" : "First record",       cur: pStats.txCount,     goal: 1,  onTap: null },
-    { id: "loyal",  icon: PIco.cal,    title: uz ? "Sodiq foydalanuvchi" : "Loyal",  desc: uz ? "30 kun ilovada" : "30 days in app",     cur: pStats.days,        goal: 30, onTap: null },
-    { id: "writer", icon: PIco.trophy, title: uz ? "Faol hisobchi" : "Active",       desc: uz ? "50 ta yozuv" : "50 records",            cur: pStats.txCount,     goal: 50, onTap: null },
-    { id: "stars",  icon: PIco.star,   title: uz ? "Yulduz yig'uvchi" : "Stargazer", desc: uz ? "25 yulduzcha" : "25 stars",             cur: stars || 0,         goal: 25, onTap: null },
-    { id: "garden", icon: PIco.leaf,   title: uz ? "Bog'bon" : "Gardener",           desc: uz ? "Bog' 3-daraja" : "Garden level 3",      cur: pStats.gardenLevel, goal: 3,  onTap: "garden" },
-    { id: "invite", icon: PIco.gift,   title: uz ? "Taklifchi" : "Inviter",          desc: uz ? "3 ta do'st" : "3 friends",              cur: refCount || 0,      goal: 3,  onTap: isKid ? null : "referral" },
-  ], [uz, pStats, stars, refCount, isKid]);
+  const achievements = useMemo(() => {
+    const list = [
+      { id: "first",  icon: PIco.list,   title: uz ? "Ilk qadam" : "First step",       desc: uz ? "Birinchi yozuv" : "First record",       cur: pStats.txCount,     goal: 1,  onTap: null },
+      { id: "loyal",  icon: PIco.cal,    title: uz ? "Sodiq foydalanuvchi" : "Loyal",  desc: uz ? "30 kun ilovada" : "30 days in app",     cur: pStats.days,        goal: 30, onTap: null },
+      { id: "writer", icon: PIco.trophy, title: uz ? "Faol hisobchi" : "Active",       desc: uz ? "50 ta yozuv" : "50 records",            cur: pStats.txCount,     goal: 50, onTap: null },
+    ];
+
+    if (!isKid) {
+      // Ota-ona uchun maxsus yutuqlar
+      list.push({
+        id: "supportive",
+        icon: PIco.baby,
+        title: uz ? "Mehribon ota-ona" : "Supportive Parent",
+        desc: uz ? "Farzandining orzusini ushaltirgan" : "Fulfilled child's dream",
+        cur: pStats.childGoalsCompleted,
+        goal: 1,
+        onTap: null
+      });
+
+      list.push({
+        id: "saver",
+        icon: PIco.gem,
+        title: uz ? "Super Tejamkor" : "Super Saver",
+        desc: uz ? "30%+ jamg'arma sur'ati" : "30%+ savings rate",
+        cur: pStats.savingsRate,
+        goal: 30,
+        onTap: null
+      });
+
+      list.push({
+        id: "planner",
+        icon: PIco.target,
+        title: uz ? "Moliyaviy strateg" : "Financial Planner",
+        desc: uz ? "3 ta faol/yakunlangan maqsad" : "3 goals set/done",
+        cur: pStats.goalCount,
+        goal: 3,
+        onTap: null
+      });
+    } else {
+      // Yoshlar uchun
+      list.push({ id: "stars",  icon: PIco.star,   title: uz ? "Yulduz yig'uvchi" : "Stargazer", desc: uz ? "25 yulduzcha" : "25 stars",             cur: stars || 0,         goal: 25, onTap: null });
+    }
+
+    list.push(
+      { id: "garden", icon: PIco.leaf,   title: uz ? "Bog'bon" : "Gardener",           desc: uz ? "Bog' 3-daraja" : "Garden level 3",      cur: pStats.gardenLevel, goal: 3,  onTap: "garden" },
+      { id: "invite", icon: PIco.gift,   title: uz ? "Taklifchi" : "Inviter",          desc: uz ? "3 ta do'st" : "3 friends",              cur: refCount || 0,      goal: 3,  onTap: isKid ? null : "referral" }
+    );
+
+    return list;
+  }, [uz, pStats, stars, refCount, isKid]);
 
   // ═══ Barqaror callbacklar (keraksiz render oldini olish) ═══
   const openEdit     = useCallback(() => setPTab("shaxsiy"), [setPTab]);
@@ -209,14 +446,133 @@ export default function ProfilePage({
     if (kidLogin.trim().length < 3)   e.login   = uz ? "Kamida 3 belgi" : "Min 3 chars";
     if (kidPw.length < 4)             e.pw      = uz ? "Kamida 4 belgi" : "Min 4 chars";
     setKidErr(e);
+    if (!parentalConsent) {
+      setParentalConsentErr(uz ? "Ota-ona roziligi va qoidalarni tasdiqlash shart" : "Parental consent and policy agreement are required");
+      buzz(20);
+      return;
+    } else {
+      setParentalConsentErr("");
+    }
     if (Object.keys(e).length) { buzz(20); return; }
     addKidAccount();
-  }, [kidName, kidSurname, kidBirthYear, kidGrade, kidLogin, kidPw, uz, buzz, addKidAccount]);
-  const openBilim    = useCallback(() => { buzz(10); setShowBilim(true); }, [buzz, setShowBilim]);
+  }, [kidName, kidSurname, kidBirthYear, kidGrade, kidLogin, kidPw, uz, buzz, addKidAccount, parentalConsent]);
+  const openBilim    = useCallback((view = "cats") => {
+    buzz(10);
+    if (setBilimInitialView) {
+      setBilimInitialView(view);
+    }
+    setShowBilim(true);
+  }, [buzz, setShowBilim, setBilimInitialView]);
   const openGarden   = useCallback(() => setPTab("garden"), [setPTab]);
-  const closeAddKid  = useCallback(() => { setShowAddKid(false); setKidErr({}); }, [setShowAddKid]);
+  const closeAddKid  = useCallback(() => { setShowAddKid(false); setKidErr({}); setParentalConsent(false); setParentalConsentErr(""); }, [setShowAddKid]);
   const closeReferral= useCallback(() => setShowReferral(false), [setShowReferral]);
-  const backToMain   = useCallback(() => setPTab("main"), [setPTab]);
+  const backToMain   = useCallback(() => { setPTab("main"); setSelectedKid(null); }, [setPTab]);
+  const handleAddVazifaLocal = async (title, reward, deadline, kidId) => {
+    buzz(12);
+    const kidObj = azolar.find(a => a.id === kidId);
+    const item = {
+      id: Date.now(),
+      title: title.trim(),
+      reward: Number(reward),
+      emoji: "📚",
+      assignedTo: kidId,
+      assignedName: kidObj?.ism || "",
+      assignedLogin: kidObj?.login || "",
+      createdBy: user.id,
+      createdByName: user.ism || "",
+      status: "pending",
+      sana: new Date().toISOString().slice(0, 10),
+      doneSana: "",
+      paidSana: "",
+      deadline: deadline || "",
+    };
+
+    const upd = [item, ...(vazifalar || [])];
+    await db.s("vazifa_" + user.oilaId, upd);
+    if (setVazifalar) {
+      setVazifalar(upd);
+    }
+    setSelectedKid(prev => {
+      if (prev && prev.id === kidId) {
+        return {
+          ...prev,
+          kidTasks: upd.filter(x => x.assignedTo === kidId)
+        };
+      }
+      return prev;
+    });
+    ok$(uz ? "Vazifa qo'shildi! 🎉" : "Task added! 🎉");
+  };
+
+  const handleAddBilimReward = async (desc, coinsRequired, realMoney) => {
+    buzz(12);
+    const newV = {
+      id: "bv_" + Date.now(),
+      desc: desc.trim(),
+      reward: Number(coinsRequired), // coinlar soni
+      pul: Number(realMoney) || 0,   // real pul so'mda
+      uid: selectedKid.id,
+      kidId: selectedKid.id,
+      kidName: selectedKid.ism,
+      done: false,
+      paid: false,
+      proposed: false,
+      approvedBy: user.id,
+      approvedAt: new Date().toISOString().slice(0, 10),
+    };
+
+    const current = (await db.g("bilim_vazifa_" + user.oilaId)) || [];
+    const upd = [newV, ...current];
+    await db.s("bilim_vazifa_" + user.oilaId, upd);
+    setKidBilimVazifalar(upd.filter(x => x.uid === selectedKid.id));
+    ok$(uz ? "Bilim mukofoti qo'shildi! 🎁" : "Knowledge reward added! 🎁");
+  };
+
+  const handleApproveBilimReward = async (v) => {
+    const myDar = dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
+    const myXar = xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);
+    const myBal = myDar - myXar;
+    if (myBal < v.pul) {
+      return ok$(uz ? "❌ Balansingizda yetarli mablag' yo'q! Kerak: " + f(v.pul, true) : "❌ Insufficient balance!", "err");
+    }
+
+    buzz(20);
+    // 1. Bilim vazifalarini yangilash (paid: true)
+    const current = (await db.g("bilim_vazifa_" + user.oilaId)) || [];
+    const upd = current.map(x => x.id === v.id ? { ...x, paid: true, paidSana: new Date().toISOString().slice(0, 10) } : x);
+    await db.s("bilim_vazifa_" + user.oilaId, upd);
+    setKidBilimVazifalar(upd.filter(x => x.uid === selectedKid.id));
+
+    // 2. Bolaning balansini oshirish
+    const kb = { ...kidBalances };
+    kb[selectedKid.id] = (kb[selectedKid.id] || 0) + v.pul;
+    await db.s("kidbal_" + user.oilaId, kb);
+    if (setKidBalances) {
+      setKidBalances(kb);
+    }
+
+    // 3. Ota-onaning xarajati
+    if (v.pul > 0) {
+      const xItem = {
+        id: Date.now(), 
+        kategoriya: "boshqa", 
+        summa: v.pul,
+        izoh: (uz ? "Bilim mukofoti to'lovi: " : "Knowledge reward payment: ") + (v.desc || ""),
+        sana: new Date().toISOString().slice(0, 10),
+        vaqt: new Date().toTimeString().slice(0, 5),
+        uid: user.id,
+        repeat: false
+      };
+      const xk = "x_" + user.oilaId + "_" + user.id;
+      const oParentXar = (await db.g(xk)) || [];
+      await db.s(xk, [xItem, ...oParentXar]);
+      if (setXar) {
+        setXar(x => [xItem, ...x]);
+      }
+    }
+
+    ok$(uz ? "Mukofot to'landi! 🎉" : "Reward paid! 🎉");
+  };
   const pickPhoto    = useCallback(() => fRef.current?.click(), [fRef]);
 
   const achTap = useCallback(tap => {
@@ -288,152 +644,537 @@ export default function ProfilePage({
 
   return (
     <div>
+      <input ref={fRef} type="file" accept="image/*" style={{ display: "none" }} onChange={doPhoto} />
+      {kidCreated && (
+        <KidCreatedModal
+          th={th}
+          lg={lg}
+          kidCreated={kidCreated}
+          buzz={buzz}
+          onClose={() => setKidCreated(null)}
+        />
+      )}
       {pTab === "main" && (
-        <div>
+        <div className="ui-fadeUp">
           <PageHeader th={th} title={t.prf} />
 
-          {/* ═══ 1. HERO — sahifadagi yagona gradient ═══ */}
-          <div className="ui-fadeUp" style={{ background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", borderRadius: RADIUS.l, padding: SPACE.s4 + SPACE.s1 + "px " + SPACE.s4 + "px", marginBottom: SPACE.s3, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(th.ac) }}>
+          {/* ═══ 1. HERO — Clicking this opens "Personal Info" (pTab === "shaxsiy") ═══ */}
+          <div className="ui-press" 
+            onClick={() => { buzz(10); setPTab("shaxsiy"); }}
+            style={{ 
+              background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", 
+              borderRadius: RADIUS.l, 
+              padding: SPACE.s5 + "px " + SPACE.s4 + "px", 
+              marginBottom: SPACE.s3, 
+              position: "relative", 
+              overflow: "hidden", 
+              boxShadow: SHADOW.e1(th.ac),
+              cursor: "pointer"
+            }}
+          >
             <div style={{ position: "absolute", top: -SPACE.s12, right: -SPACE.s12, width: SPACE.s16 * 2 + SPACE.s6, height: SPACE.s16 * 2 + SPACE.s6, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.08)", pointerEvents: "none" }} />
             <div style={{ position: "absolute", bottom: -SPACE.s12, left: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.05)", pointerEvents: "none" }} />
-            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 + 2, position: "relative" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s4, position: "relative" }}>
               <div style={{ position: "relative", flexShrink: 0 }}>
-                {/* Premium halo — UIAvatar variant orqali */}
                 <UIAvatar th={th} src={user?.photo} name={user?.ism} size={SPACE.s16} variant={isPremium ? "premium" : undefined} />
-                <button className="ui-press" onClick={pickPhoto} aria-label={t.up}
-                  style={{ position: "absolute", bottom: -2, right: -2, width: SPACE.s6, height: SPACE.s6, borderRadius: RADIUS.full, background: th.sur, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW.e2 }}>
-                  {Ico.camera(th.ac)}
-                </button>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
+                {isPremium && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 2 }}>
+                    {Ico.crown("#fff")}
+                    <span style={{ ...TYPE.tiny, fontWeight: 700, color: "#fff", textTransform: "uppercase", letterSpacing: 0.5 }}>Premium</span>
+                  </div>
+                )}
                 <div style={{ ...TYPE.heading, fontWeight: 800, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user)}</div>
                 <div style={{ ...TYPE.caption, color: heroText, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</div>
-                <div style={{ display: "flex", gap: SPACE.s1 + 2, marginTop: SPACE.s2, flexWrap: "wrap" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, background: heroSoft, borderRadius: RADIUS.pill, padding: "3px 10px", ...TYPE.caption, fontWeight: 600, color: "#fff" }}>
-                    {user?.rol === "bosh" ? Ico.crown("#fff") : Ico.user("#fff")}
-                    {user?.rol === "bosh" ? (uz ? "Oila boshlig'i" : "Family head") : (uz ? "A'zo" : "Member")}
-                  </span>
-                  {isPremium
-                    ? <Badge th={th} type="premium">Premium</Badge>
-                    : <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, background: heroSoft, borderRadius: RADIUS.pill, padding: "3px 10px", ...TYPE.caption, fontWeight: 700, color: "#fff" }}>{PIco.gem("#fff", 12)}{uz ? "Bepul" : "Free"}</span>}
-                </div>
+              </div>
+              <div style={{ flexShrink: 0, color: "rgba(255, 255, 255, 0.7)" }}>
+                {Ico.right("#fff")}
               </div>
             </div>
-            {/* Edit Profile */}
-            <button className="ui-press" onClick={openEdit}
-              style={{ width: "100%", marginTop: SPACE.s3 + 2, background: heroSoft, border: "1px solid rgba(255,255,255,0.25)", borderRadius: RADIUS.s + 2, padding: (SPACE.s2 + 2) + "px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s2, position: "relative" }}>
-              {Ico.edit("#fff")}{uz ? "Profilni tahrirlash" : "Edit profile"}
-            </button>
           </div>
 
-          {/* ═══ 2. QUICK STATS — animatsiyali counter ═══ */}
-          <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s2 }}>
-            <AnimatedStat th={th} icon={PIco.cal(th.ac)} value={pStats.days} label={uz ? "Kun" : "Days"} />
-            <AnimatedStat th={th} icon={PIco.star(PREMIUM.gold)} value={stars || 0} label={uz ? "Yulduz" : "Stars"} tone={PREMIUM.gold} />
-            <AnimatedStat th={th} icon={PIco.leaf(th.gr)} value={pStats.gardenLevel} label={uz ? "Bog'" : "Garden"} tone={th.gr} onClick={openGarden} />
-            <AnimatedStat th={th} icon={PIco.gift(th.ac)} value={refCount || 0} label={uz ? "Taklif" : "Invites"} onClick={!isKid ? openReferral : undefined} />
-          </div>
-
-          {/* ═══ 3. ACHIEVEMENTS — horizontal scroll, collectible ═══ */}
-          <SectionHeader th={th}>{uz ? "Yutuqlar" : "Achievements"}</SectionHeader>
-          <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s2, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
-            {achievements.map(a => (
-              <AchCard key={a.id} th={th}
-                icon={a.icon(a.cur >= a.goal ? "#fff" : th.t3, 20)}
-                title={a.title} desc={a.desc} cur={a.cur} goal={a.goal}
-                unlocked={a.cur >= a.goal} doneLabel={uz ? "Olindi" : "Done"}
-                onClick={a.onTap ? () => achTap(a.onTap) : undefined} />
-            ))}
-          </div>
-
-          {/* ═══ 4. PREMIUM — kit PremiumCard ═══ */}
+          {/* ═══ 2. PREMIUM — Active / Inactive card ═══ */}
           <PremiumCard th={th} active={isPremium} onClick={openPremium}
             title={isPremium ? (uz ? "Premium faol" : "Premium active") : (uz ? "Premium'ga o'ting" : "Upgrade to Premium")}
-            sub={isPremium ? (uz ? "Barcha funksiyalar ochiq" : "All features unlocked") : (uz ? "Barcha imkoniyatlarni oching" : "Unlock everything")}
+            sub={isPremium ? (uz ? "Barcha imkoniyatlar faol ✓" : "All features unlocked ✓") : (uz ? "Barcha funksiyalarni oching" : "Unlock everything")}
             features={isPremium ? [] : [
-              uz ? "Cheksiz maqsad" : "Unlimited goals",
-              uz ? "PDF/Excel eksport" : "PDF/Excel export",
-              uz ? "Cheksiz a'zo" : "Unlimited members",
-              uz ? "Ovoz kiritish" : "Voice input",
+              uz ? "Cheksiz maqsadlar va a'zolar" : "Unlimited goals & members",
+              uz ? "Moliyaviy PDF/Excel hisobotlar" : "PDF/Excel report exports",
+              uz ? "Aqlli ovozli kiritish" : "Smart voice input",
             ]}
             cta={isPremium
               ? <Badge th={th} type="premium" icon={null}>{uz ? "Faol" : "Active"}</Badge>
               : <Badge th={th} type="info">{uz ? "Ochish" : "Unlock"}</Badge>} />
 
-          {/* ═══ 5. FAMILY — a'zolar kartasi ═══ */}
-          {azolar.length > 0 && (
-            <>
-              <SectionHeader th={th}>{uz ? "Oila" : "Family"}{oila?.nomi ? " · " + oila.nomi : ""}</SectionHeader>
-              <AppCard th={th} pad={0}>
-                {azolar.map((a, i) => {
-                  const rel = RELATIONS.find(r => r.id === a.rel);
-                  const isHead = a.rol === "bosh";
-                  const isChild = a.rol === "kid";
-                  const me = a.id === user?.id;
-                  return (
-                    <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (me ? " (" + t.me + ")" : "")}
-                      sub={rel ? (rel[lg] || rel.uz) : (isHead ? t.hd : t.mb2)}
-                      variant={isChild ? "kid" : (isHead && isPremium ? "premium" : undefined)}
-                      divider={i < azolar.length - 1}
-                      badge={
-                        <span style={{ display: "inline-flex", gap: SPACE.s1, flexShrink: 0 }}>
-                          {me && <Badge th={th} type="success">{uz ? "Onlayn" : "Online"}</Badge>}
-                          {isChild && <Badge th={th} type="warning">{uz ? "Bola" : "Kid"}</Badge>}
-                          {isHead
-                            ? <Badge th={th} type="role" icon={Ico.crown(th.ac)}>{uz ? "Oila boshi" : "Owner"}</Badge>
-                            : !isChild && <Badge th={th} tone={th.t2}>{t.mb2}</Badge>}
-                        </span>
-                      } />
-                  );
-                })}
-              </AppCard>
-            </>
-          )}
+          {/* ═══ 3. OILA — Click opens Oila Details Page ═══ */}
+          <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3, overflow: "hidden" }}>
+            <ListItem th={th} divider={false} onClick={() => { buzz(10); setPTab("oila"); }}
+              icon={PIco.family(th.ac)} iconTone={th.ac}
+              title={uz ? "Oila" : "Family"}
+              sub={uz ? "A'zolar va bolalar akkauntlarini boshqarish" : "Manage family members & kids accounts"}
+              right={Ico.right(th.t2)} />
+          </AppCard>
 
-          {/* ═══ 6. REFERRAL — kompakt karta (gradientsiz) ═══ */}
-          {!isKid && (
-            <AppCard th={th} pad={0}>
-              <ListItem th={th} divider={false} onClick={openReferral}
-                icon={PIco.gift(th.gr)} iconTone={th.gr}
-                title={uz ? "Do'stlarni taklif qiling" : "Invite friends"}
-                sub={uz ? "3 ta do'st = 1 oy Premium bepul" : "3 friends = 1 month free Premium"}
-                right={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s2 }}><Badge th={th} type="status" tone={th.gr}>{refCount || 0}/3</Badge></span>} />
+          {/* ═══ 4. BARAKA BOG'I — Garden button ═══ */}
+          <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3, overflow: "hidden" }}>
+            <ListItem th={th} divider={false} onClick={() => { buzz(10); openGarden(); }}
+              icon={PIco.leaf(th.gr)} iconTone={th.gr}
+              title={uz ? "Baraka Bog'i" : "Baraka Garden"}
+              sub={uz ? `Bog' ${pStats.gardenLevel}-daraja · Kunlik rivojlanish` : `Garden level ${pStats.gardenLevel} · Daily growth`}
+              right={Ico.right(th.t2)} />
+          </AppCard>
+
+          {/* ═══ 5. SOZLAMALAR — Settings list entry ═══ */}
+          <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4, overflow: "hidden" }}>
+            <ListItem th={th} divider={false} onClick={() => { buzz(10); setPTab("sozlamalar"); }}
+              icon={Ico.settings(th.ac)} iconTone={th.ac}
+              title={uz ? "Sozlamalar" : "Settings"}
+              sub={uz ? "Ilova va hisob sozlamalari" : "App & account settings"}
+              right={Ico.right(th.t2)} />
+          </AppCard>
+        </div>
+      )}
+
+      {/* ═══════════════ DETAILED OILA PAGE ═══════════════ */}
+      {pTab === "oila" && (
+        <div className="ui-fadeUp">
+          <PageHeader th={th} title={uz ? "Oila" : "Family"} onBack={backToMain} />
+
+          {/* Katta a'zolar (Adults) */}
+          {adults.length > 0 && (
+            <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3 }}>
+              <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px " + SPACE.s1 + "px" }}>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Katta a'zolar" : "Adults"}</span>
+              </div>
+              {adults.map((a, i) => {
+                const rel = RELATIONS.find(r => r.id === a.rel);
+                const isHead = a.rol === "bosh";
+                const me = a.id === user?.id;
+                return (
+                  <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (me ? " (" + t.me + ")" : "")}
+                    sub={rel ? (rel[lg] || rel.uz) : (isHead ? t.hd : t.mb2)}
+                    divider={i < adults.length - 1}
+                    badge={
+                      <span style={{ display: "inline-flex", gap: SPACE.s1, flexShrink: 0 }}>
+                        {me && <Badge th={th} type="success">{uz ? "Onlayn" : "Online"}</Badge>}
+                        {isHead
+                          ? <Badge th={th} type="role" icon={Ico.crown(th.ac)}>{uz ? "Oila boshi" : "Owner"}</Badge>
+                          : <Badge th={th} tone={th.t2}>{t.mb2}</Badge>}
+                      </span>
+                    } />
+                );
+              })}
             </AppCard>
           )}
 
-          {/* ═══ 7. SETTINGS — 4 guruh, faqat kit SettingRow ═══ */}
-          <SectionHeader th={th}>{uz ? "Hisob" : "Account"}</SectionHeader>
-          <AppCard th={th} pad={0}>
-            <SettingRow th={th} icon={Ico.user(th.ac)} title={t.shaxsiy} sub={uz ? "Ism, telefon, oila a'zolari" : "Name, phone, family"} onClick={openEdit} divider={user?.rol === "bosh" || !isKid} />
-            {user?.rol === "bosh" && <SettingRow th={th} icon={Ico.wallet(th.ac)} title={uz ? "Budjet va limitlar" : "Budget & limits"} sub={uz ? "Oylik chegara, kategoriya limitlari" : "Monthly cap, category limits"} onClick={() => setPTab("budjet")} divider={!isKid} />}
-            {!isKid && <SettingRow th={th} icon={PIco.baby(th.ac)} title={uz ? "Bola akkaunti qo'shish" : "Add kid account"} sub={uz ? "Farzandingizga login yarating" : "Create a login for your child"} onClick={openAddKid} divider={false} />}
-          </AppCard>
+          {/* Report access toggles for adults */}
+          {user?.rol === "bosh" && azolar.length > 1 && (
+            <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
+              <SubHeader th={th}>{uz ? "Oila a'zolari va ruxsatlar" : "Members & access"}</SubHeader>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{uz ? "Kimga umumiy hisobotni ko'rishga ruxsat berasiz?" : "Who can view the full family report?"}</div>
+              {azolar.map((a, i) => {
+                const isAHead = a.rol === "bosh";
+                const hasAccess = isAHead || (oila?.reportAccess || []).includes(a.id);
+                const rel = RELATIONS.find(r => r.id === a.rel);
+                return (
+                  <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
+                    sub={rel ? (rel[lg] || rel.uz) : (isAHead ? t.hd : t.mb2)}
+                    divider={i < azolar.length - 1}
+                    badge={isAHead
+                      ? <Badge th={th} type="role">{uz ? "Oila boshi" : "Head"}</Badge>
+                      : <Switch th={th} checked={hasAccess} onChange={() => toggleReportAccess(a.id)} label={uz ? "Hisobot ruxsati" : "Report access"} />} />
+                );
+              })}
+            </AppCard>
+          )}
 
-          <SectionHeader th={th}>{uz ? "Xavfsizlik" : "Security"}</SectionHeader>
-          <AppCard th={th} pad={0}>
-            <SettingRow th={th} icon={Ico.shield(th.ac)} title={t.xav} sub={uz ? "PIN, biometrika" : "PIN, biometrics"} onClick={() => setPTab("xav")} divider={false} />
-          </AppCard>
+          {/* FARZANDLAR section */}
+          {kidsData.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s3 }}>
+              <div style={{ paddingLeft: SPACE.s1 }}>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Farzandlar" : "Children"}</span>
+              </div>
+              {kidsData.map(kid => {
+                const canDelKid = kid.rol === "kid" && (user?.rol === "bosh" || kid.parentId === user?.id);
+                return (
+                  <button 
+                    key={kid.id} 
+                    className="ui-press"
+                    onClick={() => {
+                      buzz(10);
+                      setSelectedKid(kid);
+                      setPTab("kid_detail");
+                    }}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      background: th.sur,
+                      border: "1px solid " + th.bor,
+                      borderRadius: RADIUS.m,
+                      padding: SPACE.s4,
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: SPACE.s2,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    {/* Bola Avatari + Ismi */}
+                    <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, width: "100%" }}>
+                      <UIAvatar th={th} src={kid.photo} name={kid.ism} size={SPACE.s10} />
+                      <span style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1, fontWeight: 700 }}>{fullName(kid)}</span>
+                      <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: SPACE.s2 }}>
+                        {canDelKid && (
+                          <span onClick={(e) => { e.stopPropagation(); buzz(20); setKidDel(kid); }} style={{ display: "flex", padding: 6, color: th.rd }}>
+                            {Ico.trash(th.rd)}
+                          </span>
+                        )}
+                        {Ico.right(th.t3)}
+                      </span>
+                    </div>
 
-          <SectionHeader th={th}>{uz ? "Ilova" : "App"}</SectionHeader>
-          <AppCard th={th} pad={0}>
-            <SettingRow th={th} icon={Ico.settings(th.ac)} title={t.ilovaS} sub={uz ? "Til, valyuta, mavzu, bildirishnoma" : "Language, currency, theme"} onClick={() => setPTab("ilovaS")} />
-            <SettingRow th={th} icon={PIco.leaf(th.gr)} iconTone={th.gr} title={uz ? "Baraka Bog'i" : "Baraka Garden"} sub={uz ? "Yulduzcha bilan bog'ni o'stiring" : "Grow your garden with stars"} onClick={openGarden} />
-            <SettingRow th={th} icon={PIco.book(th.ac)} title={uz ? "Bilim Bozori" : "Knowledge Market"} sub={uz ? "Moliyaviy savodxonlik" : "Financial literacy"} onClick={openBilim} divider={false} />
-          </AppCard>
+                    {/* Statistika satrlari */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
+                        {PIco.checkCircle(th.gr)}
+                        <span>{uz ? `Bu hafta ${kid.doneThisWeek} ta vazifa bajardi` : `Completed ${kid.doneThisWeek} tasks this week`}</span>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
+                        {PIco.coin(th.am)}
+                        <span>{uz ? `${f(kid.earnedAmount, true)} ishlab topdi` : `Earned ${f(kid.earnedAmount, true)}`}</span>
+                      </div>
+                      {kid.activeGoal && (
+                        <div style={{ marginTop: 4 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...TYPE.tiny, color: th.t3, marginBottom: 3, width: "100%" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <span style={{ display: "inline-flex", alignItems: "center" }}>{PIco.target(th.ac, 14)}</span>
+                              {kid.activeGoal.ism}
+                            </span>
+                            <span style={{ marginLeft: "auto", fontWeight: 700, color: th.ac }}>{kid.goalPct}%</span>
+                          </div>
+                          <LinearProgress th={th} value={kid.goalPct} tone={th.ac} height={6} />
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
-          <SectionHeader th={th}>{uz ? "Ma'lumot" : "About"}</SectionHeader>
-          <AppCard th={th} pad={0}>
-            <SettingRow th={th} icon={Ico.help(th.ac)} title={t.qol} sub={uz ? "FAQ, Telegram bot, fikr bildirish" : "FAQ, Telegram, feedback"} onClick={() => setPTab("qol")} />
-            <SettingRow th={th} icon={Ico.version(th.ac)} title={t.ver} divider={false} right={<span style={{ ...TYPE.caption, fontWeight: 600, color: th.t2 }}>v{APP_VER}</span>} />
-          </AppCard>
+          {/* Bola qo'shish CTA */}
+          {!isKid && (
+            <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3 }}>
+              <ListItem th={th} divider={false} onClick={openAddKid}
+                icon={PIco.baby(th.am)} iconTone={th.am}
+                title={uz ? "Bola qo'shish" : "Add child"}
+                sub={uz ? "Yangi farzand akkaunti yaratish" : "Create a new child account"} />
+            </AppCard>
+          )}
 
-          {/* ═══ 8. DANGER ZONE — eng pastda ═══ */}
-          <SectionHeader th={th}>{uz ? "Xavfli hudud" : "Danger zone"}</SectionHeader>
-          <AppCard th={th} pad={0} style={{ border: "1px solid " + th.rd + ALPHA.med }}>
+          {/* Do'stlarni taklif qilish va Oila kodi */}
+          <SectionHeader th={th}>{uz ? "Do'stlarni taklif qilish" : "Invite friends"}</SectionHeader>
+          {user?.rol === "bosh" && (
+            <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, marginBottom: SPACE.s3 }}>
+              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.key(th.ac)}{uz ? "Oila taklif kodi" : "Family invite code"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, padding: SPACE.s2 + "px 0", flexWrap: "wrap" }}>
+                <div style={{ fontFamily: "monospace", ...TYPE.subtitle, fontWeight: 800, color: th.ac, wordBreak: "break-all", letterSpacing: 1, flex: 1, minWidth: SPACE.s16 * 2 }}>{user?.oilaId || "—"}</div>
+                <SecondaryButton th={th} onClick={copyFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }} aria-label={uz ? "Oila kodini nusxalash" : "Copy family code"}>
+                  {PIco.copy(th.ac)}{uz ? "Nusxa" : "Copy"}
+                </SecondaryButton>
+                <SecondaryButton th={th} onClick={shareFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong }} aria-label={uz ? "Oila kodini ulashish" : "Share family code"}>
+                  {PIco.share(th.gr)}{uz ? "Ulashish" : "Share"}
+                </SecondaryButton>
+              </div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s1 }}>{uz ? "Ushbu kodni boshqa oila a'zolari ilovaga kirganda qo'shishlari uchun yuboring." : "Send this code to other family members to join."}</div>
+            </AppCard>
+          )}
+
+          {/* Referral Card */}
+          <AppCard th={th} style={{ background: th.gr + ALPHA.faint, border: "1.5px solid " + th.gr + ALPHA.med, marginBottom: SPACE.s3 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s3 }}>
+              <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Havola orqali do'stlarni taklif qilish" : "Invite friends via link"}</span>
+            </div>
+            <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{uz ? "Sizning taklif havolangiz" : "Your invite link"}</div>
+            <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+              <div style={{ flex: 1, background: th.bg, border: "1.5px solid " + th.bor, borderRadius: RADIUS.s + 2, padding: SPACE.s3 + "px", ...TYPE.caption, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", minWidth: 0 }}>{(window.location.origin + "/?ref=") + (user?.id || "")}</div>
+              <SecondaryButton th={th} onClick={copyRefLink} style={{ width: "auto", padding: "0 " + SPACE.s4 + "px", flexShrink: 0, fontSize: TYPE.caption.fontSize }}>{uz ? "Nusxa" : "Copy"}</SecondaryButton>
+            </div>
+            <PrimaryButton th={th} onClick={tgInviteFriend} style={{ padding: (SPACE.s2 + 3) + "px", fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send("#fff")}{uz ? "Telegram orqali yuborish" : "Send via Telegram"}</PrimaryButton>
+          </AppCard>
+        </div>
+      )}
+
+      {/* ═══════════════ DETAILED SETTINGS PAGE ═══════════════ */}
+      {pTab === "sozlamalar" && (
+        <div className="ui-fadeUp">
+          <PageHeader th={th} title={uz ? "Sozlamalar" : "Settings"} onBack={backToMain} />
+
+          <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
+            {/* Budjet va limitlar */}
+            {user?.rol === "bosh" && (
+              <SettingRow th={th} icon={Ico.wallet(th.ac)} title={uz ? "Budjet va limitlar" : "Budget & limits"} sub={uz ? "Oylik chegara, kategoriya limitlari" : "Monthly cap, category limits"} onClick={() => setPTab("budjet")} divider />
+            )}
+
+            {/* Xavfsizlik */}
+            <SettingRow th={th} icon={Ico.shield(th.ac)} title={t.xav} sub={uz ? "PIN kod, biometrika sozlamalari" : "PIN, biometrics settings"} onClick={() => setPTab("xav")} divider />
+
+            {/* Ilova sozlamalari */}
+            <SettingRow th={th} icon={Ico.settings(th.ac)} title={t.ilovaS} sub={uz ? "Til, valyuta, mavzu, bildirishnoma" : "Language, currency, theme"} onClick={() => setPTab("ilovaS")} divider />
+
+            {/* Yordam va FAQ */}
+            <SettingRow th={th} icon={Ico.help(th.ac)} title={t.qol} sub={uz ? "FAQ, Telegram bot, fikr bildirish" : "FAQ, Telegram, feedback"} onClick={() => setPTab("qol")} divider />
+
+            {/* Versiya */}
+            <SettingRow th={th} icon={Ico.version(th.ac)} title={t.ver} divider right={<span style={{ ...TYPE.caption, fontWeight: 600, color: th.t2 }}>v{APP_VER}</span>} />
+
+            {/* Xavfli hudud */}
             <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"} sub={uz ? "Yozuvlarni butunlay yoki sana bo'yicha o'chirish" : "Delete records entirely or by date range"} onClick={openClean} divider={false} />
           </AppCard>
-          <DangerButton th={th} onClick={logout}>{Ico.door(th.rd)}{t.lo}</DangerButton>
-          <div style={{ textAlign: "center", ...TYPE.tiny, letterSpacing: 0.4, textTransform: "none", color: th.t3, marginTop: SPACE.s3, marginBottom: SPACE.s1 }}>Oila Hisobchi · v{APP_VER}</div>
+
+          {/* Chiqish (Logout) */}
+          <DangerButton th={th} onClick={logout} style={{ marginBottom: SPACE.s4 }}>{Ico.door(th.rd)}{t.lo}</DangerButton>
+          <div style={{ textAlign: "center", ...TYPE.tiny, letterSpacing: 0.4, textTransform: "none", color: th.t3, marginTop: SPACE.s3, marginBottom: SPACE.s2 }}>Oila Hisobchi · v{APP_VER}</div>
+        </div>
+      )}
+
+      {/* ═══════════════ FARZANDIM: BATAFSIL SAHIFASI ═══════════════ */}
+      {pTab === "kid_detail" && selectedKid && (
+        <div className="ui-fadeUp">
+          <PageHeader th={th} title={uz ? "Farzandim: " + selectedKid.ism : "Child: " + selectedKid.ism} onBack={backToMain} />
+          
+          {/* Bola haqida qisqacha ma'lumot card */}
+          <AppCard th={th} style={{ marginBottom: SPACE.s3, display: "flex", alignItems: "center", gap: SPACE.s4 }}>
+            <UIAvatar th={th} src={selectedKid.photo} name={selectedKid.ism} size={SPACE.s14} />
+            <div>
+              <div style={{ ...TYPE.heading, fontWeight: 800, color: th.t1 }}>{fullName(selectedKid)}</div>
+              <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2 }}>{uz ? "Oila a'zosi · Farzand" : "Family member · Child"}</div>
+            </div>
+          </AppCard>
+
+          {/* TABLAR: Vazifalar va Bilim bozori */}
+          <div style={{ display: "flex", background: th.bor, borderRadius: RADIUS.m, padding: 3, marginBottom: SPACE.s3 }}>
+            <button 
+              className="ui-press"
+              onClick={() => { buzz(10); setKidTab("vazifalar"); }}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                border: "none",
+                borderRadius: RADIUS.s + 2,
+                fontFamily: "inherit",
+                fontSize: TYPE.caption.fontSize,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: kidTab === "vazifalar" ? th.sur : "transparent",
+                color: kidTab === "vazifalar" ? th.ac : th.t2,
+                transition: "all 0.2s ease"
+              }}
+            >
+              {uz ? "📋 VAZIFALAR" : "📋 TASKS"}
+            </button>
+            <button 
+              className="ui-press"
+              onClick={() => { buzz(10); setKidTab("bilim"); }}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                border: "none",
+                borderRadius: RADIUS.s + 2,
+                fontFamily: "inherit",
+                fontSize: TYPE.caption.fontSize,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: kidTab === "bilim" ? th.sur : "transparent",
+                color: kidTab === "bilim" ? th.ac : th.t2,
+                transition: "all 0.2s ease"
+              }}
+            >
+              {uz ? "🧠 BILIM BOZORI" : "🧠 KNOWLEDGE MARKET"}
+            </button>
+          </div>
+
+          {/* TAB 1: VAZIFALAR */}
+          {kidTab === "vazifalar" && (
+            <div className="ui-fadeUp">
+              {/* Yangi vazifa biriktirish formasi */}
+              <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 }}>
+                  <span>➕</span> {uz ? "Yangi vazifa biriktirish" : "Assign new task"}
+                </div>
+                <TextInput th={th} label={uz ? "Vazifa nomi (masalan: Uy vazifasi)" : "Task description"} value={newVTitle} onChange={setNewVTitle} placeholder={uz ? "Idishlarni yuvish..." : "Wash dishes..."} />
+                <div style={{ display: "flex", gap: SPACE.s2, marginTop: 2 }}>
+                  <div style={{ flex: 1 }}>
+                    <TextInput th={th} label={uz ? "Mukofot puli (so'mda)" : "Reward amount"} type="number" value={newVReward} onChange={setNewVReward} placeholder="10000" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <TextInput th={th} label={uz ? "Muddati (ixtiyoriy)" : "Deadline (optional)"} type="date" value={newVDeadline} onChange={setNewVDeadline} />
+                  </div>
+                </div>
+                <PrimaryButton th={th} onClick={async () => {
+                  if (!newVTitle.trim() || !newVReward || Number(newVReward) <= 0) {
+                    return ok$(uz ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
+                  }
+                  await handleAddVazifaLocal(newVTitle, newVReward, newVDeadline, selectedKid.id);
+                  setNewVTitle("");
+                  setNewVReward("");
+                  setNewVDeadline("");
+                }} style={{ marginTop: SPACE.s2 }}>
+                  {uz ? "Vazifani biriktirish" : "Assign Task"}
+                </PrimaryButton>
+              </AppCard>
+
+              {/* Vazifalar ro'yxati */}
+              <SectionHeader th={th}>{uz ? "Vazifalar ro'yxati" : "Tasks list"}</SectionHeader>
+              {selectedKid.kidTasks?.length === 0 ? (
+                <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6, color: th.t3 }}>
+                  {uz ? "Hozircha biriktirilgan vazifalar yo'q" : "No tasks assigned yet"}
+                </AppCard>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
+                  {selectedKid.kidTasks.map(v => (
+                    <AppCard key={v.id} th={th} style={{ borderLeft: "4px solid " + (v.status === "approved" ? th.gr : (v.status === "done" ? th.ye : th.ac)) }}>
+                      <div style={{ display: "flex", justifyContent: "between", alignItems: "center", width: "100%" }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ ...TYPE.title, color: th.t1, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.title}</div>
+                          <div style={{ display: "flex", gap: SPACE.s3, alignItems: "center", marginTop: 4 }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, ...TYPE.caption, fontWeight: 700, color: th.gr }}>
+                              {PIco.coin(th.gr, 15)}
+                              {f(v.reward, true)}
+                            </span>
+                            {v.deadline && (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, ...TYPE.tiny, color: th.t3 }}>
+                                {PIco.cal(th.t3, 13)}
+                                {v.deadline}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ marginLeft: SPACE.s2, flexShrink: 0 }}>
+                          {v.status === "approved" && <Badge th={th} type="success">{uz ? "Tasdiqlangan" : "Approved"}</Badge>}
+                          {v.status === "pending" && <Badge th={th} type="info">{uz ? "Kutilmoqda" : "Pending"}</Badge>}
+                          {v.status === "done" && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              <Badge th={th} type="warning">{uz ? "Bajarildi" : "Completed"}</Badge>
+                              <SecondaryButton th={th} onClick={async () => {
+                                buzz(20);
+                                if (vazifaApprove) {
+                                  await vazifaApprove(v.id);
+                                  const upd = (await db.g("vazifa_" + user.oilaId)) || [];
+                                  const filtered = upd.filter(x => x.assignedTo === selectedKid.id);
+                                  setSelectedKid(prev => ({ ...prev, kidTasks: filtered }));
+                                }
+                              }} style={{ padding: "4px 8px", fontSize: TYPE.tiny.fontSize }}>
+                                {uz ? "Tasdiqlash" : "Approve"}
+                              </SecondaryButton>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </AppCard>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: BILIM BOZORI */}
+          {kidTab === "bilim" && (
+            <div className="ui-fadeUp">
+              {/* Bola Bilim Statistikasi */}
+              <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
+                <AnimatedStat th={th} icon="🪙" value={kidCoins} label={uz ? "Tangalar" : "Coins"} tone={PREMIUM.gold} />
+                <AnimatedStat th={th} icon="🔥" value={kidStreak} label={uz ? "Kunlik streak" : "Daily streak"} tone={th.ac} />
+                <AnimatedStat th={th} icon="🎮" value={kidLearnStats.games} label={uz ? "O'yinlar" : "Games"} tone={th.gr} />
+              </div>
+
+              {/* Bilim Bozoriga to'g'ridan-to'g'ri kirish tugmasi */}
+              <AppCard th={th} style={{ background: "linear-gradient(135deg, " + th.ac + ALPHA.tint + ", " + th.sur + ")", border: "1.5px solid " + th.ac + ALPHA.med, marginBottom: SPACE.s3 }}>
+                <div style={{ ...TYPE.title, fontWeight: 800, color: th.t1 }}>🧠 {uz ? "Bilim Bozoriga kirish" : "Enter Knowledge Market"}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 4 }}>
+                  {uz ? "O'yinlar o'ynash, darslar o'qish va bolaning bilim tangalarini boshqarish uchun to'g'ridan-to'g'ri kiring!" : "Play games, read lessons and manage kid's knowledge coins directly!"}
+                </div>
+                <SecondaryButton th={th} onClick={() => openBilim("market")} style={{ marginTop: SPACE.s3, width: "100%", color: th.ac, background: th.ac + ALPHA.soft, border: "1px solid " + th.ac + ALPHA.strong }}>
+                  {uz ? "Bozorga to'g'ridan-to'g'ri o'tish" : "Go to Market directly"}
+                </SecondaryButton>
+              </AppCard>
+
+              {/* Ota-ona mukofot qo'yishi */}
+              <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 }}>
+                  <span>🎁</span> {uz ? "Ota-ona mukofot qo'yishi" : "Parent rewards placement"}
+                </div>
+                <TextInput th={th} label={uz ? "Mukofot nomi (masalan: Velosiped sotib olish)" : "Reward title"} value={newBDesc} onChange={setNewBDesc} placeholder={uz ? "Yangi velosiped..." : "New bicycle..."} />
+                <div style={{ display: "flex", gap: SPACE.s2, marginTop: 2 }}>
+                  <div style={{ flex: 1 }}>
+                    <TextInput th={th} label={uz ? "Kerakli tanga (coin)" : "Coins required"} type="number" value={newBCoins} onChange={setNewBCoins} placeholder="100" />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <TextInput th={th} label={uz ? "Sotib olinganda to'lanadigan pul (so'mda)" : "Real money reward"} type="number" value={newBPul} onChange={setNewBPul} placeholder="50000" />
+                  </div>
+                </div>
+                <PrimaryButton th={th} onClick={async () => {
+                  if (!newBDesc.trim() || !newBCoins || Number(newBCoins) <= 0) {
+                    return ok$(uz ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
+                  }
+                  await handleAddBilimReward(newBDesc, newBCoins, newBPul);
+                  setNewBDesc("");
+                  setNewBCoins("");
+                  setNewBPul("");
+                }} style={{ marginTop: SPACE.s2 }}>
+                  {uz ? "Mukofotni qo'shish" : "Add Reward"}
+                </PrimaryButton>
+              </AppCard>
+
+              {/* Qo'yilgan mukofotlar ro'yxati */}
+              <SectionHeader th={th}>{uz ? "Qo'yilgan mukofotlar" : "Placed rewards"}</SectionHeader>
+              {kidBilimVazifalar.length === 0 ? (
+                <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6, color: th.t3 }}>
+                  {uz ? "Hozircha bilim mukofotlari yo'q" : "No knowledge rewards yet"}
+                </AppCard>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
+                  {kidBilimVazifalar.map(v => (
+                    <AppCard key={v.id} th={th} style={{ borderLeft: "4px solid " + (v.paid ? th.gr : (v.done ? th.ye : th.ac)) }}>
+                      <div style={{ display: "flex", justifyContent: "between", alignItems: "center", width: "100%" }}>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ ...TYPE.title, color: th.t1, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.desc}</div>
+                          <div style={{ display: "flex", gap: SPACE.s3, alignItems: "center", marginTop: 4 }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, ...TYPE.caption, fontWeight: 700, color: PREMIUM.gold }}>
+                              {PIco.star(PREMIUM.gold, 15)}
+                              {v.reward} coin
+                            </span>
+                            {v.pul > 0 && (
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, ...TYPE.caption, fontWeight: 700, color: th.gr }}>
+                                {PIco.coin(th.gr, 15)}
+                                {f(v.pul, true)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div style={{ marginLeft: SPACE.s2, flexShrink: 0 }}>
+                          {v.paid ? (
+                            <Badge th={th} type="success">{uz ? "To'langan" : "Paid"}</Badge>
+                          ) : v.done ? (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                              <Badge th={th} type="warning">{uz ? "Tugatildi" : "Completed"}</Badge>
+                              <SecondaryButton th={th} onClick={() => handleApproveBilimReward(v)} style={{ padding: "4px 8px", fontSize: TYPE.tiny.fontSize }}>
+                                {uz ? "Tasdiqlash va to'lash" : "Approve & Pay"}
+                              </SecondaryButton>
+                            </div>
+                          ) : (
+                            <Badge th={th} type="info">{uz ? "Kutilmoqda" : "Pending"}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </AppCard>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -527,64 +1268,6 @@ export default function ProfilePage({
                 </SecondaryButton>
               </div>
               <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s1 }}>{t.fcd}</div>
-            </AppCard>
-          )}
-
-          {/* Bola akkaunti CTA */}
-          {!isKid && (
-            <AppCard th={th} pad={0}>
-              <ListItem th={th} divider={false} onClick={openAddKid}
-                icon={PIco.baby(th.am)} iconTone={th.am}
-                title={uz ? "Bola akkaunti qo'shish" : "Add kid account"}
-                sub={uz ? "Farzandingizga login yarating" : "Create a login for your child"} />
-            </AppCard>
-          )}
-
-          {/* Ruxsatlar — kim umumiy hisobotni ko'radi */}
-          {user?.rol === "bosh" && azolar.length > 1 && (
-            <AppCard th={th}>
-              <SubHeader th={th}>{uz ? "Oila a'zolari va ruxsatlar" : "Members & access"}</SubHeader>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{uz ? "Kimga umumiy hisobotni ko'rishga ruxsat berasiz?" : "Who can view the full family report?"}</div>
-              {azolar.map((a, i) => {
-                const isAHead = a.rol === "bosh";
-                const hasAccess = isAHead || (oila?.reportAccess || []).includes(a.id);
-                const rel = RELATIONS.find(r => r.id === a.rel);
-                return (
-                  <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
-                    sub={rel ? (rel[lg] || rel.uz) : (isAHead ? t.hd : t.mb2)}
-                    divider={i < azolar.length - 1}
-                    badge={isAHead
-                      ? <Badge th={th} type="role">{uz ? "Oila boshi" : "Head"}</Badge>
-                      : <Switch th={th} checked={hasAccess} onChange={() => toggleReportAccess(a.id)} label={uz ? "Hisobot ruxsati" : "Report access"} />} />
-                );
-              })}
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{PIco.bulb(th.am, 13)}{uz ? "Yashil = umumiy hisobotni ko'ra oladi" : "Green = can see full report"}</div>
-            </AppCard>
-          )}
-
-          {/* A'zolar ro'yxati */}
-          {azolar.length > 0 && (
-            <AppCard th={th} pad={0}>
-              <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px " + SPACE.s1 + "px" }}>
-                <SubHeader th={th} style={{ marginBottom: 0 }}>{t.fam}: {oila?.nomi}</SubHeader>
-              </div>
-              {azolar.map((a, i) => {
-                const canDelKid = a.rol === "kid" && (user?.rol === "bosh" || a.parentId === user?.id);
-                return (
-                  <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
-                    sub={a.email || (a.rol === "kid" ? a.login : "")}
-                    variant={a.rol === "kid" ? "kid" : undefined}
-                    divider={i < azolar.length - 1}
-                    badge={
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s2, flexShrink: 0 }}>
-                        {a.rol === "bosh"
-                          ? <Badge th={th} type="warning" icon={Ico.crown(th.am)}>{t.hd}</Badge>
-                          : <Badge th={th} tone={th.t2}>{a.rol === "kid" ? (uz ? "Bola" : "Kid") : t.mb2}</Badge>}
-                        {canDelKid && <IconButton th={th} tone="danger" icon={Ico.trash(th.rd)} label={uz ? a.ism + " akkauntini o'chirish" : "Delete kid account"} onClick={() => setKidDel(a)} size={COMP.touchMin - SPACE.s3} />}
-                      </span>
-                    } />
-                );
-              })}
             </AppCard>
           )}
         </div>
@@ -854,6 +1537,35 @@ export default function ProfilePage({
         <TextInput th={th} label={uz ? "Sinfi (ixtiyoriy)" : "Grade (optional)"} value={kidGrade} onChange={v => { setKidGrade(v.replace(/\D/g, "").slice(0, 2)); setKidErr(e => ({ ...e, grade: "" })); }} placeholder={uz ? "1–11" : "1–11"} inputMode="numeric" error={kidErr.grade} />
         <TextInput th={th} label="Login *" value={kidLogin} onChange={v => { setKidLogin(v.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase()); setKidErr(e => ({ ...e, login: "" })); }} placeholder="jahongir2015" error={kidErr.login} />
         <TextInput th={th} label={(uz ? "Parol" : "Password") + " *"} value={kidPw} onChange={v => { setKidPw(v); setKidErr(e => ({ ...e, pw: "" })); }} placeholder={uz ? "Kamida 4 belgi" : "Min 4 chars"} error={kidErr.pw} />
+        
+        {/* Ota-ona roziligi oqimi (Parental Consent Flow) */}
+        <div style={{ margin: `${SPACE.s3}px 0`, padding: SPACE.s3, background: th.bg + ALPHA.soft, borderRadius: RADIUS.s, border: "1.5px solid " + (parentalConsentErr ? th.er : th.bor), transition: "all 0.2s" }}>
+          <label style={{ display: "flex", gap: SPACE.s2, cursor: "pointer", alignItems: "flex-start", userSelect: "none" }}>
+            <input
+              type="checkbox"
+              checked={parentalConsent}
+              onChange={e => { setParentalConsent(e.target.checked); if (e.target.checked) setParentalConsentErr(""); }}
+              style={{ marginTop: 3, width: 18, height: 18, accentColor: th.ac, cursor: "pointer" }}
+            />
+            <span style={{ ...TYPE.tiny, color: th.t1, textTransform: "none", letterSpacing: 0, lineHeight: 1.4 }}>
+              {uz ? (
+                <>
+                  Men ota-ona/vasiyman va farzandimga tegishli yuqoridagi ma'lumotlarni yig'ish, qayta ishlashga hamda <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Maxfiylik Siyosati</a> va <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Foydalanish shartlari</a>ga rozilik beraman.
+                </>
+              ) : (
+                <>
+                  I confirm that I am the parent/guardian and agree to the collection/processing of my child's data in accordance with the <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Terms of Use</a>.
+                </>
+              )}
+            </span>
+          </label>
+          {parentalConsentErr && (
+            <div style={{ color: th.er, ...TYPE.tiny, fontWeight: 600, marginTop: SPACE.s2 }}>
+              {parentalConsentErr}
+            </div>
+          )}
+        </div>
+
         <PrimaryButton th={th} onClick={submitKid} style={{ marginTop: SPACE.s1 }}>{uz ? "Akkaunt yaratish" : "Create account"}</PrimaryButton>
       </BottomSheet>
 
