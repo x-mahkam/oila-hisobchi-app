@@ -3,7 +3,7 @@ import { Ico } from "../../utils/icons.jsx";
 export default function BottomNav({
   navItems, scr, setScr, th, isKid, buzz,
   setShowAddModal, setAddModalTab, setAddStep, setAddKat,
-  vazPendingCount = 0,
+  vazPendingCount = 0, setBilimInitialView,
 }) {
   return (
     <div style={{
@@ -26,7 +26,13 @@ export default function BottomNav({
             {Ico.add("#fff")}
           </button>
         : <button key={item.id}
-            onClick={() => { buzz(8); setScr(item.id); }}
+            onClick={() => {
+              buzz(8);
+              if (item.id === "bilim" && setBilimInitialView) {
+                setBilimInitialView("market");
+              }
+              setScr(item.id);
+            }}
             style={{ background:"none", border:"none", cursor:"pointer", display:"flex", flexDirection:"column", alignItems:"center", gap:4, opacity:scr===item.id?1:0.5, transition:"all .2s", padding:"4px 8px", transform:scr===item.id?"translateY(-2px)":"none" }}>
             <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
               {item.id==="bosh"    && Ico.navHome(scr===item.id?th.ac:th.t2)}

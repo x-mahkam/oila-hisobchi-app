@@ -40,7 +40,7 @@ export const TextInput = memo(function TextInput({ th, label, value, onChange, p
 /** Pul inputi: faqat raqam, ming ajratgich, katta markaziy matn. suffix — valyuta. */
 export const AmountInput = memo(function AmountInput({ th, label, value, onChange, placeholder, suffix, error, autoFocus, style }) {
   const [f, setF] = useState(false);
-  const disp = value ? String(value).replace(/\B(?=(\d{3})+(?!\d))/g, " ") : "";
+  const disp = value ? String(value).replace(/\D/g, "").replace(/\B(?=(\d{3})+(?!\d))/g, " ") : "";
   return (
     <div style={{ marginBottom: SPACE.s3, ...style }}>
       {label && <label style={lbS(th)}>{label}</label>}

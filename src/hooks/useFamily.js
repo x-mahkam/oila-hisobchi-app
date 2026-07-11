@@ -33,6 +33,7 @@ export function useFamily() {
   const [vAssignee, setVAssignee] = useState("");
   const [vEmoji,    setVEmoji]    = useState("📚");
   const [vDeadline, setVDeadline] = useState("");
+  const [vTargetParentId, setVTargetParentId] = useState("");
 
   // ── Task logic ──
 
@@ -264,21 +265,113 @@ export function useFamily() {
 
   // Add Task (Vazifa)
   const addVazifa = async () => {
-    if (!canAssignTask(user)) return ok$(lg === "uz" ? "Vazifani faqat katta oila a'zolari bera oladi" : "Only adult family members can assign tasks", "err");
-    if (!vTitle.trim() || !vReward || Number(vReward) <= 0 || !vAssignee) return ok$(lg === "uz" ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
+    const isKidUser = user?.rol === "kid";
+    const assigneeId = isKidUser ? user.id : vAssignee;
+
+    if (!isKidUser && !canAssignTask(user)) {
+      return ok$(lg === "uz" ? "Vazifani faqat katta oila a'zolari bera oladi" : "Only adult family members can assign tasks", "err");
+    }
+
+    const cleanRewardStr = String(vReward).replace(/\D/g, "");
+    const parsedReward = Number(cleanRewardStr);
+
+    if (!vTitle.trim() || !cleanRewardStr || parsedReward <= 0 || !assigneeId) {
+      return ok$(lg === "uz" ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
+    }
     buzz(12);
-    const kd = azolar.find(a => a.id === vAssignee);
-    const item = { id: Date.now(), title: vTitle.trim(), reward: Number(vReward), emoji: vEmoji, assignedTo: vAssignee, assignedName: kd?.ism || "", assignedLogin: kd?.login || "", createdBy: user.id, createdByName: user.ism || "", status: "pending", sana: td(), doneSana: "", paidSana: "", deadline: vDeadline || "" };
+    const kd = isKidUser ? user : azolar.find(a => a.id === assigneeId);
+    const status = isKidUser ? "proposed" : "pending";
+
+    const item = {
+      id: Date.now(),
+      title: vTitle.trim(),
+      reward: parsedReward,
+      emoji: vEmoji,
+      assignedTo: assigneeId,
+      assignedName: kd?.ism || "",
+      assignedLogin: kd?.login || "",
+      createdBy: user.id,
+      createdByName: user.ism || "",
+      status,
+      sana: td(),
+      doneSana: "",
+      paidSana: "",
+      deadline: vDeadline || "",
+      targetParentId: isKidUser ? vTargetParentId : ""
+    };
+
     const upd = [item, ...vazifalar];
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
-    setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚"); setVDeadline("");
-    ok$(lg === "uz" ? "Vazifa qo'shildi! 🎯" : "Task added!");
+    setShowAddVazifa(false); setVTitle(""); setVReward(""); setVAssignee(""); setVEmoji("📚"); setVDeadline(""); setVTargetParentId("");
+
+    if (isKidUser) {
+      try {
+        const parents = azolar.filter(a => a.rol !== "kid");
+        const targetParents = (vTargetParentId && vTargetParentId !== "all")
+          ? parents.filter(p => p.id === vTargetParentId)
+          : parents;
+
+        for (const p of targetParents) {
+          const pkn = (await db.g("notif_" + p.id)) || [];
+          const newNotifs = [{
+            id: Date.now(),
+            type: "vazifa_proposed",
+            text: lg === "uz"
+              ? `💡 ${user.ism} yangi vazifa taklif qildi: "${item.title}" (${f(item.reward, true)}).`
+              : `💡 ${user.ism} proposed a new task: "${item.title}" (${f(item.reward, true)}).`,
+            sana: new Date().toISOString(),
+            read: false
+          }, ...pkn];
+          await db.s("notif_" + p.id, newNotifs);
+        }
+      } catch (e) {
+        console.error("Proposed task notification error:", e);
+      }
+      ok$(lg === "uz" ? "Taklif ota-onaga jo'natildi! 💡" : "Proposal sent to parents!");
+    } else {
+      ok$(lg === "uz" ? "Vazifa qo'shildi! 🎯" : "Task added!");
+    }
   };
+
+  const vazifaAcceptProposed = useCallback(async (id, customReward) => {
+    if (!canApproveTask(user))
+      return ok$(lg === "uz" ? "Taklifni faqat katta oila a'zolari qabul qiladi" : "Only adults can accept task proposals", "err");
+    buzz(15);
+    const v = vazifalar.find(x => x.id === id);
+    if (!v) return;
+
+    // Remove any spaces or non-digit chars from the reward
+    const cleanRewardStr = String(customReward != null ? customReward : v.reward).replace(/\D/g, "");
+    const finalReward = Number(cleanRewardStr);
+
+    if (isNaN(finalReward) || finalReward <= 0) {
+      return ok$(lg === "uz" ? "Noto'g'ri narx" : "Invalid price", "err");
+    }
+
+    const upd = vazifalar.map(x => x.id === id ? { ...x, status: "pending", reward: finalReward, acceptedBy: user.id, acceptedByName: user.ism } : x);
+    await db.s("vazifa_" + user.oilaId, upd);
+    setVazifalar(upd);
+
+    try {
+      const kn = (await db.g("notif_" + v.assignedTo)) || [];
+      await db.s("notif_" + v.assignedTo, [{
+        id: Date.now(),
+        type: "vazifa_accepted",
+        text: lg === "uz"
+          ? `🎉 Ota-onangiz "${v.title}" taklifingizni qabul qildi! Mukofot: ${f(finalReward, true)}.`
+          : `🎉 Parent accepted your "${v.title}" proposal! Reward: ${f(finalReward, true)}.`,
+        sana: new Date().toISOString(),
+        read: false
+      }, ...kn]);
+    } catch (e) {}
+
+    ok$(lg === "uz" ? "Taklif qabul qilindi! Vazifa faollashtirildi." : "Proposal accepted! Task activated.");
+  }, [vazifalar, user, ok$, buzz, lg, f]);
 
   const delVazifa = async (id) => {
     const v = vazifalar.find(x => x.id === id);
     if (!canDeleteTask(user, v))
-      return ok$(lg === "uz" ? "Faqat o'zingiz bergan vazifani o'chira olasiz" : "You can only delete tasks you created", "err");
+      return ok$(lg === "uz" ? "Faqat o'zingiz bergan yoki taklif qilgan vazifani o'chira olasiz" : "You can only delete tasks you created or proposed", "err");
     const upd = vazifalar.filter(x => x.id !== id);
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
   };
@@ -305,7 +398,8 @@ export function useFamily() {
     vAssignee, setVAssignee,
     vEmoji,    setVEmoji,
     vDeadline, setVDeadline,
-    addVazifa, delVazifa,
+    vTargetParentId, setVTargetParentId,
+    addVazifa, delVazifa, vazifaAcceptProposed,
     purgeData
   };
 }

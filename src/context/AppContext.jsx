@@ -33,10 +33,12 @@ export function AppProvider({ children }) {
   const [lg,      setLg]      = useState("uz");
   const [val,     setVal]     = useState(VALS[0]);
   const [scr,     setScr]     = useState("login");
+  const [bilimInitialView, setBilimInitialView] = useState("cats");
   const [tst,     setTst]     = useState({ msg: "", type: "ok" });
   const [boot,    setBoot]    = useState(true);
   const [onbStep, setOnbStep] = useState(() => { try { return localStorage.getItem("oilaV7Onb") === "1" ? -1 : 0; } catch { return 0; } });
   const [confetti, setConfetti] = useState(false);
+  const [showPremModal, setShowPremModal] = useState(false);
 
   // ── Maqsad confirm modal ─────────────────────────────────
   const [maqsadConfirmNotif, setMaqsadConfirmNotif] = useState(null);
@@ -56,6 +58,8 @@ export function AppProvider({ children }) {
 
   // ── Buzz ─────────────────────────────────────────────────
   const buzz = useCallback((ms = 10) => { try { navigator.vibrate?.(ms); } catch {} }, []);
+
+  const [coinEarnedTrigger, setCoinEarnedTrigger] = useState({ count: 0, ts: 0 });
 
   // ── Confetti ─────────────────────────────────────────────
   const fireConfetti = useCallback(() => {
@@ -78,6 +82,7 @@ export function AppProvider({ children }) {
       const log = (await db.g("starlog_" + user.oilaId)) || [];
       log.unshift({ uid: user.id, ism: user.ism, count, reason, sana: new Date().toISOString() });
       await db.s("starlog_" + user.oilaId, log.slice(0, 50));
+      setCoinEarnedTrigger({ count, ts: Date.now() });
     } catch {}
   }, [user]);
 
@@ -91,6 +96,25 @@ export function AppProvider({ children }) {
       await db.s("notif_" + user.id, [n, ...cur].slice(0, 100));
     } catch {}
   }, [user]);
+
+  // ── Premium ──────────────────────────────────────────────
+  const activatePremium = useCallback(async () => {
+    localStorage.setItem("oilaV7Prem", "1");
+    setIsPremium(true);
+    setShowPremModal(false);
+    if (user?.oilaId && user?.rol === "bosh") {
+      try {
+        const o = (await db.g("oila_" + user.oilaId)) || (await db.g("fam_" + user.oilaId));
+        if (o) {
+          o.premium = true;
+          await db.s("oila_" + user.oilaId, o);
+          await db.s("fam_" + user.oilaId, o);
+          setOila(o);
+        }
+      } catch (e) {}
+    }
+    ok$(lg === "uz" ? "Premium faollashtirildi!" : "Premium activated!");
+  }, [user, lg, ok$, setIsPremium, setOila]);
 
   // ── Logout ───────────────────────────────────────────────
   const logout = useCallback(() => {
@@ -113,11 +137,13 @@ export function AppProvider({ children }) {
     stars, setStars, gardenData, setGardenData,
     // UI
     dark, setDark, lg, setLg, val, setVal,
-    scr, setScr, tst, boot, setBoot, onbStep, setOnbStep,
+    scr, setScr, bilimInitialView, setBilimInitialView, tst, boot, setBoot, onbStep, setOnbStep,
     th, t, confetti, setConfetti,
     maqsadConfirmNotif, setMaqsadConfirmNotif,
+    coinEarnedTrigger,
+    showPremModal, setShowPremModal,
     // Functions
-    ok$, buzz, addStar, addNotif, logout, fireConfetti,
+    ok$, buzz, addStar, addNotif, logout, fireConfetti, activatePremium,
   };
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

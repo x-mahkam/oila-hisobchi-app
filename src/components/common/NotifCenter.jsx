@@ -53,6 +53,7 @@ export default function NotifCenter({
   notifs = [], th, lg, isKid, onClose,
   onMarkRead, onMarkAll, onClear,
   onConfirmParent, onConfirmKid, setScr,
+  setBilimInitialView,
 }) {
   const uz = lg === "uz";
   const [filter, setFilter] = useState("all");     // all | unread | <cat>
@@ -87,10 +88,16 @@ export default function NotifCenter({
 
   const goAction = useCallback(() => {
     if (!sel) return;
-    const scr = catAction(catOf(sel));
+    let scr = catAction(catOf(sel));
+    if (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done") {
+      scr = "bilim";
+      if (setBilimInitialView) {
+        setBilimInitialView("market");
+      }
+    }
     setSel(null);
     if (scr && setScr) { setScr(scr); onClose && onClose(); }
-  }, [sel, setScr, onClose]);
+  }, [sel, setScr, onClose, setBilimInitialView]);
 
   const Chip = ({ id, label }) => (
     <button className="ui-press" onClick={() => setFilter(id)}
@@ -103,7 +110,10 @@ export default function NotifCenter({
   const selColor = sel ? catColor(selCat, th, PREMIUM) : th.ac;
   const needParent = sel && sel.type === "maqsad_confirm" && sel.status === "pending" && !isKid;
   const needKid = sel && sel.type === "maqsad_kid_confirm" && sel.status === "pending" && isKid;
-  const actLabel = sel ? catActionLabel(selCat, lg) : null;
+  const isBilimNotif = sel && (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done");
+  const actLabel = isBilimNotif
+    ? (uz ? "Bilim Bozoriga o'tish" : lg === "ru" ? "В рынок знаний" : "Go to Knowledge Market")
+    : (sel ? catActionLabel(selCat, lg) : null);
 
   return (
     <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(0,0,0,.5)", zIndex: 998, display: "flex", justifyContent: "flex-end" }} onClick={onClose}>

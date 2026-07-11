@@ -111,5 +111,64 @@ export function useTransactions() {
     ok$(lg==="uz"?"Daromad qo'shildi":"Income added");
   }, [user, dar, ok$, buzz, addStar, lg]);
 
-  return { addX, addD };
+  // O'chirish (delTx)
+  const delTx = useCallback(async (item) => {
+    if (!user || !user.id || !user.oilaId) return;
+    if (item.uid !== user.id) {
+      return ok$(lg === "uz" ? "Faqat o'zingiz kiritgan amallarni o'chira olasiz" : "You can only delete your own transactions", "warn");
+    }
+    buzz(10);
+    const isX = !!item.kategoriya;
+    const key = (isX ? "x_" : "d_") + user.oilaId + "_" + user.id;
+    const existing = (await db.g(key)) || [];
+    const updated = existing.filter(t => t.id !== item.id);
+    await db.s(key, updated);
+    if (isX) {
+      setXar(prev => prev.filter(x => !(x.id === item.id && x.uid === user.id)));
+    } else {
+      setDar(prev => prev.filter(d => !(d.id === item.id && d.uid === user.id)));
+    }
+    ok$(lg === "uz" ? "O'chirildi" : "Deleted");
+  }, [user, setXar, setDar, ok$, buzz, lg]);
+
+  // Tahrirlash (editTx)
+  const editTx = useCallback(async (oldItem, updatedData) => {
+    if (!user || !user.id || !user.oilaId) return;
+    if (oldItem.uid !== user.id) {
+      return ok$(lg === "uz" ? "Faqat o'zingiz kiritgan amallarni tahrirlay olasiz" : "You can only edit your own transactions", "warn");
+    }
+    buzz(10);
+    const isX = !!oldItem.kategoriya;
+    const key = (isX ? "x_" : "d_") + user.oilaId + "_" + user.id;
+    const existing = (await db.g(key)) || [];
+    
+    // update the transaction item
+    const index = existing.findIndex(t => t.id === oldItem.id);
+    if (index === -1) return ok$(lg === "uz" ? "Topilmadi" : "Not found", "err");
+    
+    const newItem = {
+      ...existing[index],
+      summa: Number(updatedData.summa),
+      izoh: updatedData.izoh,
+      sana: updatedData.sana || oldItem.sana,
+    };
+    if (isX) {
+      newItem.kategoriya = updatedData.kategoriya || oldItem.kategoriya;
+      newItem.repeat = updatedData.repeat !== undefined ? updatedData.repeat : oldItem.repeat;
+    } else {
+      newItem.tur = updatedData.tur || oldItem.tur;
+    }
+    
+    existing[index] = newItem;
+    await db.s(key, existing);
+    
+    if (isX) {
+      setXar(prev => prev.map(x => (x.id === oldItem.id && x.uid === user.id) ? newItem : x));
+    } else {
+      setDar(prev => prev.map(d => (d.id === oldItem.id && d.uid === user.id) ? newItem : d));
+    }
+    ok$(lg === "uz" ? "Muvaffaqiyatli saqlandi" : "Saved successfully");
+  }, [user, setXar, setDar, ok$, buzz, lg]);
+
+  return { addX, addD, delTx, editTx };
 }

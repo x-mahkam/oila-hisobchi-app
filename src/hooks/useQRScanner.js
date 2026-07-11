@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { td } from "../utils/formatters.js";
+import jsQR from "jsqr";
 
 export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setAddKat }) {
   const { isPremium, setShowPremModal, lg, ok$, f } = useApp();
@@ -49,15 +50,23 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
       }
       setScanMsg(lg === "uz" ? "QR kodni ramkaga joylang" : "Point QR into frame");
 
-      if ("BarcodeDetector" in window) {
-        // eslint-disable-next-line no-undef
-        const detector = new BarcodeDetector({ formats: ["qr_code"] });
-        const scan = async () => {
-          if (!scanVideoRef.current || !scanStreamRef.current) return;
-          try {
-            const codes = await detector.detect(scanVideoRef.current);
-            if (codes && codes.length > 0) {
-              const raw = codes[0].rawValue;
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+
+      const scan = async () => {
+        if (!scanVideoRef.current || !scanStreamRef.current) return;
+        try {
+          const video = scanVideoRef.current;
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              inversionAttempts: "dontInvert",
+            });
+            if (code) {
+              const raw = code.data;
               stopScanner();
               const isUrl = /^https?:\/\//i.test(raw);
               let sana = "";
@@ -131,13 +140,13 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
               }
               return;
             }
-          } catch (e) {}
-          scanRafRef.current = requestAnimationFrame(scan);
-        };
+          }
+        } catch (e) {
+          console.error("QR scanner scan error:", e);
+        }
         scanRafRef.current = requestAnimationFrame(scan);
-      } else {
-        setScanMsg(lg === "uz" ? "Brauzer QR skanerini qo'llamaydi." : "QR scanner not supported.");
-      }
+      };
+      scanRafRef.current = requestAnimationFrame(scan);
     } catch (e) {
       const isDenied =
         e.name === "NotAllowedError" ||

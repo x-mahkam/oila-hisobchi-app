@@ -405,14 +405,67 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         (lg === "uz" ? "PDF saqlash / Chop etish" : "Save PDF / Print") +
         "</button></body></html>";
 
-      const w = window.open("", "_blank");
-      if (w && w.document) {
-        w.document.write(H);
-        w.document.close();
-        ok$(lg === "uz" ? "PDF tayyor!" : "PDF ready!");
-      } else {
+      // Use a hidden iframe to bypass popup blockers and WebView constraints
+      try {
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        iframe.style.zIndex = "-1000";
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(H);
+        doc.close();
+
+        iframe.contentWindow.focus();
+        setTimeout(() => {
+          let printInitiated = false;
+          try {
+            iframe.contentWindow.print();
+            printInitiated = true;
+          } catch (pe) {
+            console.error("Iframe print failed:", pe);
+          }
+
+          // Mobil qurilmalar va WebView cheklovlari uchun, chop etish darchasi bilan bir qatorda
+          // darhol oflayn HTML hisobot faylini ham yuklab beramiz.
+          const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
+
+          if (printInitiated) {
+            ok$(
+              lg === "uz"
+                ? "Chop etish yuborildi va oflayn HTML hisobot fayli yuklab olindi!"
+                : "Print initiated and offline HTML report downloaded!",
+              "ok"
+            );
+          } else {
+            ok$(
+              okk
+                ? lg === "uz"
+                  ? "HTML hisobot fayli yuklandi! Uni ochib osongina PDF saqlashingiz mumkin."
+                  : "HTML report downloaded! Open it to easily save as PDF."
+                : lg === "uz"
+                ? "Yuklashda xatolik yuz berdi"
+                : "Error downloading file",
+              okk ? "ok" : "err"
+            );
+          }
+
+          setTimeout(() => {
+            try {
+              document.body.removeChild(iframe);
+            } catch (errClean) {}
+          }, 1500);
+        }, 300);
+      } catch (errIframe) {
+        console.error("Iframe printing failed:", errIframe);
         const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
-        ok$(okk ? (lg === "uz" ? "HTML yuklandi!" : "HTML downloaded!") : (lg === "uz" ? "Xatolik" : "Error"), okk ? "ok" : "err");
+        ok$(okk ? (lg === "uz" ? "HTML hisobot fayli yuklandi!" : "HTML report downloaded!") : (lg === "uz" ? "Xatolik" : "Error"), okk ? "ok" : "err");
       }
     } catch (e) {
       ok$((lg === "uz" ? "Xatolik: " : "Error: ") + e.message, "err");

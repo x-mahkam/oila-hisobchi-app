@@ -89,6 +89,7 @@ export function markNotif(id, notifKey) {
 
 /** O'chirilgan maqsad meta'sini tozalash (maq bilan sinxron). */
 export function pruneMeta(validIds) {
+  if (!Array.isArray(validIds) || !validIds.length) return;
   const valid = new Set(validIds.map(String));
   const all = allMeta();
   let changed = false;
