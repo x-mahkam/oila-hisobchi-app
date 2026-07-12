@@ -1,5 +1,7 @@
-import { createContext, useContext, useState, useCallback, useRef, useMemo } from "react";
-import { db, auth } from "../firebase.js";
+import { createContext, useContext, useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { db, auth, fbDB } from "../firebase.js";
+import { doc, onSnapshot } from "firebase/firestore";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { td, nt, hp, fmtN } from "../utils/formatters.js";
 import { MK, VALS, TL } from "../utils/constants.js";
 
@@ -39,6 +41,36 @@ export function AppProvider({ children }) {
   const [onbStep, setOnbStep] = useState(() => { try { return localStorage.getItem("oilaV7Onb") === "1" ? -1 : 0; } catch { return 0; } });
   const [confetti, setConfetti] = useState(false);
   const [showPremModal, setShowPremModal] = useState(false);
+
+  // ── Listen to Oila / Premium status in real-time ──────────
+  useEffect(() => {
+    if (!user?.oilaId) {
+      setIsPremium(false);
+      return;
+    }
+
+    const safeKey = (k) => ("oilaV7_" + k).replace(/[+\/\\#?]/g, "_").replace(/\s/g, "_");
+    const docRef = doc(fbDB, "appdata", safeKey("oila_" + user.oilaId));
+
+    const unsub = onSnapshot(docRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        const oVal = data.v || {};
+        const premiumActive = oVal.premium === true;
+        
+        setIsPremium(premiumActive);
+        try {
+          localStorage.setItem("oilaV7Prem", premiumActive ? "1" : "0");
+        } catch {}
+        
+        setOila(prev => ({ ...prev, ...oVal, premium: premiumActive }));
+      }
+    }, (err) => {
+      console.error("Real-time premium listener error:", err);
+    });
+
+    return () => unsub();
+  }, [user?.oilaId]);
 
   // ── Maqsad confirm modal ─────────────────────────────────
   const [maqsadConfirmNotif, setMaqsadConfirmNotif] = useState(null);
@@ -98,23 +130,30 @@ export function AppProvider({ children }) {
   }, [user]);
 
   // ── Premium ──────────────────────────────────────────────
-  const activatePremium = useCallback(async () => {
-    localStorage.setItem("oilaV7Prem", "1");
-    setIsPremium(true);
-    setShowPremModal(false);
-    if (user?.oilaId && user?.rol === "bosh") {
-      try {
-        const o = (await db.g("oila_" + user.oilaId)) || (await db.g("fam_" + user.oilaId));
-        if (o) {
-          o.premium = true;
-          await db.s("oila_" + user.oilaId, o);
-          await db.s("fam_" + user.oilaId, o);
-          setOila(o);
-        }
-      } catch (e) {}
+  const activatePremium = useCallback(async (purchaseToken, productId) => {
+    if (!user?.oilaId) return { success: false, message: "Oila ID topilmadi" };
+    
+    try {
+      const functionsInstance = getFunctions();
+      const verifyFn = httpsCallable(functionsInstance, "verifyPurchase");
+      const res = await verifyFn({
+        purchaseToken,
+        productId,
+        oilaId: user.oilaId
+      });
+      
+      if (res.data?.success) {
+        ok$(lg === "uz" ? "Xarid muvaffaqiyatli tasdiqlandi!" : "Purchase verified successfully!");
+        return { success: true, data: res.data };
+      } else {
+        throw new Error(res.data?.message || "Xaridni tasdiqlashda xatolik yuz berdi");
+      }
+    } catch (e) {
+      console.error("activatePremium Error:", e);
+      ok$(lg === "uz" ? "To'lovni tasdiqlashda xato yuz berdi" : "Error verifying payment", "err");
+      return { success: false, error: e };
     }
-    ok$(lg === "uz" ? "Premium faollashtirildi!" : "Premium activated!");
-  }, [user, lg, ok$, setIsPremium, setOila]);
+  }, [user, lg, ok$]);
 
   // ── Logout ───────────────────────────────────────────────
   const logout = useCallback(() => {

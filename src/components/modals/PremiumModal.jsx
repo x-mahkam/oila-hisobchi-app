@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Capacitor } from "@capacitor/core";
+import { Purchases } from "@revenuecat/purchases-capacitor";
 import {
   BottomSheet, AppCard, ListItem, Badge, SectionHeader,
   PremiumButton, GhostButton, PrimaryButton, LoadingButton, TextInput
@@ -23,12 +25,14 @@ const PIco = {
 };
 
 export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
-  const { isPremium, fireConfetti, buzz } = useApp();
+  const { isPremium, fireConfetti, buzz, user, activatePremium } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [activeTier, setActiveTier] = useState("yearly"); // monthly | yearly | lifetime
   const [checkoutStep, setCheckoutStep] = useState("tiers"); // tiers | checkout | success
   const [payMethod, setPayMethod] = useState("card"); // card | click | payme
   const [isLoading, setIsLoading] = useState(false);
+  const [rcOfferings, setRcOfferings] = useState(null);
+  const [rcError, setRcError] = useState("");
 
   // To'lov formalari state
   const [cardNumber, setCardNumber] = useState("");
@@ -63,6 +67,122 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
       sub: uz ? "Bir martalik to'lov, abadiy!" : "One-time payment, forever!",
       tag: uz ? "Eng yaxshi qiymat" : "Best value",
       val: 199000,
+    }
+  };
+
+  useEffect(() => {
+    async function initAndLoadRevenueCat() {
+      if (!Capacitor.isNativePlatform()) {
+        console.log("Web mode: using static mock plans.");
+        return;
+      }
+      try {
+        setIsLoading(true);
+        const apiKey = import.meta.env.VITE_REVENUECAT_API_KEY || "goog_mock_api_key_for_android";
+        await Purchases.configure({
+          apiKey,
+          appUserID: user?.oilaId || user?.id || "anonymous"
+        });
+        const offeringsData = await Purchases.getOfferings();
+        setRcOfferings(offeringsData);
+      } catch (err) {
+        console.error("RevenueCat offering load error:", err);
+        setRcError(err.message || "Failed to load packages");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    initAndLoadRevenueCat();
+  }, [user]);
+
+  const handlePurchaseClick = async () => {
+    buzz(15);
+    setIsLoading(true);
+
+    if (!Capacitor.isNativePlatform()) {
+      // Web browser preview - call sandbox
+      try {
+        const verifyRes = await activatePremium("web_sandbox_token_" + activeTier, activeTier);
+        if (verifyRes.success) {
+          setCheckoutStep("success");
+          if (typeof fireConfetti === "function") {
+            fireConfetti();
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    try {
+      let selectedPackage = null;
+      if (rcOfferings?.current?.availablePackages) {
+        selectedPackage = rcOfferings.current.availablePackages.find(p => p.identifier.includes(activeTier) || p.product.identifier.includes(activeTier));
+      }
+      
+      if (!selectedPackage && rcOfferings?.current?.availablePackages?.length > 0) {
+        selectedPackage = rcOfferings.current.availablePackages[0];
+      }
+
+      if (!selectedPackage) {
+        throw new Error(uz ? "RevenueCat obuna paketi topilmadi" : "No active RevenueCat packages found");
+      }
+
+      const res = await Purchases.purchasePackage({ aPackage: selectedPackage });
+      const purchaseToken = res.customerInfo?.originalAppUserId || "native_rc_token";
+      
+      const verifyRes = await activatePremium(purchaseToken, selectedPackage.product.identifier);
+      if (verifyRes.success) {
+        setCheckoutStep("success");
+        if (typeof fireConfetti === "function") {
+          fireConfetti();
+        }
+      }
+    } catch (e) {
+      console.error("RevenueCat purchase error:", e);
+      if (!e.userCancelled) {
+        alert(uz ? "To'lov amalga oshmadi: " + (e.message || e) : "Payment failed: " + (e.message || e));
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRestorePurchases = async () => {
+    buzz(15);
+    setIsLoading(true);
+    try {
+      if (!Capacitor.isNativePlatform()) {
+        const verifyRes = await activatePremium("web_sandbox_restore_token", activeTier);
+        if (verifyRes.success) {
+          alert(uz ? "Xaridlar muvaffaqiyatli tiklandi!" : "Purchases restored successfully!");
+          onClose();
+        }
+        return;
+      }
+
+      const { customerInfo } = await Purchases.restorePurchases();
+      const entitlements = customerInfo.entitlements.active;
+      if (Object.keys(entitlements).length > 0) {
+        const ent = Object.values(entitlements)[0];
+        const verifyRes = await activatePremium(ent.transactionIdentifier || "restore_token", ent.productIdentifier);
+        if (verifyRes.success) {
+          alert(uz ? "Xaridlar muvaffaqiyatli tiklandi!" : "Purchases restored successfully!");
+          onClose();
+        } else {
+          alert(uz ? "Xaridni tasdiqlashda xatolik: " + verifyRes.message : "Verification error: " + verifyRes.message);
+        }
+      } else {
+        alert(uz ? "Faol premium xaridlar topilmadi." : "No active premium purchases found.");
+      }
+    } catch (e) {
+      console.error("Restore Purchases Error:", e);
+      alert(uz ? "Xaridlarni tiklashda xatolik: " + e.message : "Error restoring purchases: " + e.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,7 +243,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
     return null;
   };
 
-  const handlePaySubmit = (e) => {
+  const handlePaySubmit = async (e) => {
     e.preventDefault();
     if (payMethod === "card" && cardNumber.replace(/\s/g, "").length < 16) return;
     if ((payMethod === "click" || payMethod === "payme") && phoneNumber.length < 9) return;
@@ -131,14 +251,24 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
     buzz(15);
     setIsLoading(true);
 
-    // To'lovni simulyatsiya qilish (1.5 soniya)
-    setTimeout(() => {
-      setIsLoading(false);
-      setCheckoutStep("success");
-      if (typeof fireConfetti === "function") {
-        fireConfetti();
+    try {
+      const mockToken = `web_sandbox_token_${payMethod}_${Date.now()}`;
+      const verifyRes = await activatePremium(mockToken, activeTier);
+      
+      if (verifyRes.success) {
+        setCheckoutStep("success");
+        if (typeof fireConfetti === "function") {
+          fireConfetti();
+        }
+      } else {
+        alert(uz ? "Xaridni tasdiqlashda xatolik yuz berdi" : "Error verifying purchase");
       }
-    }, 1500);
+    } catch (err) {
+      console.error(err);
+      alert(uz ? "To'lovda xatolik: " + err.message : "Payment error: " + err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSuccessDone = () => {
@@ -254,16 +384,29 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
 
           {/* ═══ 6. Action Button ═══ */}
           {!isPremium ? (
-            <PremiumButton th={th} onClick={() => { buzz(10); setCheckoutStep("checkout"); }} style={{ marginBottom: SPACE.s2 }}>
-              {PIco.gem("#fff", 18)}{uz ? `Davom etish: ${TIERS[activeTier].price}` : `Continue: ${TIERS[activeTier].price}`}
+            <PremiumButton th={th} onClick={() => {
+              buzz(10);
+              if (Capacitor.isNativePlatform()) {
+                handlePurchaseClick();
+              } else {
+                setCheckoutStep("checkout");
+              }
+            }} style={{ marginBottom: SPACE.s2 }}>
+              {PIco.gem("#fff", 18)}
+              {isLoading 
+                ? (uz ? "Yuklanmoqda..." : "Loading...") 
+                : (uz ? `Davom etish: ${TIERS[activeTier].price}` : `Continue: ${TIERS[activeTier].price}`)}
             </PremiumButton>
           ) : (
             <PrimaryButton th={th} onClick={onClose} style={{ marginBottom: SPACE.s4 }}>{uz ? "Yopish" : "Close"}</PrimaryButton>
           )}
 
           {!isPremium && (
-            <div style={{ textAlign: "center" }}>
-              <GhostButton th={th} onClick={onClose} style={{ width: "auto", margin: "0 auto " + SPACE.s4 + "px", border: "none" }}>{uz ? "Keyinroq" : "Later"}</GhostButton>
+            <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
+              <GhostButton th={th} onClick={onClose} style={{ width: "auto", margin: "0 auto", border: "none" }}>{uz ? "Keyinroq" : "Later"}</GhostButton>
+              <GhostButton th={th} onClick={handleRestorePurchases} style={{ width: "auto", margin: "0 auto " + SPACE.s4 + "px", fontSize: 11, border: "none", opacity: 0.7 }}>
+                {uz ? "Sotib olinganlarni tiklash (Restore Purchases)" : "Restore Purchases"}
+              </GhostButton>
             </div>
           )}
         </div>
