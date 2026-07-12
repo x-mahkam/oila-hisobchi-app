@@ -21,11 +21,40 @@ exports.verifyPurchase = functions.https.onCall(async (data, context) => {
     );
   }
 
-  const { purchaseToken, productId, oilaId, packageName } = data;
-  if (!purchaseToken || !productId || !oilaId) {
+  const { purchaseToken, productId, packageName } = data;
+  if (!purchaseToken || !productId) {
     throw new functions.https.HttpsError(
       "invalid-argument",
-      "Xaridni tekshirish uchun purchaseToken, productId va oilaId talab qilinadi."
+      "Xaridni tekshirish uchun purchaseToken va productId talab qilinadi."
+    );
+  }
+
+  // Chaqiruvchining o'z profilidan server tomonda aniqlaymiz
+  const userDocRef = db.collection("appdata").doc(safeKey("user_" + context.auth.uid));
+  const userDoc = await userDocRef.get();
+
+  if (!userDoc.exists) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Foydalanuvchi profili topilmadi."
+    );
+  }
+
+  const userData = userDoc.data()?.v || {};
+  const oilaId = userData.oilaId;
+  const rol = userData.rol;
+
+  if (!oilaId) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "Foydalanuvchi profilida oilaId topilmadi."
+    );
+  }
+
+  if (rol !== "bosh") {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Faqat oila boshlig'i premium xaridini tasdiqlay oladi."
     );
   }
 
@@ -33,17 +62,25 @@ exports.verifyPurchase = functions.https.onCall(async (data, context) => {
 
   // Google Play Service Account JSON kalitini tekshirish
   const saKeyJson = process.env.GOOGLE_PLAY_SERVICE_ACCOUNT;
+  const isEmulator = process.env.FUNCTIONS_EMULATOR === "true";
+
   if (!saKeyJson) {
-    // Agar konfiguratsiya hali o'rnatilmagan bo'lsa (BU QADAMNI FOYDALANUVCHI QO'LDA BAJARISHI KERAK)
-    console.warn("GOOGLE_PLAY_SERVICE_ACCOUNT muhit o'zgaruvchisi topilmadi. Sandbox rejimida xarid faollashtirilmoqda.");
-    
-    // Sandbox rejimida premium maqomini faollashtirish
-    await enablePremiumForOila(oilaId, productId, "sandbox_token", Date.now() + 365 * 24 * 60 * 60 * 1000);
-    return {
-      success: true,
-      sandbox: true,
-      message: "Sandbox rejimida faollashtirildi. Real to'lov uchun service account JSON qo'shing."
-    };
+    if (isEmulator) {
+      console.warn("[EMULATOR ONLY] GOOGLE_PLAY_SERVICE_ACCOUNT muhit o'zgaruvchisi topilmadi. Sandbox rejimida xarid faollashtirilmoqda.");
+      
+      // Sandbox rejimida premium maqomini faollashtirish
+      await enablePremiumForOila(oilaId, productId, "sandbox_token", Date.now() + 365 * 24 * 60 * 60 * 1000);
+      return {
+        success: true,
+        sandbox: true,
+        message: "Sandbox rejimida faollashtirildi. Real to'lov uchun service account JSON qo'shing."
+      };
+    }
+
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "To'lov tizimi hali sozlanmagan (GOOGLE_PLAY_SERVICE_ACCOUNT yo'q). Administratorga murojaat qiling."
+    );
   }
 
   try {

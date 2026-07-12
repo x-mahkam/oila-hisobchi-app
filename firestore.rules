@@ -61,16 +61,6 @@ service cloud.firestore {
     function docIsMySessKid(id) {
       return mySessKid() != 'NONE' && id.matches('.*_' + mySessKid());
     }
-    // Global bolalar reytingi (liderbord) — barcha autentifikatsiyalangan
-    //  foydalanuvchilar O'QIYDI (ommaviy, maxfiy moliyaviy tafsilotsiz: taxallus + ball).
-    //  kb_<kidId> hujjatlari `c: "kb"` kanalida; eski yagona `kids_board` blobi ham.
-    function isKidsBoardChannel(res) {
-      return res != null && ('c' in res.data) && res.data.c == 'kb';
-    }
-    function isKidsBoardDoc(id) {
-      return id == (DB() + 'kids_board') || id.matches(DB() + 'kb_.*');
-    }
-
     // Hujjat docId'sida mening oilaId'im bormi? (masalan maq_<oila>, x_<oila>_<uid>)
     //  Bu get()-ning ichma-ich .v.oilaId muammosini chetlab o'tuvchi bardoshli usul:
     //  docId ichida "_<myOila>" ketma-ketligi bo'lsa — mening oilamniki.
@@ -133,8 +123,6 @@ service cloud.firestore {
                   || (signedIn() && isMine())
                   || (signedIn() && isMyKidDoc(docId))
                   || (signedIn() && docIsMySessKid(docId))
-                  || (signedIn() && isKidsBoardDoc(docId))
-                  || (signedIn() && isKidsBoardChannel(resource))
                   || (signedIn() && mineByUser(resource))
                   || (signedIn() && mineByOila(resource))
                   || (signedIn() && docHasMyOila(docId))
