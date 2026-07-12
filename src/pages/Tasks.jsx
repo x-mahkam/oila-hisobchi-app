@@ -14,7 +14,6 @@ import {
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, CHART, PREMIUM } from "../utils/tokens.js";
 import { Ico } from "../utils/icons.jsx";
 import { f } from "../utils/formatters.js";
-import KidsLeaderboard from "../components/KidsLeaderboard.jsx";
 import { db } from "../firebase.js";
 import { recommendTasks, getKidAge } from "../utils/parenting.js";
 import { canAssignTask, canDeleteTask } from "../utils/permissions.js";
@@ -612,9 +611,6 @@ export default function TasksPage({
           ))}
         </AppCard>
       )}
-
-      {/* ── Global liderbord: ilovadagi barcha bolalar (Haftalik/Oylik/Butun davr) ── */}
-      <KidsLeaderboard th={th} lg={lg} user={user} />
 
       {/* ── Vazifalar ro'yxati ── */}
       <SectionHeader th={th}>{lg === "uz" ? "Vazifalar" : "Tasks"}</SectionHeader>

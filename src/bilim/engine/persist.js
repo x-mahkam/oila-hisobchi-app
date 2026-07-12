@@ -22,7 +22,50 @@ export const addCoins = async (uid, earned) => {
 };
 
 /** Bugungi sana YYYY-MM-DD. */
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+};
+
+export const calculateDailyStreak = (sessions) => {
+  if (!Array.isArray(sessions) || sessions.length === 0) return 0;
+  const dates = Array.from(new Set(sessions.filter(s => s && s.date).map(s => s.date))).sort().reverse();
+  if (dates.length === 0) return 0;
+
+  const d = new Date();
+  const todayStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  
+  const y = new Date();
+  y.setDate(y.getDate() - 1);
+  const yesterdayStr = `${y.getFullYear()}-${String(y.getMonth()+1).padStart(2,"0")}-${String(y.getDate()).padStart(2,"0")}`;
+
+  const latestDate = dates[0];
+  if (latestDate !== todayStr && latestDate !== yesterdayStr) {
+    return 0;
+  }
+
+  let streak = 1;
+  const parseDateStr = (str) => {
+    const parts = str.split('-');
+    return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  };
+
+  let current = parseDateStr(latestDate);
+
+  for (let i = 1; i < dates.length; i++) {
+    const prevDate = parseDateStr(dates[i]);
+    const diffTime = Math.abs(current - prevDate);
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      streak++;
+      current = prevDate;
+    } else if (diffDays > 1) {
+      break;
+    }
+  }
+  return streak;
+};
 
 /**
  * Sessiya natijasini log qilish (parent report uchun).
@@ -34,6 +77,11 @@ export const logGameSession = async (uid, record) => {
     const item = { id: Date.now(), date: today(), ts: Date.now(), ...record };
     const next = [item, ...(Array.isArray(cur) ? cur : [])].slice(0, 100);
     await db.s("bilim_games_" + uid, next);
+    
+    // Save streak
+    const streak = calculateDailyStreak(next);
+    await db.s("bilim_streak_" + uid, streak);
+    
     return item;
   } catch (e) { return null; }
 };
@@ -51,3 +99,30 @@ export const readSessions = async (uid) => {
   try { const v = await db.g("bilim_games_" + uid); return Array.isArray(v) ? v : []; }
   catch (e) { return []; }
 };
+
+/** Level progress o'qish (bilim_levels_<uid>). */
+export const readLevelProgress = async (uid) => {
+  try {
+    const v = await db.g("bilim_levels_" + uid);
+    return v || {};
+  } catch (e) {
+    return {};
+  }
+};
+
+/** Level progress saqlash. */
+export const saveLevelProgress = async (uid, gameId, levelId, stars) => {
+  try {
+    const cur = await readLevelProgress(uid);
+    if (!cur[gameId]) cur[gameId] = {};
+    const prevStars = cur[gameId][levelId]?.stars || 0;
+    if (stars > prevStars) {
+      cur[gameId][levelId] = { stars, ts: Date.now() };
+      await db.s("bilim_levels_" + uid, cur);
+    }
+    return cur;
+  } catch (e) {
+    return {};
+  }
+};
+

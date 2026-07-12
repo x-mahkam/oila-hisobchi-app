@@ -64,7 +64,7 @@ export function deriveLearningStats(sessions = []) {
 export const BilimHero = memo(function BilimHero({
   th, lg, name, photo, level, rankLabel, rankColor,
   coins, xp, xpPct, xpToNext, maxLevel, todayMin, todayGames, streak,
-  onContinue, onProfile,
+  onProfile,
 }) {
   const uz = lg === "uz";
   const subtitle = uz ? "Farzandingiz o'ynab bilim oladi"
@@ -120,12 +120,6 @@ export const BilimHero = memo(function BilimHero({
             {DI.fire("#fff", 15)}<span>{streak} {uz ? "kun ketma-ket o'qish" : lg === "ru" ? "дней подряд" : "day streak"}</span>
           </div>
         )}
-
-        {/* Continue CTA */}
-        <PrimaryButton th={th} onClick={onContinue}
-          style={{ marginTop: SPACE.s3, marginBottom: 0, background: "#fff", color: th.ac, boxShadow: SHADOW.e0 }}>
-          {DI.play(th.ac, 15)}{uz ? "Davom ettirish" : lg === "ru" ? "Продолжить" : "Continue"}
-        </PrimaryButton>
       </div>
     </div>
   );
@@ -272,26 +266,6 @@ export const AiTip = memo(function AiTip({ th, lg, tip, weakTip }) {
 });
 
 // ─────────────────────────────────────────────────────────────
-//  6) BARAKA BOG'I — kichik cross-link (Hero bilan raqobatlashmaydi)
-// ─────────────────────────────────────────────────────────────
-export const GardenLink = memo(function GardenLink({ th, lg, level, wateredToday, onOpen }) {
-  const uz = lg === "uz";
-  return (
-    <button className="ui-press" onClick={onOpen}
-      style={{ width: "100%", background: "linear-gradient(135deg," + th.gr + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.gr + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3, fontFamily: "inherit", boxSizing: "border-box" }}>
-      <span style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.m, background: th.gr + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{DI.leaf(th.gr, 26)}</span>
-      <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-        <span style={{ display: "block", ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1 }}>{uz ? "Baraka Bog'i" : lg === "ru" ? "Сад Бараки" : "Baraka Garden"}</span>
-        <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, marginTop: 1, fontWeight: 700, color: wateredToday ? th.gr : th.am }}>
-          {(uz ? "Bog' darajasi " : lg === "ru" ? "Уровень " : "Level ") + (level || 0) + " · " + (wateredToday ? (uz ? "sug'orilgan" : lg === "ru" ? "полит" : "watered") : (uz ? "sug'orish kerak" : lg === "ru" ? "полить" : "needs water"))}
-        </span>
-      </span>
-      {DI.chev(th.gr, 16)}
-    </button>
-  );
-});
-
-// ─────────────────────────────────────────────────────────────
 //  7) BILIM BOZORI (MARKET) — Do'kon/mukofotlar havolasi
 // ─────────────────────────────────────────────────────────────
 export const MarketLink = memo(function MarketLink({ th, lg, onOpen }) {
@@ -322,9 +296,9 @@ export const MarketLink = memo(function MarketLink({ th, lg, onOpen }) {
 const DIFF_ORDER = { easy: 0, medium: 1, hard: 2 };
 
 export const BilimDashboard = memo(function BilimDashboard({
-  th, lg, name, photo, coins = 0, xp = 0, streak = 0, sessions = [], learnedWords = 0, gardenData = {},
+  th, lg, name, photo, coins = 0, xp = 0, streak = 0, sessions = [], learnedWords = 0,
   level, rankLabel, rankColor, xpPct, xpToNext, maxLevel,
-  openGame, openCat, onProfile, onGarden, onBack, onMarket,
+  openGame, openCat, onProfile, onBack, onMarket,
 }) {
   const stats = useMemo(() => deriveLearningStats(sessions), [sessions]);
   const analysis = useMemo(() => analyzeLearning(sessions, lg, name, 3650), [sessions, lg, name]);
@@ -349,19 +323,13 @@ export const BilimDashboard = memo(function BilimDashboard({
   const contGame = useMemo(() => lastGame || GAMES.find(isAvailable) || null, [lastGame]);
   const contCat = contGame ? catById(contGame.category) : null;
 
-  const onContinue = useCallback(() => { if (contGame && openGame) openGame(contGame); }, [contGame, openGame]);
-  const goGarden = useCallback(() => { const fn = onGarden || onBack; if (fn) fn(); }, [onGarden, onBack]);
-
-  const today = new Date().toISOString().slice(0, 10);
-  const wateredToday = !!(gardenData && gardenData.watered === today);
-
   return (
     <>
       <BilimHero th={th} lg={lg} name={name} photo={photo}
         level={level} rankLabel={rankLabel} rankColor={rankColor}
         coins={coins} xp={xp} xpPct={xpPct} xpToNext={xpToNext} maxLevel={maxLevel}
         todayMin={stats.today.minutes} todayGames={stats.today.games} streak={streak}
-        onContinue={onContinue} onProfile={onProfile} />
+        onProfile={onProfile} />
 
       <MarketLink th={th} lg={lg} onOpen={onMarket} />
 
@@ -372,8 +340,6 @@ export const BilimDashboard = memo(function BilimDashboard({
       <WeeklyProgress th={th} lg={lg} stats={stats} />
 
       <AiTip th={th} lg={lg} tip={analysis.tip} weakTip={analysis.weakTip} />
-
-      <GardenLink th={th} lg={lg} level={gardenData.level} wateredToday={wateredToday} onOpen={goGarden} />
     </>
   );
 });

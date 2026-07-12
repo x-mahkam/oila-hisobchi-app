@@ -6,10 +6,10 @@
 //   • perfect (barchasi to'g'ri): +50 bonus
 // ═══════════════════════════════════════════════════════════
 export const DEFAULT_SCORING = {
-  perCorrect: 10,
+  perCorrect: 4,
   comboEvery: 5,   // har 5 ketma-ketlikda
-  comboBonus: 20,
-  perfectBonus: 50,
+  comboBonus: 5,
+  perfectBonus: 10,
 };
 
 export const initScore = () => ({

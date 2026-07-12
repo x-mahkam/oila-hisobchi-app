@@ -1,16 +1,14 @@
 // ═══════════════════════════════════════════════════════════
-//  ADDITION GAME WITH DYNAMIC LEVEL MAP & AUDIO SYNTHESIS
+//  DIVISION GAME WITH DYNAMIC LEVEL MAP & AUDIO SYNTHESIS
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE, MOTION } from "../../utils/tokens.js";
 import { useGameEngine } from "../engine/useGameEngine.js";
-import { additionGenerator } from "./generators/addition.js";
-import { translateMathString } from "../../utils/formatters.js";
+import { divisionGenerator } from "./generators/division.js";
 import { addCoins, logGameSession, bestForGame, readSessions, readCoins, readLevelProgress, saveLevelProgress } from "../engine/persist.js";
 import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
 import { DIFF, rewardOf, tierFor, medalSvg } from "../registry.jsx";
-import { starsFor } from "./levels/mathLevels.js";
 import { GAME_LEVELS } from "./levels.js";
 import { playSound, isSoundEnabled, setSoundEnabled } from "../engine/sound.js";
 
@@ -92,42 +90,20 @@ const soundIco = (enabled, color, s = 18) => (
   )
 );
 
-const OptButton = memo(function OptButton({ th, value, state, onPick, disabled, lg = "uz" }) {
+const OptButton = memo(function OptButton({ th, value, state, onPick, disabled }) {
   const bg = state === "correct" ? th.gr : state === "wrong" ? th.rd : th.sur;
   const bd = state === "correct" ? th.gr : state === "wrong" ? th.rd : th.bor;
   const col = state === "correct" || state === "wrong" ? "#fff" : th.t1;
   const cls = state === "correct" ? "bg-pulse" : state === "wrong" ? "bg-shake" : "";
-  const displayVal = translateMathString(value, lg);
   return (
     <button className={"ui-press " + cls} onClick={() => onPick(value)} disabled={disabled}
-      style={{ 
-        background: bg, 
-        border: "2px solid " + bd, 
-        borderRadius: RADIUS.m, 
-        padding: SPACE.s4 + "px", 
-        cursor: disabled ? "default" : "pointer", 
-        fontFamily: "inherit", 
-        opacity: state === "muted" ? 0.5 : 1, 
-        transition: "background " + MOTION.fast + ", border-color " + MOTION.fast, 
-        boxShadow: SHADOW.e0,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "72px"
-      }}>
-      <span style={{ 
-        fontSize: typeof displayVal === "string" && displayVal.length > 10 ? 15 : (typeof displayVal === "string" && displayVal.length > 7 ? 18 : 24), 
-        fontWeight: 800, 
-        color: col, 
-        fontVariantNumeric: "tabular-nums", 
-        lineHeight: 1.2,
-        wordBreak: "break-word"
-      }}>{displayVal}</span>
+      style={{ background: bg, border: "2px solid " + bd, borderRadius: RADIUS.m, padding: SPACE.s4 + "px", cursor: disabled ? "default" : "pointer", fontFamily: "inherit", opacity: state === "muted" ? 0.5 : 1, transition: "background " + MOTION.fast + ", border-color " + MOTION.fast, boxShadow: SHADOW.e0 }}>
+      <span style={{ fontSize: 26, fontWeight: 800, color: col, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{value}</span>
     </button>
   );
 });
 
-export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/addition", name, onBack, level }) {
+export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/division", name, onBack }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
   const uz = lg === "uz";
   const kidName = name || (user && (user.ism || "")) || "";
@@ -138,18 +114,13 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
   const [soundEnabled, setSoundEnabledState] = useState(isSoundEnabled());
   const [totalCoins, setTotalCoins] = useState(0);
 
-  const [consecutiveErrors, setConsecutiveErrors] = useState(0);
-  const [showHintOverlay, setShowHintOverlay] = useState(false);
-
-  const activeLevel = level || selectedLevel;
-
   // Dynamic config for engine based on level
-  const [lvlQuestionCount, setLvlQuestionCount] = useState(level ? level.questionCount : 5);
-  const [lvlStartDifficulty, setLvlStartDifficulty] = useState(level ? level.difficulty : "easy");
+  const [lvlQuestionCount, setLvlQuestionCount] = useState(5);
+  const [lvlStartDifficulty, setLvlStartDifficulty] = useState("easy");
 
   const eng = useGameEngine({
     questionCount: lvlQuestionCount,
-    generator: additionGenerator,
+    generator: divisionGenerator,
     startDifficulty: lvlStartDifficulty,
     name: kidName,
     lg,
@@ -176,17 +147,11 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
   useEffect(() => {
     if (user?.id) {
       readLevelProgress(user.id).then(res => {
-        setUserLevels(res["math"] || {});
+        setUserLevels(res[gameId] || {});
       });
       readCoins(user.id).then(setTotalCoins);
     }
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (level) {
-      startLevel(level);
-    }
-  }, [level]);
+  }, [user?.id, gameId]);
 
   // Monitor difficulty increase
   useEffect(() => {
@@ -253,114 +218,137 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
       const finalCoins = Math.max(1, Math.round(eng.result.coins * multiplier));
       eng.result.coins = finalCoins; 
       
-      const updatedCoins = await addCoins(user.id, finalCoins);
-      setTotalCoins(updatedCoins);
-      const afterXp = await addXp(user.id, eng.result.xp || 0);
-      const isRec = finalCoins > prevBest;
-      const lvlUp = didLevelUp(beforeXp, afterXp);
+      let isNewHigh = false;
+      if (eng.result.stars > 0) {
+        if (!prevBest || eng.result.stars > prevBest.stars) {
+          isNewHigh = true;
+        }
+      }
+      setRecord(isNewHigh);
 
-      // Determine level stars
-      let stars = 0;
-      if (activeLevel) {
-        stars = starsFor(eng.result.pct, activeLevel.passPct);
+      // Save level stars to progress map
+      if (selectedLevel) {
+        const curProgress = userLevels[selectedLevel.id] || { stars: 0 };
+        if (eng.result.stars > curProgress.stars) {
+          const updated = {
+            ...userLevels,
+            [selectedLevel.id]: {
+              stars: eng.result.stars,
+              date: new Date().toISOString(),
+              score: eng.result.score
+            }
+          };
+          await saveLevelProgress(user.id, gameId, updated);
+          setUserLevels(updated);
+        }
       }
 
-      // Play victory sound
-      if (stars > 0) {
-        playSound.victory();
-        // Save level progress to DB
-        const nextLevels = await saveLevelProgress(user.id, "math", activeLevel.id, stars);
-        setUserLevels(nextLevels["math"] || {});
-      } else {
-        playSound.wrong();
-      }
-
-      await logGameSession(user.id, {
-        gameId, subject: "math", correct: eng.result.correct, total: eng.result.total, pct: eng.result.pct,
-        seconds: eng.result.seconds, maxCombo: eng.result.maxCombo, coins: finalCoins,
-        xp: eng.result.xp || 0, difficulty: eng.result.difficulty, newRecord: isRec,
-        levelId: selectedLevel?.id || 1, starsEarned: stars,
+      await logGameSession(user.id, gameId, {
+        coins: eng.result.coins,
+        xp: eng.result.xp,
+        score: eng.result.score,
+        correct: eng.result.correct,
+        total: eng.result.total,
+        stars: eng.result.stars,
+        difficulty: eng.difficulty,
+        levelId: selectedLevel?.id || 1,
       });
 
-      setRecord(isRec);
-      setLeveledUp(lvlUp);
-      setNewLevel(levelFor(afterXp).level);
-      setSaved(true);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eng.phase, eng.result]);
-
-  const spawnFly = useCallback((amount) => {
-    const id = Date.now() + Math.random();
-    setFlies(p => [...p, { id, amount }]);
-    setTimeout(() => setFlies(p => p.filter(f => f.id !== id)), 1000);
-  }, []);
-
-  const onPick = useCallback((value) => {
-    if (picked != null) return;
-    setPicked(value);
-    eng.answer(value, (correct, gained) => {
-      setFeed(correct ? "correct" : "wrong");
-      if (correct) {
-        playSound.correct();
-        setConsecutiveErrors(0);
-        setShowHintOverlay(false);
-        if (gained > 0) spawnFly(gained);
-      } else {
-        playSound.wrong();
-        setConsecutiveErrors(prev => {
-          const next = prev + 1;
-          if (next >= 2) {
-            setShowHintOverlay(true);
-          }
-          return next;
-        });
+      if (eng.result.coins > 0) {
+        await addCoins(user.id, eng.result.coins);
       }
-    });
-  }, [picked, eng, spawnFly]);
+      if (eng.result.xp > 0) {
+        await addXp(user.id, eng.result.xp);
+        const afterXp = beforeXp + eng.result.xp;
+        const oldLvl = levelFor(beforeXp);
+        const newLvl = levelFor(afterXp);
+        if (newLvl > oldLvl) {
+          setLeveledUp(true);
+          setNewLevel(newLvl);
+          playSound.levelUp();
+        }
+      }
 
-  const optState = (opt) => {
-    if (picked == null || !eng.question) return null;
-    if (opt === eng.question.answer) return "correct";
-    if (opt === picked) return "wrong";
-    return "muted";
+      setSaved(true);
+      if (eng.result.stars >= 1) playSound.win();
+      else playSound.lose();
+    })();
+  }, [eng.phase, eng.result, user?.id, gameId, selectedLevel, userLevels]);
+
+  const handlePick = (val) => {
+    if (picked !== null) return;
+    setPicked(val);
+    const isCorrect = eng.submitAnswer(val);
+    setFeed(isCorrect ? "correct" : "wrong");
+
+    if (isCorrect) {
+      playSound.correct();
+      // Flying coin effects
+      const arr = [];
+      for (let i = 0; i < 4; i++) {
+        arr.push({ id: Math.random(), left: 40 + Math.random() * 20 });
+      }
+      setFlies(arr);
+      setTimeout(() => setFlies([]), 1000);
+    } else {
+      playSound.wrong();
+    }
   };
 
   const toggleSound = () => {
-    const nextVal = !soundEnabled;
-    setSoundEnabled(nextVal);
-    setSoundEnabledState(nextVal);
+    const nv = !soundEnabled;
+    setSoundEnabled(nv);
+    setSoundEnabledState(nv);
   };
 
-  const startLevel = (lvl) => {
-    savingRef.current = false;
-    setSaved(false);
+  // Levels list from configuration
+  const levels = GAME_LEVELS[gameId] || [];
+  
+  // Find highest unlocked level
+  let highestUnlockedLvlId = 1;
+  levels.forEach(lvl => {
+    if (lvl.id === 1) return;
+    const prevLvl = levels.find(l => l.id === lvl.id - 1);
+    const prevProgress = userLevels[prevLvl?.id];
+    if (prevProgress && prevProgress.stars >= 1) {
+      highestUnlockedLvlId = lvl.id;
+    }
+  });
+
+  const startSelectedLevel = (lvl) => {
+    setSelectedLevel(lvl);
     setLvlQuestionCount(lvl.questionCount);
     setLvlStartDifficulty(lvl.difficulty);
-    // Start engine using timeout to allow state synchronization
-    setTimeout(() => {
-      eng.start();
-    }, 100);
+    setSaved(false);
+    setRecord(false);
+    setLeveledUp(false);
+    savingRef.current = false;
+    eng.start(lvl.questionCount, lvl.difficulty, lvl.passThreshold);
   };
 
-  const levels = GAME_LEVELS[gameId] || GAME_LEVELS["math/addition"];
-
-  // ═══ INTRO / MAP ═══
+  // Render Map phase
   if (eng.phase === "intro") {
-    // Find the current active/highest unlocked level to play next
-    const highestUnlockedLvlId = levels.reduce((max, lvl) => {
-      const isUnlocked = lvl.id === 1 || (userLevels[lvl.id - 1] && userLevels[lvl.id - 1].stars >= 1);
-      return isUnlocked ? Math.max(max, lvl.id) : max;
-    }, 1);
-
     return (
-      <div style={{ paddingBottom: SPACE.s8 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <PageHeader th={th} title={uz ? "Qo'shish xaritasi" : lg === "ru" ? "Карта сложения" : "Addition Map"} onBack={onBack} />
-          <button className="ui-press" onClick={toggleSound}
-            style={{ border: "none", background: "rgba(255,255,255,0.06)", borderRadius: RADIUS.full, width: 38, height: 38, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            {soundIco(soundEnabled, th.t2, 20)}
+      <div style={{ maxWidth: 600, margin: "0 auto", padding: `${SPACE.s4}px ${SPACE.s4}px ${SPACE.s12}px ${SPACE.s4}px`, minHeight: "100vh" }}>
+        {/* Top Navbar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s5 }}>
+          <button className="ui-press" onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: th.t2, fontSize: 16, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            {uz ? "Orqaga" : "Назад"}
           </button>
+
+          <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
+            {/* Audio Toggle */}
+            <button className="ui-press" onClick={toggleSound} style={{ background: th.sur, border: `2.5px solid ${th.bor}`, width: 42, height: 42, borderRadius: RADIUS.m, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+              {soundIco(soundEnabled, th.t2, 20)}
+            </button>
+
+            {/* Kid's coins bag */}
+            <div style={{ display: "flex", alignItems: "center", gap: 6, background: th.sur, border: `2.5px solid ${th.bor}`, padding: "6px 14px", borderRadius: RADIUS.full, boxShadow: SHADOW.e0 }}>
+              {coinIco(PREMIUM.gold, 22)}
+              <span style={{ fontSize: 18, fontWeight: 900, color: PREMIUM.gold, fontVariantNumeric: "tabular-nums" }}>{totalCoins}</span>
+            </div>
+          </div>
         </div>
 
         {/* Level Path Way Card wrapper with kids design & math-themed background */}
@@ -384,19 +372,19 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
           <div style={{ position: "absolute", top: "65%", right: "-10%", width: 170, height: 170, background: "rgba(168, 85, 247, 0.22)", filter: "blur(50px)", borderRadius: "50%", pointerEvents: "none" }} />
           <div style={{ position: "absolute", top: "85%", left: "-5%", width: 160, height: 160, background: "rgba(234, 179, 8, 0.22)", filter: "blur(45px)", borderRadius: "50%", pointerEvents: "none" }} />
 
-          {/* Floating animated math symbols with vivid colors and subtle shadows */}
+          {/* Floating animated division symbols with vivid colors and subtle shadows */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-            <div className="float-symbol-1" style={{ position: "absolute", top: "4%", left: "8%", fontSize: "34px", fontWeight: 900, color: "#3b82f6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(59,130,246,0.3))" }}>+</div>
+            <div className="float-symbol-1" style={{ position: "absolute", top: "4%", left: "8%", fontSize: "34px", fontWeight: 900, color: "#06b6d4", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(6,182,212,0.3))" }}>÷</div>
             <div className="float-symbol-2" style={{ position: "absolute", top: "12%", right: "12%", fontSize: "38px", fontWeight: 900, color: "#10b981", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(16,185,129,0.3))" }}>=</div>
-            <div className="float-symbol-3" style={{ position: "absolute", top: "20%", left: "14%", fontSize: "32px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>1</div>
-            <div className="float-symbol-4" style={{ position: "absolute", top: "28%", right: "8%", fontSize: "42px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>+</div>
+            <div className="float-symbol-3" style={{ position: "absolute", top: "20%", left: "14%", fontSize: "32px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>5</div>
+            <div className="float-symbol-4" style={{ position: "absolute", top: "28%", right: "8%", fontSize: "42px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>÷</div>
             <div className="float-symbol-1" style={{ position: "absolute", top: "38%", left: "6%", fontSize: "36px", fontWeight: 900, color: "#8b5cf6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(139,92,246,0.3))" }}>3</div>
             <div className="float-symbol-2" style={{ position: "absolute", top: "48%", right: "14%", fontSize: "40px", fontWeight: 900, color: "#ef4444", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(239,68,68,0.3))" }}>?</div>
-            <div className="float-symbol-3" style={{ position: "absolute", top: "58%", left: "10%", fontSize: "40px", fontWeight: 900, color: "#06b6d4", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(6,182,212,0.3))" }}>5</div>
-            <div className="float-symbol-4" style={{ position: "absolute", top: "68%", right: "10%", fontSize: "34px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>+</div>
-            <div className="float-symbol-1" style={{ position: "absolute", top: "78%", left: "12%", fontSize: "38px", fontWeight: 900, color: "#10b981", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(16,185,129,0.3))" }}>8</div>
+            <div className="float-symbol-3" style={{ position: "absolute", top: "58%", left: "10%", fontSize: "40px", fontWeight: 900, color: "#06b6d4", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(6,182,212,0.3))" }}>2</div>
+            <div className="float-symbol-4" style={{ position: "absolute", top: "68%", right: "10%", fontSize: "34px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>÷</div>
+            <div className="float-symbol-1" style={{ position: "absolute", top: "78%", left: "12%", fontSize: "38px", fontWeight: 900, color: "#10b981", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(16,185,129,0.3))" }}>4</div>
             <div className="float-symbol-2" style={{ position: "absolute", top: "88%", right: "12%", fontSize: "38px", fontWeight: 900, color: "#3b82f6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(59,130,246,0.3))" }}>=</div>
-            <div className="float-symbol-3" style={{ position: "absolute", top: "95%", left: "15%", fontSize: "36px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>9</div>
+            <div className="float-symbol-3" style={{ position: "absolute", top: "95%", left: "15%", fontSize: "36px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>10</div>
           </div>
 
           {/* Map canvas container with custom serpentine path */}
@@ -404,11 +392,11 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
             {/* SVG serpentine connecting curve */}
             <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
               <defs>
-                <linearGradient id="additionTrackGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#3b82f6" />
+                <linearGradient id="divisionTrackGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#06b6d4" />
                   <stop offset="30%" stopColor="#10b981" />
                   <stop offset="60%" stopColor="#f59e0b" />
-                  <stop offset="100%" stopColor="#ef4444" />
+                  <stop offset="100%" stopColor="#8b5cf6" />
                 </linearGradient>
               </defs>
               
@@ -455,7 +443,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
                   return d;
                 })()}
                 fill="none"
-                stroke="url(#additionTrackGradient)"
+                stroke="url(#divisionTrackGradient)"
                 strokeWidth="10"
                 strokeLinecap="round"
               />
@@ -641,253 +629,191 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
               </div>
             </div>
 
-            <PrimaryButton th={th} onClick={() => startLevel(selectedLevel)}>
-              {uz ? "Bosqichni boshlash" : lg === "ru" ? "Начать уровень" : "Start Level"}
-            </PrimaryButton>
+            <PrimaryButton text={uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"} onClick={() => startSelectedLevel(selectedLevel)} />
           </div>
         )}
       </div>
     );
   }
 
-  // ═══ COUNTDOWN ═══
+  // Render Countdown state
   if (eng.phase === "countdown") {
     return (
-      <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div key={count} className="bg-pop" style={{ width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW.e2 }}>
-          <span style={{ fontSize: 72, fontWeight: 800, color: "#fff" }}>{count}</span>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", background: th.bg }}>
+        <div style={{ fontSize: 24, fontWeight: 900, color: th.t2, marginBottom: SPACE.s6, textTransform: "uppercase", letterSpacing: 1.5 }}>
+          {uz ? "Tayyormisiz?" : lg === "ru" ? "Готовы?" : "Are you ready?"}
         </div>
-        <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: SPACE.s6 }}>{uz ? "Tayyor bo'l!" : lg === "ru" ? "Приготовься!" : "Get ready!"}</div>
+        <div style={{ width: 140, height: 140, borderRadius: "50%", background: th.ac2, display: "flex", alignItems: "center", justifyContent: "center", border: `6px solid ${th.ac}`, boxShadow: `0 10px 30px ${th.ac}33` }}>
+          <span className="bg-pulse" style={{ fontSize: 72, fontWeight: 900, color: th.ac }}>{count}</span>
+        </div>
       </div>
     );
   }
 
-  // ═══ RESULT ═══
-  if (eng.phase === "result" && eng.result) {
-    const r = eng.result;
-    const mm = Math.floor(r.seconds / 60), ss = r.seconds % 60;
-    
-    // Check level passing stars
-    let finalStars = 0;
-    if (selectedLevel) {
-      if (r.pct >= selectedLevel.passThreshold) {
-        if (r.pct === 100) finalStars = 3;
-        else if (r.pct >= 80) finalStars = 2;
-        else finalStars = 1;
-      }
-    }
+  // Render Playing state
+  if (eng.phase === "play" && eng.question) {
+    const q = eng.question;
+    const isAnswered = picked !== null;
 
     return (
-      <div style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : lg === "ru" ? "Результат" : "Result"} onBack={() => { eng.setPhase("intro"); setSelectedLevel(null); }} />
-        
-        {/* Level Passed Banner / Stars Celebration */}
-        <div style={{ background: "linear-gradient(135deg," + (finalStars > 0 ? th.gr : th.rd) + "," + th.ac2 + ")", borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + SPACE.s4, textAlign: "center", marginBottom: SPACE.s3, boxShadow: SHADOW.e1(th.ac) }}>
-          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: SPACE.s2 }}>
-            {starIco(finalStars >= 1, 28)}
-            {starIco(finalStars >= 2, 28)}
-            {starIco(finalStars >= 3, 28)}
+      <div style={{ maxWidth: 500, margin: "0 auto", padding: SPACE.s4 }}>
+        {/* Play Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s4 }}>
+          <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>
+            {uz ? "Savol" : lg === "ru" ? "Вопрос" : "Question"} {eng.qIndex + 1} / {eng.totalQuestions}
           </div>
-          <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-            {finalStars > 0 ? (uz ? "Bosqichdan o'tdingiz!" : lg === "ru" ? "Уровень пройден!" : "Level Passed!") : (uz ? "Qayta urinib ko'ring!" : lg === "ru" ? "Попробуйте ещё раз!" : "Try Again!")}
-          </div>
-          <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>{r.correct}/{r.total} {uz ? "to'g'ri" : lg === "ru" ? "верно" : "correct"} ({r.pct}%)</div>
-          {record && <div style={{ marginTop: SPACE.s2 }}><Badge th={th} type="premium" icon={null}>{uz ? "YANGI REKORD" : lg === "ru" ? "РЕКОРД" : "NEW RECORD"}</Badge></div>}
-        </div>
-
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={r.correct} label={uz ? "To'g'ri" : lg === "ru" ? "Верно" : "Correct"} tone={th.gr} />
-          <StatCard th={th} value={r.wrong} label={uz ? "Xato" : lg === "ru" ? "Ошибки" : "Wrong"} tone={th.rd} />
-          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={uz ? "Vaqt" : lg === "ru" ? "Время" : "Time"} tone={th.ac} />
-          <StatCard th={th} value={"x" + r.maxCombo} label="Combo" tone={th.am} />
-        </div>
-
-        {/* Topilgan Coin Card */}
-        <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
-          {coinIco(PREMIUM.gold, 28)}
-          <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Topilgan coin" : lg === "ru" ? "Монеты" : "Coins earned"}</div>
-            <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.coins}</div>
-          </div>
-          {r.perfect && <Badge th={th} tone={PREMIUM.gold}>Perfect +{r.perfectBonus}</Badge>}
-        </AppCard>
-
-        {/* Dynamic Tier Progress Card */}
-        {(() => {
-          const { cur, next } = tierFor(totalCoins);
-          let tierPct = 100;
-          let progressText = "";
-          if (next) {
-            const base = cur ? cur.need : 0;
-            const diff = next.need - base;
-            tierPct = Math.min(100, Math.max(0, ((totalCoins - base) / diff) * 100));
-            progressText = uz 
-              ? `${next.need - totalCoins} coin keyingi darajaga (${next[lg] || next.uz})`
-              : lg === "ru"
-              ? `До следующего уровня (${next[lg] || next.uz}) осталось ${next.need - totalCoins} монет`
-              : `${next.need - totalCoins} coins to next level (${next[lg] || next.uz})`;
-          } else {
-            progressText = uz ? "Siz afsonaviy darajadasiz!" : lg === "ru" ? "Вы на легендарном уровне!" : "You are at the Legend level!";
-          }
-          const tierName = cur ? cur[lg] || cur.uz : (uz ? "Boshlang'ich" : lg === "ru" ? "Новичок" : "Novice");
-          const tierColor = cur ? cur.color : th.ac;
-          return (
-            <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, background: th.sur, border: "1px solid " + th.bor, marginBottom: SPACE.s2 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
-                {medalSvg(tierColor, 28)}
-                <div style={{ flex: 1 }}>
-                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>
-                    {uz ? "Sizning darajangiz" : lg === "ru" ? "Ваш уровень" : "Your Tier"}
-                  </div>
-                  <div style={{ ...TYPE.title, color: tierColor, fontSize: 18, fontWeight: 800 }}>
-                    {tierName} ({totalCoins} {uz ? "coin" : "coins"})
-                  </div>
-                </div>
-              </div>
-              <div>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 4 }}>
-                  {progressText}
-                </div>
-                <div style={{ height: 6, borderRadius: RADIUS.pill, background: th.bor, overflow: "hidden" }}>
-                  <div style={{ width: tierPct + "%", height: "100%", background: tierColor, borderRadius: RADIUS.pill }} />
-                </div>
-              </div>
-            </AppCard>
-          );
-        })()}
-
-        {/* XP Card */}
-        <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med, marginBottom: SPACE.s3 }}>
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
-          <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Tajriba (XP)" : lg === "ru" ? "Опыт (XP)" : "Experience (XP)"}</div>
-            <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.xp || 0}</div>
-          </div>
-          {leveledUp && newLevel && <Badge th={th} type="premium" icon={null}>{uz ? "LEVEL " : "LEVEL "}{newLevel}</Badge>}
-        </AppCard>
-
-        {/* AI verdict */}
-        <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, marginBottom: SPACE.s4 }}>
-          <div style={{ display: "flex", gap: SPACE.s2, alignItems: "flex-start" }}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 2a5 5 0 00-3 9c.6.5 1 1 1 2h4c0-1 .4-1.5 1-2a5 5 0 00-3-9z" stroke={th.ac} strokeWidth="1.4" fill={th.ac} fillOpacity="0.15"/><path d="M8 16h4M8.5 18h3" stroke={th.ac} strokeWidth="1.4" strokeLinecap="round"/></svg>
-            <div>
-              <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{r.ai.verdict}</div>
-              <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2 }}>{r.ai.tip}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Badge text={`${eng.difficulty.toUpperCase()}`} theme={eng.difficulty === "easy" ? "success" : eng.difficulty === "medium" ? "warning" : "danger"} />
+            <div style={{ display: "flex", alignItems: "center", gap: 4, background: th.sur, border: `1.5px solid ${th.bor}`, padding: "3px 10px", borderRadius: RADIUS.full }}>
+              {coinIco(PREMIUM.gold, 14)}
+              <span style={{ fontSize: 13, fontWeight: 800, color: PREMIUM.gold, fontVariantNumeric: "tabular-nums" }}>{eng.score}</span>
             </div>
           </div>
+        </div>
+
+        {/* Dynamic Progress Indicator */}
+        <div style={{ height: 10, background: th.bor, borderRadius: RADIUS.full, marginBottom: SPACE.s8, overflow: "hidden" }}>
+          <div style={{ width: `${((eng.qIndex) / eng.totalQuestions) * 100}%`, height: "100%", background: th.ac, borderRadius: RADIUS.full, transition: "width " + MOTION.normal }} />
+        </div>
+
+        {/* Question Board Card */}
+        <AppCard style={{ padding: `${SPACE.s4}px ${SPACE.s3}px`, textAlign: "center", marginBottom: SPACE.s4, background: th.sur, border: `2.5px solid ${isAnswered ? (feed === "correct" ? th.gr : th.rd) : th.bor}`, position: "relative" }}>
+          {/* Flying coin particles for positive actions */}
+          {flies.map(fl => (
+            <div key={fl.id} className="bg-fly" style={{ position: "absolute", bottom: "30%", left: `${fl.left}%`, zIndex: 5 }}>
+              {coinIco(PREMIUM.gold, 24)}
+            </div>
+          ))}
+
+          {/* Upgrade celebration layer */}
+          {showCelebration && (
+            <div className="bg-pop" style={{ position: "absolute", inset: 0, background: "rgba(16,185,129,0.92)", borderRadius: RADIUS.m, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
+              <div style={{ fontSize: 44, marginBottom: 4 }}>🚀</div>
+              <div style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>
+                {uz ? "QIYINCHILIK OSHDI!" : lg === "ru" ? "СЛОЖНОСТЬ ВЫРОСЛА!" : "LEVEL UP!"}
+              </div>
+            </div>
+          )}
+
+          <div style={{ fontSize: 15, color: th.t3, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: SPACE.s1 }}>
+            {uz ? "Misolni yeching" : lg === "ru" ? "Решите пример" : "Solve the equation"}
+          </div>
+          
+          {/* Math Equation Formula Displays */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12 }}>
+            <span style={{ fontSize: 44, fontWeight: 900, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{q.prompt}</span>
+          </div>
         </AppCard>
 
-        {activeLevel && (
-          <PrimaryButton th={th} onClick={() => startLevel(activeLevel)} style={{ marginTop: SPACE.s2 }}>
-            {uz ? "Qayta o'ynash" : lg === "ru" ? "Ещё раз" : "Play again"}
-          </PrimaryButton>
-        )}
-        <button className="ui-press" onClick={() => { if (level) onBack(); else { eng.setPhase("intro"); setSelectedLevel(null); } }} style={{ width: "100%", marginTop: SPACE.s2, background: "transparent", border: "none", color: th.t2, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{uz ? "Xaritaga qaytish" : lg === "ru" ? "Назад к карте" : "Back to Map"}</button>
+        {/* Options grid (2x2 layout) */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s4, marginBottom: SPACE.s8 }}>
+          {q.options.map(opt => {
+            let state = "idle";
+            if (isAnswered) {
+              if (opt === q.answer) state = "correct";
+              else if (picked === opt) state = "wrong";
+              else state = "muted";
+            }
+            return (
+              <OptButton key={opt} th={th} value={opt} state={state} onPick={handlePick} disabled={isAnswered} />
+            );
+          })}
+        </div>
+
+        {/* Action triggers */}
+        <div style={{ textAlign: "center" }}>
+          {isAnswered && (
+            <PrimaryButton 
+              text={eng.qIndex + 1 < eng.totalQuestions ? (uz ? "Keyingi savol ➜" : "Дальше ➜") : (uz ? "Natijani ko'rish 🏁" : "Результаты 🏁")} 
+              onClick={eng.nextQuestion} 
+              theme="primary"
+            />
+          )}
+        </div>
       </div>
     );
   }
 
-  // ═══ PLAY ═══
-  return (
-    <div style={{ minHeight: "70vh", display: "flex", flexDirection: "column" }}>
-      
-      {/* Celebration Toast */}
-      {showCelebration && (
-        <div className="bg-pulse" style={{
-          position: "fixed",
-          top: "20%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          zIndex: 100,
-          background: "linear-gradient(135deg," + th.gr + "," + th.ac + ")",
-          color: "#fff",
-          padding: "12px 24px",
-          borderRadius: RADIUS.pill,
-          boxShadow: SHADOW.e3,
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-          pointerEvents: "none"
-        }}>
-          <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8l1-5.5z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" fill="#fff" fillOpacity=".2"/></svg>
-          <span style={{ fontSize: 15, fontWeight: 800 }}>
-            {uz ? "Qiyinroq darajaga o'tdingiz!" : lg === "ru" ? "Уровень повышен!" : "Difficulty increased!"}
-          </span>
-        </div>
-      )}
+  // Render Result / Congratulations summary sheet
+  if (eng.phase === "result" && eng.result) {
+    const res = eng.result;
+    const passed = res.stars >= 1;
 
-      {/* Yuqori progress: Level questions */}
-      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, padding: SPACE.s2 + "px 0 " + SPACE.s4 }}>
-        <button className="ui-press" onClick={() => { if (level) onBack(); else { eng.setPhase("intro"); setSelectedLevel(null); } }} aria-label="back" style={{ background: "transparent", border: "none", cursor: "pointer", padding: SPACE.s1, flexShrink: 0 }}>
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M13 5l-6 6 6 6" stroke={th.t2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-        </button>
-        <div style={{ flex: 1, display: "flex", gap: 3 }}>
-          {Array.from({ length: eng.questionCount }).map((_, i) => (
-            <div key={i} style={{ flex: 1, height: 7, borderRadius: RADIUS.full, background: i < eng.qIndex ? th.gr : i === eng.qIndex ? th.ac : th.bor, transition: "background " + MOTION.fast }} />
-          ))}
-        </div>
-        <Badge th={th} tone={{ gr: th.gr, am: th.am, rd: th.rd }[DIFF[eng.difficulty]?.tone || "gr"]}>
-          {DIFF[eng.difficulty]?.[lg] || DIFF[eng.difficulty]?.uz}
-        </Badge>
-      </div>
-
-      {/* Coin + combo status */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s4 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, ...TYPE.subtitle, color: PREMIUM.gold, fontWeight: 800 }}>{coinIco(PREMIUM.gold, 18)}{eng.score.coins}</span>
-        {eng.score.combo >= 2 && <Badge th={th} type="warning">Combo x{eng.score.combo}</Badge>}
-      </div>
-
-      {/* Question Card */}
-      <div style={{ position: "relative", background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.l, padding: SPACE.s5 + "px " + SPACE.s4, textAlign: "center", marginBottom: SPACE.s4, boxShadow: SHADOW.e1(th.ac) }}>
-        <div style={{ fontSize: 26, fontWeight: 800, color: th.t1, fontVariantNumeric: "tabular-nums", letterSpacing: 0.5, wordBreak: "break-word" }}>
-          {eng.question ? translateMathString(eng.question.prompt, lg) : ""}
-        </div>
-        {/* Floating flying coins */}
-        {flies.map(fl => (
-          <span key={fl.id} className="bg-fly" style={{ position: "absolute", top: SPACE.s3, left: "50%", transform: "translateX(-50%)", display: "inline-flex", alignItems: "center", gap: 3, ...TYPE.subtitle, fontWeight: 800, color: PREMIUM.gold, pointerEvents: "none" }}>
-            {coinIco(PREMIUM.gold, 18)}+{fl.amount}
-          </span>
-        ))}
-      </div>
-
-      {/* Adaptive Hint Overlay */}
-      {showHintOverlay && (
-        <div className="bg-pop" style={{
-          position: "fixed",
-          bottom: 120,
-          left: 16,
-          right: 16,
-          background: "linear-gradient(135deg, " + th.ac + ", " + th.ac2 + ")",
-          border: "2px solid " + PREMIUM.gold,
-          borderRadius: RADIUS.l,
-          padding: SPACE.s4,
-          boxShadow: "0 10px 25px rgba(0,0,0,0.25)",
-          color: "#fff",
-          zIndex: 90
-        }}>
-          <div style={{ display: "flex", gap: SPACE.s3, alignItems: "flex-start" }}>
-            <div style={{ background: "rgba(255,255,255,0.2)", borderRadius: RADIUS.full, padding: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 16v-4M12 8h.01" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
-                {uz ? "Kichik yordam!" : lg === "ru" ? "Подсказка!" : "Quick Tip!"}
+    return (
+      <div style={{ maxWidth: 500, margin: "0 auto", padding: `${SPACE.s6}px ${SPACE.s4}px ${SPACE.s12}px ${SPACE.s4}px`, textAlign: "center" }}>
+        
+        {/* Level Up alert popup layer */}
+        {leveledUp && (
+          <div className="bg-pop" style={{ background: "linear-gradient(135deg, #f59e0b, #d97706)", padding: `${SPACE.s4}px ${SPACE.s5}px`, borderRadius: RADIUS.l, color: "#fff", marginBottom: SPACE.s6, border: "2px solid rgba(255,255,255,0.2)", boxShadow: SHADOW.e4, display: "flex", alignItems: "center", gap: 16 }}>
+            <div style={{ fontSize: 48 }}>👑</div>
+            <div style={{ textAlign: "left" }}>
+              <div style={{ fontSize: 20, fontWeight: 900 }}>
+                {uz ? "YANGI DARAXA!" : lg === "ru" ? "НОВЫЙ УРОВЕНЬ!" : "LEVEL UP!"}
               </div>
-              <p style={{ fontSize: 14, margin: 0, opacity: 0.95, lineHeight: 1.4 }}>
-                {lg === "uz" ? "Yordam: Narxlarni osongina qo'shish uchun avval mingliklarni qo'shib oling, keyin so'm birligini biriktiring! (Masalan: 3 ming so'm + 4 ming so'm = 7 ming so'm)" : lg === "ru" ? "Подсказка: чтобы легко складывать цены, просто сложите тысячи! (Пример: 3 тыс. руб. + 4 тыс. руб. = 7 тыс. руб.)" : lg === "kk" ? "Кеңес: бағаларды оңай қосу үшін алдымен мыңдықтарды қосыңыз! (Мысалы: 3 мың тг. + 4 мың тг. = 7 мың тг.)" : "Tip: To add prices easily, just add the thousands! (Example: $3k + $4k = $7k)"}
-              </p>
+              <div style={{ fontSize: 13, opacity: 0.9 }}>
+                {uz ? `Tabriklaymiz! Siz hozir ${newLevel}-darajaga chiqdingiz.` : `Congratulations! You reached level ${newLevel}.`}
+              </div>
             </div>
-            <button className="ui-press" onClick={() => { setShowHintOverlay(false); setConsecutiveErrors(0); }} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", fontWeight: "bold" }}>×</button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Choices grid */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3 }}>
-        {eng.question && eng.question.options.map((opt, i) => (
-          <OptButton key={i} th={th} value={opt} state={optState(opt)} onPick={onPick} disabled={picked != null} lg={lg} />
-        ))}
+        <div style={{ display: "flex", justifyContent: "center", margin: `${SPACE.s6}px 0` }}>
+          {medalSvg(passed ? (res.stars === 3 ? "gold" : res.stars === 2 ? "silver" : "bronze") : "none", 140)}
+        </div>
+
+        <h2 style={{ ...TYPE.display, fontSize: 34, color: passed ? th.gr : th.rd, margin: "0 0 4px" }}>
+          {passed 
+            ? (uz ? "AJOYIB MAHORAT!" : lg === "ru" ? "ОТЛИЧНАЯ РАБОТА!" : "EXCELLENT JOB!") 
+            : (uz ? "YANA BIR BOR URINIB KO'R!" : lg === "ru" ? "ПОПРОБУЙ ЕЩЕ РАЗ!" : "TRY ONCE MORE!")}
+        </h2>
+        <p style={{ ...TYPE.body, color: th.t2, margin: `0 0 ${SPACE.s6}px` }}>
+          {passed 
+            ? (uz ? "Siz bu bosqichni muvaffaqiyatli topshirdingiz!" : lg === "ru" ? "Вы успешно прошли этот уровень!" : "You completed this level successfully!") 
+            : (uz ? `Kamida ${selectedLevel?.passThreshold}% natija kerak edi.` : `You needed at least ${selectedLevel?.passThreshold}%.`)}
+        </p>
+
+        {/* Stars Display Block */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: SPACE.s8, background: th.sur, border: `2px solid ${th.bor}`, padding: "12px 24px", borderRadius: RADIUS.xl, width: "fit-content", margin: "0 auto " + SPACE.s8 + "px" }}>
+          {starIco(res.stars >= 1, 38)}
+          {starIco(res.stars >= 2, 38)}
+          {starIco(res.stars >= 3, 38)}
+        </div>
+
+        {/* Stats grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s4, marginBottom: SPACE.s8 }}>
+          <StatCard label={uz ? "To'g'ri javoblar" : "Correct solutions"} val={`${res.correct} / ${res.total}`} sub={uz ? "Yechilgan misollar" : "Solved questions"} theme="success" />
+          <StatCard label={uz ? "Yig'ilgan tangalar" : "Coins rewarded"} val={`+${res.coins}`} icon={coinIco(PREMIUM.gold, 18)} sub={uz ? "Taqdirlandi" : "Awarded"} theme="warning" />
+          <StatCard label={uz ? "To'plangan XP" : "XP gained"} val={`+${res.xp}`} sub={uz ? "Tajriba ballari" : "Experience points"} theme="accent" />
+          <StatCard label={uz ? "To'g'rilik foizi" : "Accuracy"} val={`${Math.round((res.correct/res.total)*100)}%`} sub={uz ? "Umumiy foiz" : "Total score"} theme={passed ? "success" : "danger"} />
+        </div>
+
+        {/* Play actions triggers */}
+        <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
+          {passed ? (
+            <PrimaryButton 
+              text={uz ? "Keyingi Bosqich ➜" : "Следующий уровень ➜"} 
+              onClick={() => {
+                const nextLvl = levels.find(l => l.id === (selectedLevel?.id || 0) + 1);
+                if (nextLvl) {
+                  startSelectedLevel(nextLvl);
+                } else {
+                  setSelectedLevel(null);
+                  eng.backToIntro();
+                }
+              }} 
+            />
+          ) : (
+            <PrimaryButton text={uz ? "Qayta urinish ⟳" : "Повторить ⟳"} onClick={() => startSelectedLevel(selectedLevel)} />
+          )}
+
+          <button className="ui-press" onClick={() => { setSelectedLevel(null); eng.backToIntro(); }}
+            style={{ width: "100%", background: "none", border: `2.5px solid ${th.bor}`, borderRadius: RADIUS.l, padding: "14px", color: th.t2, fontSize: 16, fontWeight: 700, cursor: "pointer", transition: "all " + MOTION.fast }}>
+            {uz ? "Xaritaga qaytish" : "Вернуться к карте"}
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  return null;
 }

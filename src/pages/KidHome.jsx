@@ -17,7 +17,7 @@ import { AppCard, SectionHeader, PrimaryButton, Badge, UIAvatar, LinearProgress,
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
 import { levelFor, rankFor } from "../bilim/engine/xp.js";
-import { readSessions } from "../bilim/engine/persist.js";
+import { readSessions, calculateDailyStreak } from "../bilim/engine/persist.js";
 import { analyzeLearning } from "../bilim/engine/analytics.js";
 import { gameById } from "../bilim/registry.jsx";
 
@@ -98,26 +98,143 @@ const SkillCard = memo(function SkillCard({ th, name, pct, games, coin, onClick 
   );
 });
 
-// ── Yutuq kartasi (collectible) ──
+// ── Redesigned MedalCard (collectible) ──
 const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal, isNew, onClick }) {
   const pct = goal > 0 ? Math.min(100, Math.round(cur / goal * 100)) : 0;
+  
   return (
-    <button className="ui-press" onClick={onClick} disabled={!unlocked}
+    <button 
+      className="ui-press" 
+      onClick={onClick} 
+      disabled={!unlocked}
       style={{
-        width: COMP.pageMax * 0.42, flexShrink: 0,
-        background: unlocked ? PREMIUM.gold + ALPHA.faint : th.sur,
-        border: unlocked ? "1.5px solid " + PREMIUM.gold + ALPHA.strong : "1px dashed " + th.bor,
-        borderRadius: RADIUS.m, padding: SPACE.s3, boxSizing: "border-box",
-        scrollSnapAlign: "start", position: "relative", textAlign: "left",
-        fontFamily: "inherit", cursor: unlocked ? "pointer" : "default"
-      }}>
-      {isNew && unlocked && <span style={{ position: "absolute", top: SPACE.s2, right: SPACE.s2 }}><Badge th={th} type="premium" icon={null}>NEW</Badge></span>}
-      <div style={{ width: SPACE.s12, height: SPACE.s12, borderRadius: RADIUS.full, background: unlocked ? PREMIUM.grad : th.surH, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: unlocked ? SHADOW.e1(PREMIUM.deep) : SHADOW.e0, filter: unlocked ? "none" : "grayscale(1)", opacity: unlocked ? 1 : 0.5, marginBottom: SPACE.s2 }}>
-        {unlocked ? KI.medal("#fff", 22) : KI.lock(th.t3, 18)}
+        background: "transparent",
+        border: "none",
+        outline: "none",
+        cursor: unlocked ? "pointer" : "default",
+        padding: 0,
+        margin: 0,
+        fontFamily: "inherit",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        textAlign: "center",
+        width: "100%",
+        position: "relative"
+      }}
+    >
+      {/* Medal circular badge */}
+      <div 
+        style={{
+          width: 64,
+          height: 64,
+          borderRadius: RADIUS.full,
+          position: "relative",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: unlocked 
+            ? "linear-gradient(135deg, " + PREMIUM.gold + ", #f59e0b)" 
+            : th.surH,
+          boxShadow: unlocked 
+            ? "0 4px 12px " + PREMIUM.gold + "50, inset 0 -2px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.3)" 
+            : "none",
+          border: unlocked 
+            ? "2px solid #fff" 
+            : "2px dashed " + th.bor,
+          transition: "all 0.3s ease",
+          marginBottom: SPACE.s2
+        }}
+      >
+        {/* If locked, show progress concentric ring */}
+        {!unlocked && goal > 0 && (
+          <svg 
+            width={64} 
+            height={64} 
+            viewBox="0 0 64 64" 
+            style={{ 
+              position: "absolute", 
+              top: -2, 
+              left: -2, 
+              transform: "rotate(-90deg)",
+              pointerEvents: "none"
+            }}
+          >
+            <circle 
+              cx={32} 
+              cy={32} 
+              r={29} 
+              fill="none" 
+              stroke={th.bor} 
+              strokeWidth="2" 
+            />
+            <circle 
+              cx={32} 
+              cy={32} 
+              r={29} 
+              fill="none" 
+              stroke={th.ac} 
+              strokeWidth="2" 
+              strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 29} 
+              strokeDashoffset={2 * Math.PI * 29 * (1 - pct / 100)} 
+              style={{ transition: "stroke-dashoffset 0.4s ease" }}
+            />
+          </svg>
+        )}
+
+        {/* Medal icon or Lock icon */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          filter: unlocked ? "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" : "none"
+        }}>
+          {unlocked ? KI.medal("#fff", 30) : KI.lock(th.t3, 20)}
+        </div>
+
+        {/* Claim / New badge indicator */}
+        {isNew && unlocked && (
+          <div style={{
+            position: "absolute",
+            top: -4,
+            right: -4,
+            width: 16,
+            height: 16,
+            borderRadius: RADIUS.full,
+            background: th.rd,
+            border: "2px solid #fff",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+          }} />
+        )}
       </div>
-      <div style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: unlocked ? th.t1 : th.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{title}</div>
-      <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub}</div>
-      {!unlocked && goal > 0 && <LinearProgress th={th} value={pct} tone={th.ac} style={{ marginTop: SPACE.s2 }} />}
+
+      {/* Text Info */}
+      <div style={{ 
+        ...TYPE.caption, 
+        fontWeight: 700, 
+        color: unlocked ? th.t1 : th.t3, 
+        maxWidth: 85,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        lineHeight: "1.2"
+      }}>
+        {title}
+      </div>
+      
+      {/* Subtext or Progress number */}
+      <div style={{ 
+        fontSize: 10, 
+        color: th.t3, 
+        marginTop: 2,
+        maxWidth: 85,
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap"
+      }}>
+        {unlocked ? sub : `${cur}/${goal}`}
+      </div>
     </button>
   );
 });
@@ -180,16 +297,25 @@ export default function KidHome({
   // ── Bilim ma'lumoti — MAVJUD kollektsiyalardan, faqat o'qish (BilimHub naqshi) ──
   const [coins, setCoins] = useState(0);
   const [xp, setXp] = useState(0);
-  const [bstreak, setBstreak] = useState(0);
   const [sessions, setSessions] = useState([]);
-  const [vazifaRewards, setVazifaRewards] = useState([]); // bilim_vazifa_<oila> (faqat o'qish)
+  const [offers, setOffers] = useState([]);
+  
+  const isToday = useCallback((sanaStr) => {
+    if (!sanaStr) return false;
+    if (sanaStr === bugun) return true;
+    const utcToday = new Date().toISOString().slice(0, 10);
+    if (sanaStr === utcToday) return true;
+    return false;
+  }, [bugun]);
+
+  const bstreak = useMemo(() => calculateDailyStreak(sessions), [sessions]);
+
   useEffect(() => {
     if (!user?.id) return;
     db.g("bilim_coins_" + user.id).then(v => { if (v != null) setCoins(Number(v) || 0); }).catch(() => {});
     db.g("bilim_xp_" + user.id).then(v => { if (v != null) setXp(Number(v) || 0); }).catch(() => {});
-    db.g("bilim_streak_" + user.id).then(v => { if (v != null) setBstreak(Number(v) || 0); }).catch(() => {});
     readSessions(user.id).then(setSessions).catch(() => {});
-    if (user.oilaId) db.g("bilim_vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifaRewards(v); }).catch(() => {});
+    if (user.oilaId) db.g("bilim_offer_" + user.oilaId).then(v => { if (Array.isArray(v)) setOffers(v); }).catch(() => {});
   }, [user?.id, user?.oilaId]);
 
   const lv = useMemo(() => levelFor(xp), [xp]);
@@ -199,22 +325,30 @@ export default function KidHome({
 
   const age = user?.birthYear ? Math.max(0, new Date().getFullYear() - Number(user.birthYear)) : null;
   const greet = (() => { const h = new Date().getHours(); return h < 12 ? (uz ? "Xayrli tong" : "Good morning") : h < 18 ? (uz ? "Xayrli kun" : "Good afternoon") : (uz ? "Xayrli kech" : "Good evening"); })();
-  const wateredToday = gardenData && gardenData.watered === bugun;
+  const wateredToday = gardenData && isToday(gardenData.watered);
+  const wateredCountToday = useMemo(() => {
+    if (!gardenData || !gardenData.wateredBy || !user?.id) return 0;
+    return gardenData.wateredBy.filter(w => w.uid === user.id && isToday(w.sana ? w.sana.slice(0, 10) : "")).length;
+  }, [gardenData, isToday, user?.id]);
 
   // ── Vazifa hosilalari ──
   const tasks = useMemo(() => {
     const myV = (vazifalar || []).filter(v => isMineTask(v, user));
     const doneAll = myV.filter(v => v.status === "approved");
     const active = myV.filter(v => v.status === "pending" || v.status === "done");
-    const doneToday = doneAll.filter(v => v.paidSana === bugun).length;
+    const doneToday = myV.filter(v => {
+      const completedToday = v.status === "done" && isToday(v.doneSana);
+      const paidToday = v.status === "approved" && (isToday(v.paidSana) || isToday(v.doneSana));
+      return completedToday || paidToday;
+    }).length;
     return { myV, doneAll, active, doneToday };
-  }, [vazifalar, user, bugun]);
+  }, [vazifalar, user, isToday]);
 
   // ── Bugungi Bilim faoliyati ──
   const todayLearn = useMemo(() => {
-    const t = (sessions || []).filter(s => s.date === bugun);
+    const t = (sessions || []).filter(s => isToday(s.date));
     return { games: t.length, coins: t.reduce((a, s) => a + (Number(s.coins) || 0), 0), xp: t.reduce((a, s) => a + (Number(s.xp) || 0), 0) };
-  }, [sessions, bugun]);
+  }, [sessions, isToday]);
 
   // ── Fanlar (analitika) ──
   const analysis = useMemo(() => analyzeLearning(sessions, lg, name, 30), [sessions, lg, name]);
@@ -227,12 +361,12 @@ export default function KidHome({
     const list = [
       { id: "task",   icon: KI.task(th.ac), label: uz ? "Vazifa bajar" : "Do a task",     cur: tasks.doneToday,   goal: 1, onClick: () => { buzz(6); setScr("vazifa"); } },
       { id: "game",   icon: KI.game(th.ac), label: uz ? "O'yin o'yna" : "Play a game",     cur: todayLearn.games,  goal: 1, onClick: () => { buzz(6); setScr("bilim"); } },
-      { id: "coin",   icon: KI.coin(th.ac), label: uz ? "10 coin yig'" : "Earn 10 coins",  cur: todayLearn.coins,  goal: 10, onClick: () => { buzz(6); setScr("bilim"); } },
-      { id: "garden", icon: KI.leaf(th.gr), label: uz ? "Bog' sug'or" : "Water the garden", cur: 0, goal: 0, done: wateredToday, onClick: () => { buzz(6); if (setPTab) setPTab("garden"); setScr("profil"); } },
+      { id: "coin",   icon: KI.coin(th.ac), label: uz ? "20 coin yig'" : "Earn 20 coins",  cur: todayLearn.coins,  goal: 20, onClick: () => { buzz(6); setScr("bilim"); } },
+      { id: "garden", icon: KI.leaf(th.gr), label: uz ? "Bog' sug'or" : "Water the garden", cur: wateredCountToday, goal: 2, onClick: () => { buzz(6); if (setPTab) setPTab("garden"); setScr("profil"); } },
     ];
     const done = list.filter(m => m.done || (m.goal > 0 && m.cur >= m.goal)).length;
     return { list, done, total: list.length };
-  }, [th, uz, tasks.doneToday, todayLearn.games, todayLearn.coins, wateredToday, buzz, setScr, setShowGames, setShowBilim, setPTab]);
+  }, [th, uz, tasks.doneToday, todayLearn.games, todayLearn.coins, wateredCountToday, buzz, setScr, setShowGames, setShowBilim, setPTab]);
 
   // ── Yutuqlar (task + garden + bilim aralash) ──
   const medals = useMemo(() => {
@@ -249,22 +383,10 @@ export default function KidHome({
   }, [uz, tasks.doneAll.length, coins, sessions.length, gardenData.level, bstreak]);
   const unlockedCount = medals.filter(m => m.unlocked).length;
 
-  // ── Do'kon mukofotlari (coin → mukofot; bilim_vazifa, faqat shu bola, to'lanmagan) ──
-  const rewards = useMemo(() => {
-    const mine = (vazifaRewards || [])
-      .filter(v => v.uid === user?.id && !v.paid && Number(v.targetCoins) > 0)
-      .map(v => ({
-        id: v.id,
-        name: (v.desc && String(v.desc).trim()) || (uz ? "Mukofot" : "Reward"),
-        reward: Number(v.reward) || 0,
-        targetCoins: Number(v.targetCoins) || 0,
-        done: !!v.done || coins >= (Number(v.targetCoins) || 0),
-        remain: Math.max(0, (Number(v.targetCoins) || 0) - coins),
-      }))
-      // eng yaqin (kam qolgan) birinchi; tayyorlar eng tepada
-      .sort((a, b) => (b.done - a.done) || (a.remain - b.remain));
-    return mine.slice(0, 3);
-  }, [vazifaRewards, user?.id, coins, uz]);
+  // ── Savdolashish takliflari (bilim_offer, faqat shu bola, pending va ota-onadan kelgan) ──
+  const pendingOffersCount = useMemo(() => {
+    return (offers || []).filter(o => o.kidId === user?.id && o.status === "pending" && o.fromRole === "parent").length;
+  }, [offers, user?.id]);
 
   // ── Ota-ona maqtovi (placeholder — kelajakda AI) ──
   const praise = useMemo(() => {
@@ -281,8 +403,6 @@ export default function KidHome({
     setBilimInitialView(viewName);
     setScr("bilim");
   }, [buzz, setScr, setBilimInitialView]);
-  const openTasks = useCallback(() => { buzz(10); setScr("vazifa"); }, [buzz, setScr]);
-  const openGarden = useCallback(() => { buzz(10); if (setPTab) setPTab("garden"); setScr("profil"); }, [buzz, setPTab, setScr]);
 
   const ring = COMP.touchMin + SPACE.s16;
   const R = (ring - 6) / 2;
@@ -295,15 +415,20 @@ export default function KidHome({
         <div style={{ position: "absolute", top: -SPACE.s12, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
         <div style={{ position: "absolute", bottom: -SPACE.s16, left: -SPACE.s6, width: SPACE.s16 + SPACE.s12, height: SPACE.s16 + SPACE.s12, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.07)", pointerEvents: "none" }} />
         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s4, position: "relative" }}>
-          <div style={{ position: "relative", width: ring, height: ring, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width={ring} height={ring} viewBox={"0 0 " + ring + " " + ring} style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }}>
-              <circle cx={ring / 2} cy={ring / 2} r={R} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
-              <circle cx={ring / 2} cy={ring / 2} r={R} fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round"
-                strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - lv.pct / 100)} style={{ transition: "stroke-dashoffset .6s ease" }} />
-            </svg>
-            <UIAvatar th={th} src={user.photo} name={name} size={COMP.touchMin + SPACE.s6} />
-            <span style={{ position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)", background: "#fff", color: rankColor, ...TYPE.tiny, fontWeight: 800, letterSpacing: 0, borderRadius: RADIUS.pill, padding: "2px 9px", boxShadow: SHADOW.e1(rankColor) }}>
-              LVL {lv.level}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flexShrink: 0, gap: 4 }}>
+            <div style={{ position: "relative", width: ring, height: ring, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg width={ring} height={ring} viewBox={"0 0 " + ring + " " + ring} style={{ position: "absolute", top: 0, left: 0, transform: "rotate(-90deg)" }}>
+                <circle cx={ring / 2} cy={ring / 2} r={R} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="4" />
+                <circle cx={ring / 2} cy={ring / 2} r={R} fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round"
+                  strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - lv.pct / 100)} style={{ transition: "stroke-dashoffset .6s ease" }} />
+              </svg>
+              <UIAvatar th={th} src={user.photo} name={name} size={COMP.touchMin + SPACE.s6} />
+              <span style={{ position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)", background: "#fff", color: rankColor, ...TYPE.tiny, fontWeight: 800, letterSpacing: 0, borderRadius: RADIUS.pill, padding: "2px 9px", boxShadow: SHADOW.e1(rankColor) }}>
+                LVL {lv.level}
+              </span>
+            </div>
+            <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.9)", fontWeight: 700, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>
+              {lv.inLevel}/{lv.max ? lv.inLevel : (lv.inLevel + lv.toNext)} XP
             </span>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -329,69 +454,17 @@ export default function KidHome({
         </div>
       </div>
 
-      {/* ═══ 2. LEVEL ═══ */}
-      <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s2 }}>
-          <span style={{ ...TYPE.subtitle, color: th.t1 }}>{uz ? "Daraja" : "Level"} {lv.level} · {rankLabel}</span>
-          <span style={{ ...TYPE.caption, fontWeight: 800, color: th.ac, fontVariantNumeric: "tabular-nums" }}>{lv.inLevel}/{lv.max ? lv.inLevel : (lv.inLevel + lv.toNext)} XP</span>
-        </div>
-        <LinearProgress th={th} value={lv.pct} tone={rankColor} height={SPACE.s2 + 2} />
-        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s2 }}>
-          {lv.max ? (uz ? "Eng yuqori darajaga yetding! Zo'rsan!" : "You reached the top level!") : (uz ? "Yana " + lv.toNext + " XP yig'sang yangi daraja ochiladi." : lv.toNext + " XP to the next level.")}
-        </div>
-      </AppCard>
-
-      {/* ═══ 3. BUGUNGI MISSIYA ═══ */}
+      {/* ═══ 2. BUGUNGI MISSIYA ═══ */}
       <SectionHeader th={th} right={<Badge th={th} type={missions.done >= missions.total ? "success" : undefined}>{missions.done}/{missions.total}</Badge>}>{uz ? "Bugungi missiya" : "Today's mission"}</SectionHeader>
       <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
         <LinearProgress th={th} value={Math.round(missions.done / missions.total * 100)} tone={th.gr} height={SPACE.s2 + 2} style={{ marginBottom: SPACE.s2 }} />
         {missions.list.map(m => <Mission key={m.id} th={th} icon={m.icon} label={m.label} cur={m.cur} goal={m.goal} done={m.done} onClick={m.onClick} />)}
       </AppCard>
 
-      {/* ═══ VAZIFALARIM (bosh sahifada oson topilishi uchun) ═══ */}
-      <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-        <button className="ui-press" onClick={openTasks} style={{ flex: 1.2, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s2 + "px", cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s2, fontFamily: "inherit", minWidth: 0 }}>
-          <span style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.s + 2, background: th.ac + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.task(th.ac, 20)}</span>
-          <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-            <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{uz ? "Vazifalarim" : "My tasks"}</span>
-            <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tasks.active.length > 0 ? (tasks.active.length + (uz ? " ta faol" : " active")) : (uz ? "Hozircha yangi yo'q" : "No new")}</span>
-          </span>
-          {tasks.active.length > 0 && <Badge th={th} type="warning">{tasks.active.length}</Badge>}
-        </button>
-
-        {setShowAddVazifa && (
-          <button className="ui-press" onClick={() => { buzz(10); setShowAddVazifa(true); }} style={{ flex: 1, background: th.sur, border: "1.5px dashed " + th.ac, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s2 + "px", cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s2, fontFamily: "inherit", minWidth: 0 }}>
-            <span style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.s + 2, background: th.ac + "18", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><line x1="8" y1="2" x2="8" y2="14" stroke={th.ac} strokeWidth="2.2" strokeLinecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke={th.ac} strokeWidth="2.2" strokeLinecap="round"/></svg>
-            </span>
-            <span style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-              <span style={{ display: "block", ...TYPE.caption, fontWeight: 700, color: th.ac, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{uz ? "Vazifa taklif qilish" : "Propose task"}</span>
-              <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{uz ? "Yangi taklif" : "New proposal"}</span>
-            </span>
-          </button>
-        )}
-      </div>
-
-      {/* ═══ BILIM BOZORI — ISHLA (o'rgan/o'yna → coin) ═══ */}
+      {/* ═══ 3. BILIM BOZORI ═══ */}
       <SectionHeader th={th} right={<span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{KI.coin(PREMIUM.gold, 15)}<span style={{ ...TYPE.caption, fontWeight: 800, color: PREMIUM.gold, fontVariantNumeric: "tabular-nums" }}>{coins}</span></span>}>{uz ? "Bilim Bozori" : "Knowledge Market"}</SectionHeader>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s2 }}>
-        <button className="ui-press" onClick={openBilim} style={{ background: "linear-gradient(135deg," + th.ac + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.ac + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", textAlign: "left", display: "flex", flexDirection: "column", gap: SPACE.s1, boxSizing: "border-box" }}>
-          <span style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s1 }}>{KI.book(th.ac, 22)}</span>
-          <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "O'rgan va ishla" : "Learn & earn"}</span>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Dars yech → coin" : "Lessons → coins"}</span>
-        </button>
-        <button className="ui-press" onClick={openGames} style={{ background: "linear-gradient(135deg," + th.ac2 + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.ac2 + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", textAlign: "left", display: "flex", flexDirection: "column", gap: SPACE.s1, boxSizing: "border-box" }}>
-          <span style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: th.ac2 + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s1 }}>{KI.game(th.ac2, 22)}</span>
-          <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "O'yin markazi" : "Games center"}</span>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Mini-o'yinlar" : "Mini-games"}</span>
-        </button>
-      </div>
 
-      {/* ═══ BILIM BOZORI — DO'KON (coin → mukofot) ═══ */}
-      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s2, marginTop: SPACE.s1 }}>
-        <span style={{ display: "flex", flexShrink: 0 }}>{KI.store(th.gr, 18)}</span>
-        <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, textTransform: "uppercase", letterSpacing: ".3px" }}>{uz ? "Do'kon — coinni almashtir" : "Shop — spend coins"}</span>
-      </div>
+      {/* Oltin do'kon banneri */}
       <button 
         className="ui-press" 
         onClick={() => openBilim("market")}
@@ -427,29 +500,28 @@ export default function KidHome({
         </div>
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ ...TYPE.title, fontSize: TYPE.title.fontSize - 1, color: th.t1, fontWeight: 800 }}>
-            {uz ? "Bilim Bozori" : "Knowledge Market"}
+            {uz ? "Do'kon" : "Shop"}
           </div>
           <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 4, lineHeight: "1.3" }}>
             {uz ? "Yig'ilgan coinlaringizni o'yinchoqlar, kitoblar yoki mukofot pullariga almashtiring!" : "Exchange your earned coins for toys, books, or reward money!"}
           </div>
+          {pendingOffersCount > 0 && (
+            <div style={{ ...TYPE.tiny, color: th.ac, fontWeight: 800, marginTop: 6, display: "flex", alignItems: "center", gap: 4, background: th.ac + "18", padding: "4px 8px", borderRadius: 8 }}>
+              🔔 {uz ? `Ota-onangizdan ${pendingOffersCount} ta yangi taklif bor!` : `You have ${pendingOffersCount} new offer(s) from parents!`}
+            </div>
+          )}
         </div>
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center" }}>
           {KI.chev(PREMIUM.gold, 20)}
         </div>
       </button>
 
-      {/* ═══ 4. DAILY STREAK ═══ */}
-      <SectionHeader th={th}>{uz ? "Kunlik seriya" : "Daily streak"}</SectionHeader>
-      {bstreak > 0 ? (
-        <div style={{ background: "linear-gradient(135deg," + th.am + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.am + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s4, marginBottom: SPACE.s3, display: "flex", alignItems: "center", gap: SPACE.s4 }}>
-          <div style={{ width: COMP.touchMin + SPACE.s2, height: COMP.touchMin + SPACE.s2, borderRadius: RADIUS.full, background: th.am + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.fire(th.am, 30)}</div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{bstreak} {uz ? "kun" : "days"}</div>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{uz ? "Har kuni o'yna va seriyani uzma!" : "Play daily and keep the streak!"}</div>
-          </div>
-        </div>
-      ) : (
-        <EmptyState th={th} icon={KI.fire(th.t3, 40)} title={uz ? "Seriya hali boshlanmagan" : "No streak yet"} message={uz ? "Bugun bitta o'yin o'yna — seriyang boshlanadi!" : "Play a game today to start your streak!"} actionText={uz ? "O'ynash" : "Play"} onAction={openGames} style={{ marginBottom: SPACE.s3 }} />
+      {/* ═══ 4. KUNLIK SERIYA (streak) — faqat 0 bo'lganda ═══ */}
+      {bstreak === 0 && (
+        <>
+          <SectionHeader th={th}>{uz ? "Kunlik seriya" : "Daily streak"}</SectionHeader>
+          <EmptyState th={th} icon={KI.fire(th.t3, 40)} title={uz ? "Seriya hali boshlanmagan" : "No streak yet"} message={uz ? "Bugun bitta o'yin o'yna — seriyang boshlanadi!" : "Play a game today to start your streak!"} actionText={uz ? "O'ynash" : "Play"} onAction={openGames} style={{ marginBottom: SPACE.s3 }} />
+        </>
       )}
 
       {/* ═══ 5. O'RGANILAYOTGAN FANLAR ═══ */}
@@ -464,7 +536,16 @@ export default function KidHome({
 
       {/* ═══ 6. SO'NGGI YUTUQLAR ═══ */}
       <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlockedCount}/{medals.length}</Badge>}>{uz ? "So'nggi yutuqlar" : "Achievements"}</SectionHeader>
-      <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s3, scrollSnapType: "x mandatory", WebkitOverflowScrolling: "touch" }}>
+      <div style={{ 
+        display: "grid", 
+        gridTemplateColumns: "repeat(3, 1fr)", 
+        gap: SPACE.s4 + "px " + SPACE.s2 + "px", 
+        background: th.sur, 
+        border: "1px solid " + th.bor, 
+        borderRadius: RADIUS.m, 
+        padding: SPACE.s4, 
+        marginBottom: SPACE.s3 
+      }}>
         {medals.map(m => (
           <MedalCard
             key={m.id} th={th} unlocked={m.unlocked} title={m.title} sub={m.sub} cur={m.cur} goal={m.goal} isNew={m.isNew}
@@ -488,7 +569,7 @@ export default function KidHome({
         </div>
       </div>
 
-      {/* ═══ OXIRGI O'YNALGAN O'YINLAR ═══ */}
+      {/* ═══ 8. OXIRGI O'YNALGAN O'YINLAR ═══ */}
       {recent.length > 0 && (
         <>
           <SectionHeader th={th}>{uz ? "Oxirgi o'yinlar" : "Recent games"}</SectionHeader>
@@ -500,19 +581,6 @@ export default function KidHome({
           })}
         </>
       )}
-
-      {/* ═══ 10. BARAKA BOG'I PREVIEW ═══ */}
-      <SectionHeader th={th}>{uz ? "Baraka Bog'i" : "Baraka Garden"}</SectionHeader>
-      <button className="ui-press" onClick={openGarden} style={{ width: "100%", background: "linear-gradient(135deg," + th.gr + ALPHA.tint + "," + th.sur + ")", border: "1px solid " + th.gr + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3, fontFamily: "inherit" }}>
-        <div style={{ width: COMP.touchMin + SPACE.s2, height: COMP.touchMin + SPACE.s2, borderRadius: RADIUS.m, background: th.gr + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{KI.leaf(th.gr, 28)}</div>
-        <div style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
-          <div style={{ ...TYPE.subtitle, color: th.t1 }}>{uz ? "Bog' darajasi" : "Garden level"} {gardenData.level || 0}</div>
-          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: wateredToday ? th.gr : th.am, marginTop: 2, fontWeight: 700 }}>
-            {wateredToday ? (uz ? "Bugun sug'orilgan" : "Watered today") : (uz ? "Bugun sug'orish kerak" : "Needs watering today")}
-          </div>
-        </div>
-        {KI.chev(th.gr, 18)}
-      </button>
     </div>
   );
 }

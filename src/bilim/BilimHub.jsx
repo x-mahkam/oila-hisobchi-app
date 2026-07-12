@@ -13,13 +13,24 @@ import { PageHeader, SectionHeader, AppCard, StatCard, Badge, EmptyState, Primar
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
 import { CATEGORIES, catById, gamesOf, isAvailable, DIFF } from "./registry.jsx";
-import { readSessions } from "./engine/persist.js";
+import { readSessions, calculateDailyStreak } from "./engine/persist.js";
 import { levelFor, rankFor, readXp } from "./engine/xp.js";
 import { analyzeLearning, weeklyReport } from "./engine/analytics.js";
 import LearningProfile from "./LearningProfile.jsx";
 import { BilimDashboard } from "./dashboard.jsx";
-import BilimBozor from "../BilimBozor.jsx";
+import BilimBozor, { WORDS, LEVELS } from "../BilimBozor.jsx";
 import AdditionGame from "./games/AdditionGame.jsx";
+import SubtractionGame from "./games/SubtractionGame.jsx";
+import MultiplicationGame from "./games/MultiplicationGame.jsx";
+import DivisionGame from "./games/DivisionGame.jsx";
+import LevelMap from "./games/LevelMap.jsx";
+import SortGame from "./games/SortGame.jsx";
+import BudgetGame from "./games/BudgetGame.jsx";
+import PriceQuizGame from "./games/PriceQuizGame.jsx";
+import MoneyWordsGame from "./games/MoneyWordsGame.jsx";
+import DecisionGame from "./games/DecisionGame.jsx";
+import SavingsSequenceGame from "./games/SavingsSequenceGame.jsx";
+import BankSimGame from "./games/BankSimGame.jsx";
 
 const diffColor = (tone, th) => ({ gr: th.gr, am: th.am, rd: th.rd }[tone] || th.ac);
 const grad = (g, th) => "linear-gradient(135deg," + (th[g.grad[0]] || th.ac) + "," + (th[g.grad[1]] || th.ac2) + ")";
@@ -50,7 +61,7 @@ const GameCard = memo(function GameCard({ th, lg, game, onOpen }) {
   );
 });
 
-export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack, gardenData = {}, onGarden, initialView }) {
+export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack, initialView }) {
   const { setBilimInitialView } = useApp();
   const uz = lg === "uz";
   const isKid = user?.rol === "kid";
@@ -69,6 +80,8 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   }, [setBilimInitialView]);
   const [cat, setCat] = useState(null);
   const [game, setGame] = useState(null);
+  const [activeLevel, setActiveLevel] = useState(null);
+  const [selectedEnglishLevel, setSelectedEnglishLevel] = useState(null);
 
   // ── Mavjud bilim_* dan o'qish (yozuv yo'q, sxema o'zgarmaydi) ──
   const [coins, setCoins] = useState(0);
@@ -84,21 +97,24 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
       db.g("bilim_coins_" + user.id).then(v => { if (v != null) setCoins(v); }).catch(() => {});
       db.g("bilim_xp_" + user.id).then(v => { if (v != null) setXp(Number(v) || 0); }).catch(() => {});
       db.g("bilim_stats_" + user.id).then(v => { if (v && typeof v === "object") setStats(v); }).catch(() => {});
-      db.g("bilim_streak_" + user.id).then(v => { if (v != null) setStreak(v); }).catch(() => {});
-      readSessions(user.id).then(setSessions).catch(() => {});
+      readSessions(user.id).then(sess => {
+        setSessions(sess);
+        const st = calculateDailyStreak(sess);
+        setStreak(st);
+      }).catch(() => {});
     } else {
       // Ota-ona: har bolaning natijasini o'qib preview tayyorlash
       const kids = (azolar || []).filter(a => a.rol === "kid");
       Promise.all(kids.map(async k => {
-        const [c, xpv, s, st] = await Promise.all([
+        const [c, xpv, s] = await Promise.all([
           db.g("bilim_coins_" + k.id).catch(() => 0),
           db.g("bilim_xp_" + k.id).catch(() => 0),
           db.g("bilim_stats_" + k.id).catch(() => ({})),
-          db.g("bilim_streak_" + k.id).catch(() => 0),
         ]);
         const learned = s && typeof s === "object" ? Object.keys(s).length : 0;
         const ksessions = await readSessions(k.id);
-        return { id: k.id, name: fullName(k), photo: k.photo, coins: c || 0, xp: Number(xpv) || 0, learned, streak: st || 0, sessions: ksessions };
+        const kstreak = calculateDailyStreak(ksessions);
+        return { id: k.id, name: fullName(k), photo: k.photo, coins: c || 0, xp: Number(xpv) || 0, learned, streak: kstreak, sessions: ksessions };
       })).then(setParentData).catch(() => {});
     }
   }, [user?.id, isKid, azolar]);
@@ -111,10 +127,19 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   }, [learnedWords]);
 
   const openCat = useCallback((c) => { setCat(c); setView("games"); }, []);
-  const openGame = useCallback((g) => { setGame(g); setView("detail"); }, []);
+  const openGame = useCallback((g) => {
+    if (g && (g.category === "math" || g.id?.startsWith("math/"))) {
+      setCat(catById("math") || { id: "math", name: { uz: "Matematika", ru: "Математика", en: "Math" } });
+      setView("games");
+    } else {
+      setGame(g);
+      setView("detail");
+    }
+  }, []);
   const openProfile = useCallback(() => setView("profile"), []);
   const back = useCallback(() => {
-    if (view === "play") { setView("detail"); }
+    if (view === "play-level") { setView("games"); }
+    else if (view === "play") { setView("detail"); }
     else if (view === "detail") { setView("games"); }
     else if (view === "games" || view === "parent") { setView("cats"); setCat(null); }
     else {
@@ -128,11 +153,53 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   }, [game]);
 
   // ═══ PLAY — real o'yin (hozircha english/words → BilimBozor) ═══
+  if (view === "play-level" && activeLevel) {
+    if (activeLevel.game === "math/addition") {
+      return <AdditionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} />;
+    }
+    if (activeLevel.game === "math/subtraction") {
+      return <SubtractionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} />;
+    }
+    if (activeLevel.game === "math/multiply") {
+      return <MultiplicationGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} />;
+    }
+  }
+
   if (view === "play" && game && game.load === "english/words") {
-    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} embedded gameTitle={game.name[lg] || game.name.uz} onBack={() => setView("detail")} />;
+    return <BilimBozor user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} embedded gameTitle={game.name[lg] || game.name.uz} initialLevel={selectedEnglishLevel} onBack={() => { setView("detail"); setSelectedEnglishLevel(null); }} />;
   }
   if (view === "play" && game && game.load === "math/addition") {
     return <AdditionGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "math/subtraction") {
+    return <SubtractionGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "math/multiply") {
+    return <MultiplicationGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "math/division") {
+    return <DivisionGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "finance/needs-wants") {
+    return <SortGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "finance/budget") {
+    return <BudgetGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && (game.load === "finance/price-compare" || game.load === "finance/discount")) {
+    return <PriceQuizGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "english/money-words") {
+    return <MoneyWordsGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "logic/decision") {
+    return <DecisionGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "logic/pattern") {
+    return <SavingsSequenceGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "finance/bank-sim") {
+    return <BankSimGame user={user} lg={lg} dark={dark} onBack={() => setView("detail")} />;
   }
 
   // ═══ LEARNING PROFILE (bola) ═══
@@ -175,10 +242,23 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     return (
       <div>
         <PageHeader th={th} title={game.name[lg] || game.name.uz} onBack={back} />
-        <div style={{ background: grad(catById(game.category) || CATEGORIES[0], th), borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + SPACE.s4, marginBottom: SPACE.s3, textAlign: "center", boxShadow: SHADOW.e1(th.ac) }}>
-          <div style={{ width: SPACE.s16 + SPACE.s4, height: SPACE.s16 + SPACE.s4, borderRadius: RADIUS.l, background: "rgba(255,255,255,0.22)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto " + SPACE.s3 }}>{game.icon("#fff", 44)}</div>
-          <div style={{ ...TYPE.heading, fontWeight: 800, color: "#fff" }}>{game.name[lg] || game.name.uz}</div>
-          <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.9)", marginTop: SPACE.s1 }}>{game.desc[lg] || game.desc.uz}</div>
+        <div style={{
+          background: grad(catById(game.category) || CATEGORIES[0], th),
+          borderRadius: RADIUS.m,
+          padding: "18px 16px",
+          marginBottom: SPACE.s3,
+          textAlign: "center",
+          boxShadow: SHADOW.e1(th.ac),
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "110px",
+          boxSizing: "border-box"
+        }}>
+          <div style={{ width: 42, height: 42, borderRadius: RADIUS.m - 4, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 8, flexShrink: 0 }}>{game.icon("#fff", 24)}</div>
+          <h2 style={{ ...TYPE.heading, fontSize: 18, fontWeight: 800, color: "#fff", margin: 0, padding: 0, lineHeight: 1.2 }}>{game.name[lg] || game.name.uz}</h2>
+          <p style={{ ...TYPE.caption, fontSize: 12.5, color: "rgba(255,255,255,0.85)", margin: "4px 0 0 0", padding: 0, maxWidth: "280px", lineHeight: "1.3" }}>{game.desc[lg] || game.desc.uz}</p>
         </div>
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
           <StatCard th={th} value={d[lg] || d.uz} label={uz ? "Daraja" : lg === "ru" ? "Сложность" : "Difficulty"} tone={dc} />
@@ -192,7 +272,70 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
           </AppCard>
         )}
         {avail ? (
-          <PrimaryButton th={th} onClick={startGame}>{uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"}</PrimaryButton>
+          game.id === "english/words" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginTop: SPACE.s2 }}>
+              <div style={{ ...TYPE.subtitle, fontSize: 14, fontWeight: 800, color: th.t2, marginBottom: 2, textAlign: "center" }}>
+                {uz ? "Darajani tanlang va o'yinni boshlang:" : "Выберите уровень и начните игру:"}
+              </div>
+              {LEVELS.map(lvl => {
+                const allW = WORDS[lvl.id] || [];
+                const statsObj = stats || {};
+                const newCount = allW.filter(w => (statsObj[w.en] || 0) === 0).length;
+                const seenCount = allW.filter(w => (statsObj[w.en] || 0) > 0).length;
+                const pct = Math.min(100, Math.round((seenCount / allW.length) * 100));
+
+                const lvlName = lvl.id === 1 ? (uz ? "Boshlang'ich" : "Начальный") : lvl.id === 2 ? (uz ? "O'rta" : "Средний") : (uz ? "Yuqori" : "Продвинутый");
+                const diffLabel = lvl.id === 1 ? (uz ? "Oson" : "Легко") : lvl.id === 2 ? (uz ? "O'rtacha" : "Средне") : (uz ? "Qiyin" : "Сложно");
+
+                return (
+                  <button
+                    key={lvl.id}
+                    className="ui-press"
+                    onClick={() => {
+                      setSelectedEnglishLevel(lvl.id);
+                      setView("play");
+                    }}
+                    style={{
+                      width: "100%",
+                      textAlign: "left",
+                      fontFamily: "inherit",
+                      cursor: "pointer",
+                      background: th.sur,
+                      border: "2.5px solid " + lvl.color + "44",
+                      borderRadius: RADIUS.m,
+                      padding: SPACE.s3,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 8,
+                      boxSizing: "border-box"
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
+                      <span style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ width: 10, height: 10, borderRadius: "50%", background: lvl.color }} />
+                        {lvlName}
+                      </span>
+                      <span style={{ ...TYPE.tiny, fontWeight: 700, padding: "2px 8px", borderRadius: RADIUS.pill, background: lvl.color + "1a", color: lvl.color }}>
+                        {diffLabel} · +{lvl.baseCoins} coin
+                      </span>
+                    </div>
+
+                    <div style={{ width: "100%" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", ...TYPE.tiny, color: th.t2, marginBottom: 4 }}>
+                        <span>{uz ? "O'rganilgan so'zlar:" : "Изучено слов:"} <b>{seenCount}/{allW.length}</b></span>
+                        {newCount > 0 && <span style={{ color: th.gr }}>+{newCount} {uz ? "yangi" : "новых"}</span>}
+                      </div>
+                      <div style={{ height: 6, borderRadius: RADIUS.full, background: th.bor, overflow: "hidden", width: "100%" }}>
+                        <div style={{ width: pct + "%", height: "100%", background: lvl.color, borderRadius: RADIUS.full, transition: "width .3s" }} />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <PrimaryButton th={th} onClick={startGame}>{uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"}</PrimaryButton>
+          )
         ) : (
           <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6 + "px " + SPACE.s4 }}>
             <div style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s1 }}>{uz ? "Tez orada" : lg === "ru" ? "Скоро" : "Coming soon"}</div>
@@ -205,6 +348,20 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
 
   // ═══ O'YINLAR RO'YXATI (kategoriya ichida) ═══
   if (view === "games" && cat) {
+    if (cat.id === "math") {
+      return (
+        <LevelMap
+          user={user}
+          lg={lg}
+          dark={dark}
+          onSelectLevel={(lvl) => {
+            setActiveLevel(lvl);
+            setView("play-level");
+          }}
+          onBack={back}
+        />
+      );
+    }
     const list = gamesOf(cat.id);
     const prog = progressOf(cat.id);
     return (
@@ -243,10 +400,10 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
       <PageHeader th={th} title={uz ? "Bilim Bozori" : lg === "ru" ? "Рынок знаний" : "Knowledge Market"} onBack={onBack} />
       <BilimDashboard
         th={th} lg={lg} name={fullName(user)} photo={user?.photo}
-        coins={coins} xp={xp} streak={streak} sessions={sessions} learnedWords={learnedWords} gardenData={gardenData}
+        coins={coins} xp={xp} streak={streak} sessions={sessions} learnedWords={learnedWords}
         level={lv.level} rankLabel={rankLabel} rankColor={rankObj.color}
         xpPct={lv.pct} xpToNext={lv.toNext} maxLevel={lv.max}
-        openGame={openGame} openCat={openCat} onProfile={openProfile} onGarden={onGarden} onBack={onBack}
+        openGame={openGame} openCat={openCat} onProfile={openProfile} onBack={onBack}
         onMarket={() => setView("market")}
       />
     </div>

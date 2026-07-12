@@ -791,77 +791,96 @@ export default function ProfilePage({
 
           {/* FARZANDLAR section */}
           {kidsData.length > 0 && (
-            <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s3 }}>
-              <div style={{ paddingLeft: SPACE.s1 }}>
-                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Farzandlar" : "Children"}</span>
-              </div>
-              {kidsData.map(kid => {
-                const canDelKid = kid.rol === "kid" && (user?.rol === "bosh" || kid.parentId === user?.id);
-                return (
-                  <button 
+            isKid ? (
+              <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3 }}>
+                <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px " + SPACE.s1 + "px" }}>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Farzandlar" : "Children"}</span>
+                </div>
+                {kidsData.map((kid, i) => (
+                  <MemberRow 
                     key={kid.id} 
-                    className="ui-press"
-                    onClick={() => {
-                      buzz(10);
-                      setSelectedKid(kid);
-                      setPTab("kid_detail");
-                    }}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      background: th.sur,
-                      border: "1px solid " + th.bor,
-                      borderRadius: RADIUS.m,
-                      padding: SPACE.s4,
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: SPACE.s2,
-                      boxSizing: "border-box"
-                    }}
-                  >
-                    {/* Bola Avatari + Ismi */}
-                    <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, width: "100%" }}>
-                      <UIAvatar th={th} src={kid.photo} name={kid.ism} size={SPACE.s10} />
-                      <span style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1, fontWeight: 700 }}>{fullName(kid)}</span>
-                      <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: SPACE.s2 }}>
-                        {canDelKid && (
-                          <span onClick={(e) => { e.stopPropagation(); buzz(20); setKidDel(kid); }} style={{ display: "flex", padding: 6, color: th.rd }}>
-                            {Ico.trash(th.rd)}
-                          </span>
-                        )}
-                        {Ico.right(th.t3)}
-                      </span>
-                    </div>
-
-                    {/* Statistika satrlari */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
-                        {PIco.checkCircle(th.gr)}
-                        <span>{uz ? `Bu hafta ${kid.doneThisWeek} ta vazifa bajardi` : `Completed ${kid.doneThisWeek} tasks this week`}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
-                        {PIco.coin(th.am)}
-                        <span>{uz ? `${f(kid.earnedAmount, true)} ishlab topdi` : `Earned ${f(kid.earnedAmount, true)}`}</span>
-                      </div>
-                      {kid.activeGoal && (
-                        <div style={{ marginTop: 4 }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...TYPE.tiny, color: th.t3, marginBottom: 3, width: "100%" }}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              <span style={{ display: "inline-flex", alignItems: "center" }}>{PIco.target(th.ac, 14)}</span>
-                              {kid.activeGoal.ism}
+                    th={th} 
+                    photo={kid.photo} 
+                    name={fullName(kid) + (kid.id === user?.id ? " (" + t.me + ")" : "")}
+                    sub={uz ? "Farzand" : "Child"}
+                    divider={i < kidsData.length - 1}
+                    badge={<Badge th={th} tone={th.t2}>{uz ? "Farzand" : "Child"}</Badge>} 
+                  />
+                ))}
+              </AppCard>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s3 }}>
+                <div style={{ paddingLeft: SPACE.s1 }}>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Farzandlar" : "Children"}</span>
+                </div>
+                {kidsData.map(kid => {
+                  const canDelKid = kid.rol === "kid" && (user?.rol === "bosh" || kid.parentId === user?.id);
+                  return (
+                    <button 
+                      key={kid.id} 
+                      className="ui-press"
+                      onClick={() => {
+                        buzz(10);
+                        setSelectedKid(kid);
+                        setPTab("kid_detail");
+                      }}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        background: th.sur,
+                        border: "1px solid " + th.bor,
+                        borderRadius: RADIUS.m,
+                        padding: SPACE.s4,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: SPACE.s2,
+                        boxSizing: "border-box"
+                      }}
+                    >
+                      {/* Bola Avatari + Ismi */}
+                      <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, width: "100%" }}>
+                        <UIAvatar th={th} src={kid.photo} name={kid.ism} size={SPACE.s10} />
+                        <span style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1, fontWeight: 700 }}>{fullName(kid)}</span>
+                        <span style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: SPACE.s2 }}>
+                          {canDelKid && (
+                            <span onClick={(e) => { e.stopPropagation(); buzz(20); setKidDel(kid); }} style={{ display: "flex", padding: 6, color: th.rd }}>
+                              {Ico.trash(th.rd)}
                             </span>
-                            <span style={{ marginLeft: "auto", fontWeight: 700, color: th.ac }}>{kid.goalPct}%</span>
-                          </div>
-                          <LinearProgress th={th} value={kid.goalPct} tone={th.ac} height={6} />
+                          )}
+                          {Ico.right(th.t3)}
+                        </span>
+                      </div>
+
+                      {/* Statistika satrlari */}
+                      <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
+                          {PIco.checkCircle(th.gr)}
+                          <span>{uz ? `Bu hafta ${kid.doneThisWeek} ta vazifa bajardi` : `Completed ${kid.doneThisWeek} tasks this week`}</span>
                         </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
+                          {PIco.coin(th.am)}
+                          <span>{uz ? `${f(kid.earnedAmount, true)} ishlab topdi` : `Earned ${f(kid.earnedAmount, true)}`}</span>
+                        </div>
+                        {kid.activeGoal && (
+                          <div style={{ marginTop: 4 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...TYPE.tiny, color: th.t3, marginBottom: 3, width: "100%" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                <span style={{ display: "inline-flex", alignItems: "center" }}>{PIco.target(th.ac, 14)}</span>
+                                {kid.activeGoal.ism}
+                              </span>
+                              <span style={{ marginLeft: "auto", fontWeight: 700, color: th.ac }}>{kid.goalPct}%</span>
+                            </div>
+                            <LinearProgress th={th} value={kid.goalPct} tone={th.ac} height={6} />
+                          </div>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )
           )}
 
           {/* Bola qo'shish CTA */}

@@ -1,11 +1,11 @@
 // ═══════════════════════════════════════════════════════════
-//  ADDITION GAME WITH DYNAMIC LEVEL MAP & AUDIO SYNTHESIS
+//  SUBTRACTION GAME WITH DYNAMIC LEVEL MAP & AUDIO SYNTHESIS
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE, MOTION } from "../../utils/tokens.js";
 import { useGameEngine } from "../engine/useGameEngine.js";
-import { additionGenerator } from "./generators/addition.js";
+import { subtractionGenerator } from "./generators/subtraction.js";
 import { translateMathString } from "../../utils/formatters.js";
 import { addCoins, logGameSession, bestForGame, readSessions, readCoins, readLevelProgress, saveLevelProgress } from "../engine/persist.js";
 import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
@@ -127,7 +127,7 @@ const OptButton = memo(function OptButton({ th, value, state, onPick, disabled, 
   );
 });
 
-export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/addition", name, onBack, level }) {
+export default function SubtractionGame({ user, lg = "uz", dark, gameId = "math/subtraction", name, onBack, level }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
   const uz = lg === "uz";
   const kidName = name || (user && (user.ism || "")) || "";
@@ -149,7 +149,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
 
   const eng = useGameEngine({
     questionCount: lvlQuestionCount,
-    generator: additionGenerator,
+    generator: subtractionGenerator,
     startDifficulty: lvlStartDifficulty,
     name: kidName,
     lg,
@@ -343,7 +343,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
     }, 100);
   };
 
-  const levels = GAME_LEVELS[gameId] || GAME_LEVELS["math/addition"];
+  const levels = GAME_LEVELS[gameId] || GAME_LEVELS["math/subtraction"];
 
   // ═══ INTRO / MAP ═══
   if (eng.phase === "intro") {
@@ -356,7 +356,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <PageHeader th={th} title={uz ? "Qo'shish xaritasi" : lg === "ru" ? "Карта сложения" : "Addition Map"} onBack={onBack} />
+          <PageHeader th={th} title={uz ? "Ayirish xaritasi" : lg === "ru" ? "Карта вычитания" : "Subtraction Map"} onBack={onBack} />
           <button className="ui-press" onClick={toggleSound}
             style={{ border: "none", background: "rgba(255,255,255,0.06)", borderRadius: RADIUS.full, width: 38, height: 38, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             {soundIco(soundEnabled, th.t2, 20)}
@@ -384,19 +384,19 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
           <div style={{ position: "absolute", top: "65%", right: "-10%", width: 170, height: 170, background: "rgba(168, 85, 247, 0.22)", filter: "blur(50px)", borderRadius: "50%", pointerEvents: "none" }} />
           <div style={{ position: "absolute", top: "85%", left: "-5%", width: 160, height: 160, background: "rgba(234, 179, 8, 0.22)", filter: "blur(45px)", borderRadius: "50%", pointerEvents: "none" }} />
 
-          {/* Floating animated math symbols with vivid colors and subtle shadows */}
+          {/* Floating animated math symbols with vivid colors and subtle shadows (subtraction themed) */}
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
-            <div className="float-symbol-1" style={{ position: "absolute", top: "4%", left: "8%", fontSize: "34px", fontWeight: 900, color: "#3b82f6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(59,130,246,0.3))" }}>+</div>
+            <div className="float-symbol-1" style={{ position: "absolute", top: "4%", left: "8%", fontSize: "34px", fontWeight: 900, color: "#ef4444", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(239,68,68,0.3))" }}>-</div>
             <div className="float-symbol-2" style={{ position: "absolute", top: "12%", right: "12%", fontSize: "38px", fontWeight: 900, color: "#10b981", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(16,185,129,0.3))" }}>=</div>
-            <div className="float-symbol-3" style={{ position: "absolute", top: "20%", left: "14%", fontSize: "32px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>1</div>
-            <div className="float-symbol-4" style={{ position: "absolute", top: "28%", right: "8%", fontSize: "42px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>+</div>
-            <div className="float-symbol-1" style={{ position: "absolute", top: "38%", left: "6%", fontSize: "36px", fontWeight: 900, color: "#8b5cf6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(139,92,246,0.3))" }}>3</div>
+            <div className="float-symbol-3" style={{ position: "absolute", top: "20%", left: "14%", fontSize: "32px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>9</div>
+            <div className="float-symbol-4" style={{ position: "absolute", top: "28%", right: "8%", fontSize: "42px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>-</div>
+            <div className="float-symbol-1" style={{ position: "absolute", top: "38%", left: "6%", fontSize: "36px", fontWeight: 900, color: "#8b5cf6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(139,92,246,0.3))" }}>4</div>
             <div className="float-symbol-2" style={{ position: "absolute", top: "48%", right: "14%", fontSize: "40px", fontWeight: 900, color: "#ef4444", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(239,68,68,0.3))" }}>?</div>
-            <div className="float-symbol-3" style={{ position: "absolute", top: "58%", left: "10%", fontSize: "40px", fontWeight: 900, color: "#06b6d4", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(6,182,212,0.3))" }}>5</div>
-            <div className="float-symbol-4" style={{ position: "absolute", top: "68%", right: "10%", fontSize: "34px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>+</div>
-            <div className="float-symbol-1" style={{ position: "absolute", top: "78%", left: "12%", fontSize: "38px", fontWeight: 900, color: "#10b981", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(16,185,129,0.3))" }}>8</div>
+            <div className="float-symbol-3" style={{ position: "absolute", top: "58%", left: "10%", fontSize: "40px", fontWeight: 900, color: "#06b6d4", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(6,182,212,0.3))" }}>2</div>
+            <div className="float-symbol-4" style={{ position: "absolute", top: "68%", right: "10%", fontSize: "34px", fontWeight: 900, color: "#f59e0b", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(245,158,11,0.3))" }}>-</div>
+            <div className="float-symbol-1" style={{ position: "absolute", top: "78%", left: "12%", fontSize: "38px", fontWeight: 900, color: "#10b981", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(16,185,129,0.3))" }}>7</div>
             <div className="float-symbol-2" style={{ position: "absolute", top: "88%", right: "12%", fontSize: "38px", fontWeight: 900, color: "#3b82f6", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(59,130,246,0.3))" }}>=</div>
-            <div className="float-symbol-3" style={{ position: "absolute", top: "95%", left: "15%", fontSize: "36px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>9</div>
+            <div className="float-symbol-3" style={{ position: "absolute", top: "95%", left: "15%", fontSize: "36px", fontWeight: 900, color: "#ec4899", textShadow: "0 2px 4px rgba(0,0,0,0.15)", filter: "drop-shadow(0 2px 4px rgba(236,72,153,0.3))" }}>5</div>
           </div>
 
           {/* Map canvas container with custom serpentine path */}
@@ -404,11 +404,11 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
             {/* SVG serpentine connecting curve */}
             <svg style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }}>
               <defs>
-                <linearGradient id="additionTrackGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="30%" stopColor="#10b981" />
-                  <stop offset="60%" stopColor="#f59e0b" />
-                  <stop offset="100%" stopColor="#ef4444" />
+                <linearGradient id="subtractionTrackGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#ef4444" />
+                  <stop offset="30%" stopColor="#f59e0b" />
+                  <stop offset="60%" stopColor="#10b981" />
+                  <stop offset="100%" stopColor="#3b82f6" />
                 </linearGradient>
               </defs>
               
@@ -455,7 +455,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
                   return d;
                 })()}
                 fill="none"
-                stroke="url(#additionTrackGradient)"
+                stroke="url(#subtractionTrackGradient)"
                 strokeWidth="10"
                 strokeLinecap="round"
               />
@@ -874,7 +874,7 @@ export default function AdditionGame({ user, lg = "uz", dark, gameId = "math/add
                 {uz ? "Kichik yordam!" : lg === "ru" ? "Подсказка!" : "Quick Tip!"}
               </div>
               <p style={{ fontSize: 14, margin: 0, opacity: 0.95, lineHeight: 1.4 }}>
-                {lg === "uz" ? "Yordam: Narxlarni osongina qo'shish uchun avval mingliklarni qo'shib oling, keyin so'm birligini biriktiring! (Masalan: 3 ming so'm + 4 ming so'm = 7 ming so'm)" : lg === "ru" ? "Подсказка: чтобы легко складывать цены, просто сложите тысячи! (Пример: 3 тыс. руб. + 4 тыс. руб. = 7 тыс. руб.)" : lg === "kk" ? "Кеңес: бағаларды оңай қосу үшін алдымен мыңдықтарды қосыңыз! (Мысалы: 3 мың тг. + 4 мың тг. = 7 мың тг.)" : "Tip: To add prices easily, just add the thousands! (Example: $3k + $4k = $7k)"}
+                {lg === "uz" ? "Yordam: Narxlarni oson ayirish uchun avval mingliklarni ayiring, keyin so'm birligini biriktiring! (Masalan: 5 ming so'm - 2 ming so'm = 3 ming so'm)" : lg === "ru" ? "Подсказка: чтобы легко вычитать цены, просто вычтите тысячи! (Пример: 5 тыс. руб. - 2 тыс. руб. = 3 тыс. руб.)" : lg === "kk" ? "Кеңес: бағаларды оңай азайту үшін алдымен мыңдықтарды азайтыңыз! (Мысалы: 5 мың тг. - 2 мың тг. = 3 мың тг.)" : "Tip: To subtract prices easily, just subtract the thousands! (Example: $5k - $2k = $3k)"}
               </p>
             </div>
             <button className="ui-press" onClick={() => { setShowHintOverlay(false); setConsecutiveErrors(0); }} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", fontWeight: "bold" }}>×</button>

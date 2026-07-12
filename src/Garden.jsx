@@ -141,7 +141,7 @@ const GModal = memo(function GModal({ gt, onClose, children }) {
 
 // ════════════════════════════════════════════════════════════
 export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }) {
-  const { maq } = useApp() || { maq: [] };
+  const { maq, setGardenData } = useApp() || { maq: [], setGardenData: null };
   const oilaId = user?.oilaId;
   const L = (uz, ru = uz) => (lg === "ru" ? ru : uz);
   const gt = gardenTheme(dark);
@@ -175,6 +175,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const [familyBonusClaimed, setFamilyBonusClaimed] = useState(false);
   const [barakaStarsCount, setBarakaStarsCount] = useState(0);
   const [lastAiAdviceAt, setLastAiAdviceAt] = useState(0);
+  const [wateredBy, setWateredBy] = useState([]);
 
   // ── OMBORE & BOZOR (Warehouse & Bazaar System) ──
   const [warehouse, setWarehouse] = useState({ normal: 0, golden: 0, rainbow: 0 });
@@ -308,6 +309,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       if (g?.familyBonusClaimed !== undefined) setFamilyBonusClaimed(g.familyBonusClaimed);
       if (g?.barakaStarsCount !== undefined) setBarakaStarsCount(g.barakaStarsCount);
       if (g?.lastAiAdviceAt !== undefined) setLastAiAdviceAt(g.lastAiAdviceAt);
+      if (g?.wateredBy !== undefined) setWateredBy(g.wateredBy || []);
 
       if (g?.warehouse !== undefined) setWarehouse(g.warehouse);
       if (g?.pests !== undefined) setPests(g.pests);
@@ -336,6 +338,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         plots: newPlots,
         lastWatered: lastWateredRef.current || null,
         updatedAt: Date.now(),
+        wateredBy: extraFields.wateredBy !== undefined ? extraFields.wateredBy : wateredBy,
         waterDrops: extraFields.waterDrops !== undefined ? extraFields.waterDrops : waterDrops,
         goldenSeeds: extraFields.goldenSeeds !== undefined ? extraFields.goldenSeeds : goldenSeeds,
         rainbowSeeds: extraFields.rainbowSeeds !== undefined ? extraFields.rainbowSeeds : rainbowSeeds,
@@ -352,6 +355,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       payload.placedDecorations = newPlaced !== undefined ? newPlaced : placedDecorations;
 
       await db.s("baraka_garden_" + oilaId, payload);
+      if (setGardenData) setGardenData(payload);
       if (newCoins    !== undefined) await db.s("baraka_coins_" + oilaId, newCoins);
       if (newEnergy   !== undefined) await db.s("baraka_energy_" + oilaId, newEnergy);
       if (newCrystals !== undefined) await db.s("baraka_crystals_" + oilaId, newCrystals);
@@ -714,6 +718,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     const newFamilySuns = familySuns + 5;
     setFamilySuns(newFamilySuns);
 
+    // Bola sug'organi haqidagi ma'lumotni saqlash (bosh sahifadagi 0/2 missiyasi uchun)
+    const newRecord = { uid: user?.id, ism: user?.ism || "Bola", sana: new Date().toISOString() };
+    const newWateredBy = [newRecord, ...wateredBy].slice(0, 50);
+    setWateredBy(newWateredBy);
+
     const newPlots = plots.map(p => p.id === plotId
       ? { ...p, waterCount: resetWater ? 0 : newWaterCount, stage: newStage, lastWateredAt: nowT, harvestReady }
       : p);
@@ -731,7 +740,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     spawnCoin(5, 78, 72, "bolt");
     await saveGarden(newPlots, undefined, newEnergy, undefined, usesDrop ? undefined : nowT, undefined, undefined, undefined, {
       waterDrops: nextDrops,
-      familySuns: newFamilySuns
+      familySuns: newFamilySuns,
+      wateredBy: newWateredBy
     });
   };
 

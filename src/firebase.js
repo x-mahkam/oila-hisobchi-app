@@ -119,7 +119,7 @@ export const setOwnerCtx = (uid, oilaId) => { ownerCtx = { uid: uid || null, oil
 
 // Kalitdan oilaId'ni ajratib olish (oila-umumiy hujjatlar uchun).
 // Masalan "x_<oilaId>_<uid>" yoki "maq_<oilaId>" dan <oilaId> chiqadi.
-const OILA_PREFIXES = ["x_", "d_", "maq_", "qarz_", "vazifa_", "kidbal_", "stars_", "starlog_", "oila_", "fam_", "toy_"];
+const OILA_PREFIXES = ["x_", "d_", "maq_", "qarz_", "vazifa_", "kidbal_", "stars_", "starlog_", "oila_", "fam_", "toy_", "bilim_offer_"];
 
 // Oila-umumiy hujjatning oilaId'sini kalitdan aniqlash.
 const oilaIdFromKey = (k) => {

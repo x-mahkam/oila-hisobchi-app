@@ -29,7 +29,15 @@ export function analyzeLearning(sessions = [], lg = "uz", name = "", days = 30) 
   }
   const bySubject = Object.values(map).map(m => {
     const c = catById(m.cat);
-    return { cat: m.cat, name: c ? (c.name[lg] || c.name.uz) : m.cat, pct: Math.round(m.pctSum / m.games), games: m.games, avgCoin: Math.round(m.coin / m.games) };
+    const avgPct = m.pctSum / m.games;
+    const mastery = Math.min(100, Math.max(5, Math.round((Math.min(6, m.games) * 16.6) * (avgPct / 100))));
+    return { 
+      cat: m.cat, 
+      name: c ? (c.name[lg] || c.name.uz) : m.cat, 
+      pct: mastery, 
+      games: m.games, 
+      avgCoin: Math.round(m.coin / m.games) 
+    };
   }).sort((a, b) => b.pct - a.pct);
 
   const best = bySubject[0] || null;

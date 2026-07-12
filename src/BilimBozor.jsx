@@ -7,6 +7,7 @@ import { notifyFamily } from "./utils/notify.jsx";
 import { CATEGORIES, gameById } from "./bilim/registry.jsx";
 import { analyzeLearning, weeklyReport } from "./bilim/engine/analytics.js";
 import { useApp } from "./context/AppContext.jsx";
+import { logGameSession } from "./bilim/engine/persist.js";
 
 // ── Outline SVG ikonkalar (emoji o'rniga) ──
 const BIco = {
@@ -33,7 +34,45 @@ const BIco = {
 // ═══════════════════════════════════════════════════════════
 
 // ── SO'ZLAR BAZASI (har darajada 50 ta) ────────────────────
-const WORDS = {
+// ── WORD_EMOJIS XARITASI (visual rasm o'rniga bolalarbop emojilar) ────────────────────
+export const WORD_EMOJIS = {
+  // Level 1
+  apple: "🍎", book: "📖", cat: "🐱", dog: "🐶", house: "🏠", water: "💧",
+  food: "🍲", sun: "☀️", moon: "🌙", star: "⭐", tree: "🌳", flower: "🌸",
+  mother: "👩", father: "👨", child: "👶", school: "🏫", friend: "🤝", happy: "😊",
+  big: "🐘", small: "🐭", red: "🔴", blue: "🔵", green: "🟢", white: "⚪",
+  black: "⚫", one: "1️⃣", two: "2️⃣", three: "3️⃣", four: "4️⃣", five: "5️⃣",
+  eat: "🍽️", drink: "🥤", sleep: "😴", run: "🏃", walk: "🚶", read: "📚",
+  write: "✍️", play: "🎮", love: "❤️", good: "👍", bad: "👎", hot: "🔥",
+  cold: "❄️", day: "☀️", night: "🌃", hand: "✋", eye: "👁️", ear: "👂",
+  nose: "👃", mouth: "👄",
+
+  // Level 2
+  money: "💵", family: "👨‍👩‍👧‍👦", health: "🏥", work: "💼", travel: "✈️", dream: "💭",
+  success: "🏆", future: "🚀", study: "📖", beautiful: "✨", important: "⚠️", together: "🤝",
+  always: "♾️", never: "🚫", morning: "🌅", evening: "🌇", market: "🛒", savings: "🏦",
+  budget: "📊", goal: "🎯", teacher: "👩‍🏫", student: "🧑‍🎓", hospital: "🏥", doctor: "🩺",
+  street: "🛣️", city: "🏙️", village: "🏡", mountain: "🏔️", river: "🏞️", sky: "🌌",
+  rain: "🌧️", snow: "❄️", wind: "💨", summer: "☀️", winter: "❄️", spring: "🌱",
+  autumn: "🍂", bread: "🍞", milk: "🥛", egg: "🥚", meat: "🥩", vegetable: "🥕",
+  fruit: "🍎", chair: "🪑", table: "🪵", window: "🪟", door: "🚪", floor: "🪵",
+  wall: "🧱", roof: "🏠",
+
+  // Level 3
+  achievement: "🏆", responsibility: "⚖️", opportunity: "🔑", environment: "🌍", investment: "📈",
+  management: "👔", education: "🎓", experience: "🧠", knowledge: "📚", patience: "⏳",
+  confidence: "💪", discipline: "📅", creativity: "🎨", prosperity: "🌾", gratitude: "🙏",
+  perseverance: "🏔️", dedication: "❤️", inspiration: "💡", determination: "✊", excellence: "⭐",
+  entrepreneur: "💼", innovation: "💡", collaboration: "🤝", communication: "💬", leadership: "👑",
+  strategy: "🗺️", motivation: "🔥", productivity: "⚡", sustainability: "♻️", transparency: "🔍",
+  integrity: "🤝", resilience: "🌱", empathy: "🫶", curiosity: "🧐", flexibility: "🤸",
+  accountability: "📝", mindfulness: "🧘", ambition: "🎯", courage: "🦁", wisdom: "🦉",
+  generosity: "🎁", humility: "🙇", loyalty: "🐕", sincerity: "🤍", compassion: "💖",
+  diligence: "🐝", punctuality: "⏰", adaptability: "🦎", professionalism: "🎓"
+};
+
+// ── SO'ZLAR BAZASI (har darajada 50 ta) ────────────────────
+export const WORDS = {
   1: [
     {en:"apple",uz:"olma"},{en:"book",uz:"kitob"},{en:"cat",uz:"mushuk"},
     {en:"dog",uz:"it"},{en:"house",uz:"uy"},{en:"water",uz:"suv"},
@@ -101,10 +140,10 @@ const WORDS = {
   ],
 };
 
-const LEVELS = [
-  { id:1, name:"Boshlang'ich", color:"#22c55e", baseCoins:5,  wordsPerSession:10 },
-  { id:2, name:"O'rta",        color:"#f59e0b", baseCoins:10, wordsPerSession:10 },
-  { id:3, name:"Yuqori",       color:"#8b5cf6", baseCoins:15, wordsPerSession:10 },
+export const LEVELS = [
+  { id:1, name:"Boshlang'ich", color:"#22c55e", baseCoins:3,  wordsPerSession:10 },
+  { id:2, name:"O'rta",        color:"#f59e0b", baseCoins:5,  wordsPerSession:10 },
+  { id:3, name:"Yuqori",       color:"#8b5cf6", baseCoins:7,  wordsPerSession:10 },
 ];
 
 // Eskirish koeffitsienti: necha marta ko'rilgan → coin multiplier
@@ -143,8 +182,8 @@ const getAutoDesc = (coins, pul, isKidRole, lang) => {
   }
 };
 
-export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, embedded=false, gameTitle }) {
-  const { xar, setXar, dar, setDar, setKidBalances } = useApp();
+export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, embedded=false, gameTitle, initialLevel }) {
+  const { xar, setXar, dar, setDar, setKidBalances, vazifalar } = useApp();
   const lastAutoDescRef = useRef("");
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh" || user?.rol === "azo";
@@ -153,7 +192,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [tab, setTab]               = useState(embedded ? "oyin" : "bozor");
-  const [vazifalar, setVazifalar]   = useState([]);
+  const [offers, setOffers]         = useState([]);
   const [showAddV, setShowAddV]     = useState(false);
   const [vCoins, setVCoins]         = useState("");
   const [vPul, setVPul]             = useState("");
@@ -176,8 +215,11 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
   const [flyCoins, setFlyCoins]     = useState([]);
   const [streak, setStreak]         = useState(0);
   const [loading, setLoading]       = useState(false);
-  const [editingRewardVId, setEditingRewardVId] = useState(null);
-  const [editRewardValue, setEditRewardValue]   = useState("");
+  
+  const [counteringOfferId, setCounteringOfferId] = useState(null);
+  const [counterCoins, setCounterCoins]           = useState("");
+  const [counterPul, setCounterPul]               = useState("");
+
   const [sessions, setSessions]     = useState([]);
   const [kidsCoins, setKidsCoins]   = useState({});
 
@@ -201,13 +243,13 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
     if (!oilaId) return;
 
     // --- INSTANT CACHE LOADING ---
-    const vC = db.gCache("bilim_vazifa_" + oilaId);
+    const vC = db.gCache("bilim_offer_" + oilaId);
     const bcC = db.gCache("bilim_coins_" + user?.id);
     const wsC = db.gCache("bilim_stats_" + user?.id);
-    const stC = db.gCache("bilim_streak_" + user?.id);
+    const stC = db.gCache("bilim_correct_streak_" + user?.id);
     const sessC = db.gCache("bilim_games_" + user?.id);
 
-    if (vC) setVazifalar(vC);
+    if (vC) setOffers(vC);
     if (bcC != null) setBilimCoins(bcC);
     if (wsC) setWordStats(wsC);
     if (stC != null) setStreak(stC);
@@ -222,17 +264,42 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
   const loadAll = async () => {
     try {
       const [v, bc, ws, st, sess] = await Promise.all([
-        db.g("bilim_vazifa_" + oilaId),
+        db.g("bilim_offer_" + oilaId),
         db.g("bilim_coins_" + user?.id),
         db.g("bilim_stats_" + user?.id),
-        db.g("bilim_streak_" + user?.id),
+        db.g("bilim_correct_streak_" + user?.id),
         db.g("bilim_games_" + user?.id),
       ]);
-      if (v)        setVazifalar(v);
+      if (v)        setOffers(v);
       if (bc!=null) setBilimCoins(bc);
-      if (ws)       setWordStats(ws);
+      const wsObj = ws || {};
+      if (ws)       setWordStats(wsObj);
       if (st!=null) setStreak(st);
       if (sess)     setSessions(Array.isArray(sess) ? sess : []);
+      
+      if (initialLevel && (initialLevel === 1 || initialLevel === 2 || initialLevel === 3)) {
+        const allWords = WORDS[initialLevel] || WORDS[1];
+        const sorted = [...allWords].sort((a,b) => {
+          const sa = wsObj[a.en] || 0;
+          const sb = wsObj[b.en] || 0;
+          return sa - sb; // kam ko'rilgan birinchi
+        });
+        const session = sorted.slice(0, 10);
+        setLevel(initialLevel);
+        setSessionWords(session);
+        setCurIdx(0);
+        setSelected(null);
+        setIsCorrect(null);
+        setSessionScore({right:0, wrong:0, earned:0});
+        setShowResult(false);
+        
+        const word = session[0];
+        if (word) {
+          const wrong = shuffle(allWords.filter(w => w.en !== word.en)).slice(0,3).map(w => w.uz);
+          setChoices(shuffle([word.uz, ...wrong]));
+        }
+      }
+
       const kids = (azolar||[]).filter(a => a.rol==="kid");
       if (kids.length > 0) {
         setVKidId(kids[0].id);
@@ -324,19 +391,35 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       await Promise.all([
         db.s("bilim_stats_" + user.id, newStats),
         db.s("bilim_coins_" + user.id, newCoins),
-        db.s("bilim_streak_" + user.id, newStreak),
+        db.s("bilim_correct_streak_" + user.id, newStreak),
       ]);
       checkVazifalar(newCoins);
     } else {
       setStreak(0);
       setSessionScore(prev => ({...prev, wrong: prev.wrong+1}));
-      await db.s("bilim_streak_" + user.id, 0);
+      await db.s("bilim_correct_streak_" + user.id, 0);
     }
 
     setTimeout(() => {
       const next = curIdx + 1;
       if (next >= sessionWords.length) {
         setShowResult(true);
+        // Log daily activity session and automatically update daily study streak
+        const finalRight = right ? sessionScore.right + 1 : sessionScore.right;
+        const finalEarned = right ? sessionScore.earned + earned : sessionScore.earned;
+        const finalTotal = sessionWords.length;
+        const finalPct = Math.round((finalRight / finalTotal) * 100);
+        logGameSession(user.id, {
+          gameId: "vocab",
+          correct: finalRight,
+          total: finalTotal,
+          pct: finalPct,
+          seconds: 60,
+          maxCombo: finalRight,
+          coins: finalEarned,
+          difficulty: level,
+          newRecord: false
+        }).catch(e => console.error(e));
       } else {
         setCurIdx(next);
         buildChoices(sessionWords, next, WORDS[level]||WORDS[1]);
@@ -344,226 +427,247 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
     }, 900);
   };
 
-  const checkVazifalar = async (currentCoins) => {
-    // Child manually confirms task completion when coins target is reached via the "Topshirish" button.
-  };
-
-  const confirmCollected = async (v) => {
-    try {
-      const upd = vazifalar.map(vz =>
-        vz.id === v.id ? { ...vz, done: true, doneSana: new Date().toISOString().slice(0, 10) } : vz
-      );
-      setVazifalar(upd);
-      await db.s("bilim_vazifa_" + oilaId, upd);
-      showMsg(L("🎉 Vazifa bajarildi deb belgilandi! Ota-ona tasdiqlaydi va to'laydi.", "🎉 Задание выполнено! Ожидает выплаты родителя."));
-
-      // Notify parents
-      try {
-        const adults = (azolar || []).filter(a => a.rol === "bosh" || a.rol === "azo");
-        for (const p of adults) {
-          await notifyFamily(
-            p.id,
-            "bilim_done",
-            L("Bilim coinlari yig'ildi!", "Монеты знаний собраны!"),
-            L(
-              `${v.kidName} bilim vazifasi coinlarini yig'di: "${v.desc}". To'lovni tasdiqlang!`,
-              `${v.kidName} собрал монеты задания: "${v.desc}". Подтвердите выплату!`
-            )
-          );
-        }
-      } catch (e2) {
-        console.error("Failed to notify parent about task done:", e2);
-      }
-    } catch (e) {
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+  // ── Yangi taklif qo'shish (addOffer) ──
+  const addOffer = async () => {
+    const coinsNum = Number(vCoins);
+    const amountNum = Number(vPul.replace(/\D/g, ""));
+    if (!coinsNum || !amountNum) {
+      showMsg(L("Iltimos, barcha maydonlarni to'ldiring!", "Пожалуйста, заполните все поля!"), "err");
+      return;
     }
-  };
 
-  // ── Vazifa qo'shish ──
-  const addVazifa = async () => {
-    const cleanPulStr = String(vPul).replace(/\D/g, "");
-    if (!vCoins || !vPul || Number(vCoins) <= 0 || Number(cleanPulStr) <= 0)
-      return showMsg(L("❌ Maydonlarni to'ldiring","❌ Заполните поля"), "err");
-    if (!vKidId)
-      return showMsg(L("❌ Bola tanlang","❌ Выберите ребёнка"), "err");
+    const targetKidId = isKid ? user.id : vKidId;
+    if (!targetKidId) {
+      showMsg(L("Iltimos, bolani tanlang!", "Пожалуйста, выберите ребенка!"), "err");
+      return;
+    }
+    const targetKidName = isKid ? (user.ism || "Bola") : ((azolar || []).find(k => k.id === vKidId)?.ism || "Bola");
 
-    const reward = Number(cleanPulStr);
-
-    const kid = (azolar||[]).find(a => a.id===vKidId);
-    const v = {
+    const newOffer = {
       id: Date.now(),
-      uid: vKidId,
-      kidName: kid?.ism || "Bola",
-      targetCoins: Number(vCoins),
-      reward,
-      desc: vDesc || L(`${vCoins} ta Bilim Coin yig'`, `Набери ${vCoins} монет`),
-      done: false,
-      paid: false,
-      createdBy: user.id,
-      createdAt: new Date().toISOString().slice(0,10),
+      kidId: targetKidId,
+      kidName: targetKidName,
+      fromRole: isKid ? "kid" : "parent",
+      coins: coinsNum,
+      amount: amountNum,
+      status: "pending",
+      counterOf: null,
+      note: vDesc.trim() || "",
+      createdAt: new Date().toISOString(),
+      createdBy: user.id
     };
-    const upd = [v, ...vazifalar];
-    setVazifalar(upd);
-    await db.s("bilim_vazifa_" + oilaId, upd);
-    setShowAddV(false);
-    setVCoins(""); setVPul(""); setVDesc("");
-    showMsg(L("✅ Vazifa qo'shildi!", "✅ Задание добавлено!"));
-  };
 
-  // ── Bola taklif yuborishi ──
-  const addProposal = async () => {
-    const cleanPulStr = String(vPul).replace(/\D/g, "");
-    if (!vCoins || !vPul || Number(vCoins) <= 0 || Number(cleanPulStr) <= 0)
-      return showMsg(L("❌ Maydonlarni to'ldiring", "❌ Заполните поля"), "err");
+    const updatedOffers = [newOffer, ...offers];
+    setOffers(updatedOffers);
+    await db.s("bilim_offer_" + oilaId, updatedOffers);
 
-    const reward = Number(cleanPulStr);
-    const targetParentId = vParentId || "all";
-    const targetParentName = targetParentId === "all" ? L("Ota-ona", "Родители") : ((azolar || []).find(a => a.id === targetParentId)?.ism || L("Ota-ona", "Родители"));
-
-    const v = {
-      id: Date.now(),
-      uid: user.id,
-      kidName: user.ism || "Bola",
-      targetCoins: Number(vCoins),
-      reward,
-      desc: vDesc || L(`${vCoins} ta Bilim Coin yig'ish`, `Набрать ${vCoins} монет`),
-      done: false,
-      paid: false,
-      proposed: true,
-      proposedBy: user.id,
-      proposedTo: targetParentId,
-      proposedToName: targetParentName,
-      createdBy: user.id,
-      createdAt: new Date().toISOString().slice(0, 10),
-    };
-    const upd = [v, ...vazifalar];
-    setVazifalar(upd);
-    await db.s("bilim_vazifa_" + oilaId, upd);
-    
-    // Notify parents
+    // Notify recipient
     try {
       const adults = (azolar || []).filter(a => a.rol === "bosh" || a.rol === "azo");
-      const uidsToNotify = targetParentId === "all" ? adults.map(a => a.id) : [targetParentId];
+      const uidsToNotify = isKid ? (vParentId === "all" ? adults.map(a => a.id) : [vParentId]) : [targetKidId];
       for (const uid of uidsToNotify) {
         await notifyFamily(
           uid,
-          "bilim_proposal",
-          L("Yangi bilim vazifasi taklifi", "Новое предложение задания"),
-          L(
-            `${v.kidName} yangi bilim vazifasi taklif qildi: ${v.desc} (${v.reward.toLocaleString()} so'm)`,
-            `${v.kidName} предложил новое задание: ${v.desc} (${v.reward.toLocaleString()} сум)`
-          ),
-          { proposalId: v.id }
+          "bilim_offer",
+          L("Yangi bilim bozori taklifi", "Новое предложение на рынке знаний"),
+          isKid
+            ? L(`${targetKidName} yangi taklif kiritdi: ${coinsNum} coin uchun ${amountNum.toLocaleString()} so'm`, `${targetKidName} сделал предложение: ${amountNum.toLocaleString()} сум за ${coinsNum} монет`)
+            : L(`Ota-onangiz yangi taklif kiritdi: ${coinsNum} coiningizga ${amountNum.toLocaleString()} so'm`, `Родители сделали предложение: ${amountNum.toLocaleString()} сум за ${coinsNum} монет`),
+          { offerId: newOffer.id }
         );
       }
     } catch (e) {
-      console.error("Failed to send proposal notifications:", e);
+      console.error("Failed to send notification:", e);
     }
 
     setShowAddV(false);
-    setVCoins(""); setVPul(""); setVDesc(""); setVParentId("all");
-    showMsg(L("✅ Taklif ota-onangizga yuborildi!", "✅ Предложение отправлено родителям!"));
+    setVCoins("");
+    setVPul("");
+    setVDesc("");
+    showMsg(L("Taklif muvaffaqiyatli yuborildi! 🚀", "Предложение успешно отправлено! 🚀"));
   };
 
-  // ── Ota-ona taklifni tasdiqlashi ──
-  const approveProposal = async (v) => {
+  // ── Taklifni qabul qilish (acceptOffer) ──
+  const acceptOffer = async (off) => {
     try {
-      let finalReward = v.reward;
-      const cleanEditReward = Number(String(editRewardValue).replace(/\D/g, ""));
-      if (editingRewardVId === v.id && cleanEditReward > 0) {
-        finalReward = cleanEditReward;
-        setEditingRewardVId(null);
-      }
-      const upd = vazifalar.map(vz =>
-        vz.id === v.id ? { ...vz, proposed: false, reward: finalReward, approvedBy: user.id, approvedAt: new Date().toISOString().slice(0, 10) } : vz
-      );
-      setVazifalar(upd);
-      await db.s("bilim_vazifa_" + oilaId, upd);
-      showMsg(L("✅ Taklif tasdiqlandi!", "✅ Предложение одобрено!"));
-
-      // Notify the kid
-      await notifyFamily(
-        v.uid,
-        "bilim_approved",
-        L("Bilim vazifasi tasdiqlandi!", "Задание утверждено!"),
-        L(
-          `Ota-onangiz taklifingizni tasdiqladi: ${v.desc} (${finalReward.toLocaleString()} so'm)`,
-          `Родители утвердили ваше предложение: ${v.desc} (${finalReward.toLocaleString()} сум)`
-        )
-      );
-    } catch (e) {
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
-    }
-  };
-
-  // ── Ota-ona taklifni rad etishi ──
-  const rejectProposal = async (v) => {
-    try {
-      const upd = vazifalar.filter(vz => vz.id !== v.id);
-      setVazifalar(upd);
-      await db.s("bilim_vazifa_" + oilaId, upd);
-      showMsg(L("❌ Taklif rad etildi", "❌ Предложение отклонено"));
-    } catch (e) {
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
-    }
-  };
-
-  // ── Vazifani to'lash — bola balansiga, ota/ona balansidan ──
-  const payVazifa = async (v) => {
-    try {
-      // Ota/ona balansini tekshirish
-      const myDar = dar.filter(d => d.uid === user.id || !d.uid).reduce((s, d) => s + Number(d.summa || 0), 0);
-      const myXar = xar.filter(x => x.uid === user.id || !x.uid).reduce((s, x) => s + Number(x.summa || 0), 0);
-      const myBal = myDar - myXar;
-
-      if (myBal < v.reward) {
-        return showMsg(
-          L(
-            `❌ Balansingizda yetarli mablag' yo'q! Kerak: ${v.reward.toLocaleString()} so'm`,
-            `❌ Недостаточно средств на вашем балансе! Нужно: ${v.reward.toLocaleString()} сум`
-          ),
-          "err"
-        );
+      // 1. Bolaning joriy coin balansini tekshirish
+      const currentCoins = (await db.g("bilim_coins_" + off.kidId)) || 0;
+      if (currentCoins < off.coins) {
+        const errMsg = isKid 
+          ? L("Sizda yetarli bilim coin yo'q! 🪙", "У вас недостаточно монет знаний! 🪙")
+          : L(`Farzandingizda yetarli bilim coin yo'q! (Mavjud: ${currentCoins}) 🪙`, `У ребенка недостаточно монет знаний! (Доступно: ${currentCoins}) 🪙`);
+        showMsg(errMsg, "err");
+        return;
       }
 
-      // Bolaning bilim coin balansini noldan boshlash (to'landi)
-      const kidBilim = (await db.g("bilim_coins_" + v.uid)) || 0;
-      // Bolaning cho'ntak pulini oshirish
+      // 2. Bolaning coin balansini kamaytirish
+      const newCoins = currentCoins - off.coins;
+      await db.s("bilim_coins_" + off.kidId, newCoins);
+      if (isKid) {
+        setBilimCoins(newCoins);
+      }
+      setKidsCoins(prev => ({ ...prev, [off.kidId]: newCoins }));
+
+      // 3. Bolaning cho'ntak puliga so'mni qo'shish
       const kb = (await db.g("kidbal_" + oilaId)) || {};
-      kb[v.uid] = (kb[v.uid] || 0) + v.reward;
+      kb[off.kidId] = (kb[off.kidId] || 0) + off.amount;
       await db.s("kidbal_" + oilaId, kb);
       if (typeof setKidBalances === "function") {
         setKidBalances(kb);
       }
 
-      // Bolaning coin balansini yangilash (kamaytirish)
-      const nextCoins = Math.max(0, kidBilim - v.targetCoins);
-      await db.s("bilim_coins_" + v.uid, nextCoins);
-      setKidsCoins(prev => ({ ...prev, [v.uid]: nextCoins }));
-
-      // Ota/ona xarajatlariga qo'shish
+      // 4. Ota-onadan xarajat yozish (oilaviy byudjet uchun)
       const xItem = {
         id: Date.now(),
         kategoriya: "boshqa",
-        summa: v.reward,
-        izoh: L(`Bilim bozor: ${v.desc}`, `Маркет знаний: ${v.desc}`),
+        summa: off.amount,
+        izoh: L(`Bilim bozor: taklif qabul qilindi (${off.coins} coin)`, `Маркет знаний: предложение принято (${off.coins} монет)`),
         sana: new Date().toISOString().slice(0, 10),
         vaqt: new Date().toTimeString().slice(0, 5),
         uid: user.id,
         repeat: false
       };
-      const xk = "x_" + oilaId + "_" + user.id;
+      const adultId = isBosh ? user.id : ((azolar || []).find(a => a.rol === "bosh" || a.rol === "azo")?.id || user.id);
+      const xk = "x_" + oilaId + "_" + adultId;
       const currentXData = (await db.g(xk)) || [];
       await db.s(xk, [xItem, ...currentXData]);
-      setXar(prev => [xItem, ...prev]);
+      if (typeof setXar === "function") {
+        setXar(prev => [xItem, ...prev]);
+      }
 
-      const upd = vazifalar.map(vz =>
-        vz.id===v.id ? {...vz, paid:true, paidSana:new Date().toISOString().slice(0,10)} : vz
-      );
-      setVazifalar(upd);
-      await db.s("bilim_vazifa_" + oilaId, upd);
-      showMsg(L(`💰 ${v.reward.toLocaleString()} so'm to'landi!`, `💰 Выплачено ${v.reward.toLocaleString()} сум!`));
-    } catch(e) {
+      // 5. Taklif statusini "accepted" deb belgilash
+      const updated = offers.map(o => {
+        if (o.id === off.id) {
+          return {
+            ...o,
+            status: "accepted",
+            respondedAt: new Date().toISOString(),
+            respondedBy: user.id
+          };
+        }
+        return o;
+      });
+      setOffers(updated);
+      await db.s("bilim_offer_" + oilaId, updated);
+
+      showMsg(L("🎉 Taklif qabul qilindi va pul o'tkazildi!", "🎉 Предложение принято, средства зачислены!"));
+
+      // Notify recipient
+      try {
+        const notifyTarget = isKid ? adultId : off.kidId;
+        await notifyFamily(
+          notifyTarget,
+          "bilim_offer_accepted",
+          L("Taklif qabul qilindi!", "Предложение принято!"),
+          L(
+            `Taklifingiz qabul qilindi: ${off.coins} coin evaziga ${off.amount.toLocaleString()} so'm o'tkazildi.`,
+            `Ваше предложение принято: ${off.amount.toLocaleString()} сум зачислены за ${off.coins} монет.`
+          )
+        );
+      } catch (e2) {
+        console.error("Failed to notify acceptance:", e2);
+      }
+    } catch (e) {
+      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+    }
+  };
+
+  // ── Taklifni rad etish (rejectOffer) ──
+  const rejectOffer = async (off) => {
+    try {
+      const updated = offers.map(o => {
+        if (o.id === off.id) {
+          return {
+            ...o,
+            status: "rejected",
+            respondedAt: new Date().toISOString(),
+            respondedBy: user.id
+          };
+        }
+        return o;
+      });
+      setOffers(updated);
+      await db.s("bilim_offer_" + oilaId, updated);
+      showMsg(L("Taklif rad etildi ❌", "Предложение отклонено ❌"));
+
+      // Notify recipient
+      try {
+        const recipient = off.createdBy;
+        await notifyFamily(
+          recipient,
+          "bilim_offer_rejected",
+          L("Taklif rad etildi", "Предложение отклонено"),
+          L(`Yuborgan taklifingiz rad etildi: ${off.coins} coin, ${off.amount.toLocaleString()} so'm`, `Ваше предложение отклонено: ${off.coins} монет, ${off.amount.toLocaleString()} сум`)
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (e) {
+      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+    }
+  };
+
+  // ── Qarshi taklif yuborish (submitCounterOffer) ──
+  const submitCounterOffer = async (off) => {
+    try {
+      const coinsNum = Number(counterCoins);
+      const amountNum = Number(counterPul.replace(/\D/g, ""));
+      if (!coinsNum || !amountNum) {
+        showMsg(L("Iltimos, barcha maydonlarni to'ldiring!", "Пожалуйста, заполните все поля!"), "err");
+        return;
+      }
+
+      const counterOffer = {
+        id: Date.now(),
+        kidId: off.kidId,
+        kidName: off.kidName,
+        fromRole: isKid ? "kid" : "parent",
+        coins: coinsNum,
+        amount: amountNum,
+        status: "pending",
+        counterOf: off.id,
+        note: L("Qarshi taklif", "Встречное предложение"),
+        createdAt: new Date().toISOString(),
+        createdBy: user.id
+      };
+
+      const updated = offers.map(o => {
+        if (o.id === off.id) {
+          return {
+            ...o,
+            status: "countered",
+            respondedAt: new Date().toISOString(),
+            respondedBy: user.id
+          };
+        }
+        return o;
+      });
+
+      const finalOffers = [counterOffer, ...updated];
+      setOffers(finalOffers);
+      await db.s("bilim_offer_" + oilaId, finalOffers);
+
+      setCounteringOfferId(null);
+      setCounterCoins("");
+      setCounterPul("");
+      showMsg(L("Qarshi taklif yuborildi! 🔄", "Встречное предложение отправлено! 🔄"));
+
+      // Notify recipient
+      try {
+        const recipient = off.createdBy;
+        await notifyFamily(
+          recipient,
+          "bilim_offer_countered",
+          L("Yangi qarshi taklif!", "Новое встречное предложение!"),
+          L(
+            `Taklifingizga qarshi yangi taklif berildi: ${coinsNum} coin uchun ${amountNum.toLocaleString()} so'm`,
+            `Получено встречное предложение: ${amountNum.toLocaleString()} сум за ${coinsNum} монет`
+          )
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    } catch (e) {
       showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
     }
   };
@@ -768,10 +872,11 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               })()}
 
               {/* So'z kartasi */}
-              <div style={{background:`linear-gradient(135deg,${curLvl?.color}22,${curLvl?.color}0a)`,border:`2px solid ${curLvl?.color}44`,borderRadius:24,padding:"30px 20px",textAlign:"center",marginBottom:18}}>
-                <div style={{fontSize:11,fontWeight:700,color:dark?"#94a3b8":"#64748b",letterSpacing:2,marginBottom:8}}>ENGLISH</div>
-                <div style={{fontSize:38,fontWeight:900,color:dark?"#f1f5f9":"#1e293b",letterSpacing:1}}>{curWord.en}</div>
-                {streak>2 && <div style={{marginTop:8,fontSize:13,color:"#f59e0b",fontWeight:700,animation:"pulse 1s ease-in-out infinite",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",14)} {streak} ketma-ket!</div>}
+              <div style={{background:`linear-gradient(135deg,${curLvl?.color}22,${curLvl?.color}0a)`,border:`2px solid ${curLvl?.color}44`,borderRadius:24,padding:"24px 20px",textAlign:"center",marginBottom:18}}>
+                <div style={{fontSize:64,marginBottom:12,filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", animation: "bounce 2s infinite ease-in-out"}}>{WORD_EMOJIS[curWord.en.toLowerCase()] || "📝"}</div>
+                <div style={{fontSize:11,fontWeight:700,color:dark?"#94a3b8":"#64748b",letterSpacing:2,marginBottom:4}}>ENGLISH</div>
+                <div style={{fontSize:34,fontWeight:900,color:dark?"#f1f5f9":"#1e293b",letterSpacing:1}}>{curWord.en}</div>
+                {streak>2 && <div style={{marginTop:8,fontSize:13,color:"#f59e0b",fontWeight:700,animation:"pulse 1s ease-in-out infinite",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",14)} {streak} {L("ketma-ket!","подряд!")}</div>}
               </div>
 
               {/* Variantlar */}
@@ -842,343 +947,393 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       {/* ══════════ BOZOR ══════════════════════════════════════ */}
       {tab==="bozor" && (
         <div style={{flex:1,padding:"0 16px 16px",overflow:"auto"}}>
+          {/* Bozor Intro Header */}
           <div style={{
             background: th.ac + "0d",
             border: `1.5px solid ${th.ac}33`,
             borderRadius: 16,
-            padding: "12px 16px",
-            marginBottom: 14,
+            padding: "14px 16px",
+            marginBottom: 16,
             fontSize: 13,
             color: th.t2,
             lineHeight: 1.6,
             display: "flex",
             alignItems: "flex-start",
-            gap: 8
+            gap: 10
           }}>
-            <span style={{ display: "inline-flex", marginTop: 2 }}>{BIco.info(th.ac, 16)}</span>
-            <span>
-              {isKid ? L(
-                "Ota-onangiz siz uchun 'Bilim Vazifasi' qo'shadi. Masalan: '200 Bilim Coin yig' = 50 000 so'm'. Coin yig'sangiz, pulingiz cho'ntak puli hisobiga avtomatik tushadi!",
-                "Родители добавляют задания. Например: 'Собери 200 монет = 50 000 сум'. Копите монеты — деньги автоматически зачислятся на карманные расходы!"
-              ) : L(
-                "Ota-ona 'Bilim Vazifasi' qo'shadi. Masalan: '200 Bilim Coin yig' = 50 000 so'm'. Bola coin yig'sa, mukofot puli avtomatik tarzda bolaning cho'ntak puli balansiga tushadi!",
-                "Родитель добавляет задание. Например: 'Собери 200 монет = 50 000 сум'. Когда ребёнок накопит монеты, вознаграждение автоматически зачислится на его баланс!"
-              )}
-            </span>
+            <span style={{ display: "inline-flex", marginTop: 2 }}>{BIco.info(th.ac, 18)}</span>
+            <div>
+              <strong style={{ display: "block", color: th.t1, marginBottom: 4, fontSize: 14 }}>
+                {L("Bilim Bozori 2.0 — Ikki tomonlama savdolashish 🤝", "Рынок знаний 2.0 — Двусторонний торг 🤝")}
+              </strong>
+              <span>
+                {isKid ? L(
+                  "Siz va ota-onangiz o'zaro savdolashishingiz mumkin! Coinlaringiz evaziga so'm taklif qiling, rad eting yoki qarshi taklif bering. Kelishuv qabul qilingandagina coinlar yechiladi va real so'm hisobingizga o'tadi!",
+                  "Вы и родители можете торговаться друг с другом! Предлагайте сум за свои монеты, отклоняйте или делайте встречные предложения. Монеты спишутся и зачислятся на баланс только после согласия обеих сторон!"
+                ) : L(
+                  "Farzandlaringiz bilan bilim coinlari evaziga so'm almashish uchun savdolashing! Takliflarni qabul qiling, rad eting yoki o'z narxingizni (qarshi taklif) yuboring.",
+                  "Торгуйтесь с детьми по обмену монет знаний на сум! Принимайте предложения, отклоняйте или делайте встречные предложения со своей ценой."
+                )}
+              </span>
+            </div>
           </div>
 
-          {/* Bola: Ota-onaga taklif yuborish tugmasi */}
-          {isKid && (
-            <button onClick={() => { setShowAddV(true); setVParentId("all"); }}
-              style={{
-                width: "100%",
-                padding: "14px",
-                borderRadius: 16,
-                border: `2px dashed ${th.ac}`,
-                background: th.ac + "0a",
-                cursor: "pointer",
-                fontSize: 15,
-                fontWeight: 700,
-                color: th.ac,
-                marginBottom: 16,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                transition: "all 0.2s"
-              }}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                {BIco.plus(th.ac, 16)} {L("Yangi taklif yuborish", "Предложить задание")}
+          {/* Coin Status Indicator */}
+          <div style={{
+            background: th.sur,
+            border: `1.5px solid ${th.bor}`,
+            borderRadius: 16,
+            padding: "12px 16px",
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {BIco.user(th.ac, 18)}
+              <span style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>
+                {isKid ? L("Sizning bilim coinlaringiz:", "Ваши монеты знаний:") : L("Farzandlar balanslari:", "Балансы детей:")}
               </span>
-            </button>
-          )}
-
-          {/* Ota-ona: bola tanlash + vazifa qo'shish */}
-          {isBosh && (
-            <>
-              {kids.length>1 && (
-                <div style={{display:"flex",gap:8,marginBottom:12,flexWrap:"wrap"}}>
-                  {kids.map(k => (
-                    <button key={k.id} onClick={()=>setVKidId(k.id)}
-                      style={{padding:"8px 16px",borderRadius:20,border:`2px solid ${vKidId===k.id?th.ac:th.bor}`,background:vKidId===k.id?th.ac+"22":"transparent",color:vKidId===k.id?th.ac:th.t2,fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                      <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.user(vKidId===k.id?th.ac:th.t2, 12)} {k.ism}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button onClick={()=>setShowAddV(true)}
-                style={{width:"100%",padding:"15px",borderRadius:16,border:`2px dashed ${th.ac}`,background:"transparent",cursor:"pointer",fontSize:15,fontWeight:700,color:th.ac,marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                <span style={{display:"inline-flex",alignItems:"center",gap:6}}>{BIco.plus(th.ac, 16)} {L("Yangi bilim vazifasi","Новое задание")}</span>
-              </button>
-            </>
-          )}
-
-          {/* Vazifalar */}
-          {(isBosh ? vazifalar : vazifalar.filter(v=>v.uid===user?.id)).length===0 ? (
-            <div style={{textAlign:"center",padding:"40px 20px",color:th.t3}}>
-              <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>{BIco.empty(th.bor, 48)}</div>
-              <div style={{fontSize:14}}>{L("Hozircha vazifa yo'q","Заданий нет")}</div>
-              {isKid && <div style={{fontSize:12,marginTop:8}}>{L("Ota-onangizdan vazifa so'rang yoki taklif jo'nating","Попросите родителя добавить задание или отправьте предложение")}</div>}
             </div>
-          ) : (
-            <div style={{display:"flex",flexDirection:"column",gap:12}}>
-              {(isBosh ? vazifalar : vazifalar.filter(v=>v.uid===user?.id)).map(v => {
-                const kidCoins = v.uid===user?.id ? bilimCoins : (kidsCoins[v.uid] ?? null);
-                const progress = kidCoins!==null ? Math.min(100,(kidCoins/v.targetCoins)*100) : null;
-                const isProposal = v.proposed;
-                
-                return (
-                  <div key={v.id} style={{
-                    background: th.sur,
-                    border: `1px solid ${v.paid ? th.gr : v.done ? th.am : isProposal ? th.am + "88" : th.bor}`,
-                    borderRadius: 16,
-                    padding: "16px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-                      <div style={{ flex: 1, fontSize: 14, fontWeight: 700, color: th.t1, paddingRight: 8, display: "flex", alignItems: "center", gap: 6 }}>
-                        {BIco.book(th.ac, 14)} {v.desc}
-                      </div>
-                      <div style={{
-                        flexShrink: 0,
-                        fontSize: 11,
-                        fontWeight: 700,
-                        borderRadius: 10,
-                        padding: "3px 8px",
-                        background: v.paid ? th.gr + "18" : v.done ? th.am + "18" : isProposal ? th.am + "18" : "transparent",
-                        color: v.paid ? th.gr : v.done ? th.am : isProposal ? th.am : "transparent",
-                        border: `1px solid ${v.paid ? th.gr : v.done ? th.am : isProposal ? th.am : "transparent"}`,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 4
-                      }}>
-                        {v.paid ? (
-                          <><span style={{ display: "inline-flex" }}>{BIco.check(th.gr, 10)}</span> {L("To'landi", "Выплачено")}</>
-                        ) : v.done ? (
-                          <><span style={{ display: "inline-flex" }}>{BIco.fire(th.am, 10)}</span> {L("Kutilmoqda", "Ожидает")}</>
-                        ) : isProposal ? (
-                          <><span style={{ display: "inline-flex" }}>{BIco.star(th.am, 10)}</span> {L("Taklif yuborildi", "Предложено")}</>
-                        ) : ""}
-                      </div>
-                    </div>
+            {isKid ? (
+              <span style={{ fontSize: 16, fontWeight: 800, color: th.am, display: "inline-flex", alignItems: "center", gap: 4 }}>
+                {BIco.coin(th.am, 16)} {bilimCoins}
+              </span>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-end" }}>
+                {kids.map(k => (
+                  <span key={k.id} style={{ fontSize: 13, color: th.t2 }}>
+                    {k.ism}: <strong style={{ color: th.am }}>{kidsCoins[k.id] ?? 0} {BIco.coin(th.am, 12)}</strong>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
 
-                    {/* Meta info */}
-                    {isBosh && (
-                      <div style={{ fontSize: 12, color: th.t2, marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                        {BIco.user(th.t2, 12)} <span style={{ fontWeight: 600 }}>{v.kidName}</span>
-                      </div>
-                    )}
-                    {isProposal && v.proposedToName && (
-                      <div style={{ fontSize: 12, color: th.t2, marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                        {BIco.user(th.t2, 12)} {L("Kimga: ", "Кому: ")} <span style={{ fontWeight: 600 }}>{v.proposedToName}</span>
-                      </div>
-                    )}
+          {/* New Offer Button */}
+          <button onClick={() => { setShowAddV(true); if (kids.length > 0 && !vKidId) setVKidId(kids[0].id); }}
+            style={{
+              width: "100%",
+              padding: "14px",
+              borderRadius: 16,
+              border: `2px dashed ${th.ac}`,
+              background: th.ac + "0a",
+              cursor: "pointer",
+              fontSize: 15,
+              fontWeight: 700,
+              color: th.ac,
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              transition: "all 0.2s"
+            }}
+          >
+            {BIco.plus(th.ac, 18)} {isKid ? L("Yangi taklif yuborish", "Предложить сделку") : L("Yangi taklif yuborish", "Сделать предложение ребенку")}
+          </button>
 
-                    {isBosh && isProposal ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, marginBottom: 10, flexWrap: "wrap" }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: th.am, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          {BIco.coin(th.am, 14)} {v.targetCoins} Coin
-                        </span>
-                        <span style={{ color: th.t3 }}>→</span>
-                        {editingRewardVId === v.id ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              value={editRewardValue}
-                              onChange={(e) => {
-                                const raw = e.target.value.replace(/\D/g, "");
-                                setEditRewardValue(formatInputSum(raw));
-                              }}
-                              placeholder={v.reward.toString()}
-                              style={{
-                                width: 100,
-                                padding: "4px 8px",
-                                borderRadius: 10,
-                                border: `2px solid ${th.ac}`,
-                                background: dark ? "#1e293b" : "#fff",
-                                color: th.t1,
-                                fontWeight: "bold",
-                                fontSize: 13,
-                              }}
-                            />
-                            <span style={{ fontSize: 12, color: th.t2 }}>so'm</span>
-                            <button
-                              onClick={() => {
-                                const cleanReward = Number(String(editRewardValue).replace(/\D/g, ""));
-                                if (cleanReward > 0) {
-                                  v.reward = cleanReward;
-                                }
-                                setEditingRewardVId(null);
-                              }}
-                              style={{
-                                padding: "4px 8px",
-                                background: th.gr,
-                                color: "#fff",
-                                border: "none",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                fontSize: 11,
-                                fontWeight: "bold"
-                              }}
-                            >
-                              {L("Saqlash", "Сохранить")}
-                            </button>
-                            <button
-                              onClick={() => setEditingRewardVId(null)}
-                              style={{
-                                padding: "4px 8px",
-                                background: th.bor,
-                                color: th.t1,
-                                border: "none",
-                                borderRadius: 8,
-                                cursor: "pointer",
-                                fontSize: 11,
-                                fontWeight: "bold"
-                              }}
-                            >
-                              {L("Bekor", "Отмена")}
-                            </button>
-                          </div>
-                        ) : (
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: th.gr, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                              {BIco.coin(th.gr, 14)} {v.reward.toLocaleString()} so'm
-                            </span>
-                            <button
-                              onClick={() => {
-                                setEditingRewardVId(v.id);
-                                setEditRewardValue(v.reward.toString());
-                              }}
-                              style={{
-                                background: "none",
-                                border: "none",
-                                color: th.ac,
-                                fontSize: 11,
-                                fontWeight: 700,
-                                cursor: "pointer",
-                                padding: "2px 6px",
-                                borderRadius: 6,
-                                border: `1px solid ${th.ac}33`,
-                              }}
-                            >
-                              {L("O'zgartirish", "Изменить")}
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: progress !== null && !v.done && !isProposal ? 10 : 0 }}>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: th.am, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          {BIco.coin(th.am, 14)} {v.targetCoins} Coin
-                        </span>
-                        <span style={{ color: th.t3 }}>→</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: th.gr, display: "inline-flex", alignItems: "center", gap: 4 }}>
-                          {BIco.coin(th.gr, 14)} {v.reward.toLocaleString()} so'm
-                        </span>
-                      </div>
-                    )}
+          {/* Filter offers for parent / kid */}
+          {(() => {
+            const visibleOffers = isKid 
+              ? offers.filter(o => o.kidId === user.id)
+              : offers;
 
-                    {/* Progress Bar */}
-                    {progress !== null && !v.done && !isProposal && (
-                      <div style={{ marginTop: 8 }}>
-                        <div style={{ background: th.bor, borderRadius: 20, height: 7, overflow: "hidden", marginBottom: 4 }}>
-                          <div style={{ width: `${progress}%`, height: "100%", background: th.ac, borderRadius: 20, transition: "width .4s" }} />
-                        </div>
-                        <div style={{ fontSize: 11, color: th.t2, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 4 }}>
-                          <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                            {kidCoins}/{v.targetCoins} {BIco.coin(th.t2, 10)}
+            if (visibleOffers.length === 0) {
+              return (
+                <div style={{textAlign:"center",padding:"40px 20px",color:th.t3}}>
+                  <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>{BIco.empty(th.bor, 48)}</div>
+                  <div style={{fontSize:14, fontWeight: 600}}>{L("Hozircha savdolar yo'q","Активных сделок нет")}</div>
+                  <div style={{fontSize:12,marginTop:6, color: th.t2}}>{L("Boshlash uchun yuqoridagi tugma orqali yangi taklif kiritishingiz mumkin.","Для начала создайте новое предложение по кнопке выше.")}</div>
+                </div>
+              );
+            }
+
+            return (
+              <div style={{display:"flex",flexDirection:"column",gap:12}}>
+                {visibleOffers.map(off => {
+                  const isIncoming = (isKid && off.fromRole === "parent") || (isBosh && off.fromRole === "kid");
+                  const isPending = off.status === "pending";
+                  const dateStr = off.createdAt ? new Date(off.createdAt).toLocaleDateString() : "";
+                  
+                  // For styling status badges
+                  let statusColor = th.t2;
+                  let statusBg = th.bg;
+                  let statusLabel = off.status;
+
+                  if (off.status === "pending") {
+                    statusColor = "#f59e0b";
+                    statusBg = "#f59e0b12";
+                    statusLabel = L("Kutilmoqda", "Ожидает");
+                  } else if (off.status === "accepted") {
+                    statusColor = "#10b981";
+                    statusBg = "#10b98112";
+                    statusLabel = L("Qabul qilindi", "Принято");
+                  } else if (off.status === "rejected") {
+                    statusColor = "#ef4444";
+                    statusBg = "#ef444412";
+                    statusLabel = L("Rad etildi", "Отклонено");
+                  } else if (off.status === "countered") {
+                    statusColor = "#3b82f6";
+                    statusBg = "#3b82f612";
+                    statusLabel = L("Qarshi taklif", "Встречное");
+                  }
+
+                  return (
+                    <div key={off.id} style={{
+                      background: th.sur,
+                      border: `1.5px solid ${isPending ? th.ac + "44" : th.bor}`,
+                      borderRadius: 16,
+                      padding: "16px",
+                      boxShadow: "0 2px 8px rgba(0,0,0,0.03)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 10
+                    }}>
+                      {/* Top Row: Sender & Status Badge */}
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          {BIco.user(th.t2, 14)}
+                          <span style={{ fontSize: 12, color: th.t2, fontWeight: 600 }}>
+                            {isKid 
+                              ? (off.fromRole === "parent" ? L("Ota-ona taklifi", "Предложение родителей") : L("Siz yuborgan taklif", "Ваше предложение"))
+                              : (off.fromRole === "kid" ? L(`${off.kidName} taklifi`, `Предложение ${off.kidName}`) : L(`Sizning (${off.kidName}ga) taklifingiz`, `Ваше предложение (${off.kidName})`))
+                            }
                           </span>
-                          {kidCoins >= v.targetCoins && isKid && (
-                            <button
-                              onClick={() => confirmCollected(v)}
-                              style={{
-                                padding: "4px 10px",
-                                borderRadius: 8,
-                                border: "none",
-                                background: th.gr,
-                                color: "#fff",
-                                fontWeight: "bold",
-                                fontSize: 11,
-                                cursor: "pointer",
-                                transition: "all 0.2s"
-                              }}
-                            >
-                              {L("Topshirish", "Сдать")}
-                            </button>
-                          )}
+                        </div>
+                        <span style={{
+                          fontSize: 11,
+                          fontWeight: 700,
+                          borderRadius: 8,
+                          padding: "3px 8px",
+                          background: statusBg,
+                          color: statusColor,
+                          border: `1.5px solid ${statusColor}44`
+                        }}>
+                          {statusLabel}
+                        </span>
+                      </div>
+
+                      {/* Middle Row: Trade Details */}
+                      <div style={{
+                        background: th.bg,
+                        borderRadius: 12,
+                        padding: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-around",
+                        border: `1px solid ${th.bor}`
+                      }}>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>{L("Bilim Coinlari", "Монеты")}</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: th.am, display: "flex", alignItems: "center", gap: 4 }}>
+                            {BIco.coin(th.am, 16)} {off.coins} Coin
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 18, color: th.t3 }}>➔</span>
+                        <div style={{ textAlign: "center" }}>
+                          <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>{L("Mukofot", "Вознаграждение")}</div>
+                          <div style={{ fontSize: 16, fontWeight: 800, color: th.gr }}>
+                            {off.amount.toLocaleString()} so'm
+                          </div>
                         </div>
                       </div>
-                    )}
 
-                    {/* Parent buttons for proposals */}
-                    {isBosh && isProposal && (
-                      <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-                        <button onClick={() => rejectProposal(v)}
-                          style={{
-                            flex: 1,
-                            padding: "10px",
-                            borderRadius: 12,
-                            border: `1px solid ${th.rd}`,
-                            background: "transparent",
-                            color: th.rd,
-                            fontWeight: 700,
-                            fontSize: 13,
-                            cursor: "pointer",
-                            transition: "all 0.2s"
-                          }}
-                        >
-                          {L("Rad etish", "Отклонить")}
-                        </button>
-                        <button onClick={() => approveProposal(v)}
-                          style={{
-                            flex: 1,
-                            padding: "10px",
-                            borderRadius: 12,
-                            border: "none",
-                            background: `linear-gradient(135deg, ${th.gr}, #047857)`,
-                            color: "#fff",
-                            fontWeight: 800,
-                            fontSize: 13,
-                            cursor: "pointer",
-                            transition: "all 0.2s"
-                          }}
-                        >
-                          {L("Tasdiqlash", "Одобрить")}
-                        </button>
+                      {/* Display optional description note */}
+                      {off.note && (
+                        <div style={{ fontSize: 12, color: th.t2, background: th.bg, padding: "8px 12px", borderRadius: 8, fontStyle: "italic" }}>
+                          {off.note}
+                        </div>
+                      )}
+
+                      {/* Date details */}
+                      <div style={{ fontSize: 10, color: th.t3, display: "flex", justifyContent: "space-between" }}>
+                        <span>ID: {off.id}</span>
+                        <span>{dateStr}</span>
                       </div>
-                    )}
 
-                    {/* Parent button to pay finished tasks */}
-                    {isBosh && v.done && !v.paid && (
-                      <button onClick={() => payVazifa(v)}
-                        style={{
-                          marginTop: 10,
-                          width: "100%",
-                          padding: "12px",
-                          borderRadius: 12,
-                          border: "none",
-                          background: `linear-gradient(135deg, ${th.gr}, #047857)`,
-                          color: "#fff",
-                          fontWeight: 800,
-                          fontSize: 14,
-                          cursor: "pointer",
+                      {/* Action buttons if pending and incoming */}
+                      {isPending && isIncoming && (
+                        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                          <button onClick={() => rejectOffer(off)}
+                            style={{
+                              flex: 1,
+                              padding: "10px",
+                              borderRadius: 12,
+                              border: `1.5px solid ${th.rd}44`,
+                              background: "transparent",
+                              color: th.rd,
+                              fontWeight: 700,
+                              fontSize: 13,
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                          >
+                            {L("Rad etish", "Отклонить")}
+                          </button>
+                          
+                          <button onClick={() => {
+                            setCounteringOfferId(off.id);
+                            setCounterCoins(off.coins.toString());
+                            setCounterPul(off.amount.toString());
+                          }}
+                            style={{
+                              flex: 1,
+                              padding: "10px",
+                              borderRadius: 12,
+                              border: `1.5px solid ${th.ac}44`,
+                              background: "transparent",
+                              color: th.ac,
+                              fontWeight: 700,
+                              fontSize: 13,
+                              cursor: "pointer",
+                              transition: "all 0.2s"
+                            }}
+                          >
+                            {L("Savdolashish", "Торговаться")}
+                          </button>
+
+                          <button onClick={() => acceptOffer(off)}
+                            style={{
+                              flex: 1.5,
+                              padding: "10px",
+                              borderRadius: 12,
+                              border: "none",
+                              background: `linear-gradient(135deg, ${th.gr}, #059669)`,
+                              color: "#fff",
+                              fontWeight: 800,
+                              fontSize: 13,
+                              cursor: "pointer",
+                              transition: "all 0.2s",
+                              boxShadow: "0 2px 6px rgba(16,185,129,0.2)"
+                            }}
+                          >
+                            {L("Qabul qilish", "Принять")}
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Waiting message for pending outgoing offers */}
+                      {isPending && !isIncoming && (
+                        <div style={{
+                          textAlign: "center",
+                          fontSize: 12,
+                          color: th.t2,
+                          background: th.bg,
+                          padding: "8px",
+                          borderRadius: 10,
+                          border: `1px solid ${th.bor}`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          gap: 6,
-                          transition: "all 0.2s"
-                        }}
-                      >
-                        {BIco.coin("#fff", 14)} {L(`${v.reward.toLocaleString()} so'm to'lash`, `Выплатить ${v.reward.toLocaleString()} сум`)}
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                          gap: 6
+                        }}>
+                          <span style={{ display: "inline-flex", animation: "pulse 1.5s infinite" }}>{BIco.star(th.ac, 12)}</span>
+                          {L("Qarshi tomondan javob kutilmoqda...", "Ожидание ответа с другой стороны...")}
+                        </div>
+                      )}
+
+                      {/* Interactive Counter-Offer inline fields */}
+                      {counteringOfferId === off.id && (
+                        <div style={{
+                          marginTop: 8,
+                          padding: "12px",
+                          background: th.bg,
+                          border: `1.5px solid ${th.ac}44`,
+                          borderRadius: 12,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 10,
+                          animation: "slideDown 0.2s ease"
+                        }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: th.t1 }}>
+                            {L("Yangi qarshi taklif kiritish 🔄", "Ввести встречное предложение 🔄")}
+                          </div>
+                          
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 10, color: th.t2, display: "block", marginBottom: 4 }}>{L("Coins", "Монеты")}</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={counterCoins}
+                                onChange={e => setCounterCoins(e.target.value.replace(/\D/g, ""))}
+                                style={{
+                                  width: "100%",
+                                  padding: "8px 10px",
+                                  borderRadius: 8,
+                                  border: `1px solid ${th.bor}`,
+                                  background: th.sur,
+                                  color: th.t1,
+                                  fontSize: 13,
+                                  outline: "none",
+                                  boxSizing: "border-box"
+                                }}
+                              />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <label style={{ fontSize: 10, color: th.t2, display: "block", marginBottom: 4 }}>{L("So'm (Mukofot)", "Сум (Награда)")}</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                value={counterPul}
+                                onChange={e => {
+                                  const raw = e.target.value.replace(/\D/g, "");
+                                  setCounterPul(formatInputSum(raw));
+                                }}
+                                style={{
+                                  width: "100%",
+                                  padding: "8px 10px",
+                                  borderRadius: 8,
+                                  border: `1px solid ${th.bor}`,
+                                  background: th.sur,
+                                  color: th.t1,
+                                  fontSize: 13,
+                                  outline: "none",
+                                  boxSizing: "border-box"
+                                }}
+                              />
+                            </div>
+                          </div>
+
+                          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 }}>
+                            <button onClick={() => setCounteringOfferId(null)}
+                              style={{
+                                padding: "6px 12px",
+                                borderRadius: 8,
+                                border: "none",
+                                background: th.bor,
+                                color: th.t2,
+                                fontWeight: 700,
+                                fontSize: 12,
+                                cursor: "pointer"
+                              }}
+                            >
+                              {L("Bekor qilish", "Отмена")}
+                            </button>
+                            <button onClick={() => submitCounterOffer(off)}
+                              style={{
+                                padding: "6px 16px",
+                                borderRadius: 8,
+                                border: "none",
+                                background: th.ac,
+                                color: "#fff",
+                                fontWeight: 800,
+                                fontSize: 12,
+                                cursor: "pointer"
+                              }}
+                            >
+                              {L("Yuborish 🔄", "Отправить 🔄")}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -1256,7 +1411,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           <div style={{flex:1,padding:"16px",overflow:"auto"}}>
             {isBosh && (
               <>
-                <div style={{display:"space-between", justifyContent:"space-between",alignItems:"center",marginBottom:14, display:"flex"}}>
+                <div style={{display:"flex", justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
                   <span style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",display:"flex",alignItems:"center",gap:6}}>{BIco.chart("#3b82f6", 16)} {L("Bola-ona natijalari","Результаты")}</span>
                   <button onClick={()=>setTab("bozor")}
                     style={{display:"flex",alignItems:"center",gap:6,background:dark?"#1e293b":"#fff",border:`1.5px solid ${dark?"#334155":"#cbd5e1"}`,borderRadius:12,padding:"6px 12px",fontSize:12,fontWeight:700,color:"#3b82f6",cursor:"pointer"}}>
@@ -1511,8 +1666,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               <button onClick={()=>setShowAddV(false)} style={{flex:1,padding:"13px",borderRadius:14,border:"none",background:th.bor,color:th.t2,fontWeight:700,cursor:"pointer"}}>
                 {L("Bekor qilish","Отмена")}
               </button>
-              <button onClick={isKid ? addProposal : addVazifa} style={{flex:1,padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${th.ac},${th.ac2})`,color:"#fff",fontWeight:800,cursor:"pointer"}}>
-                {isKid ? L("Taklif jo'natish","Предложить") : L("Vazifa qo'shish","Добавить")}
+              <button onClick={addOffer} style={{flex:1,padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${th.ac},${th.ac2})`,color:"#fff",fontWeight:800,cursor:"pointer"}}>
+                {isKid ? L("Taklif jo'natish","Предложить") : L("Taklif jo'natish","Отправить")}
               </button>
             </div>
           </div>

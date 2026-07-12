@@ -3,7 +3,7 @@
 //  Yangi o'yin qo'shish = shu faylga BITTA yozuv qo'shish.
 //  Firebase/coin/permission O'ZGARMAYDI — bu faqat metama'lumot.
 //  Har o'yin: { id: "<category>/<game>", ... , load: () => Component }
-//  `load` bo'lmasa — "tez orada" (soon) holatida ko'rinadi.
+//  `load` bo'lsa — "tez orada" (soon) holatida ko'rinadi.
 // ═══════════════════════════════════════════════════════════
 
 // ── Kichik outline SVG'lar (emoji o'rniga) ──
@@ -14,6 +14,7 @@ const S = (paths, extra) => (c, s = 26) => (
   </svg>
 );
 export const BIco = {
+  finance: S(["M10 16a6 6 0 1012 0 6 6 0 00-12 0z", "M16 8V6M16 26v-2M12 11a4 4 0 018 0c0 2-4 2-4 4v1"]),
   math:    S(["M6 6h20v20H6z", "M11 11h10M11 16h10M11 21h6"]),
   english: S(["M16 5c-5 0-9 3-9 8s4 8 9 8 9-3 9-8-4-8-9-8z", "M16 5v16M7 13h18"]),
   logic:   S(["M16 4l10 6v12l-10 6-10-6V10z", "M16 4v12M16 16l10-6M16 16l-10-6"]),
@@ -25,6 +26,8 @@ export const BIco = {
   // o'yin ikonkalari
   plus:    S(["M9 9h14v14H9z", "M16 12v8M12 16h8"]),
   minus:   S(["M9 9h14v14H9z", "M12 16h8"]),
+  multiply: S(["M9 9h14v14H9z", "M13 13l6 6M19 13l-6 6"]),
+  divide:   S(["M9 9h14v14H9z", "M12 16h8", "M16 12h.01M16 20h.01"]),
   palette: S(["M16 6C10 6 6 10 6 15c0 4 3 6 6 6 2 0 2-1 2-2 0-2 2-2 3-2 4 0 6-2 6-5 0-4-4-6-7-6z", "M11 13h.01M20 13h.01M14 19h.01"]),
   animal:  S(["M10 12c-2-4 2-6 3-3M22 12c2-4-2-6-3-3M8 18c0-5 4-8 8-8s8 3 8 8-4 6-8 6-8-1-8-6z", "M13 16h.01M19 16h.01"]),
   science: S(["M13 4h6M14 4v7l-6 12a2 2 0 002 3h12a2 2 0 002-3l-6-12V4", "M11 19h10"]),
@@ -66,6 +69,7 @@ export const medalSvg = (color, s = 22) => (
 // ═══ KATEGORIYALAR ═══════════════════════════════════════════
 //  gradient: [tokenKey1, tokenKey2] — th[key] orqali olinadi (hardcoded yo'q)
 export const CATEGORIES = [
+  { id: "finance",   name: { uz: "Moliyaviy savodxonlik", ru: "Финансовая грамотность", en: "Financial Literacy" }, icon: BIco.finance, grad: ["am", "ac"] },
   { id: "math",      name: { uz: "Matematika", ru: "Математика", en: "Math" },     icon: BIco.math,    grad: ["ac", "ac2"] },
   { id: "english",   name: { uz: "Ingliz tili", ru: "Английский", en: "English" }, icon: BIco.english, grad: ["gr", "ac"] },
   { id: "logic",     name: { uz: "Mantiq", ru: "Логика", en: "Logic" },            icon: BIco.logic,   grad: ["am", "rd"] },
@@ -80,6 +84,7 @@ export const CATEGORIES = [
 //  Coin — MAVJUD umumiy bilim_coins_ hisobiga; XP — yangi bilim_xp_ hisobiga.
 //  Barcha o'yin BITTA umumiy Coin va BITTA umumiy XP ga qo'shiladi.
 export const SUBJECT_REWARDS = {
+  finance:   { coin: 2.2, xp: 4 },
   math:      { coin: 2, xp: 3.5 },
   english:   { coin: 1.5, xp: 2.5 },
   logic:     { coin: 1.8, xp: 3 },
@@ -96,29 +101,72 @@ export const catById = (id) => CATEGORIES.find(c => c.id === id);
 // ═══ O'YINLAR REGISTRY ══════════════════════════════════════
 //  Har o'yin: id="<category>/<slug>", metadata + (ixtiyoriy) load.
 //  `load` bo'lsa — "available"; bo'lmasa — "soon".
-//  Hozircha faqat ingliz so'z o'yini real; qolganlari keyingi sprintlarda.
 export const GAMES = [
-  // ── English ──
+  // ── Finance (Moliyaviy savodxonlik) ──
+  {
+    id: "finance/needs-wants",
+    category: "finance",
+    name: { uz: "Kerak yoki Xohish?", ru: "Потребность или Желание?", en: "Need or Want?" },
+    desc: { uz: "Har narsani to'g'ri toifaga ajrat", ru: "Раздели вещи на правильные категории", en: "Sort items into the correct category" },
+    icon: BIco.finance, difficulty: "easy", minutes: 5, maxCoin: 10, premium: false, load: "finance/needs-wants"
+  },
+  {
+    id: "finance/budget",
+    category: "finance",
+    name: { uz: "Haftalik byudjet", ru: "Еженедельный бюджет", en: "Weekly budget" },
+    desc: { uz: "Pulni toifalarga to'g'ri taqsimla", ru: "Правильно распредели деньги по категориям", en: "Allocate money across categories" },
+    icon: BIco.finance, difficulty: "medium", minutes: 8, maxCoin: 15, premium: false, load: "finance/budget"
+  },
+  {
+    id: "finance/price-compare",
+    category: "finance",
+    name: { uz: "Arzonini top", ru: "Найди дешевле", en: "Compare Prices" },
+    desc: { uz: "Mahsulotlarning birlik narxini solishtirib, eng arzonini top", ru: "Сравни цену за единицу и найди самое выгодное", en: "Compare unit prices to find the best deal" },
+    icon: BIco.finance, difficulty: "medium", minutes: 7, maxCoin: 12, premium: false, load: "finance/price-compare"
+  },
+  {
+    id: "finance/bank-sim",
+    category: "finance",
+    name: { uz: "Bank Simulyatori", ru: "Симулятор Банка", en: "Bank Simulator" },
+    desc: { uz: "Kredit va omonat tushunchalarini o'rganing", ru: "Изучите кредиты и депозиты", en: "Learn credit and deposit concepts" },
+    icon: BIco.finance, difficulty: "medium", minutes: 10, maxCoin: 20, premium: false, load: "finance/bank-sim"
+  },
   {
     id: "english/words",
     category: "english",
     name: { uz: "So'z o'rgan", ru: "Учи слова", en: "Learn words" },
     desc: { uz: "Rasm bo'yicha inglizcha so'zni top", ru: "Найди слово по картинке", en: "Match the word to the picture" },
     icon: BIco.english, difficulty: "easy", minutes: 10, maxCoin: 15, premium: false,
-    load: "english/words",   // Hub bu id ni mavjud BilimBozor o'yiniga ulaydi
+    load: "english/words",
+  },
+  {
+    id: "english/money-words",
+    category: "english",
+    name: { uz: "Pul lug'ati", ru: "Словарь денег", en: "Money Words" },
+    desc: { uz: "Pulga oid inglizcha so'zlarni o'rgan", ru: "Английские слова о деньгах", en: "Learn money-related vocabulary" },
+    icon: BIco.english, difficulty: "easy", minutes: 8, maxCoin: 12, premium: false,
+    load: "english/money-words"
   },
   // ── Reja qilingan o'yinlar (metadata tayyor; komponent keyin) ──
   { id: "math/addition",    category: "math",  name: { uz: "Qo'shish", ru: "Сложение", en: "Addition" },     desc: { uz: "Sonlarni qo'shishni mashq qil", ru: "Практика сложения", en: "Practice adding numbers" }, icon: BIco.plus,   difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false, load: "math/addition" },
-  { id: "math/subtraction", category: "math",  name: { uz: "Ayirish", ru: "Вычитание", en: "Subtraction" },   desc: { uz: "Ayirishni o'rgan", ru: "Учись вычитать", en: "Learn subtraction" },                     icon: BIco.minus,  difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
-  { id: "math/multiply",    category: "math",  name: { uz: "Ko'paytirish", ru: "Умножение", en: "Multiply" }, desc: { uz: "Ko'paytirish jadvali", ru: "Таблица умножения", en: "Times tables" },                   icon: BIco.math,   difficulty: "medium", minutes: 10, maxCoin: 15, premium: false },
-  { id: "english/colors",   category: "english", name: { uz: "Ranglar", ru: "Цвета", en: "Colors" },          desc: { uz: "Inglizcha ranglarni o'rgan", ru: "Учи цвета", en: "Learn colors in English" },          icon: BIco.palette,difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
+  { id: "math/subtraction", category: "math",  name: { uz: "Ayirish", ru: "Вычитание", en: "Subtraction" },   desc: { uz: "Ayirishni o'rgan", ru: "Учись вычитать", en: "Learn subtraction" },                     icon: BIco.minus,  difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false, load: "math/subtraction" },
+  { id: "math/multiply",    category: "math",  name: { uz: "Ko'paytirish", ru: "Умножение", en: "Multiply" }, desc: { uz: "Ko'paytirish jadvali", ru: "Таблица умножения", en: "Times tables" },                   icon: BIco.multiply,difficulty: "medium", minutes: 10, maxCoin: 15, premium: false, load: "math/multiply" },
+  { id: "math/division",    category: "math",  name: { uz: "Bo'lish", ru: "Деление", en: "Division" },        desc: { uz: "Bo'lishni o'rganing", ru: "Учитесь делению", en: "Learn division" },                    icon: BIco.divide,  difficulty: "medium", minutes: 10, maxCoin: 15, premium: false, load: "math/division" },
+  { id: "english/colors",   category: "english", name: { uz: "Ranglar", ru: "Цвета", en: "Colors" },          desc: { uz: "Inglizcha ranglarni o'rgan", ru: "Уchi tsvetlar", en: "Learn colors in English" },       icon: BIco.palette,difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
   { id: "english/animals",  category: "english", name: { uz: "Hayvonlar", ru: "Животные", en: "Animals" },    desc: { uz: "Hayvon nomlarini o'rgan", ru: "Названия животных", en: "Learn animal names" },           icon: BIco.animal, difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
-  { id: "logic/pattern",    category: "logic", name: { uz: "Naqsh", ru: "Узор", en: "Patterns" },             desc: { uz: "Keyingi shaklni top", ru: "Найди следующую фигуру", en: "Find the next shape" },        icon: BIco.logic,  difficulty: "medium", minutes: 10, maxCoin: 15, premium: false },
-  { id: "memory/pairs",     category: "memory",name: { uz: "Juftliklar", ru: "Пары", en: "Pairs" },           desc: { uz: "Bir xil kartalarni top", ru: "Найди одинаковые карты", en: "Match the cards" },          icon: BIco.memory, difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
-  { id: "science/biology",   category: "science",name: { uz: "Biologiya", ru: "Биология", en: "Biology" },      desc: { uz: "Tabiat va tirik olam", ru: "Природа и жизнь", en: "Nature and life" },                   icon: BIco.nature, difficulty: "medium", minutes: 10, maxCoin: 15, premium: true },
+  { id: "logic/pattern",    category: "logic",   name: { uz: "Jamg'arma ketma-ketligi", ru: "Последовательность накоплений", en: "Savings Sequence" }, desc: { uz: "Jamg'arma o'sish qonuniyatlarini top", ru: "Найди закономерность роста сбережений", en: "Find pattern of savings growth" }, icon: BIco.finance, difficulty: "medium", minutes: 7, maxCoin: 12, premium: false, load: "logic/pattern" },
+  {
+    id: "logic/decision",
+    category: "logic",
+    name: { uz: "Qaror qabul qilish", ru: "Принятие решений", en: "Decision Making" },
+    desc: { uz: "To'g'ri va aqlli moliyaviy qarorlar qabul qilishni o'rgan", ru: "Учись принимать правильные финансовые решения", en: "Learn to make smart financial decisions" },
+    icon: BIco.logic, difficulty: "medium", minutes: 8, maxCoin: 15, premium: false, load: "logic/decision"
+  },
+  { id: "memory/pairs",     category: "memory",  name: { uz: "Juftliklar", ru: "Пары", en: "Pairs" },           desc: { uz: "Bir xil kartalarni top", ru: "Найди одинаковые карты", en: "Match the cards" },          icon: BIco.memory, difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
+  { id: "science/biology",   category: "science", name: { uz: "Biologiya", ru: "Биология", en: "Biology" },      desc: { uz: "Tabiat va tirik olam", ru: "Природа и жизнь", en: "Nature and life" },                   icon: BIco.nature, difficulty: "medium", minutes: 10, maxCoin: 15, premium: true },
   { id: "coding/scratch",     category: "coding",  name: { uz: "Scratch asoslari", ru: "Основы Scratch", en: "Scratch basics" }, desc: { uz: "Blokli dasturlashga kirish", ru: "Введение в блочное программирование", en: "Intro to block coding" }, icon: BIco.tech, difficulty: "hard", minutes: 15, maxCoin: 25, premium: true },
   { id: "geography/capitals", category: "geography", name: { uz: "Poytaxtlar", ru: "Столицы", en: "Capitals" }, desc: { uz: "Davlat poytaxtlarini top", ru: "Найди столицы", en: "Find capitals" }, icon: BIco.geo, difficulty: "medium", minutes: 10, maxCoin: 15, premium: false },
-  { id: "book/reading",     category: "book",  name: { uz: "Ertak o'qish", ru: "Чтение сказок", en: "Story reading" }, desc: { uz: "Qisqa ertaklarni o'qi", ru: "Читай короткие сказки", en: "Read short stories" }, icon: BIco.book, difficulty: "easy", minutes: 10, maxCoin: 15, premium: false },
+  { id: "book/reading",     category: "book",    name: { uz: "Ertak o'qish", ru: "Чтение сказок", en: "Story reading" }, desc: { uz: "Qisqa ertaklarni o'qi", ru: "Читай короткие сказки", en: "Read short stories" }, icon: BIco.book, difficulty: "easy", minutes: 10, maxCoin: 15, premium: false },
 ];
 
 export const gamesOf = (catId) => GAMES.filter(g => g.category === catId);

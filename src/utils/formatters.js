@@ -96,3 +96,46 @@ export const fmtN = (n, val, sh) => {
   if (val.id === "uzs") return spc(v) + " so'm";
   return Math.round(c) + " " + val.b;
 };
+
+/** Matematika o'yinlari uchun qisqa pul formati (tilga qarab) */
+export const formatMathCurrency = (value, lang = "uz") => {
+  const val = Number(value) || 0;
+  const isMultipleOf1000 = val % 1000 === 0 && val >= 1000;
+  
+  if (lang === "uz") {
+    if (isMultipleOf1000) {
+      return `${val / 1000} ming so'm`;
+    }
+    return `${val.toLocaleString("ru-RU")} so'm`;
+  } else if (lang === "ru") {
+    if (isMultipleOf1000) {
+      return `${val / 1000} тыс. руб.`;
+    }
+    return `${val.toLocaleString("ru-RU")} руб.`;
+  } else if (lang === "kk") {
+    if (isMultipleOf1000) {
+      return `${val / 1000} мың тг.`;
+    }
+    return `${val.toLocaleString("ru-RU")} тг.`;
+  } else {
+    // English/default
+    if (isMultipleOf1000) {
+      return `$${val / 1000}k`;
+    }
+    return `$${val.toLocaleString("en-US")}`;
+  }
+};
+
+/** Matn ichidagi "X so'm" yoki "X 000 so'm" ni tilga moslab o'zgartiradi */
+export const translateMathString = (str, lang = "uz") => {
+  if (typeof str !== "string") return str;
+  return str.replace(/(\d[\d\s]*)\s*so'm/gi, (match, p1) => {
+    const num = parseInt(p1.replace(/\s+/g, ""), 10);
+    if (!isNaN(num)) {
+      return formatMathCurrency(num, lang);
+    }
+    return match;
+  });
+};
+
+
