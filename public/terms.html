@@ -3,127 +3,373 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Foydalanish Shartlari | Terms of Use - Oila Hisobchi</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <title>Foydalanish shartlari · Terms of Service — Oila Hisobchi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      line-height: 1.6;
-      color: #334155;
-      background-color: #f8fafc;
-      margin: 0;
-      padding: 0;
-    }
-    .container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 40px;
-      background: #ffffff;
-      border-radius: 16px;
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
-    }
-    h1 {
-      color: #0f172a;
-      font-size: 2.25rem;
-      font-weight: 700;
-      margin-top: 0;
-      margin-bottom: 2rem;
-      border-bottom: 2px solid #e2e8f0;
-      padding-bottom: 1rem;
-    }
-    h2 {
-      color: #1e293b;
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-top: 2.5rem;
-      margin-bottom: 1rem;
-    }
-    p, li {
-      font-size: 1rem;
-      color: #475569;
-    }
-    ul {
-      padding-left: 1.5rem;
-    }
-    li {
-      margin-bottom: 0.5rem;
-    }
-    .lang-section {
-      margin-bottom: 4rem;
-    }
-    .divider {
-      height: 2px;
-      background-color: #e2e8f0;
-      margin: 4rem 0;
-    }
-    .footer {
-      text-align: center;
-      margin-top: 3rem;
-      font-size: 0.875rem;
-      color: #94a3b8;
-    }
+    :root{--bg:#f8fafc;--sur:#ffffff;--t1:#0f172a;--t2:#475569;--t3:#94a3b8;--ac:#0ea5e9;--bor:#e2e8f0;}
+    *{box-sizing:border-box}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.65;color:var(--t2);background:var(--bg);margin:0;padding:0}
+    .container{max-width:800px;margin:0 auto;padding:20px 16px 60px}
+    .card{background:var(--sur);border-radius:16px;padding:32px 28px;box-shadow:0 4px 6px -1px rgb(0 0 0/.05),0 2px 4px -2px rgb(0 0 0/.05)}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(248,250,252,.92);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--t1);font-size:15px}
+    .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#22c55e);display:flex;align-items:center;justify-content:center;font-size:17px}
+    .lang{display:flex;gap:6px;background:var(--sur);border:1.5px solid var(--bor);border-radius:12px;padding:4px}
+    .lang button{border:none;background:transparent;padding:7px 14px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .15s}
+    .lang button.on{background:var(--ac);color:#fff}
+    h1{color:var(--t1);font-size:1.7rem;font-weight:800;margin:0 0 6px;line-height:1.3}
+    .upd{font-size:.85rem;color:var(--t3);margin-bottom:24px;font-weight:600}
+    h2{color:#1e293b;font-size:1.15rem;font-weight:700;margin:2rem 0 .7rem}
+    p,li{font-size:.95rem;color:var(--t2)}
+    ul{padding-left:1.4rem;margin:.4rem 0 1rem}
+    li{margin-bottom:.35rem}
+    a{color:var(--ac);font-weight:600}
+    .content{display:none}
+    .content.show{display:block;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    @media(max-width:520px){.card{padding:24px 18px}h1{font-size:1.4rem}}
   </style>
 </head>
 <body>
-  <div class="container">
-    
-    <!-- UZBEK VERSION -->
-    <div class="lang-section">
-      <h1>Foydalanish Shartlari</h1>
-      <p><strong>Oxirgi yangilanish:</strong> 9-Iyul, 2026-yil</p>
-      
-      <p>"Oila Hisobchi" ilovasidan foydalanish orqali siz ushbu Foydalanish Shartlariga rozilik bildirasiz. Agar siz ushbu shartlarga rozi bo'lmasangiz, ilovadan foydalanmang.</p>
-
-      <h2>1. Xizmatlardan Foydalanish</h2>
-      <p>Foydalanuvchilar ilovadan faqat shaxsiy va qonuniy maqsadlarda foydalanishlari kerak. Ilovani buzish, uning xavfsizligini chetlab o'tish yoki serverlariga ortiqcha yuklama hosil qilish qat'iyan taqiqlanadi.</p>
-
-      <h2>2. Hisob qaydnomasi Xavfsizligi</h2>
-      <p>Hisob qaydnomangiz xavfsizligi (shu jumladan elektron pochta, telefon raqami va parollar) uchun shaxsan o'zingiz javobgarsiz. Har qanday shubhali faoliyat haqida bizga xabar berishingiz so'raladi.</p>
-
-      <h2>3. Bolalar hisoblarini boshqarish</h2>
-      <p>Ilovadagi "Bolalar hisoblari" faqat kattalar (ota-ona yoki bosh hisob egasi) tomonidan yaratilishi va nazorat qilinishi kerak. Ota-onalar o'z farzandlarining ilovadan foydalanishi uchun to'liq javobgardir.</p>
-
-      <h2>4. Premium Obuna</h2>
-      <p>Ilovadagi Premium xizmatlar foydalanuvchining ixtiyoriy tanlovi asosida faollashtiriladi. Premium imkoniyatlar (AI tavsiyalar, eksport, skanerlash va boshqalar) ilova taqdim etgan funksionallik doirasida taqdim etiladi.</p>
-
-      <h2>5. Mas'uliyatni Cheklash</h2>
-      <p>Ilova moliyaviy hisob-kitoblarni qulaylashtirish maqsadida yaratilgan, ammo u rasmiy moliyaviy, yuridik yoki soliq maslahatlarini bermaydi. Har qanday moliyaviy qarorlaringiz uchun shaxsan o'zingiz javobgarsiz.</p>
-
-      <h2>6. Shartlarning O'zgarishi</h2>
-      <p>Biz ushbu shartlarni istalgan vaqtda o'zgartirish huquqini saqlab qolamiz. Yangilangan shartlar ushbu sahifada e'lon qilingandan so'ng darhol kuchga kiradi.</p>
-    </div>
-
-    <div class="divider"></div>
-
-    <!-- ENGLISH VERSION -->
-    <div class="lang-section">
-      <h1>Terms of Use</h1>
-      <p><strong>Last Updated:</strong> July 9, 2026</p>
-      
-      <p>By using the "Oila Hisobchi" application, you agree to comply with and be bound by these Terms of Use. If you do not agree to these terms, please do not use the application.</p>
-
-      <h2>1. Use of Service</h2>
-      <p>Users must use the application solely for personal and lawful purposes. Any attempt to hack, bypass security, or overload our servers is strictly prohibited.</p>
-
-      <h2>2. Account Security</h2>
-      <p>You are personally responsible for the security of your account credentials (including email, phone number, and password). Please notify us immediately of any unauthorized account activity.</p>
-
-      <h2>3. Children's Accounts</h2>
-      <p>Children's profiles within the application must be created, managed, and monitored exclusively by a parent or legal guardian. Parents bear full responsibility for their children's activities in the app.</p>
-
-      <h2>4. Premium Subscription</h2>
-      <p>Premium features are unlocked voluntarily. Unlocked capabilities (such as AI insights, data export, invoice scanning) are provided as-is based on current system capabilities.</p>
-
-      <h2>5. Limitation of Liability</h2>
-      <p>This app is designed to help organize and track family finances, but does not constitute official financial, legal, or tax advisory services. All financial decisions remain your sole responsibility.</p>
-
-      <h2>6. Changes to Terms</h2>
-      <p>We reserve the right to modify these terms at any time. Any updates will be posted on this page and will become effective immediately upon publication.</p>
-    </div>
-
-    <div class="footer">
-      <p>&copy; 2026 Oila Hisobchi. Barcha huquqlar himoyalangan.</p>
+<div class="container">
+  <div class="topbar">
+    <div class="brand"><span class="dot">💰</span>Oila Hisobchi</div>
+    <div class="lang" id="langSw">
+      <button data-l="uz">O'zbekcha</button>
+      <button data-l="ru">Русский</button>
+      <button data-l="en">English</button>
     </div>
   </div>
+
+  <div class="card">
+
+  <!-- ═══════════════ UZBEK ═══════════════ -->
+  <div class="content" id="c-uz">
+    <h1>FOYDALANISH SHARTLARI</h1>
+    <div class="upd">Oxirgi yangilanish: 9-iyul, 2026-yil</div>
+    <p>"Oila Hisobchi" ilovasidan foydalanish orqali siz ushbu Foydalanish shartlariga rozilik bildirasiz. Agar ushbu shartlarga rozi bo'lmasangiz, ilovadan foydalanishni to'xtatishingiz kerak.</p>
+
+    <h2>1. Ilovaning maqsadi</h2>
+    <p>"Oila Hisobchi" oilaviy moliyani boshqarish, farzandlarda moliyaviy savodxonlikni rivojlantirish, topshiriqlarni boshqarish, jamg'arma yuritish va oilaviy maqsadlarga erishishda yordam beruvchi mobil ilovadir.</p>
+    <p>Ilova taqdim etayotgan ma'lumotlar va tavsiyalar faqat yordamchi xarakterga ega bo'lib, rasmiy moliyaviy, yuridik yoki soliq maslahati hisoblanmaydi.</p>
+
+    <h2>2. Foydalanuvchi hisoblari</h2>
+    <p>Foydalanuvchi ilovadan foydalanish uchun akkaunt yaratishi mumkin.</p>
+    <p>Foydalanuvchi quyidagilar uchun javobgar hisoblanadi:</p>
+    <ul>
+      <li>akkaunt ma'lumotlarining to'g'riligi;</li>
+      <li>parol va akkaunt xavfsizligi;</li>
+      <li>akkaunt orqali amalga oshirilgan barcha harakatlar.</li>
+    </ul>
+    <p>Har qanday ruxsatsiz kirish aniqlansa, foydalanuvchi imkon qadar tezroq bizga xabar berishi kerak.</p>
+
+    <h2>3. Bolalar akkauntlari</h2>
+    <p>Bolalar akkauntlari faqat ota-ona yoki qonuniy vasiy tomonidan yaratilishi mumkin.</p>
+    <p>Ota-ona:</p>
+    <ul>
+      <li>bola akkauntini yaratadi;</li>
+      <li>topshiriqlar beradi;</li>
+      <li>mukofotlarni belgilaydi;</li>
+      <li>bola faoliyatini nazorat qiladi.</li>
+    </ul>
+    <p>"Oila Hisobchi" bolalardan mustaqil ravishda shaxsiy ma'lumot yig'maydi.</p>
+
+    <h2>4. Premium xizmatlar</h2>
+    <p>Premium funksiyalar ixtiyoriy hisoblanadi.</p>
+    <p>Premium obunalar Google Play Billing tizimi orqali amalga oshiriladi.</p>
+    <p>To'lovlarni qaytarish, bekor qilish yoki obunani boshqarish Google Play qoidalariga muvofiq amalga oshiriladi.</p>
+    <p>Premium xizmatlar quyidagilarni o'z ichiga olishi mumkin:</p>
+    <ul>
+      <li>AI tavsiyalari;</li>
+      <li>kengaytirilgan hisobotlar;</li>
+      <li>eksport funksiyalari;</li>
+      <li>qo'shimcha o'yinlar;</li>
+      <li>boshqa Premium imkoniyatlar.</li>
+    </ul>
+    <p>Premium tarkibi vaqt o'tishi bilan yangilanishi mumkin.</p>
+
+    <h2>5. Taqiqlangan foydalanish</h2>
+    <p>Foydalanuvchiga quyidagilar taqiqlanadi:</p>
+    <ul>
+      <li>ilovani noqonuniy maqsadlarda ishlatish;</li>
+      <li>boshqa foydalanuvchilarning akkauntlariga ruxsatsiz kirish;</li>
+      <li>ilova xavfsizligini buzishga urinish;</li>
+      <li>zararli dasturlar tarqatish;</li>
+      <li>ilovani teskari muhandislik (reverse engineering) qilish;</li>
+      <li>avtomatlashtirilgan botlardan foydalanish;</li>
+      <li>xizmat ishiga ataylab xalaqit berish.</li>
+    </ul>
+    <p>Bunday holatlar aniqlansa, akkaunt vaqtincha yoki butunlay bloklanishi mumkin.</p>
+
+    <h2>6. Intellektual mulk</h2>
+    <p>"Oila Hisobchi" ilovasining dizayni, logotipi, dastur kodi, matnlari, grafiklari, animatsiyalari va boshqa materiallari mualliflik huquqi bilan himoyalangan.</p>
+    <p>Bizning yozma ruxsatimizsiz ushbu materiallarni nusxalash, tarqatish yoki tijorat maqsadlarida foydalanish taqiqlanadi.</p>
+
+    <h2>7. Javobgarlikni cheklash</h2>
+    <p>Ilova imkon qadar uzluksiz ishlashi uchun harakat qilamiz.</p>
+    <p>Biroq quyidagi holatlar uchun javobgar emasmiz:</p>
+    <ul>
+      <li>internet uzilishlari;</li>
+      <li>uchinchi tomon xizmatlaridagi nosozliklar;</li>
+      <li>qurilma nosozliklari;</li>
+      <li>ma'lumotlarning foydalanuvchi tomonidan noto'g'ri kiritilishi;</li>
+      <li>foydalanuvchining noto'g'ri moliyaviy qarorlari.</li>
+    </ul>
+    <p>Ilovadagi AI tavsiyalari faqat tavsiya xarakteriga ega bo'lib, yakuniy qaror foydalanuvchining o'ziga tegishlidir.</p>
+
+    <h2>8. Hisobni o'chirish</h2>
+    <p>Foydalanuvchi istalgan vaqtda akkauntini ilova orqali o'chirish huquqiga ega.</p>
+    <p>Akkaunt o'chirilgandan so'ng shaxsiy ma'lumotlar Maxfiylik siyosatiga muvofiq o'chiriladi yoki anonimlashtiriladi.</p>
+
+    <h2>9. Xizmatdagi o'zgarishlar</h2>
+    <p>Biz ilovaning funksiyalarini istalgan vaqtda:</p>
+    <ul>
+      <li>yangilash;</li>
+      <li>o'zgartirish;</li>
+      <li>qo'shish;</li>
+      <li>vaqtincha to'xtatish;</li>
+      <li>ayrim funksiyalarni olib tashlash</li>
+    </ul>
+    <p>huquqini saqlab qolamiz.</p>
+
+    <h2>10. Foydalanish shartlariga o'zgartirishlar</h2>
+    <p>Ushbu Foydalanish shartlari vaqti-vaqti bilan yangilanishi mumkin.</p>
+    <p>Muhim o'zgarishlar ilova ichida yoki rasmiy aloqa kanallari orqali foydalanuvchilarga ma'lum qilinadi.</p>
+    <p>Yangilangan shartlar e'lon qilingan kundan boshlab kuchga kiradi.</p>
+
+    <h2>11. Qo'llaniladigan qonunchilik</h2>
+    <p>Ushbu Foydalanish shartlari O'zbekiston Respublikasi qonunchiligiga muvofiq talqin qilinadi va qo'llaniladi.</p>
+
+    <h2>12. Biz bilan bog'lanish</h2>
+    <p>Agar sizda ushbu Foydalanish shartlari bo'yicha savollar bo'lsa, biz bilan bog'lanishingiz mumkin.</p>
+    <p><strong>Elektron pochta:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ RUSSIAN ═══════════════ -->
+  <div class="content" id="c-ru">
+    <h1>УСЛОВИЯ ИСПОЛЬЗОВАНИЯ</h1>
+    <div class="upd">Последнее обновление: 9 июля 2026 года</div>
+    <p>Используя приложение «Oila Hisobchi», вы соглашаетесь с настоящими Условиями использования. Если вы не согласны с этими условиями, вы должны прекратить использование приложения.</p>
+
+    <h2>1. Назначение приложения</h2>
+    <p>«Oila Hisobchi» — это мобильное приложение, помогающее управлять семейными финансами, развивать финансовую грамотность у детей, управлять заданиями, вести накопления и достигать семейных целей.</p>
+    <p>Информация и рекомендации, предоставляемые приложением, носят исключительно вспомогательный характер и не являются официальной финансовой, юридической или налоговой консультацией.</p>
+
+    <h2>2. Аккаунты пользователей</h2>
+    <p>Для использования приложения пользователь может создать аккаунт.</p>
+    <p>Пользователь несёт ответственность за:</p>
+    <ul>
+      <li>достоверность данных аккаунта;</li>
+      <li>безопасность пароля и аккаунта;</li>
+      <li>все действия, совершённые через аккаунт.</li>
+    </ul>
+    <p>При обнаружении любого несанкционированного доступа пользователь должен как можно скорее сообщить нам об этом.</p>
+
+    <h2>3. Детские аккаунты</h2>
+    <p>Детские аккаунты могут создаваться только родителем или законным опекуном.</p>
+    <p>Родитель:</p>
+    <ul>
+      <li>создаёт детский аккаунт;</li>
+      <li>даёт задания;</li>
+      <li>назначает награды;</li>
+      <li>контролирует деятельность ребёнка.</li>
+    </ul>
+    <p>«Oila Hisobchi» не собирает персональные данные от детей самостоятельно.</p>
+
+    <h2>4. Premium-услуги</h2>
+    <p>Premium-функции являются необязательными.</p>
+    <p>Premium-подписки оформляются через систему Google Play Billing.</p>
+    <p>Возврат платежей, отмена или управление подпиской осуществляются в соответствии с правилами Google Play.</p>
+    <p>Premium-услуги могут включать:</p>
+    <ul>
+      <li>AI-рекомендации;</li>
+      <li>расширенные отчёты;</li>
+      <li>функции экспорта;</li>
+      <li>дополнительные игры;</li>
+      <li>другие Premium-возможности.</li>
+    </ul>
+    <p>Состав Premium может обновляться со временем.</p>
+
+    <h2>5. Запрещённое использование</h2>
+    <p>Пользователю запрещается:</p>
+    <ul>
+      <li>использовать приложение в незаконных целях;</li>
+      <li>несанкционированно получать доступ к аккаунтам других пользователей;</li>
+      <li>пытаться нарушить безопасность приложения;</li>
+      <li>распространять вредоносное программное обеспечение;</li>
+      <li>выполнять обратную разработку (reverse engineering) приложения;</li>
+      <li>использовать автоматизированных ботов;</li>
+      <li>намеренно препятствовать работе сервиса.</li>
+    </ul>
+    <p>При выявлении таких случаев аккаунт может быть временно или полностью заблокирован.</p>
+
+    <h2>6. Интеллектуальная собственность</h2>
+    <p>Дизайн, логотип, программный код, тексты, графика, анимации и другие материалы приложения «Oila Hisobchi» защищены авторским правом.</p>
+    <p>Копирование, распространение или коммерческое использование этих материалов без нашего письменного разрешения запрещено.</p>
+
+    <h2>7. Ограничение ответственности</h2>
+    <p>Мы стремимся обеспечить максимально бесперебойную работу приложения.</p>
+    <p>Однако мы не несём ответственности за:</p>
+    <ul>
+      <li>перебои интернет-соединения;</li>
+      <li>сбои в работе сторонних сервисов;</li>
+      <li>неисправности устройств;</li>
+      <li>неверный ввод данных пользователем;</li>
+      <li>неверные финансовые решения пользователя.</li>
+    </ul>
+    <p>AI-рекомендации в приложении носят исключительно рекомендательный характер, окончательное решение остаётся за пользователем.</p>
+
+    <h2>8. Удаление аккаунта</h2>
+    <p>Пользователь имеет право в любое время удалить свой аккаунт через приложение.</p>
+    <p>После удаления аккаунта персональные данные удаляются или анонимизируются в соответствии с Политикой конфиденциальности.</p>
+
+    <h2>9. Изменения в сервисе</h2>
+    <p>Мы сохраняем за собой право в любое время:</p>
+    <ul>
+      <li>обновлять;</li>
+      <li>изменять;</li>
+      <li>добавлять;</li>
+      <li>временно приостанавливать;</li>
+      <li>удалять отдельные функции приложения.</li>
+    </ul>
+
+    <h2>10. Изменения Условий использования</h2>
+    <p>Настоящие Условия использования могут периодически обновляться.</p>
+    <p>О существенных изменениях пользователи будут уведомлены внутри приложения или через официальные каналы связи.</p>
+    <p>Обновлённые условия вступают в силу со дня их публикации.</p>
+
+    <h2>11. Применимое законодательство</h2>
+    <p>Настоящие Условия использования толкуются и применяются в соответствии с законодательством Республики Узбекистан.</p>
+
+    <h2>12. Связь с нами</h2>
+    <p>Если у вас есть вопросы по настоящим Условиям использования, вы можете связаться с нами.</p>
+    <p><strong>Электронная почта:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ ENGLISH ═══════════════ -->
+  <div class="content" id="c-en">
+    <h1>TERMS OF SERVICE</h1>
+    <div class="upd">Last updated: July 9, 2026</div>
+    <p>By using the "Oila Hisobchi" app, you agree to these Terms of Service. If you do not agree to these terms, you must stop using the app.</p>
+
+    <h2>1. Purpose of the App</h2>
+    <p>"Oila Hisobchi" is a mobile app that helps manage family finances, develop financial literacy in children, manage tasks, keep savings, and achieve family goals.</p>
+    <p>The information and recommendations provided by the app are for assistance purposes only and do not constitute official financial, legal, or tax advice.</p>
+
+    <h2>2. User Accounts</h2>
+    <p>Users may create an account to use the app.</p>
+    <p>The user is responsible for:</p>
+    <ul>
+      <li>the accuracy of their account information;</li>
+      <li>the security of their password and account;</li>
+      <li>all actions performed through their account.</li>
+    </ul>
+    <p>If any unauthorized access is detected, the user must notify us as soon as possible.</p>
+
+    <h2>3. Child Accounts</h2>
+    <p>Child accounts may only be created by a parent or legal guardian.</p>
+    <p>The parent:</p>
+    <ul>
+      <li>creates the child account;</li>
+      <li>assigns tasks;</li>
+      <li>sets rewards;</li>
+      <li>supervises the child's activity.</li>
+    </ul>
+    <p>"Oila Hisobchi" does not collect personal data from children independently.</p>
+
+    <h2>4. Premium Services</h2>
+    <p>Premium features are optional.</p>
+    <p>Premium subscriptions are processed through the Google Play Billing system.</p>
+    <p>Refunds, cancellations, and subscription management are handled in accordance with Google Play policies.</p>
+    <p>Premium services may include:</p>
+    <ul>
+      <li>AI recommendations;</li>
+      <li>advanced reports;</li>
+      <li>export features;</li>
+      <li>additional games;</li>
+      <li>other Premium features.</li>
+    </ul>
+    <p>Premium content may be updated over time.</p>
+
+    <h2>5. Prohibited Use</h2>
+    <p>Users are prohibited from:</p>
+    <ul>
+      <li>using the app for illegal purposes;</li>
+      <li>gaining unauthorized access to other users' accounts;</li>
+      <li>attempting to breach the app's security;</li>
+      <li>distributing malicious software;</li>
+      <li>reverse engineering the app;</li>
+      <li>using automated bots;</li>
+      <li>intentionally interfering with the service.</li>
+    </ul>
+    <p>If such cases are detected, the account may be temporarily or permanently blocked.</p>
+
+    <h2>6. Intellectual Property</h2>
+    <p>The design, logo, source code, texts, graphics, animations, and other materials of the "Oila Hisobchi" app are protected by copyright.</p>
+    <p>Copying, distributing, or using these materials for commercial purposes without our written permission is prohibited.</p>
+
+    <h2>7. Limitation of Liability</h2>
+    <p>We strive to keep the app running as smoothly as possible.</p>
+    <p>However, we are not liable for:</p>
+    <ul>
+      <li>internet outages;</li>
+      <li>failures of third-party services;</li>
+      <li>device malfunctions;</li>
+      <li>incorrect data entry by the user;</li>
+      <li>the user's incorrect financial decisions.</li>
+    </ul>
+    <p>AI recommendations in the app are advisory only; the final decision rests with the user.</p>
+
+    <h2>8. Account Deletion</h2>
+    <p>The user has the right to delete their account through the app at any time.</p>
+    <p>After the account is deleted, personal data is deleted or anonymized in accordance with the Privacy Policy.</p>
+
+    <h2>9. Changes to the Service</h2>
+    <p>We reserve the right at any time to:</p>
+    <ul>
+      <li>update;</li>
+      <li>modify;</li>
+      <li>add;</li>
+      <li>temporarily suspend;</li>
+      <li>remove certain features of the app.</li>
+    </ul>
+
+    <h2>10. Changes to These Terms</h2>
+    <p>These Terms of Service may be updated from time to time.</p>
+    <p>Users will be notified of significant changes within the app or through official communication channels.</p>
+    <p>The updated terms take effect from the date of publication.</p>
+
+    <h2>11. Governing Law</h2>
+    <p>These Terms of Service are interpreted and applied in accordance with the legislation of the Republic of Uzbekistan.</p>
+
+    <h2>12. Contact Us</h2>
+    <p>If you have any questions about these Terms of Service, you can contact us.</p>
+    <p><strong>Email:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+  </div>
+
+  </div>
+</div>
+<script>
+(function(){
+  var LANGS=["uz","ru","en"];
+  function setLang(l){
+    if(LANGS.indexOf(l)<0)l="uz";
+    LANGS.forEach(function(x){
+      document.getElementById("c-"+x).classList.toggle("show",x===l);
+    });
+    document.querySelectorAll("#langSw button").forEach(function(b){
+      b.classList.toggle("on",b.dataset.l===l);
+    });
+    document.documentElement.lang=l;
+    try{localStorage.setItem("policy_lang",l);}catch(e){}
+  }
+  document.querySelectorAll("#langSw button").forEach(function(b){
+    b.addEventListener("click",function(){setLang(b.dataset.l);});
+  });
+  var q=new URLSearchParams(location.search).get("lang");
+  var saved=null;try{saved=localStorage.getItem("policy_lang");}catch(e){}
+  setLang(q||saved||"uz");
+})();
+</script>
 </body>
 </html>
