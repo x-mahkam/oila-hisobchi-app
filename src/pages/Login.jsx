@@ -457,13 +457,17 @@ export default function LoginPage() {
           </button>}
           {!reg&&!kidLoginMode&&<button onClick={handleResetPw} style={{background:"none",border:"none",color:th.ac,cursor:"pointer",fontSize:13,fontWeight:600,marginTop:14,width:"100%",textAlign:"center",padding:"6px"}}>{lg==="uz"?"Parolni unutdingizmi?":lg==="ru"?"Забыли пароль?":"Forgot password?"}</button>}
         </div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 16, marginTop: 28, fontSize: 11, fontWeight: 500, letterSpacing: 0.2 }}>
-          <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: th.t3, textDecoration: "underline" }}>
+        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flexWrap: "wrap", gap: "6px 12px", marginTop: 28, fontSize: 11, fontWeight: 500, letterSpacing: 0.2, textAlign: "center" }}>
+          <a href={"/privacy.html?lang=" + lg} target="_blank" rel="noopener noreferrer" style={{ color: th.t3, textDecoration: "underline" }}>
             {lg === "uz" ? "Maxfiylik siyosati" : lg === "ru" ? "Политика конфиденциальности" : "Privacy Policy"}
           </a>
           <span style={{ color: th.bor }}>•</span>
-          <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: th.t3, textDecoration: "underline" }}>
+          <a href={"/terms.html?lang=" + lg} target="_blank" rel="noopener noreferrer" style={{ color: th.t3, textDecoration: "underline" }}>
             {lg === "uz" ? "Foydalanish shartlari" : lg === "ru" ? "Условия использования" : "Terms of Use"}
+          </a>
+          <span style={{ color: th.bor }}>•</span>
+          <a href={"/child-safety.html?lang=" + lg} target="_blank" rel="noopener noreferrer" style={{ color: th.t3, textDecoration: "underline" }}>
+            {lg === "uz" ? "Bolalar xavfsizligi siyosati" : lg === "ru" ? "Политика безопасности детей" : "Child Safety Policy"}
           </a>
         </div>
       </div>

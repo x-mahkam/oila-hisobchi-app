@@ -953,6 +953,35 @@ export default function ProfilePage({
             <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"} sub={uz ? "Yozuvlarni butunlay yoki sana bo'yicha o'chirish" : "Delete records entirely or by date range"} onClick={openClean} divider={false} />
           </AppCard>
 
+          {/* ─────────── Huquqiy hujjatlar (Legal) ─────────── */}
+          <SubHeader th={th}>{uz ? "Huquqiy hujjatlar" : "Legal"}</SubHeader>
+          <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
+            <SettingRow
+              th={th}
+              icon={PIco.lock(th.ac, 18)}
+              title={uz ? "Maxfiylik siyosati" : "Privacy Policy"}
+              sub={uz ? "Ma'lumotlaringiz qanday himoyalanadi" : "How your data is protected"}
+              onClick={() => window.open("/privacy.html?lang=" + lg, "_blank", "noopener,noreferrer")}
+              divider
+            />
+            <SettingRow
+              th={th}
+              icon={PIco.list(th.ac, 18)}
+              title={uz ? "Foydalanish shartlari" : "Terms of Use"}
+              sub={uz ? "Ilovadan foydalanish qoidalari" : "Rules for using the app"}
+              onClick={() => window.open("/terms.html?lang=" + lg, "_blank", "noopener,noreferrer")}
+              divider
+            />
+            <SettingRow
+              th={th}
+              icon={PIco.baby(th.ac, 18)}
+              title={uz ? "Bolalar xavfsizligi va ota-ona roziligi siyosati" : "Child Safety & Parental Consent Policy"}
+              sub={uz ? "Farzandlar ma'lumotlari va xavfsizligi" : "Children's data & safety"}
+              onClick={() => window.open("/child-safety.html?lang=" + lg, "_blank", "noopener,noreferrer")}
+              divider={false}
+            />
+          </AppCard>
+
           {/* Chiqish (Logout) */}
           <DangerButton th={th} onClick={logout} style={{ marginBottom: SPACE.s4 }}>{Ico.door(th.rd)}{t.lo}</DangerButton>
           <div style={{ textAlign: "center", ...TYPE.tiny, letterSpacing: 0.4, textTransform: "none", color: th.t3, marginTop: SPACE.s3, marginBottom: SPACE.s2 }}>Oila Hisobchi · v{APP_VER}</div>
@@ -1448,7 +1477,7 @@ export default function ProfilePage({
         <div>
           <PageHeader th={th} title={t.xav} onBack={backToMain} />
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={Ico.lock(th.ac)} title={t.pin} sub={uz ? "4 raqamli maxfiy kod" : "4-digit code"}
+            <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t.pin} sub={uz ? "4 raqamli maxfiy kod" : "4-digit code"}
               right={<SecondaryButton th={th} onClick={() => setPinStep(pinStep === "idle" ? "enter" : "idle")} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>{pinStep === "idle" ? (uz ? "O'zgartirish" : "Change") : (uz ? "Bekor" : "Cancel")}</SecondaryButton>}
               divider={pinStep !== "idle"} />
             {pinStep !== "idle" && (
@@ -1569,11 +1598,11 @@ export default function ProfilePage({
             <span style={{ ...TYPE.tiny, color: th.t1, textTransform: "none", letterSpacing: 0, lineHeight: 1.4 }}>
               {uz ? (
                 <>
-                  Men ota-ona/vasiyman va farzandimga tegishli yuqoridagi ma'lumotlarni yig'ish, qayta ishlashga hamda <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Maxfiylik Siyosati</a> va <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Foydalanish shartlari</a>ga rozilik beraman.
+                  Men ota-ona/vasiyman va farzandimga tegishli yuqoridagi ma'lumotlarni yig'ish, qayta ishlashga hamda <a href="/privacy.html?lang=uz" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Maxfiylik Siyosati</a>, <a href="/terms.html?lang=uz" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Foydalanish shartlari</a> va <a href="/child-safety.html?lang=uz" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Bolalar xavfsizligi va ota-ona roziligi siyosati</a>ga rozilik beraman.
                 </>
               ) : (
                 <>
-                  I confirm that I am the parent/guardian and agree to the collection/processing of my child's data in accordance with the <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Privacy Policy</a> and <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Terms of Use</a>.
+                  I confirm that I am the parent/guardian and agree to the collection/processing of my child's data in accordance with the <a href="/privacy.html?lang=en" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Privacy Policy</a>, <a href="/terms.html?lang=en" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Terms of Use</a> and <a href="/child-safety.html?lang=en" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Child Safety & Parental Consent Policy</a>.
                 </>
               )}
             </span>
