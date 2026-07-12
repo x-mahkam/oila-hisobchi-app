@@ -138,8 +138,7 @@ export function AppProvider({ children }) {
       const verifyFn = httpsCallable(functionsInstance, "verifyPurchase");
       const res = await verifyFn({
         purchaseToken,
-        productId,
-        oilaId: user.oilaId
+        productId
       });
       
       if (res.data?.success) {

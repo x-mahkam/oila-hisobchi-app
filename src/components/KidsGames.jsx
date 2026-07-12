@@ -6,7 +6,6 @@
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
 import { db } from "../firebase.js";
-import { publishKidScore } from "../utils/kidsBoard.js";
 
 const WORDS = [
   ["olma","apple"],["kitob","book"],["maktab","school"],["quyosh","sun"],["oy","moon"],
@@ -94,12 +93,7 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
     const today = new Date().toISOString().slice(0, 10);
     const nb = { ...best };
     if (finalScore > (nb[key] || 0)) nb[key] = finalScore;
-    // Liderbord balli: kuniga 1 marta har o'yin uchun (8+ = 5 ball, 5+ = 2 ball)
-    const pts = finalScore >= 8 ? 5 : finalScore >= 5 ? 2 : 0;
-    if (pts > 0 && nb["pd_" + key] !== today) {
-      nb["pd_" + key] = today;
-      try { await publishKidScore({ kidId: user.id, ism: user.ism, oilaId: user.oilaId, deltaPts: pts }); } catch {}
-    }
+
     setBest(nb);
     try { await db.s("kidgame_" + user.id, nb); } catch {}
     if (finalScore === TOTAL_Q && addStar) { try { addStar(1, L("O'yinda 10/10 natija!", "10/10 в игре!")); } catch {} }

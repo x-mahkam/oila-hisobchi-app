@@ -3,11 +3,10 @@ import { Capacitor } from "@capacitor/core";
 import { Purchases } from "@revenuecat/purchases-capacitor";
 import {
   BottomSheet, AppCard, ListItem, Badge, SectionHeader,
-  PremiumButton, GhostButton, PrimaryButton, LoadingButton, TextInput
+  PremiumButton, GhostButton, PrimaryButton
 } from "../ui/index.js";
-import { SPACE, TYPE, RADIUS, ALPHA, PREMIUM, OPACITY, SHADOW, COMP } from "../../utils/tokens.js";
+import { SPACE, TYPE, RADIUS, ALPHA, PREMIUM, SHADOW } from "../../utils/tokens.js";
 import { useApp } from "../../context/AppContext.jsx";
-import { Ico } from "../../utils/icons.jsx";
 
 // ── Premium-lokal outline SVG ikonkalar (DS 6-qoida) ──
 const PIco = {
@@ -19,26 +18,17 @@ const PIco = {
   qr: (c, s = 18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" stroke={c} strokeWidth="1.2"/><rect x="9" y="2" width="5" height="5" rx="1" stroke={c} strokeWidth="1.2"/><rect x="2" y="9" width="5" height="5" rx="1" stroke={c} strokeWidth="1.2"/><path d="M9 9h2v2H9zM12 12h2v2h-2zM12 9h2M9 12v2" stroke={c} strokeWidth="1.2"/></svg>,
   ai: (c, s = 18) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.2 3.3L12.5 6 9.2 7.2 8 10.5 6.8 7.2 3.5 6l3.3-1.2L8 1.5z" fill={c} opacity=".2" stroke={c} strokeWidth="1.1" strokeLinejoin="round"/><path d="M12.5 10l.6 1.6 1.6.6-1.6.6-.6 1.6-.6-1.6-1.6-.6 1.6-.6.6-1.6z" fill={c}/></svg>,
   check: (c, s = 14) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-7" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  chevD: (c, s = 12, open) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}><path d="M4 6l4 4 4-4" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  card: (c, s = 24) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
-  phone: (c, s = 24) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>,
+  chevD: (c, s = 12, open) => <svg width={s} height={s} viewBox="0 0 16 16" fill="none" style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.2s ease" }}><path d="M4 6l4 4 4-4" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
 };
 
 export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
   const { isPremium, fireConfetti, buzz, user, activatePremium } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [activeTier, setActiveTier] = useState("yearly"); // monthly | yearly | lifetime
-  const [checkoutStep, setCheckoutStep] = useState("tiers"); // tiers | checkout | success
-  const [payMethod, setPayMethod] = useState("card"); // card | click | payme
+  const [checkoutStep, setCheckoutStep] = useState("tiers"); // tiers | success
   const [isLoading, setIsLoading] = useState(false);
   const [rcOfferings, setRcOfferings] = useState(null);
   const [rcError, setRcError] = useState("");
-
-  // To'lov formalari state
-  const [cardNumber, setCardNumber] = useState("");
-  const [cardExpiry, setCardExpiry] = useState("");
-  const [cardName, setCardName] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
 
   const uz = lg === "uz";
   const gold = PREMIUM.gold;
@@ -96,26 +86,10 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
   }, [user]);
 
   const handlePurchaseClick = async () => {
+    if (!Capacitor.isNativePlatform()) return;
+
     buzz(15);
     setIsLoading(true);
-
-    if (!Capacitor.isNativePlatform()) {
-      // Web browser preview - call sandbox
-      try {
-        const verifyRes = await activatePremium("web_sandbox_token_" + activeTier, activeTier);
-        if (verifyRes.success) {
-          setCheckoutStep("success");
-          if (typeof fireConfetti === "function") {
-            fireConfetti();
-          }
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setIsLoading(false);
-      }
-      return;
-    }
 
     try {
       let selectedPackage = null;
@@ -152,18 +126,11 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
   };
 
   const handleRestorePurchases = async () => {
+    if (!Capacitor.isNativePlatform()) return;
+
     buzz(15);
     setIsLoading(true);
     try {
-      if (!Capacitor.isNativePlatform()) {
-        const verifyRes = await activatePremium("web_sandbox_restore_token", activeTier);
-        if (verifyRes.success) {
-          alert(uz ? "Xaridlar muvaffaqiyatli tiklandi!" : "Purchases restored successfully!");
-          onClose();
-        }
-        return;
-      }
-
       const { customerInfo } = await Purchases.restorePurchases();
       const entitlements = customerInfo.entitlements.active;
       if (Object.keys(entitlements).length > 0) {
@@ -203,73 +170,6 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
     { q: uz ? "Butun oilaga ta'sir qiladimi?" : "Does it apply to the whole family?", a: uz ? "Ha. Oila boshlig'i faollashtirsa, Premium obunasi butun oila a'zolariga avtomatik qo'llanadi." : "Yes. When the family head activates, Premium applies to the whole family." },
     { q: uz ? "Bekor qilsam ma'lumotlarim yo'qoladimi?" : "Do I lose data if I cancel?", a: uz ? "Yo'q. Barcha yozuvlaringiz saqlanib qoladi, faqat Premium imkoniyatlar cheklanadi." : "No. All your records stay — only Premium features become limited." },
   ];
-
-  // Karta raqamini formatlash (8600 0000 ...)
-  const handleCardChange = (val) => {
-    const clean = val.replace(/\D/g, "");
-    let formatted = "";
-    for (let i = 0; i < clean.length && i < 16; i++) {
-      if (i > 0 && i % 4 === 0) formatted += " ";
-      formatted += clean[i];
-    }
-    setCardNumber(formatted);
-  };
-
-  // Amal muddati formatlash (MM/YY)
-  const handleExpiryChange = (val) => {
-    const clean = val.replace(/\D/g, "");
-    let formatted = "";
-    if (clean.length > 0) {
-      formatted += clean.substring(0, 2);
-      if (clean.length > 2) {
-        formatted += "/" + clean.substring(2, 4);
-      }
-    }
-    setCardExpiry(formatted);
-  };
-
-  // Telefon raqamini formatlash
-  const handlePhoneChange = (val) => {
-    const clean = val.replace(/\D/g, "");
-    setPhoneNumber(clean);
-  };
-
-  // Karta provayderini aniqlash (Uzcard, Humo, Visa)
-  const getCardType = (num) => {
-    const clean = num.replace(/\s/g, "");
-    if (clean.startsWith("8600")) return "Uzcard";
-    if (clean.startsWith("9860")) return "Humo";
-    if (clean.startsWith("4") || clean.startsWith("5")) return "Visa/Mastercard";
-    return null;
-  };
-
-  const handlePaySubmit = async (e) => {
-    e.preventDefault();
-    if (payMethod === "card" && cardNumber.replace(/\s/g, "").length < 16) return;
-    if ((payMethod === "click" || payMethod === "payme") && phoneNumber.length < 9) return;
-
-    buzz(15);
-    setIsLoading(true);
-
-    try {
-      const mockToken = `web_sandbox_token_${payMethod}_${Date.now()}`;
-      const verifyRes = await activatePremium(mockToken, activeTier);
-      
-      if (verifyRes.success) {
-        setCheckoutStep("success");
-        if (typeof fireConfetti === "function") {
-          fireConfetti();
-        }
-      } else {
-        alert(uz ? "Xaridni tasdiqlashda xatolik yuz berdi" : "Error verifying purchase");
-      }
-    } catch (err) {
-      console.error(err);
-      alert(uz ? "To'lovda xatolik: " + err.message : "Payment error: " + err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSuccessDone = () => {
     onActivate(); // real premium statusni faollashtiradi
@@ -384,19 +284,32 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
 
           {/* ═══ 6. Action Button ═══ */}
           {!isPremium ? (
-            <PremiumButton th={th} onClick={() => {
-              buzz(10);
-              if (Capacitor.isNativePlatform()) {
-                handlePurchaseClick();
-              } else {
-                setCheckoutStep("checkout");
-              }
-            }} style={{ marginBottom: SPACE.s2 }}>
-              {PIco.gem("#fff", 18)}
-              {isLoading 
-                ? (uz ? "Yuklanmoqda..." : "Loading...") 
-                : (uz ? `Davom etish: ${TIERS[activeTier].price}` : `Continue: ${TIERS[activeTier].price}`)}
-            </PremiumButton>
+            Capacitor.isNativePlatform() ? (
+              <PremiumButton th={th} onClick={handlePurchaseClick} style={{ marginBottom: SPACE.s2 }}>
+                {PIco.gem("#fff", 18)}
+                {isLoading 
+                  ? (uz ? "Yuklanmoqda..." : "Loading...") 
+                  : (uz ? `Davom etish: ${TIERS[activeTier].price}` : `Continue: ${TIERS[activeTier].price}`)}
+              </PremiumButton>
+            ) : (
+              <div style={{
+                background: th.surH,
+                border: "1px dashed " + th.ac,
+                borderRadius: RADIUS.m,
+                padding: SPACE.s4,
+                textAlign: "center",
+                marginBottom: SPACE.s4,
+                color: th.ac,
+                ...TYPE.caption,
+                fontSize: TYPE.caption.fontSize + 1,
+                lineHeight: 1.5,
+                fontWeight: 600
+              }}>
+                {uz 
+                  ? "Premium xarid faqat Android ilovasi (Google Play) orqali mavjud. Iltimos, Oila Hisobchi ilovasini Play Store'dan o'rnating." 
+                  : "Premium purchase is only available on the Android app (Google Play). Please install the Oila Hisobchi app from the Play Store."}
+              </div>
+            )
           ) : (
             <PrimaryButton th={th} onClick={onClose} style={{ marginBottom: SPACE.s4 }}>{uz ? "Yopish" : "Close"}</PrimaryButton>
           )}
@@ -404,111 +317,18 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
           {!isPremium && (
             <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
               <GhostButton th={th} onClick={onClose} style={{ width: "auto", margin: "0 auto", border: "none" }}>{uz ? "Keyinroq" : "Later"}</GhostButton>
-              <GhostButton th={th} onClick={handleRestorePurchases} style={{ width: "auto", margin: "0 auto " + SPACE.s4 + "px", fontSize: 11, border: "none", opacity: 0.7 }}>
-                {uz ? "Sotib olinganlarni tiklash (Restore Purchases)" : "Restore Purchases"}
-              </GhostButton>
+              {Capacitor.isNativePlatform() && (
+                <GhostButton th={th} onClick={handleRestorePurchases} style={{ width: "auto", margin: "0 auto " + SPACE.s4 + "px", fontSize: 11, border: "none", opacity: 0.7 }}>
+                  {uz ? "Sotib olinganlarni tiklash (Restore Purchases)" : "Restore Purchases"}
+                </GhostButton>
+              )}
             </div>
           )}
         </div>
       )}
 
-      {checkoutStep === "checkout" && (
-        <div className="ui-fadeUp" style={{ paddingBottom: SPACE.s4 }}>
-          {/* Sarlavha */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s4 }}>
-            <button className="ui-press" onClick={() => setCheckoutStep("tiers")} style={{ background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", padding: 4 }}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={th.t1} strokeWidth="2.5"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-            </button>
-            <div style={{ ...TYPE.heading, color: th.t1, textAlign: "center" }}>{uz ? "Xavfsiz To'lov" : "Secure Payment"}</div>
-            <div style={{ width: 24 }} />
-          </div>
-
-          {/* Tanlangan Reja Xulosasi */}
-          <AppCard th={th} style={{ background: gold + "0D", border: "1.5px solid " + gold, marginBottom: SPACE.s4 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ ...TYPE.body, fontWeight: 800, color: th.t1 }}>{TIERS[activeTier].title}</div>
-                <div style={{ ...TYPE.caption, color: th.t2, fontSize: TYPE.caption.fontSize - 1 }}>{TIERS[activeTier].sub}</div>
-              </div>
-              <div style={{ ...TYPE.heading, color: gold, fontWeight: 900 }}>{TIERS[activeTier].price}</div>
-            </div>
-          </AppCard>
-
-          {/* To'lov usuli tanlagich */}
-          <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
-            {[
-              { id: "card", label: uz ? "Karta orqali" : "By Card", icon: PIco.card },
-              { id: "click", label: "Click", icon: PIco.phone },
-              { id: "payme", label: "Payme", icon: PIco.phone },
-            ].map(m => {
-              const isSel = payMethod === m.id;
-              return (
-                <button key={m.id} className="ui-press" onClick={() => { buzz(8); setPayMethod(m.id); }} style={{
-                  flex: 1, padding: SPACE.s3 + "px " + SPACE.s2 + "px",
-                  background: isSel ? th.ac + "15" : th.surH,
-                  border: isSel ? "1.5px solid " + th.ac : "1px solid " + th.bor,
-                  borderRadius: RADIUS.m, cursor: "pointer", display: "flex", flexDirection: "column",
-                  alignItems: "center", gap: 6, transition: "all 0.15s ease", fontFamily: "inherit"
-                }}>
-                  {m.icon(isSel ? th.ac : th.t2, 20)}
-                  <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: isSel ? 700 : 500, color: isSel ? th.ac : th.t1 }}>{m.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Form */}
-          <form onSubmit={handlePaySubmit}>
-            {payMethod === "card" ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s4 }}>
-                <div>
-                  <label style={{ ...TYPE.caption, color: th.t2, display: "block", marginBottom: 6, fontWeight: 600 }}>{uz ? "Karta raqami" : "Card number"}</label>
-                  <div style={{ position: "relative" }}>
-                    <TextInput th={th} placeholder="8600 0000 0000 0000" value={cardNumber} onChange={handleCardChange} required style={{ letterSpacing: 1.5, fontFamily: "monospace", fontSize: 16 }} />
-                    {getCardType(cardNumber) && (
-                      <div style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)" }}>
-                        <Badge th={th} type="pro" style={{ background: th.ac, color: "#fff", fontWeight: 700 }}>{getCardType(cardNumber)}</Badge>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3 }}>
-                  <div>
-                    <label style={{ ...TYPE.caption, color: th.t2, display: "block", marginBottom: 6, fontWeight: 600 }}>{uz ? "Amal qilish muddati" : "Expiry date"}</label>
-                    <TextInput th={th} placeholder="MM/YY" value={cardExpiry} onChange={handleExpiryChange} maxLength={5} required style={{ textAlign: "center", fontFamily: "monospace", fontSize: 16 }} />
-                  </div>
-                  <div>
-                    <label style={{ ...TYPE.caption, color: th.t2, display: "block", marginBottom: 6, fontWeight: 600 }}>{uz ? "Karta egasi ismi" : "Cardholder name"}</label>
-                    <TextInput th={th} placeholder="ISM SHARIF" value={cardName} onChange={(e) => setCardName(e.target.value.toUpperCase())} required style={{ textTransform: "uppercase" }} />
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s4 }}>
-                <div>
-                  <label style={{ ...TYPE.caption, color: th.t2, display: "block", marginBottom: 6, fontWeight: 600 }}>{uz ? "Telefon raqamingiz" : "Phone number"}</label>
-                  <div style={{ display: "flex", alignItems: "center", position: "relative" }}>
-                    <div style={{ position: "absolute", left: 12, ...TYPE.body, fontWeight: 700, color: th.t1 }}>+998</div>
-                    <TextInput th={th} placeholder="90 123 45 67" value={phoneNumber} onChange={(e) => handlePhoneChange(e.target.value)} required style={{ paddingLeft: 56, letterSpacing: 1, fontWeight: "bold" }} />
-                  </div>
-                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 6 }}>{uz ? "To'lovni tasdiqlash uchun telefoningizga SMS-kod yuboriladi." : "An SMS-code will be sent to confirm payment."}</div>
-                </div>
-              </div>
-            )}
-
-            {/* To'lash tugmasi */}
-            <LoadingButton th={th} loading={isLoading} type="submit" style={{ background: gold, borderColor: gold, color: "#fff", width: "100%", marginBottom: SPACE.s3 }}>
-              {uz ? "To'lovni amalga oshirish" : "Pay now"}
-            </LoadingButton>
-
-            <GhostButton th={th} onClick={() => setCheckoutStep("tiers")} style={{ width: "100%" }}>{uz ? "Bekor qilish" : "Cancel"}</GhostButton>
-          </form>
-        </div>
-      )}
-
       {checkoutStep === "success" && (
-        <div className="ui-fadeUp" style={{ textAlign: "center", padding: SPACE.s6 + "px " + SPACE.s4 + "px", pb: SPACE.s10 }}>
+        <div className="ui-fadeUp" style={{ textAlign: "center", padding: SPACE.s6 + "px " + SPACE.s4 + "px" }}>
           {/* Animated bounce check */}
           <div className="anim-bounceIn" style={{ width: 80, height: 80, borderRadius: RADIUS.full, background: th.gr + ALPHA.faint, border: "2px solid " + th.gr, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto " + SPACE.s4 + "px" }}>
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke={th.gr} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">

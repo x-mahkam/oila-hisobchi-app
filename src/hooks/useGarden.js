@@ -18,10 +18,6 @@ export function useGarden() {
       const newStars = Math.max(0, cur - cost);
       const today = new Date().toISOString().slice(0, 10);
       const g = (await db.g("garden_" + user.oilaId)) || { level: 0, watered: null, totalStars: 0, wateredBy: [] };
-      if (g.watered === today) {
-        ok$(lg === "uz" ? "Bog' bugun allaqachon sug'orildi 🌿" : "Garden already watered today 🌿", "warn");
-        return;
-      }
       const wCount = (g.wateredBy || []).filter(w => w.sana && w.sana >= new Date(Date.now() - 30 * 86400000).toISOString()).length + 1;
       const newLevel = Math.min(Math.floor(wCount / 3), 6);
       const newG = {

@@ -3,7 +3,6 @@ import { db } from "../firebase.js";
 import { td, nt, f, hp } from "../utils/formatters.js";
 import { canApproveTask, canCompleteTask, canAssignTask, canDeleteTask } from "../utils/permissions.js";
 import { useApp } from "../context/AppContext.jsx";
-import { publishKidScore } from "../utils/kidsBoard.js";
 
 export function useFamily() {
   const { user, oila, azolar, setAzolar, setOila,
@@ -124,17 +123,7 @@ export function useFamily() {
     await db.s("kidbal_" + user.oilaId, kb);
     setKidBalances(kb);
 
-    try {
-      const kidObj = cand.find(a => a.id === kidId) || cand[0];
-      await publishKidScore({
-        kidId,
-        ism: (kidObj?.ism || v.assignedName || "?"),
-        oilaId: user.oilaId,
-        deltaPts: 10,
-        deltaTask: 1,
-        deltaEarn: Number(v.reward) || 0,
-      });
-    } catch {}
+
 
     const xItem = {
       id: Date.now(), kategoriya:"boshqa", summa:v.reward,
