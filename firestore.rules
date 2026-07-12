@@ -141,13 +141,14 @@ service cloud.firestore {
                   || (signedIn() && docIsMyUid(docId))
                   || (signedIn() && myChannel(resource));
 
-      allow create: if signedIn() && (isMine() || isMyKidDoc(docId) || docIsMySessKid(docId) || isLookup(docId) || writeOk() || docHasMyOila(docId) || docIsMyUid(docId));
+      allow create: if signedIn() && (isMine() || isMyKidDoc(docId) || docIsMySessKid(docId) || isLookup(docId) || writeOk() || docHasMyOila(docId) || docIsMyUid(docId))
+                    && (!isOilaDoc(docId) || !('v' in request.resource.data) || !('premium' in request.resource.data.v) || request.resource.data.v.premium == false);
 
       allow update: if signedIn() && (
                        isMine() || isMyKidDoc(docId) || docIsMySessKid(docId) || isLookup(docId)
                        || (writeOk() && (mineByUser(resource) || mineByOila(resource)))
                        || docHasMyOila(docId) || docIsMyUid(docId)
-                    );
+                    ) && (!isOilaDoc(docId) || !('v' in request.resource.data) || !('premium' in request.resource.data.v) || ('v' in resource.data && 'premium' in resource.data.v && request.resource.data.v.premium == resource.data.v.premium));
 
       allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || docHasMyOila(docId) || docIsMyUid(docId) || docIsMySessKid(docId) || myChannel(resource));
     }

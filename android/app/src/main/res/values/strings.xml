@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Oila Hisobchi</string>
+    <string name="title_activity_main">Oila Hisobchi</string>
+    <string name="package_name">com.mahakam.oilahisobchi</string>
+    <string name="custom_url_scheme">com.mahakam.oilahisobchi</string>
+</resources>
