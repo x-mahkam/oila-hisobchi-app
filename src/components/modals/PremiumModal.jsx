@@ -157,16 +157,16 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
     { ico: PIco.target, uz: "Cheksiz maqsad", en: "Unlimited goals" },
     { ico: PIco.family, uz: "Cheksiz oila a'zosi", en: "Unlimited members" },
     { ico: PIco.doc, uz: "PDF/Excel eksport", en: "PDF/Excel export" },
-    { ico: PIco.mic, uz: "Ovozli boshqaruv (AI)", en: "Voice input (AI)" },
+    { ico: PIco.mic, uz: "Ovozli boshqaruv (Smart)", en: "Voice input (Smart)" },
     { ico: PIco.qr, uz: "Tushum cheklarini QR skanerlash", en: "QR receipt scanner" },
-    { ico: PIco.ai, uz: "AI aqlli moliyaviy maslahatlar", en: "AI smart insights" },
+    { ico: PIco.ai, uz: "Foydali moliyaviy maslahatlar", en: "Useful financial insights" },
   ];
 
   const FREE_ITEMS = uz ? ["3 ta maqsad", "2 oila a'zosi", "Asosiy hisobot"] : ["3 goals", "2 members", "Basic report"];
   const PREM_ITEMS = FEATURES.map(f => (uz ? f.uz : f.en));
 
   const FAQ = [
-    { q: uz ? "Premium nimani beradi?" : "What does Premium include?", a: uz ? "Cheksiz maqsad va a'zolar, PDF/Excel eksport, ovoz kiritish, QR skaner va AI tavsiyalar — barcha cheklovlar olib tashlanadi." : "Unlimited goals & members, PDF/Excel export, voice input, QR scanner and AI insights — all limits removed." },
+    { q: uz ? "Premium nimani beradi?" : "What does Premium include?", a: uz ? "Cheksiz maqsad va a'zolar, PDF/Excel eksport, ovoz kiritish, QR skaner va foydali tavsiyalar — barcha cheklovlar olib tashlanadi." : "Unlimited goals & members, PDF/Excel export, voice input, QR scanner and useful insights — all limits removed." },
     { q: uz ? "Butun oilaga ta'sir qiladimi?" : "Does it apply to the whole family?", a: uz ? "Ha. Oila boshlig'i faollashtirsa, Premium obunasi butun oila a'zolariga avtomatik qo'llanadi." : "Yes. When the family head activates, Premium applies to the whole family." },
     { q: uz ? "Bekor qilsam ma'lumotlarim yo'qoladimi?" : "Do I lose data if I cancel?", a: uz ? "Yo'q. Barcha yozuvlaringiz saqlanib qoladi, faqat Premium imkoniyatlar cheklanadi." : "No. All your records stay — only Premium features become limited." },
   ];

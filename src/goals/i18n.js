@@ -14,7 +14,7 @@ const DICT = {
   countdown:    { uz: "Qolgan vaqt",         ru: "Осталось времени",   en: "Time left" },
   perPeriod:    { uz: "Yig'ish rejasi",      ru: "План накоплений",    en: "Savings plan" },
   timeline:     { uz: "Tarix",               ru: "История",            en: "Timeline" },
-  aiTips:       { uz: "AI tavsiyalar",       ru: "AI-советы",          en: "AI tips" },
+  aiTips:       { uz: "Foydali tavsiyalar",   ru: "Полезные советы",    en: "Useful tips" },
   notifs:       { uz: "Bildirishnomalar",    ru: "Уведомления",        en: "Notifications" },
 
   // ── Health statuslari ──

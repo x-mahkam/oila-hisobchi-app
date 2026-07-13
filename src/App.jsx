@@ -316,7 +316,7 @@ export default function App() {
   }, [xar]);
 
   const pieD = useMemo(() => KATS.map((k, i) => ({
-    name: KN[lg][i], value: bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0), color: k.c,
+    name: (KN[lg] || KN.uz)[i], value: bX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0), color: k.c,
   })).filter(d => d.value > 0), [bX, lg]);
 
   const {
@@ -491,6 +491,13 @@ export default function App() {
       </style></head><body>
         <div class="doc-num">${lg === "uz" ? "Hujjat \u2116" : lg === "ru" ? "\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u2116" : "Document \u2116"} ${hujjatRaqami}</div>
         <div class="head">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:54px;height:54px;display:block;margin:0 auto 8px;">
+            <rect width="120" height="120" rx="28" fill="#5D5CFF" />
+            <path d="M12 46 L60 12 L108 46" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <rect x="18" y="47" width="84" height="58" rx="14" stroke="#FFFFFF" stroke-width="7" fill="none" />
+            <path d="M18 58 L102 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
+            <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+          </svg>
           <div class="title">${lg === "uz" ? "TILXAT" : lg === "ru" ? "\u0420\u0410\u0421\u041f\u0418\u0421\u041a\u0410" : "RECEIPT"}</div>
           <div class="sub">${lg === "uz" ? "pul qarzi olinganligi to'g'risida" : lg === "ru" ? "\u043e \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u0438 \u0434\u0435\u043d\u0435\u0436\u043d\u043e\u0433\u043e \u0437\u0430\u0439\u043c\u0430" : "of a monetary loan"}</div>
         </div>
@@ -628,7 +635,7 @@ export default function App() {
     if (bpct >= 100) tips.push(L("◆ Budjet ogohlantirishi: ", "◆ Budget warning: ") + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
     else if (bpct >= 80) tips.push(L("◆ Budjet nazorati: ", "◆ Budget check: ") + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
     else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push(L("◆ Zo'r natija: ", "◆ Great progress: ") + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
-    const katTotals = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
+    const katTotals = KATS.map((k, i) => ({ nom: (KN[lg] || KN.uz)[i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
     if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push(L("◆ Eng yuqori xarajat: ", "◆ Top spending: ") + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
     if (totD > 0) {
       const savePct = bal2 > 0 ? Math.round(bal2 / totD * 100) : 0;
@@ -672,32 +679,9 @@ export default function App() {
     return salom + "\n\n" + L("◆ " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n");
   };
 
-  // Masofaviy AI API (ixtiyoriy): VITE_AI_API_URL sozlansa shu endpointga so'rov yuboriladi.
-  // Sozlanmagan yoki ishlamasa — lokal dvigatel zaxira sifatida ishlaydi (AI hech qachon "o'lmaydi").
+  // Masofaviy maslahat o'chirildi (faqat offline va tezkor lokal tizim ishlaydi)
   const fetchRemoteAdvice = async () => {
-    const AI_URL = import.meta.env.VITE_AI_API_URL;
-    if (!AI_URL) return null;                                  // API sozlanmagan
-    if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("offline");
-    const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
-    const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
-    const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
-    const totD = mD.reduce((s, d) => s + Number(d.summa || 0), 0);
-    const kats = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0);
-    const prompt = (lg === "uz"
-      ? "Siz oilaviy moliya bo'yicha maslahatchisiz. Quyidagi oy ma'lumotlari asosida qisqa, amaliy moliyaviy maslahat bering (o'zbek tilida): "
-      : "You are a family finance advisor. Give short practical advice based on this month: ")
-      + JSON.stringify({ oy: tm(), daromad: totD, xarajat: totX, budjet: oila?.budjet || 0, kategoriyalar: kats });
-    const resp = await fetch(AI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, lang: lg }),
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!resp.ok) throw new Error("API " + resp.status);
-    const data = await resp.json();
-    const text = data.advice || data.text || data.result || (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content);
-    if (!text || typeof text !== "string") throw new Error("empty response");
-    return text;
+    return null;
   };
 
   const aiAdv = async () => {
@@ -723,7 +707,16 @@ export default function App() {
   };
 
 
-  if (boot) return <div style={{ ...makeS(th).pg, display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>{Ico.wallet(th.ac)}</div>;
+  if (boot) {
+    return (
+      <div style={{ ...makeS(th).pg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16 }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          {Ico.logo(100, true)}
+        </div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: th.t1, letterSpacing: -0.5 }}>Oila Hisobchi</div>
+      </div>
+    );
+  }
 
   // ── TILXAT TEKSHIRUV SAHIFASI (QR skanerlaganda) ──────────
   if (verifyTilxat) {
@@ -875,7 +868,7 @@ export default function App() {
                 {isPremium && <span style={{ fontSize: 8, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", color: "#fff", borderRadius: 20, padding: "1px 6px", fontWeight: 700 }}>PRO</span>}
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: -0.2 }}>
-                {lg === "uz" ? <><span style={{ color: th.ac }}>Oila</span><span style={{ color: th.gr }}>Hisobchi</span></> : <><span style={{ color: th.ac }}>Family</span><span style={{ color: th.gr }}>Budget</span></>}
+                {(lg === "uz" || lg === "qr") ? <><span style={{ color: th.ac }}>Oila</span><span style={{ color: th.gr }}>Hisobchi</span></> : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? <><span style={{ color: th.ac }}>Семейный</span><span style={{ color: th.gr }}>Бюджет</span></> : <><span style={{ color: th.ac }}>Family</span><span style={{ color: th.gr }}>Budget</span></>}
               </span>
             </div>
           </div>

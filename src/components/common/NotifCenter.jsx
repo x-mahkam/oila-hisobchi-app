@@ -89,7 +89,7 @@ export default function NotifCenter({
   const goAction = useCallback(() => {
     if (!sel) return;
     let scr = catAction(catOf(sel));
-    if (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done") {
+    if (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done" || sel.type === "bilim_offer" || sel.type === "bilim_offer_accepted" || sel.type === "bilim_offer_rejected" || sel.type === "bilim_offer_countered" || (sel.type && sel.type.startsWith("bilim_"))) {
       scr = "bilim";
       if (setBilimInitialView) {
         setBilimInitialView("market");
@@ -110,7 +110,7 @@ export default function NotifCenter({
   const selColor = sel ? catColor(selCat, th, PREMIUM) : th.ac;
   const needParent = sel && sel.type === "maqsad_confirm" && sel.status === "pending" && !isKid;
   const needKid = sel && sel.type === "maqsad_kid_confirm" && sel.status === "pending" && isKid;
-  const isBilimNotif = sel && (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done");
+  const isBilimNotif = sel && (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done" || sel.type === "bilim_offer" || sel.type === "bilim_offer_accepted" || sel.type === "bilim_offer_rejected" || sel.type === "bilim_offer_countered" || sel.type.startsWith("bilim_"));
   const actLabel = isBilimNotif
     ? (uz ? "Bilim Bozoriga o'tish" : lg === "ru" ? "В рынок знаний" : "Go to Knowledge Market")
     : (sel ? catActionLabel(selCat, lg) : null);

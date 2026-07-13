@@ -18,11 +18,11 @@ import { Badge } from "./Badge.jsx";
 import { injectUiCss } from "./motion.js";
 
 /** Bazaviy karta. onClick berilsa bosiladigan bo'ladi. */
-export const AppCard = memo(function AppCard({ th, children, onClick, pad = SPACE.s4, style }) {
+export const AppCard = memo(function AppCard({ th, children, onClick, pad = SPACE.s4, style, asDiv = false }) {
   injectUiCss();
   const s = { background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: pad, marginBottom: SPACE.s3, boxSizing: "border-box", ...style };
-  if (onClick) return <button className="ui-press" onClick={onClick} style={{ ...s, width: "100%", cursor: "pointer", textAlign: "left", fontFamily: "inherit", display: "block" }}>{children}</button>;
-  return <div style={s}>{children}</div>;
+  if (onClick && !asDiv) return <button className="ui-press" onClick={onClick} style={{ ...s, width: "100%", cursor: "pointer", textAlign: "left", fontFamily: "inherit", display: "block" }}>{children}</button>;
+  return <div style={s} onClick={onClick} className={onClick ? "ui-press" : undefined} role={onClick ? "button" : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}>{children}</div>;
 });
 
 /** Statistika katagi (raqam+label). Qatorda 3-4 tasi yonma-yon. */

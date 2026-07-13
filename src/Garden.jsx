@@ -1120,7 +1120,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setTimeout(async () => {
       setAiAdvice(adviceText);
       setLoadingAdvice(false);
-      showMsg(L("AI moliyaviy maslahati tayyor!", "Финансовый совет от ИИ готов!"), "bloom");
+      showMsg(L("Foydali moliyaviy maslahat tayyor!", "Полезный финансовый совет готов!"), "bloom");
       await saveGarden(plots, undefined, cost > 0 ? nextEnergy : undefined, undefined, undefined, undefined, undefined, undefined, {
         lastAiAdviceAt: nextLastAdvice
       });
@@ -1325,7 +1325,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         {/* AI Maslahatchi */}
         <button className="ui-press" onClick={() => { setShowAiAdvisorModal(true); handleGetAiAdvice(); }} 
           style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(109, 33, 168, 0.22))", border: "1.5px solid #c084fc", boxShadow: "0 0 12px rgba(168, 85, 247, 0.55)", cursor: "pointer" }} 
-          title={L("AI Maslahatchi", "ИИ Советник")}>
+          title={L("Foydali Maslahatchi", "Полезный Советник")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.8s ease-in-out infinite 0.4s" }}>🔮</span>
         </button>
 
@@ -2051,7 +2051,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>
             <span style={{ fontSize: 44 }}>🔮✨</span>
           </div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🔮 {L("AI Moliyaviy Maslahatchi", "ИИ Финансовый Советник")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🔮 {L("Foydali Moliyaviy Maslahatchi", "Полезный Финансовый Советник")}</div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
             {L("Har kuni 1-maslahat bepul! Keyingi maslahat 20 Quyosh.", "Каждый день 1-й совет бесплатно! Далее по 20 Солнца.")}
           </p>

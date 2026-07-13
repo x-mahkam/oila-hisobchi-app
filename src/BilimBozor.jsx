@@ -183,7 +183,7 @@ const getAutoDesc = (coins, pul, isKidRole, lang) => {
 };
 
 export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, embedded=false, gameTitle, initialLevel }) {
-  const { xar, setXar, dar, setDar, setKidBalances, vazifalar } = useApp();
+  const { xar, setXar, dar, setDar, setKidBalances, vazifalar, setVazifalar } = useApp();
   const lastAutoDescRef = useRef("");
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh" || user?.rol === "azo";
@@ -201,11 +201,12 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
   const [vParentId, setVParentId]   = useState("all");
 
   // O'yin
-  const [level, setLevel]           = useState(1);
+  const [level, setLevel]           = useState(() => initialLevel || 1);
   const [bilimCoins, setBilimCoins] = useState(0);
   // wordStats: { [word_en]: seenCount }
   const [wordStats, setWordStats]   = useState({});
   const [sessionWords, setSessionWords] = useState([]);
+  const [isInitialLoading, setIsInitialLoading] = useState(() => !!initialLevel);
   const [curIdx, setCurIdx]         = useState(0);
   const [choices, setChoices]       = useState([]);
   const [selected, setSelected]     = useState(null);
@@ -298,6 +299,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           const wrong = shuffle(allWords.filter(w => w.en !== word.en)).slice(0,3).map(w => w.uz);
           setChoices(shuffle([word.uz, ...wrong]));
         }
+        setIsInitialLoading(false);
       }
 
       const kids = (azolar||[]).filter(a => a.rol==="kid");
@@ -672,6 +674,44 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
     }
   };
 
+  const confirmCollected = async (task) => {
+    if (!task) return;
+    try {
+      const upd = vazifalar.map(v => v.id === task.id ? { ...v, status: "done", doneSana: new Date().toISOString().split('T')[0], done: true } : v);
+      await db.s("vazifa_" + user.oilaId, upd);
+      setVazifalar(upd);
+      showMsg(L("Vazifa bajarildi deb belgilandi! Ota-ona tasdiqlashini kuting. 🎉", "Задание отмечено как выполненное! Ожидайте подтверждения родителей. 🎉"));
+      
+      try {
+        const parents = (azolar || []).filter(a => a.rol !== "kid");
+        for (const p of parents) {
+          const pkn = (await db.g("notif_" + p.id)) || [];
+          const newNotifs = [{
+            id: Date.now() + Math.random(),
+            type: "vazifa_done",
+            text: lg === "uz"
+              ? `👶 ${user.ism || "Bola"} bilim vazifasini bajardi: "${task.desc || task.title}". Tasdiqlash kutilmoqda.`
+              : `👶 ${user.ism || "Ребенок"} выполнил учебное задание: "${task.desc || task.title}". Ожидает подтверждения.`,
+            sana: new Date().toISOString(),
+            read: false
+          }, ...pkn];
+          await db.s("notif_" + p.id, newNotifs);
+        }
+      } catch (e) {
+        console.error("Parent notification error:", e);
+      }
+    } catch (e) {
+      console.error(e);
+      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+    }
+  };
+
+  const checkVazifalar = (newCoins) => {
+    if (myVazifaActive && newCoins >= myVazifaActive.targetCoins) {
+      showMsg(L("🎉 Tabriklaymiz! Vazifa maqsadiga erishdingiz! Uni topshirishingiz mumkin.", "🎉 Поздравляем! Вы достигли цели задания! Можете отправить его на проверку."));
+    }
+  };
+
   const curWord = sessionWords[curIdx];
   const curLvl = LEVELS.find(l => l.id===level);
   const myVazifaActive = vazifalar.find(v => v.uid===user?.id && !v.done && !v.paid);
@@ -807,7 +847,15 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           )}
 
           {/* Daraja tanlash */}
-          {sessionWords.length===0 && !showResult && (
+          {isInitialLoading && (
+            <div style={{ textAlign: "center", padding: "40px 20px" }}>
+              <div className="skeleton" style={{ height: 180, borderRadius: 24, marginBottom: 20 }} />
+              <div className="skeleton" style={{ height: 50, borderRadius: 16, marginBottom: 10 }} />
+              <div className="skeleton" style={{ height: 50, borderRadius: 16 }} />
+            </div>
+          )}
+
+          {sessionWords.length===0 && !showResult && !isInitialLoading && (
             <div style={{animation:"slideUp .35s ease"}}>
               <div style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",marginBottom:14,textAlign:"center"}}>
                 {L("Daraja tanlang:","Выберите уровень:")}
