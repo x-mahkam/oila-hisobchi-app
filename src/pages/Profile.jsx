@@ -11,7 +11,8 @@ import { useMemo, useState, useEffect, useRef, useCallback, memo } from "react";
 import { KatIco } from "../components/common/index.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { useFamily } from "../hooks/useFamily.js";
-import { db } from "../firebase.js";
+import { db, fbAuth } from "../firebase.js";
+import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { normTel } from "../utils/formatters.js";
 import KidCreatedModal from "../components/modals/KidCreatedModal.jsx";
 import {
@@ -136,6 +137,7 @@ export default function ProfilePage({
     user, setUser, oila, setOila, azolar, setAzolar,
     isPremium, xar, dar, maq, qarzlar, stars, gardenData,
     dark, setDark, lg, setLg, val, setVal,
+    scr, setScr,
     th, t, ok$, buzz, addStar, logout,
   } = useApp();
 
@@ -164,6 +166,12 @@ export default function ProfilePage({
   const [askTel, setAskTel] = useState(false);
   const [parentalConsent, setParentalConsent] = useState(false);
   const [parentalConsentErr, setParentalConsentErr] = useState("");
+
+  // Hisobni o'chirish oqimi uchun statelar
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false);
+  const [deleteAccountStep, setDeleteAccountStep] = useState("info"); // "info" | "password" | "loading"
+  const [deleteConfirmPw, setDeleteConfirmPw] = useState("");
+  const [deletePwErr, setDeletePwErr] = useState("");
 
   // Farzand batafsil ko'rinishi va formalar uchun statelar
   const [selectedKid, setSelectedKid] = useState(null);
@@ -434,6 +442,144 @@ export default function ProfilePage({
     const okDone = await purgeData(clnAll ? "" : clnFrom, clnAll ? "" : clnTo, clnFam);
     if (okDone) { setShowClean(false); setClnFrom(""); setClnTo(""); setClnAll(true); setClnFam(false); }
   }, [purgeData, clnAll, clnFrom, clnTo, clnFam]);
+
+  const openDeleteAccount = useCallback(() => {
+    buzz(10);
+    setShowDeleteAccount(true);
+    setDeleteAccountStep("info");
+    setDeleteConfirmPw("");
+    setDeletePwErr("");
+  }, [buzz]);
+
+  const doDeleteAccount = useCallback(async (pwVal = deleteConfirmPw) => {
+    setDeletePwErr("");
+    setDeleteAccountStep("loading");
+    try {
+      const curU = fbAuth.currentUser;
+      if (!curU) {
+        throw new Error(uz ? "Foydalanuvchi aniqlanmadi" : "User not found");
+      }
+
+      // 1. Re-authenticate if user has a password provider
+      const hasPassword = curU.providerData && curU.providerData.some(p => p.providerId === "password");
+      if (hasPassword && curU.email) {
+        const credential = EmailAuthProvider.credential(curU.email, pwVal);
+        await reauthenticateWithCredential(curU, credential);
+      }
+
+      // Re-auth is successful! Proceed to delete all Firestore documents & auth user.
+      const uid = user.id;
+      const oilaId = user.oilaId;
+      const isHead = user.rol === "bosh";
+
+      // Prepare a list of doc deletes
+      const deletes = [];
+
+      if (isHead) {
+        // 2. Fetch all kids or adult family members to delete their personal records
+        const familyMembers = azolar || [];
+        for (const member of familyMembers) {
+          if (member.id !== uid) {
+            // Delete other members' user/notif documents
+            deletes.push(db.del("user_" + member.id));
+            deletes.push(db.del("notif_" + member.id));
+            deletes.push(db.del("x_" + oilaId + "_" + member.id));
+            deletes.push(db.del("d_" + oilaId + "_" + member.id));
+            deletes.push(db.del("kidgame_" + member.id));
+            deletes.push(db.del("kb_" + member.id));
+          }
+        }
+
+        // Delete family wide docs
+        deletes.push(db.del("oila_" + oilaId));
+        deletes.push(db.del("fam_" + oilaId));
+        deletes.push(db.del("maq_" + oilaId));
+        deletes.push(db.del("qarz_" + oilaId));
+        deletes.push(db.del("vazifa_" + oilaId));
+        deletes.push(db.del("kidbal_" + oilaId));
+        deletes.push(db.del("stars_" + oilaId));
+        deletes.push(db.del("starlog_" + oilaId));
+        deletes.push(db.del("toy_" + oilaId));
+        deletes.push(db.del("bilim_vazifa_" + oilaId));
+        deletes.push(db.del("bilim_offer_" + oilaId));
+        deletes.push(db.del("act_" + oilaId));
+        
+        // Garden docs
+        deletes.push(db.del("baraka_garden_" + oilaId));
+        deletes.push(db.del("baraka_coins_" + oilaId));
+        deletes.push(db.del("baraka_energy_" + oilaId));
+        deletes.push(db.del("baraka_crystals_" + oilaId));
+        deletes.push(db.del("baraka_daily_" + oilaId));
+      } else {
+        // Not family head. Let's remove this user from the family list.
+        const ms = await db.g("fam_" + oilaId) || await db.g("oila_" + oilaId);
+        if (ms) {
+          const memberIds = (ms.azolarIds || ms.azolar || []).filter(id => id !== uid);
+          const o2 = { ...ms, azolarIds: memberIds, azolar: memberIds };
+          await db.s("oila_" + oilaId, o2);
+          await db.s("fam_" + oilaId, o2);
+        }
+      }
+
+      // 3. Delete personal documents
+      deletes.push(db.del("user_" + uid));
+      deletes.push(db.del("notif_" + uid));
+      deletes.push(db.del("x_" + oilaId + "_" + uid));
+      deletes.push(db.del("d_" + oilaId + "_" + uid));
+
+      if (user.email) {
+        deletes.push(db.del("em_" + user.email.toLowerCase()));
+      }
+      if (user.tel) {
+        const tel = user.tel.replace(/\D/g, "");
+        const n9 = tel.slice(-9);
+        deletes.push(db.del("tel_" + tel));
+        deletes.push(db.del("tel9_" + n9));
+        deletes.push(db.del("tphone_" + n9));
+      }
+
+      // Run all Firestore deletes
+      await Promise.all(deletes);
+
+      // 4. Delete user from Firebase Auth
+      await curU.delete();
+
+      // 5. Clean local cache
+      localStorage.clear();
+
+      // 6. Logout and return to boot/login
+      ok$(uz ? "Hisobingiz butunlay o'chirildi" : "Account deleted successfully");
+      logout();
+    } catch (err) {
+      console.error("Account deletion error:", err);
+      setDeleteAccountStep("password");
+      setDeletePwErr(
+        err.code === "auth/wrong-password" || err.code === "auth/invalid-credential"
+          ? (uz ? "Parol noto'g'ri kiritildi" : "Incorrect password")
+          : (lg === "uz" ? "Xato yuz berdi: " : "Error occurred: ") + (err.message || err.code)
+      );
+    }
+  }, [user, oila, azolar, logout, ok$, deleteConfirmPw, uz, lg]);
+
+  const handleDeleteAccountContinue = useCallback(() => {
+    buzz(10);
+    const curU = fbAuth.currentUser;
+    const hasPassword = curU && curU.providerData && curU.providerData.some(p => p.providerId === "password");
+    if (hasPassword) {
+      setDeleteAccountStep("password");
+    } else {
+      doDeleteAccount("");
+    }
+  }, [buzz, doDeleteAccount]);
+
+  const handleDeleteAccountFinal = useCallback(() => {
+    buzz(10);
+    if (!deleteConfirmPw.trim()) {
+      setDeletePwErr(uz ? "Iltimos parolingizni kiriting" : "Please enter your password");
+      return;
+    }
+    doDeleteAccount(deleteConfirmPw);
+  }, [buzz, deleteConfirmPw, doDeleteAccount, uz]);
   const submitKid = useCallback(() => {
     const nowY = new Date().getFullYear();
     const by = Number(kidBirthYear);
@@ -725,6 +871,15 @@ export default function ProfilePage({
               right={Ico.right(th.t2)} />
           </AppCard>
 
+          {/* ═══ 4b. BILIM BOZORI — Knowledge Market button ═══ */}
+          <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3, overflow: "hidden" }}>
+            <ListItem th={th} divider={false} onClick={() => { buzz(10); openBilim("market"); }}
+              icon={PIco.book(th.ac)} iconTone={th.ac}
+              title={lg === "uz" ? "Bilim bozori" : lg === "ru" ? "Рынок знаний" : "Knowledge Market"}
+              sub={lg === "uz" ? "Bilim coinlar evaziga oilaviy savdolashish va mukofotlar" : lg === "ru" ? "Семейный торг и награды за монеты знаний" : "Family trading and rewards for knowledge coins"}
+              right={Ico.right(th.t2)} />
+          </AppCard>
+
           {/* ═══ 5. SOZLAMALAR — Settings list entry ═══ */}
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4, overflow: "hidden" }}>
             <ListItem th={th} divider={false} onClick={() => { buzz(10); setPTab("sozlamalar"); }}
@@ -931,6 +1086,15 @@ export default function ProfilePage({
         <div className="ui-fadeUp">
           <PageHeader th={th} title={uz ? "Sozlamalar" : "Settings"} onBack={backToMain} />
 
+          {/* App Logo & Info Header */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 10px 24px", textAlign: "center" }}>
+            <div style={{ width: 56, height: 56, borderRadius: 16, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10, boxShadow: "0 8px 24px " + th.ac + "22" }}>
+              <span style={{ transform: "scale(1.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>{Ico.wallet("#fff")}</span>
+            </div>
+            <div style={{ ...TYPE.heading, fontSize: 18, fontWeight: 800, color: th.t1 }}>Oila Hisobchi</div>
+            <div style={{ ...TYPE.caption, color: th.t2, marginTop: 4, maxWidth: 280, fontSize: 13 }}>{uz ? "Oilaviy moliyaviy nazorat va hamkorlik ilovasi" : "Family finance tracking & collaboration app"}</div>
+          </div>
+
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
             {/* Budjet va limitlar */}
             {user?.rol === "bosh" && (
@@ -947,15 +1111,30 @@ export default function ProfilePage({
             <SettingRow th={th} icon={Ico.help(th.ac)} title={t.qol} sub={uz ? "FAQ, Telegram bot, fikr bildirish" : "FAQ, Telegram, feedback"} onClick={() => setPTab("qol")} divider />
 
             {/* Versiya */}
-            <SettingRow th={th} icon={Ico.version(th.ac)} title={t.ver} divider right={<span style={{ ...TYPE.caption, fontWeight: 600, color: th.t2 }}>v{APP_VER}</span>} />
+            <SettingRow th={th} icon={Ico.version(th.ac)} title={t.ver} divider={user?.rol !== "kid"} right={<span style={{ ...TYPE.caption, fontWeight: 600, color: th.t2 }}>v{APP_VER}</span>} />
 
             {/* Xavfli hudud */}
-            <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"} sub={uz ? "Yozuvlarni butunlay yoki sana bo'yicha o'chirish" : "Delete records entirely or by date range"} onClick={openClean} divider={false} />
+            {user?.rol !== "kid" && (
+              <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"} sub={uz ? "Yozuvlarni butunlay yoki sana bo'yicha o'chirish" : "Delete records entirely or by date range"} onClick={openClean} divider />
+            )}
+
+            {/* Hisobni o'chirish */}
+            {user?.rol !== "kid" && (
+              <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "🔴 Hisobni o'chirish" : "🔴 Delete Account"} sub={uz ? "Akkauntingiz va barcha ma'lumotlarni butunlay o'chirish" : "Delete your account and all data permanently"} onClick={openDeleteAccount} divider={false} />
+            )}
           </AppCard>
 
           {/* ─────────── Huquqiy hujjatlar (Legal) ─────────── */}
           <SubHeader th={th}>{uz ? "Huquqiy hujjatlar" : "Legal"}</SubHeader>
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
+            <SettingRow
+              th={th}
+              icon={PIco.book(th.ac, 18)}
+              title={uz ? "Ilova haqida" : lg === "ru" ? "О приложении" : "About App"}
+              sub={uz ? "Ilovaning maqsadi va asosiy imkoniyatlari" : lg === "ru" ? "Цели и основные возможности приложения" : "App goals and main features"}
+              onClick={() => window.open("/about.html?lang=" + lg, "_blank", "noopener,noreferrer")}
+              divider
+            />
             <SettingRow
               th={th}
               icon={PIco.lock(th.ac, 18)}
@@ -978,6 +1157,22 @@ export default function ProfilePage({
               title={uz ? "Bolalar xavfsizligi va ota-ona roziligi siyosati" : "Child Safety & Parental Consent Policy"}
               sub={uz ? "Farzandlar ma'lumotlari va xavfsizligi" : "Children's data & safety"}
               onClick={() => window.open("/child-safety.html?lang=" + lg, "_blank", "noopener,noreferrer")}
+              divider
+            />
+            <SettingRow
+              th={th}
+              icon={Ico.trash ? Ico.trash(th.ac, 18) : PIco.list(th.ac, 18)}
+              title={uz ? "Hisobni o'chirish siyosati" : lg === "ru" ? "Политика удаления аккаунта" : "Account Deletion Policy"}
+              sub={uz ? "Akkauntni butunlay o'chirish qoidalari" : lg === "ru" ? "Правила полного удаления аккаунта" : "Rules for deleting accounts permanently"}
+              onClick={() => window.open("/account-deletion.html?lang=" + lg, "_blank", "noopener,noreferrer")}
+              divider
+            />
+            <SettingRow
+              th={th}
+              icon={PIco.warn(th.ac, 18)}
+              title={uz ? "Mas'uliyatni cheklash bayonoti" : lg === "ru" ? "Отказ от ответственности" : "Disclaimer"}
+              sub={uz ? "Ilovadan foydalanish mas'uliyati va cheklovlar" : lg === "ru" ? "Ответственность и ограничения использования" : "Responsibilities and usage limitations"}
+              onClick={() => window.open("/disclaimer.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider={false}
             />
           </AppCard>
@@ -1408,10 +1603,18 @@ export default function ProfilePage({
 
           {/* Til */}
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={Ico.globe(th.ac)} title={t.til} sub={uz ? "O'zbek" : lg === "ru" ? "Русский" : "English"} right={null} />
+            <ListItem th={th} icon={Ico.globe(th.ac)} title={t.til} sub={{uz: "O'zbek", ru: "Русский", en: "English", kk: "Қазақша", ky: "Кыргызча", tg: "Тоҷикӣ", qr: "Qaraqalpaqsha"}[lg] || lg.toUpperCase()} right={null} />
             <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 }}>
-              {[{ id: "uz", l: "O'zbek" }, { id: "ru", l: "Русский" }, { id: "kk", l: "Qaraqalpaq" }, { id: "en", l: "English" }].map(l => (
-                <ChoiceChip key={l.id} th={th} on={lg === l.id} onClick={() => { const nl = l.id === "kk" ? "uz" : l.id; setLg(nl); localStorage.setItem("oilaV7L", nl); }}>{l.l}</ChoiceChip>
+              {[
+                { id: "uz", l: "O'zbek" },
+                { id: "ru", l: "Русский" },
+                { id: "kk", l: "Қазақша" },
+                { id: "ky", l: "Кыргызча" },
+                { id: "tg", l: "Тоҷикӣ" },
+                { id: "qr", l: "Qaraqalpaqsha" },
+                { id: "en", l: "English" }
+              ].map(l => (
+                <ChoiceChip key={l.id} th={th} on={lg === l.id} onClick={() => { setLg(l.id); localStorage.setItem("oilaV7L", l.id); }}>{l.l}</ChoiceChip>
               ))}
             </div>
           </AppCard>
@@ -1734,6 +1937,82 @@ export default function ProfilePage({
           ? kidDel.ism + " akkaunti va logini (" + (kidDel.login || "—") + ") butunlay o'chiriladi. Bola boshqa kira olmaydi. Yozuvlari tarixda saqlanib qoladi."
           : kidDel.ism + "'s account and login (" + (kidDel.login || "—") + ") will be deleted permanently. Their records remain in history.") : ""}
         confirmText={uz ? "Ha, o'chirilsin" : "Yes, delete"} cancelText={uz ? "Bekor qilish" : "Cancel"} />
+
+      {/* Hisobni o'chirish oqimi */}
+      <BottomSheet th={th} open={showDeleteAccount} onClose={() => deleteAccountStep !== "loading" && setShowDeleteAccount(false)} title={uz ? "Hisobni o'chirish" : "Delete Account"}>
+        <div style={{ padding: SPACE.s2 }}>
+          {deleteAccountStep === "info" && (
+            <>
+              <div style={{ ...TYPE.subtitle, color: th.rd, fontWeight: 700, marginBottom: SPACE.s3 }}>
+                {uz ? "Hisobni o'chirsangiz:" : "If you delete your account:"}
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
+                {[
+                  uz ? "✓ Oilaviy ma'lumotlar" : "✓ Family information",
+                  uz ? "✓ Xarajatlar" : "✓ Expenses",
+                  uz ? "✓ Daromadlar" : "✓ Incomes",
+                  uz ? "✓ Bolalar akkauntlari" : "✓ Kids' accounts",
+                  uz ? "✓ Maqsadlar" : "✓ Goals",
+                  uz ? "✓ Coin" : "✓ Coins",
+                  uz ? "✓ Orzular" : "✓ Dreams (goals)",
+                  uz ? "✓ Statistikalar" : "✓ Statistics"
+                ].map((item, index) => (
+                  <div key={index} style={{ ...TYPE.caption, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s1, fontWeight: 600 }}>
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <div style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s4, lineHeight: 1.5 }}>
+                {uz ? "butunlay o'chiriladi.\n\nDavom etasizmi?" : "will be permanently deleted.\n\nDo you want to continue?"}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
+                <DangerButton th={th} solid onClick={handleDeleteAccountContinue}>
+                  {uz ? "Davom etish" : "Continue"}
+                </DangerButton>
+                <GhostButton th={th} onClick={() => setShowDeleteAccount(false)}>
+                  {uz ? "Bekor qilish" : "Cancel"}
+                </GhostButton>
+              </div>
+            </>
+          )}
+
+          {deleteAccountStep === "password" && (
+            <>
+              <div style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s3, lineHeight: 1.5 }}>
+                {uz ? "Hisobni butunlay o'chirish uchun parolingizni qayta kiriting:" : "Please re-enter your password to delete your account permanently:"}
+              </div>
+              <TextInput
+                th={th}
+                type="password"
+                label={uz ? "Parol" : "Password"}
+                value={deleteConfirmPw}
+                onChange={setDeleteConfirmPw}
+                placeholder={uz ? "Parolingizni kiriting" : "Enter your password"}
+                error={deletePwErr}
+              />
+              
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginTop: SPACE.s4 }}>
+                <DangerButton th={th} solid onClick={handleDeleteAccountFinal}>
+                  {uz ? "O'chirish" : "Delete"}
+                </DangerButton>
+                <GhostButton th={th} onClick={() => setDeleteAccountStep("info")}>
+                  {uz ? "Orqaga" : "Back"}
+                </GhostButton>
+              </div>
+            </>
+          )}
+
+          {deleteAccountStep === "loading" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, padding: SPACE.s4 + "px 0", alignItems: "center", justifyContent: "center" }}>
+              <LinearProgress th={th} />
+              <div style={{ ...TYPE.caption, color: th.t2, fontWeight: 600, textAlign: "center" }}>
+                {uz ? "Hisob o'chirilmoqda, iltimos kuting..." : "Deleting account, please wait..."}
+              </div>
+            </div>
+          )}
+        </div>
+      </BottomSheet>
     </div>
   );
 }

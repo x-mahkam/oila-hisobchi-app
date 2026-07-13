@@ -121,7 +121,7 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
       </div>
 
       {/* ── AI bahosi ── */}
-      <SectionHeader th={th}>{uz ? "AI bahosi" : lg === "ru" ? "Оценка AI" : "AI assessment"}</SectionHeader>
+      <SectionHeader th={th}>{uz ? "Foydali baholash" : lg === "ru" ? "Полезная оценка" : "Useful assessment"}</SectionHeader>
       <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med }}>
         <div style={{ display: "flex", gap: SPACE.s2, alignItems: "flex-start" }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 2a5 5 0 00-3 9c.6.5 1 1 1 2h4c0-1 .4-1.5 1-2a5 5 0 00-3-9z" stroke={th.ac} strokeWidth="1.4" fill={th.ac} fillOpacity="0.15"/><path d="M8 16h4M8.5 18h3" stroke={th.ac} strokeWidth="1.4" strokeLinecap="round"/></svg>

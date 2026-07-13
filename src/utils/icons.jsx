@@ -20,7 +20,31 @@ export const Ico={
   back:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   right:c=><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   repeat:c=><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7A5 5 0 0111 3.5" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M9 2l2 1.5L9 5" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/><path d="M12 7a5 5 0 01-9 3.5" stroke={c} strokeWidth="1.4" strokeLinecap="round"/><path d="M5 12l-2-1.5L5 9" stroke={c} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>,
-  wallet:c=><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><rect x="2" y="5" width="18" height="13" rx="2.5" fill={c} opacity=".15" stroke={c} strokeWidth="1.4"/><path d="M2 9h18" stroke={c} strokeWidth="1.3"/><circle cx="15" cy="13" r="1.5" fill={c} opacity=".8"/></svg>,
+  wallet:(c,size=22)=>(
+    <svg width={size} height={size} viewBox="0 0 120 120" fill="none">
+      <path d="M12 46 L60 12 L108 46" stroke={c} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+      <rect x="18" y="47" width="84" height="58" rx="14" stroke={c} strokeWidth="7" fill="none" />
+      <path d="M18 58 L102 58" stroke={c} strokeWidth="7" strokeLinecap="round" />
+      <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke={c} strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+    </svg>
+  ),
+  logo:(size=120, hasBg=true)=>(
+    <svg width={size} height={size} viewBox="0 0 120 120" fill="none" style={{display:"block"}}>
+      {hasBg && (
+        <rect width="120" height="120" rx="28" fill="#5D5CFF" />
+      )}
+      <g style={hasBg ? {filter:"drop-shadow(0px 4px 6px rgba(15,23,42,0.15))"} : {}}>
+        {/* House Roof */}
+        <path d="M12 46 L60 12 L108 46" stroke="#FFFFFF" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+        {/* Card/Wallet Outline */}
+        <rect x="18" y="47" width="84" height="58" rx="14" stroke="#FFFFFF" strokeWidth="7" fill="none" />
+        {/* Divider Line */}
+        <path d="M18 58 L102 58" stroke="#FFFFFF" strokeWidth="7" strokeLinecap="round" />
+        {/* Heart Outline */}
+        <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </g>
+    </svg>
+  ),
   money:c=><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="2" fill={c} opacity=".15" stroke={c} strokeWidth="1.3"/><circle cx="9" cy="9" r="2.5" stroke={c} strokeWidth="1.3"/></svg>,
   bank:c=><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M2 8L10 3l8 5H2z" fill={c} opacity=".2" stroke={c} strokeWidth="1.3" strokeLinejoin="round"/><rect x="4" y="9" width="2.5" height="6" rx=".8" fill={c} opacity=".6"/><rect x="8.75" y="9" width="2.5" height="6" rx=".8" fill={c} opacity=".6"/><rect x="13.5" y="9" width="2.5" height="6" rx=".8" fill={c} opacity=".6"/><line x1="2" y1="15" x2="18" y2="15" stroke={c} strokeWidth="1.5" strokeLinecap="round"/></svg>,
   brain:c=><svg width="38" height="38" viewBox="0 0 38 38" fill="none"><path d="M19 6c-3 0-5 1.5-6.5 4-2 0-4 1.5-4 4 0 1 .3 2 .8 2.8C8 18 7 20 7 22.5c0 3 2 5 4.5 6V30c0 1.7 1.3 3 3 3h9c1.7 0 3-1.3 3-3v-1.5c2.5-1 4.5-3 4.5-6 0-2.5-1-4.5-3-5.7.5-.8.8-1.8.8-2.8 0-2.5-2-4-4-4C23 7.5 22 6 19 6z" fill={c} opacity=".15" stroke={c} strokeWidth="1.5"/><path d="M19 10v18M13 14c1.5.8 3.5 1.2 6 1.2M25 17c-1.5.8-3.5 1.2-6 1.2" stroke={c} strokeWidth="1.2" strokeLinecap="round" opacity=".6"/></svg>,

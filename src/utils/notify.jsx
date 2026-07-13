@@ -49,6 +49,7 @@ const TYPE_CAT = {
   garden_harvest: "garden", garden_energy: "garden", garden_daily: "garden",
   family_member: "family", family_kid: "family", family_task_sent: "family", family_task_done: "family",
   bilim_proposal: "family", bilim_approved: "family", bilim_done: "family",
+  bilim_offer: "family", bilim_offer_accepted: "family", bilim_offer_rejected: "family", bilim_offer_countered: "family",
   premium_ended: "premium", trial_ended: "premium",
   ai_weekly: "ai", ai_monthly: "ai",
   reminder: "reminder", daily_reminder: "reminder",
@@ -60,6 +61,7 @@ const TYPE_PRIO = {
   budget_over: "critical", budget_100: "critical", premium_ended: "critical", trial_ended: "high",
   debt_new: "high", goal_deadline: "high", budget_80: "high", family_kid: "high",
   bilim_proposal: "high", bilim_approved: "high", bilim_done: "high",
+  bilim_offer: "high", bilim_offer_accepted: "high", bilim_offer_rejected: "high", bilim_offer_countered: "high",
   goal_behind: "normal", debt_confirmed: "normal", debt_repaid: "normal",
   goal_done: "normal", family_member: "normal", family_task_sent: "normal", family_task_done: "normal",
   garden_harvest: "normal", garden_energy: "low", garden_daily: "low",
@@ -73,7 +75,7 @@ export const prioRank = (n) => PRIO_RANK[prioOf(n)] ?? 2;
 
 // ── Toifadan qaysi ekranga o'tish (action tugmasi) ───────────
 export const catAction = (cat) => ({
-  goal: "maqsad", budget: "hisobot", debt: "qarzlar", family: "vazifa",
+  goal: "maqsad", budget: "hisobot", debt: "qarz", family: "vazifa",
   garden: "profil", premium: "profil", ai: "hisobot", reminder: null,
 }[cat] || null);
 
@@ -86,7 +88,7 @@ export const catActionLabel = (cat, lg) => {
     family:  uz ? "Vazifalar" : ru ? "Задачи" : "Tasks",
     garden:  uz ? "Bog'ni ochish" : ru ? "Открыть сад" : "Open garden",
     premium: uz ? "Premium" : "Premium",
-    ai:      uz ? "AI tahlil" : ru ? "AI-анализ" : "AI analysis",
+    ai:      uz ? "Foydali tahlil" : ru ? "Полезный анализ" : "Useful analysis",
   }[cat] || null;
 };
 

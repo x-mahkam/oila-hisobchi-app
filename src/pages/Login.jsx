@@ -41,6 +41,18 @@ export default function LoginPage() {
   const [resetEmail,   setResetEmail]   = useState("");
   const [resetInput,   setResetInput]   = useState("");
   const [resetSent,    setResetSent]    = useState(false);
+  const [showLgDD,     setShowLgDD]     = useState(false);
+
+  const LANGS_MAP = {
+    uz: { label: "🇺🇿 O'zbekcha", name: "O'zbekcha" },
+    ru: { label: "🇷🇺 Русский", name: "Русский" },
+    kk: { label: "🇰🇿 Қазақша", name: "Қазақша" },
+    ky: { label: "🇰🇬 Кыргызча", name: "Кыргызча" },
+    tg: { label: "🇹🇯 Тоҷикӣ", name: "Тоҷикӣ" },
+    qr: { label: "🇺🇿 Qaraqalpaqsha", name: "Qaraqalpaqsha" },
+    en: { label: "🇬🇧 English", name: "English" }
+  };
+  const LANG_KEYS = ["uz", "en", "ru", "kk", "ky", "tg", "qr"];
 
   useEffect(() => {
     try {
@@ -356,13 +368,30 @@ export default function LoginPage() {
       <div style={{position:"fixed",top:-120,left:"50%",transform:"translateX(-50%)",width:450,height:450,borderRadius:"50%",background:"radial-gradient(circle,"+th.ac+"1a,transparent 70%)",pointerEvents:"none"}}/>
       <div style={{padding:"50px 24px 40px",position:"relative"}}>
         <div style={{textAlign:"center",marginBottom:36}}>
-          <div style={{width:82,height:82,borderRadius:24,background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")",display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 14px",boxShadow:"0 14px 36px "+th.ac+"44"}}>{Ico.wallet("#fff")}</div>
-          <div style={{fontSize:28,fontWeight:800,letterSpacing:-0.5}}>{lg==="uz"?<><span style={{color:th.ac}}>Oila</span><span style={{color:th.gr}}>Hisobchi</span></>:lg==="ru"?<><span style={{color:th.ac}}>Семейный</span><span style={{color:th.gr}}>Бюджет</span></>:<><span style={{color:th.ac}}>Family</span><span style={{color:th.gr}}>Budget</span></>}</div>
-          <div style={{color:th.t2,fontSize:13,marginTop:5}}>{lg==="uz"?"Daromad \u00b7 Xarajat \u00b7 Maqsad \u00b7 Oila":lg==="ru"?"\u0414\u043e\u0445\u043e\u0434 \u00b7 \u0420\u0430\u0441\u0445\u043e\u0434 \u00b7 \u0426\u0435\u043b\u0438 \u00b7 \u0421\u0435\u043c\u044c\u044f":"Income \u00b7 Expense \u00b7 Goals \u00b7 Family"}</div>
+          <div style={{margin:"0 auto 14px",display:"flex",justifyContent:"center"}}>{Ico.logo(82, true)}</div>
+          <div style={{fontSize:28,fontWeight:800,letterSpacing:-0.5}}>{(lg==="uz"||lg==="qr")?<><span style={{color:th.ac}}>Oila</span><span style={{color:th.gr}}>Hisobchi</span></>:(lg==="ru"||lg==="kk"||lg==="ky"||lg==="tg")?<><span style={{color:th.ac}}>Семейный</span><span style={{color:th.gr}}>Бюджет</span></>:<><span style={{color:th.ac}}>Family</span><span style={{color:th.gr}}>Budget</span></>}</div>
+          <div style={{color:th.t2,fontSize:13,marginTop:5}}>{(lg==="uz"||lg==="qr")?"Daromad \u00b7 Xarajat \u00b7 Maqsad \u00b7 Oila":(lg==="ru"||lg==="kk"||lg==="ky"||lg==="tg")?"\u0414\u043e\u0445\u043e\u0434 \u00b7 \u0420\u0430\u0441\u0445\u043e\u0434 \u00b7 \u0426\u0435\u043b\u0438 \u00b7 \u0421\u0435\u043c\u044c\u044f":"Income \u00b7 Expense \u00b7 Goals \u00b7 Family"}</div>
         </div>
-        <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:20}}>
-          {["uz","ru","en"].map(l=><button key={l} onClick={()=>{setLg(l);localStorage.setItem("oilaV7L",l);}} style={{...STY.ch(lg===l),padding:"5px 12px"}}>{l.toUpperCase()}</button>)}
-          <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...STY.ch(true,th.t2),padding:"5px 12px",display:"flex",alignItems:"center",gap:4}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?(lg==="uz"?"Kunduz":"Light"):(lg==="uz"?"Tungi":"Dark")}</button>
+        <div style={{display:"flex",justifyContent:"center",gap:10,marginBottom:24,position:"relative",zIndex:100,flexWrap:"wrap"}}>
+          {/* Custom Language Dropdown Selector */}
+          <div style={{position:"relative",minWidth:165}}>
+            <button onClick={()=>{ buzz(5); setShowLgDD(v=>!v); }} style={{...STY.ch(showLgDD, th.ac), padding:"8px 14px", display:"flex", alignItems:"center", gap:6, width:"100%", justifyContent:"space-between", height:"100%"}}>
+              <span style={{fontSize:13}}>{(LANGS_MAP[lg] || LANGS_MAP.uz).label}</span>
+              <span style={{transform:showLgDD?"rotate(180deg)":"none",transition:"transform .2s",display:"flex",alignItems:"center"}}>{Ico.chevron(th.t2,false)}</span>
+            </button>
+            {showLgDD && (
+              <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:th.sur,border:"1.5px solid "+th.bor,borderRadius:12,maxHeight:180,overflowY:"auto",zIndex:200,boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
+                {LANG_KEYS.map(l => (
+                  <button key={l} onClick={()=>{ buzz(5); setLg(l); localStorage.setItem("oilaV7L",l); setShowLgDD(false); }} style={{width:"100%",background:lg===l?th.ac+"11":"none",border:"none",borderBottom:"1px solid "+th.bor,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:lg===l?th.ac:th.t1,fontSize:13}}>
+                    <span>{LANGS_MAP[l].label}</span>
+                    {lg===l && Ico.check(th.ac)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button onClick={()=>{setDark(v=>!v);localStorage.setItem("oilaV7D",String(!dark));}} style={{...STY.ch(true,th.t2),padding:"8px 14px",display:"flex",alignItems:"center",gap:6,height:"100%",fontSize:13}}>{dark?Ico.sun(th.t2):Ico.moon(th.t2)}{dark?((lg==="uz"||lg==="qr")?"Kunduz":"Light"):((lg==="uz"||lg==="qr")?"Tungi":"Dark")}</button>
         </div>
         <div style={{display:"flex",gap:6,marginBottom:18}}>
           <button onClick={()=>switchAuthMode(false,false)} style={{...STY.tb(!reg&&!kidLoginMode),fontSize:13,padding:"11px 6px"}}>{lg==="uz"?"Kirish":lg==="ru"?"\u0412\u043e\u0439\u0442\u0438":"Login"}</button>

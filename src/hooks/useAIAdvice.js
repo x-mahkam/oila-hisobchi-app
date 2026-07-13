@@ -36,7 +36,7 @@ export function useAIAdvice() {
     else if (bpct >= 80) tips.push(L("◆ Budjet nazorati: ", "◆ Budget check: ") + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
     else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push(L("◆ Zo'r natija: ", "◆ Great progress: ") + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
     
-    const katTotals = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
+    const katTotals = KATS.map((k, i) => ({ nom: (KN[lg] || KN.uz)[i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
     if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push(L("◆ Eng yuqori xarajat: ", "◆ Top spending: ") + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
     
     if (totD > 0) {
@@ -85,35 +85,10 @@ export function useAIAdvice() {
     return salom + "\n\n" + L("◆ " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n");
   }, [xar, dar, oila, maq, qarzlar, user, lg, f]);
 
-  // Masofaviy AI API (ixtiyoriy): VITE_AI_API_URL sozlansa shu endpointga so'rov yuboriladi.
+  // Masofaviy maslahat o'chirildi (faqat offline va tezkor lokal tizim ishlaydi)
   const fetchRemoteAdvice = useCallback(async () => {
-    const AI_URL = import.meta.env.VITE_AI_API_URL;
-    if (!AI_URL) return null;
-    if (typeof navigator !== "undefined" && navigator.onLine === false) throw new Error("offline");
-    
-    const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
-    const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
-    const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
-    const totD = mD.reduce((s, d) => s + Number(d.summa || 0), 0);
-    const kats = KATS.map((k, i) => ({ nom: KN[lg][i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0);
-    
-    const prompt = (lg === "uz"
-      ? "Siz oilaviy moliya bo'yicha maslahatchisiz. Quyidagi oy ma'lumotlari asosida qisqa, amaliy moliyaviy maslahat bering (o'zbek tilida): "
-      : "You are a family finance advisor. Give short practical advice based on this month: ")
-      + JSON.stringify({ oy: tm(), daromad: totD, xarajat: totX, budjet: oila?.budjet || 0, kategoriyalar: kats });
-    
-    const resp = await fetch(AI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt, lang: lg }),
-      signal: AbortSignal.timeout(12000),
-    });
-    if (!resp.ok) throw new Error("API " + resp.status);
-    const data = await resp.json();
-    const text = data.advice || data.text || data.result || (data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content);
-    if (!text || typeof text !== "string") throw new Error("empty response");
-    return text;
-  }, [xar, dar, oila, lg]);
+    return null;
+  }, []);
 
   const aiAdv = useCallback(async () => {
     if (!isPremium) { setShowPremModal(true); return; }

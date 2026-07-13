@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useState } from "react";
 import { ONB_SLIDES } from "../utils/constants.js";
 import { PrimaryButton, PremiumButton, GhostButton, Badge, injectUiCss } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, GARDEN, PREMIUM, OPACITY, COMP } from "../utils/tokens.js";
@@ -75,13 +75,22 @@ const ILLOS = {
 };
 
 // Til tugmalari — statik ro'yxat (komponent tashqarisida)
-const LANGS = ["uz", "ru", "en"];
+const LANGS = ["uz", "en", "ru", "kk", "ky", "tg", "qr"];
+const LANGS_MAP = {
+  uz: { label: "🇺🇿 O'zbekcha", name: "O'zbekcha" },
+  ru: { label: "🇷🇺 Русский", name: "Русский" },
+  kk: { label: "🇰🇿 Қазақша", name: "Қазақша" },
+  ky: { label: "🇰🇬 Кыргызча", name: "Кыргызча" },
+  tg: { label: "🇹🇯 Тоҷикӣ", name: "Тоҷикӣ" },
+  qr: { label: "🇺🇿 Qaraqalpaqsha", name: "Qaraqalpaqsha" },
+  en: { label: "🇬🇧 English", name: "English" }
+};
 const TXT = {
-  skip: { uz: "O'tkazib yuborish", ru: "Пропустить", en: "Skip" },
-  next: { uz: "Keyingi", ru: "Далее", en: "Next" },
-  start: { uz: "Boshlash", ru: "Начать", en: "Get started" },
-  later: { uz: "Keyinroq", ru: "Позже", en: "Later" },
-  back: { uz: "Orqaga", ru: "Назад", en: "Back" },
+  skip: { uz: "O'tkazib yuborish", ru: "Пропустить", en: "Skip", kk: "Өткізіп жіберу", ky: "Өткөрүп жиберүү", tg: "Гузаштан", qr: "O'tkazib yuborish" },
+  next: { uz: "Keyingi", ru: "Далее", en: "Next", kk: "Келесі", ky: "Кийинки", tg: "Кӯдаки", qr: "Keyingi" },
+  start: { uz: "Boshlash", ru: "Начать", en: "Get started", kk: "Бастау", ky: "Баштоо", tg: "Оғоз", qr: "Boshlash" },
+  later: { uz: "Keyinroq", ru: "Позже", en: "Later", kk: "Кейінірек", ky: "Кийинчерээк", tg: "Дертар", qr: "Keyinroq" },
+  back: { uz: "Orqaga", ru: "Назад", en: "Back", kk: "Артқа", ky: "Артка", tg: "Қафо", qr: "Orqaga" },
 };
 
 // Slayd rang kaliti → real token qiymati
@@ -104,13 +113,14 @@ const Illo = memo(function Illo({ id, color }) {
 
 export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbStep }) {
   injectUiCss();
+  const [showLgDD, setShowLgDD] = useState(false);
   const s = ONB_SLIDES[onbStep];
   if (!s) return null;
   const finish = () => { try { localStorage.setItem("oilaV7Onb", "1"); } catch {} setOnbStep(-1); };
   const c = slideColor(s.color, th);
   const last = onbStep === ONB_SLIDES.length - 1;
-  const title = lg === "uz" ? s.titleUz : lg === "ru" ? s.titleRu : s.titleEn;
-  const desc = lg === "uz" ? s.descUz : lg === "ru" ? s.descRu : s.descEn;
+  const title = (lg === "uz" || lg === "qr") ? s.titleUz : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? s.titleRu : s.titleEn;
+  const desc = (lg === "uz" || lg === "qr") ? s.descUz : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? s.descRu : s.descEn;
   const isPremiumSlide = s.id === "premium";
 
   return (
@@ -120,13 +130,23 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
 
       {/* Yuqori panel: til + Skip */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: SPACE.s4 + SPACE.s1 + "px " + SPACE.s6 + "px", position: "relative" }}>
-        <div style={{ display: "flex", gap: SPACE.s1 + 2 }}>
-          {LANGS.map(l => (
-            <button key={l} className="ui-press" onClick={() => { setLg(l); localStorage.setItem("oilaV7L", l); }}
-              style={{ background: lg === l ? th.ac + ALPHA.tint : "transparent", border: "1px solid " + (lg === l ? th.ac : th.bor), borderRadius: RADIUS.s - 2, padding: SPACE.s1 + "px " + (SPACE.s2 + 2) + "px", color: lg === l ? th.ac : th.t2, cursor: "pointer", ...TYPE.caption, fontWeight: 600, fontFamily: "inherit" }}>
-              {l.toUpperCase()}
-            </button>
-          ))}
+        <div style={{ position: "relative", zIndex: 100 }}>
+          <button onClick={() => setShowLgDD(v => !v)} className="ui-press"
+            style={{ background: th.sur, border: "1px solid " + (showLgDD ? th.ac : th.bor), borderRadius: RADIUS.s - 2, padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", color: th.t1, cursor: "pointer", ...TYPE.caption, fontWeight: 600, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
+            <span>{(LANGS_MAP[lg] || LANGS_MAP.uz).label}</span>
+            <span style={{ transform: showLgDD ? "rotate(180deg)" : "none", transition: "transform .2s", display: "inline-flex", fontSize: 10 }}>▼</span>
+          </button>
+          {showLgDD && (
+            <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, minWidth: 165, maxHeight: 180, overflowY: "auto", zIndex: 200, boxShadow: "0 6px 20px rgba(0,0,0,0.15)" }}>
+              {LANGS.map(l => (
+                <button key={l} onClick={() => { setLg(l); localStorage.setItem("oilaV7L", l); setShowLgDD(false); }}
+                  style={{ width: "100%", background: lg === l ? th.ac + ALPHA.faint : "none", border: "none", borderBottom: "1px solid " + th.bor, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", color: lg === l ? th.ac : th.t1, ...TYPE.caption, fontWeight: lg === l ? 700 : 500, textAlign: "left" }}>
+                  <span>{LANGS_MAP[l].label}</span>
+                  {lg === l && <span style={{ color: th.ac, fontSize: 12 }}>✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <GhostButton th={th} onClick={finish} style={{ width: "auto", border: "none", padding: SPACE.s1 + "px " + SPACE.s2 + "px" }}>{TXT.skip[lg] || TXT.skip.uz}</GhostButton>
       </div>
@@ -145,9 +165,9 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
         {/* 5-slayd: 3 asosiy foyda */}
         {isPremiumSlide && (
           <div className="ui-fadeUp" style={{ marginTop: SPACE.s4 + SPACE.s1, display: "flex", flexDirection: "column", gap: SPACE.s2, alignItems: "flex-start" }}>
-            {(lg === "uz" ? ["Cheksiz maqsad va a'zolar", "PDF/Excel eksport", "AI tavsiyalar"]
+            {(lg === "uz" ? ["Cheksiz maqsad va a'zolar", "PDF/Excel eksport", "Foydali tavsiyalar"]
               : lg === "ru" ? ["Безлимитные цели и участники", "Экспорт PDF/Excel", "AI-советы"]
-              : ["Unlimited goals & members", "PDF/Excel export", "AI insights"]).map(b => (
+              : ["Unlimited goals & members", "PDF/Excel export", "Useful insights"]).map(b => (
               <div key={b} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, color: th.t1 }}>
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8l4 4 6-7" stroke={PREMIUM.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 {b}

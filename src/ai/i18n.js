@@ -12,8 +12,8 @@ const DICT = {
   cardSavings:   { uz: "Jamg'arma murabbiysi",  ru: "Коуч по накоплениям",  en: "Savings coach" },
   cardRisk:      { uz: "Xavf tahlili",          ru: "Анализ рисков",        en: "Risk analysis" },
   cardSummary:   { uz: "Oylik xulosa",          ru: "Итоги месяца",         en: "Monthly summary" },
-  aiInsight:     { uz: "AI maslahati",          ru: "Совет ИИ",             en: "AI insight" },
-  aiSummary:     { uz: "AI xulosa",             ru: "AI-итог",              en: "AI summary" },
+  aiInsight:     { uz: "Foydali maslahat",      ru: "Полезный совет",       en: "Useful insight" },
+  aiSummary:     { uz: "Foydali xulosa",        ru: "Полезный итог",        en: "Useful summary" },
 
   // Health darajalari
   lvlExcellent:  { uz: "Juda yaxshi",  ru: "Отлично",        en: "Excellent" },

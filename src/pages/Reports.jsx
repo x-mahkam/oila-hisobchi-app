@@ -113,7 +113,7 @@ export default function ReportsPage({
       />
 
       {/* Sprint 3B: AI Summary — trend tahlili + oylik xulosa */}
-      <SectionHeader th={th}>{lg === "uz" ? "AI tahlil" : lg === "ru" ? "AI-анализ" : "AI analysis"}</SectionHeader>
+      <SectionHeader th={th}>{lg === "uz" ? "Foydali tahlil" : lg === "ru" ? "Полезный анализ" : "Useful analysis"}</SectionHeader>
       <MonthlySummaryCard th={th} lg={lg} f={f} ai={reportAI} />
       <ReportsAISummary th={th} lg={lg} f={f} summary={reportAI.summary} trends={reportAI.trends} />
 

@@ -252,11 +252,11 @@ export const AiTip = memo(function AiTip({ th, lg, tip, weakTip }) {
   const uz = lg === "uz";
   return (
     <>
-      <SectionHeader th={th}>{uz ? "AI tavsiyasi" : lg === "ru" ? "Совет AI" : "AI suggestion"}</SectionHeader>
+      <SectionHeader th={th}>{uz ? "Foydali tavsiyalar" : lg === "ru" ? "Полезные советы" : "Useful suggestions"}</SectionHeader>
       <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, display: "flex", gap: SPACE.s3, alignItems: "flex-start" }}>
         <span style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.s, background: th.ac + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{DI.ai(th.ac, 20)}</span>
         <div style={{ minWidth: 0 }}>
-          <div style={{ ...TYPE.tiny, letterSpacing: 1, color: th.ac, fontWeight: 800, marginBottom: 2 }}>{uz ? "AI TAVSIYA" : "AI TIP"}</div>
+          <div style={{ ...TYPE.tiny, letterSpacing: 1, color: th.ac, fontWeight: 800, marginBottom: 2 }}>{uz ? "FOYDALI TAVSIYA" : "USEFUL TIP"}</div>
           <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 600, lineHeight: 1.5 }}>{tip}</div>
           {weakTip && <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2, lineHeight: 1.5 }}>{weakTip}</div>}
         </div>

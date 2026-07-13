@@ -500,7 +500,7 @@ export default function DashboardPage({
                 </span>
               </SectionHeader>
               
-              <AppCard th={th} style={{ background: `linear-gradient(135deg, ${th.am}10, ${th.ac}08)`, border: `1.5px dashed ${vaz.pending > 0 ? th.am : th.bor}`, cursor: "pointer" }} onClick={() => { buzz(8); setScr("vazifa"); }}>
+              <AppCard th={th} asDiv style={{ background: `linear-gradient(135deg, ${th.am}10, ${th.ac}08)`, border: `1.5px dashed ${vaz.pending > 0 ? th.am : th.bor}`, cursor: "pointer" }} onClick={() => { buzz(8); setScr("vazifa"); }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: SPACE.s2 }}>
                   <div>
                     <h4 style={{ ...TYPE.body, fontWeight: 800, color: th.t1, display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
@@ -675,7 +675,7 @@ export default function DashboardPage({
           {/* Sprint 3B: AI moliyaviy tahlil — Health / Forecast / Trend / Savings / Risk */}
           {budgetAI && (
             <>
-              <SectionHeader th={th}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.ac)}{lg === "uz" ? "AI moliyaviy tahlil" : lg === "ru" ? "AI-анализ финансов" : "AI financial analysis"}</span></SectionHeader>
+              <SectionHeader th={th}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.ac)}{lg === "uz" ? "Foydali moliyaviy tahlil" : lg === "ru" ? "Полезный анализ финансов" : "Useful financial analysis"}</span></SectionHeader>
               <SmartBudgetSection th={th} lg={lg} f={f} ai={budgetAI} />
             </>
           )}

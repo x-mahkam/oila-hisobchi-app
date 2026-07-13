@@ -44,7 +44,7 @@ export const actScreenLabel = (cat, lg) => {
     garden:  uz ? "Bog'ga o'tish" : ru ? "В сад" : "Go to garden",
     family:  uz ? "Oilaga o'tish" : ru ? "К семье" : "Go to family",
     premium: "Premium",
-    ai:      uz ? "AI tahlil" : ru ? "AI-анализ" : "AI analysis",
+    ai:      uz ? "Foydali tahlil" : ru ? "Полезный анализ" : "Useful analysis",
   }[cat] || null;
 };
 
