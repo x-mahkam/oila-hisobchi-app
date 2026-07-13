@@ -14,9 +14,78 @@
     .topbar{position:sticky;top:0;z-index:10;background:rgba(248,250,252,.92);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--t1);font-size:15px}
     .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#22c55e);display:flex;align-items:center;justify-content:center;font-size:17px}
-    .lang{display:flex;gap:6px;background:var(--sur);border:1.5px solid var(--bor);border-radius:12px;padding:4px}
-    .lang button{border:none;background:transparent;padding:7px 14px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .15s}
-    .lang button.on{background:var(--ac);color:#fff}
+    .lang-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-trigger {
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .dropdown-trigger:hover {
+      border-color: var(--ac);
+    }
+    .dropdown-trigger .arrow {
+      font-size: 10px;
+      color: var(--t3);
+      transition: transform 0.2s;
+    }
+    .lang-dropdown.open .dropdown-trigger .arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      max-height: 180px;
+      z-index: 100;
+      min-width: 165px;
+    }
+    .lang-dropdown.open .dropdown-menu {
+      display: block;
+    }
+    .dropdown-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t2);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .dropdown-menu button:hover {
+      background: #f1f5f9;
+    }
+    .dropdown-menu button.on {
+      background: #e0f2fe;
+      color: #0284c7;
+      font-weight: 700;
+    }
     h1{color:var(--t1);font-size:1.7rem;font-weight:800;margin:0 0 6px;line-height:1.3}
     .upd{font-size:.85rem;color:var(--t3);margin-bottom:24px;font-weight:600}
     h2{color:#1e293b;font-size:1.15rem;font-weight:700;margin:2rem 0 .7rem}
@@ -33,11 +102,21 @@
 <body>
 <div class="container">
   <div class="topbar">
-    <div class="brand"><span class="dot">💰</span>Oila Hisobchi</div>
-    <div class="lang" id="langSw">
-      <button data-l="uz">O'zbekcha</button>
-      <button data-l="ru">Русский</button>
-      <button data-l="en">English</button>
+    <div class="brand"><img src="/icon.svg" style="width:34px;height:34px;border-radius:10px" alt="Logo" />Oila Hisobchi</div>
+    <div class="lang-dropdown" id="langDropdown">
+      <button class="dropdown-trigger" id="langTrigger">
+        <span id="currentLangText">🇺🇿 O'zbekcha</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown-menu" id="langMenu">
+        <button data-l="uz">🇺🇿 O'zbekcha</button>
+        <button data-l="en">🇬🇧 English</button>
+        <button data-l="ru">🇷🇺 Русский</button>
+        <button data-l="kk">🇰🇿 Қазақша</button>
+        <button data-l="ky">🇰🇬 Кыргызча</button>
+        <button data-l="tg">🇹🇯 Тоҷикӣ</button>
+        <button data-l="qr">🇺🇿 Qaraqalpaqsha</button>
+      </div>
     </div>
   </div>
 
@@ -80,7 +159,7 @@
     <p>To'lovlarni qaytarish, bekor qilish yoki obunani boshqarish Google Play qoidalariga muvofiq amalga oshiriladi.</p>
     <p>Premium xizmatlar quyidagilarni o'z ichiga olishi mumkin:</p>
     <ul>
-      <li>AI tavsiyalari;</li>
+      <li>Foydali tavsiyalar;</li>
       <li>kengaytirilgan hisobotlar;</li>
       <li>eksport funksiyalari;</li>
       <li>qo'shimcha o'yinlar;</li>
@@ -115,7 +194,7 @@
       <li>ma'lumotlarning foydalanuvchi tomonidan noto'g'ri kiritilishi;</li>
       <li>foydalanuvchining noto'g'ri moliyaviy qarorlari.</li>
     </ul>
-    <p>Ilovadagi AI tavsiyalari faqat tavsiya xarakteriga ega bo'lib, yakuniy qaror foydalanuvchining o'ziga tegishlidir.</p>
+    <p>Ilovadagi foydali tavsiyalar faqat tavsiya xarakteriga ega bo'lib, yakuniy qaror foydalanuvchining o'ziga tegishlidir.</p>
 
     <h2>8. Hisobni o'chirish</h2>
     <p>Foydalanuvchi istalgan vaqtda akkauntini ilova orqali o'chirish huquqiga ega.</p>
@@ -142,7 +221,7 @@
 
     <h2>12. Biz bilan bog'lanish</h2>
     <p>Agar sizda ushbu Foydalanish shartlari bo'yicha savollar bo'lsa, biz bilan bog'lanishingiz mumkin.</p>
-    <p><strong>Elektron pochta:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Elektron pochta:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   <!-- ═══════════════ RUSSIAN ═══════════════ -->
@@ -182,7 +261,7 @@
     <p>Возврат платежей, отмена или управление подпиской осуществляются в соответствии с правилами Google Play.</p>
     <p>Premium-услуги могут включать:</p>
     <ul>
-      <li>AI-рекомендации;</li>
+      <li>Полезные рекомендации;</li>
       <li>расширенные отчёты;</li>
       <li>функции экспорта;</li>
       <li>дополнительные игры;</li>
@@ -217,7 +296,7 @@
       <li>неверный ввод данных пользователем;</li>
       <li>неверные финансовые решения пользователя.</li>
     </ul>
-    <p>AI-рекомендации в приложении носят исключительно рекомендательный характер, окончательное решение остаётся за пользователем.</p>
+    <p>Полезные рекомендации в приложении носят исключительно рекомендательный характер, окончательное решение остаётся за пользователем.</p>
 
     <h2>8. Удаление аккаунта</h2>
     <p>Пользователь имеет право в любое время удалить свой аккаунт через приложение.</p>
@@ -243,7 +322,7 @@
 
     <h2>12. Связь с нами</h2>
     <p>Если у вас есть вопросы по настоящим Условиям использования, вы можете связаться с нами.</p>
-    <p><strong>Электронная почта:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Электронная почта:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   <!-- ═══════════════ ENGLISH ═══════════════ -->
@@ -283,7 +362,7 @@
     <p>Refunds, cancellations, and subscription management are handled in accordance with Google Play policies.</p>
     <p>Premium services may include:</p>
     <ul>
-      <li>AI recommendations;</li>
+      <li>Useful recommendations;</li>
       <li>advanced reports;</li>
       <li>export features;</li>
       <li>additional games;</li>
@@ -318,7 +397,7 @@
       <li>incorrect data entry by the user;</li>
       <li>the user's incorrect financial decisions.</li>
     </ul>
-    <p>AI recommendations in the app are advisory only; the final decision rests with the user.</p>
+    <p>Useful recommendations in the app are advisory only; the final decision rests with the user.</p>
 
     <h2>8. Account Deletion</h2>
     <p>The user has the right to delete their account through the app at any time.</p>
@@ -344,28 +423,245 @@
 
     <h2>12. Contact Us</h2>
     <p>If you have any questions about these Terms of Service, you can contact us.</p>
-    <p><strong>Email:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Email:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KAZAKH ═══════════════ -->
+  <div class="content" id="c-kk">
+    <h1>ПАЙДАЛАНУ ШАРТТАРЫ</h1>
+    <div class="upd">Соңғы жаңарту: 9 шілде, 2026 жыл</div>
+    <p>«Oila Hisobchi» қосымшасын пайдалану арқылы сіз осы Пайдалану шарттарымен келісесіз. Егер сіз бұл шарттармен келіспесеңіз, қосымшаны пайдалануды тоқтатуыңыз керек.</p>
+
+    <h2>1. Қосымшаның мақсаты</h2>
+    <p>«Oila Hisobchi» — бұл отбасылық қаржыны басқаруға, балалардың қаржылық сауаттылығын арттыруға, тапсырмаларды басқаруға, жинақтар жүргізуге және отбасылық мақсаттарға қол жеткізуге көмектесетін мобильді қосымша.</p>
+    <p>Қосымша ұсынатын ақпарат пен ұсыныстар тек көмекші сипатқа ие және ресми қаржылық, заңдық немесе салықтық кеңес болып табылмайды.</p>
+
+    <h2>2. Пайдаланушы аккаунттары</h2>
+    <p>Пайдаланушы қосымшаны пайдалану үшін аккаунт жасай алады.</p>
+    <p>Пайдаланушы келесілер үшін жауапты:</p>
+    <ul>
+      <li>аккаунт мәліметтерінің дұрыстығы;</li>
+      <li>пароль мен аккаунт қауіпсіздігі;</li>
+      <li>аккаунт арқылы жасалған барлық әрекеттер.</li>
+    </ul>
+
+    <h2>3. Балалар аккаунттары</h2>
+    <p>Балалар аккаунтын тек ата-ана немесе заңды өкіл жасай алады.</p>
+    <p>Ата-ана:</p>
+    <ul>
+      <li>бала аккаунтын жасайды;</li>
+      <li>тапсырмалар береді;</li>
+      <li>марапаттар белгілейді;</li>
+      <li>баланың белсенділігін қадағалайды.</li>
+    </ul>
+
+    <h2>4. Premium қызметтер</h2>
+    <p>Premium функциялар ерікті болып табылады.</p>
+    <p>Premium жазылымдар Google Play Billing жүйесі арқылы жүзеге асырылады.</p>
+    <p>Төлемдерді қайтару, тоқтату немесе басқару Google Play ережелеріне сәйкес орындалады.</p>
+
+    <h2>5. Тыйым салынған әрекеттер</h2>
+    <p>Пайдаланушыға келесі әрекеттерді жасауға тыйым салынады:</p>
+    <ul>
+      <li>қосымшаны заңсыз мақсаттарда пайдалану;</li>
+      <li>басқа пайдаланушылардың аккаунттарына рұқсатсыз кіру;</li>
+      <li>жүйе қауіпсіздігін бұзуға әрекеттену;</li>
+      <li>зиянды бағдарламаларды тарату.</li>
+    </ul>
+
+    <h2>6. Зияткерлік меншік</h2>
+    <p>«Oila Hisobchi» қосымшасының дизайны, логотипі, бағдарламалық коды, мәтіндері, графикасы және басқа да материалдары авторлық құқықпен қорғалған.</p>
+
+    <h2>7. Жауапкершілікті шектеу</h2>
+    <p>Біз қосымшаның үздіксіз жұмыс істеуін қамтамасыз етуге тырысамыз, бірақ интернеттің үзілуі, үшінші тұлғалардың қызметтеріндегі ақаулар және пайдаланушының дұрыс емес қаржылық шешімдері үшін жауапты емеспіз.</p>
+
+    <h2>8. Аккаунтты өшіру</h2>
+    <p>Пайдаланушы кез келген уақытта өз аккаунтын қосымша арқылы өшіруге құқылы.</p>
+
+    <h2>9. Шарттарға өзгерістер енгізу</h2>
+    <p>Осы Пайдалану шарттары уақытылы жаңартылып тұруы мүмкін. Маңызды өзгерістер пайдаланушыларға қосымша ішінде немесе ресми арналар арқылы хабарланады.</p>
+
+    <h2>10. Қолданылатын заңнама</h2>
+    <p>Бұл Пайдалану шарттары Өзбекстан Республикасының заңнамасына сәйкес түсіндіріледі және қолданылады.</p>
+
+    <h2>11. Байланыс</h2>
+    <p>Сұрақтарыңыз болса, бізбен байланысыңыз:<br><strong>Электрондық пошта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ QARAQALPAQ ═══════════════ -->
+  <div class="content" id="c-qr">
+    <h1>PAYDALANIW SHARTLERI</h1>
+    <div class="upd">Aqırgı jańalanıw: 9-iyul, 2026-jıl</div>
+    <p>"Oila Hisobchi" qosımshasınan paydalanıw arqalı siz usı Paydalanıw shartlerine razılıq bildiresiz. Eger usı shartlerge razı bolmasańız, qosımshadan paydalanıwdı toqtatıwıńız kerek.</p>
+
+    <h2>1. Qosımshanıń maqseti</h2>
+    <p>"Oila Hisobchi" shańaraqlıq qarjını basqarıw, perzentlerde finanslıq sawatlılıqtı rawajlandırıw, tapsırmalardı basqarıw, jıynaq júrgiziw hám shańaraqlıq maqsetlerge erisiwde járdem beriwshi mobil qosımshadır.</p>
+    <p>Qosımsha usınıp atırǵan maǵlıwmatlar hám usınıslar tek járdemshi xarakterge ie bolıp, rásmiy moliyaviy yamasa salıq máslaháti esaplanbaydı.</p>
+
+    <h2>2. Paydalanıwshı akkauntları</h2>
+    <p>Paydalanıwshı qosımshadan paydalanıw ushın akkaunt jarata aladı. Paydalanıwshı akkaunt maǵlıwmatlarınıń durıslıǵı, parol hám akkaunt qawipsizligi ushın juwapker esaplanadı.</p>
+
+    <h2>3. Balalar akkauntları</h2>
+    <p>Balalar akkauntları tek ata-ana yamasa nızamlı qorǵawshı tárepinen jaratılıwı múmkin.</p>
+
+    <h2>4. Premium xızmetler</h2>
+    <p>Premium funkciyalar ıqtıyarsız esaplanadı. Premium jazılıwlar Google Play Billing sisteması arqalı ámelge asırıladı.</p>
+
+    <h2>5. Qadaǵan etilgen paydalanıw</h2>
+    <p>Qosımshanı nızamsız maqsetlerde isletiw, basqa paydalanıwshılardıń akkauntlarına ruxsatsız kiriw, qosımsha qawipsizligin buziwǵa urınıw qadaǵan etiledi.</p>
+
+    <h2>6. Intellektual múlk</h2>
+    <p>"Oila Hisobchi" qosımshasınıń dizayni, logotipi, programmalıq kodı hám basqa materialları avtorlıq huqıqı menen qorǵalǵan.</p>
+
+    <h2>7. Juwapkershilikti sheklew</h2>
+    <p>Internet úzilisi, úshinshi tárep xızmetlerindegi aqawlar hám paydalanıwshınıń qáte finanslıq qararları ushın juwapker emespiz.</p>
+
+    <h2>8. Akkaunttı óshiriw</h2>
+    <p>Paydalanıwshı qálegen waqıtta akkauntın qosımsha arqalı óshiriw huqıqına ie.</p>
+
+    <h2>9. Shartlerge ózgerisler</h2>
+    <p>Bul Paydalanıw shartleri vaqıtı-vaqıtı menen jańalanıp turıwı múmkin.</p>
+
+    <h2>10. Qollanılatuǵın nızamshılıq</h2>
+    <p>Usı Paydalanıw shartleri Ózbekstan Respublikası nızamshılıǵına muwapıq túsindiriledi hám qollanıladı.</p>
+
+    <h2>11. Baylanıs</h2>
+    <p>Sorawlarıńız bolsa, biz benen baylanısıń:<br><strong>Elektron pochta:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KYRGYZ ═══════════════ -->
+  <div class="content" id="c-ky">
+    <h1>КОЛДОНУУ ШАРТТАРЫ</h1>
+    <div class="upd">Акыркы жаңыртуу: 9-июль, 2026-жыл</div>
+    <p>«Oila Hisobchi» тиркемесин колдонуу менен сиз ушул Колдонуу шарттарына макулдугуңузду билдиресиз. Эгерде сиз бул шарттарга макул болбосоңуз, тиркемени колдонууну токтотушуңуз керек.</p>
+
+    <h2>1. Тиркеменин максаты</h2>
+    <p>«Oila Hisobchi» — үй-бүлөлүк каржыны башкарууга, балдардын каржылык сабаттуулугун жогорулатууга, тапшырмаларды башкарууга, топтомдорду жүргүзүүгө жана үй-бүлөлүк максаттарга жетүүгө жардам берген мобилдик тиркеме.</p>
+    <p>Тиркеме сунуштаган маалыматтар жана сунуштар көмөкчү мүнөзгө ээ жана расмий каржылык же салыктык кеңеш болуп эсептелбейт.</p>
+
+    <h2>2. Колдонуучунун аккаунттары</h2>
+    <p>Колдонуучу тиркемени колдонуу үчүн аккаунт түзө алат. Каттоо маалыматтарыиын тууралыгы, сырсөз жана аккаунттун коопсуздугу үчүн колдонуучу өзү жооптуу болот.</p>
+
+    <h2>3. Балдардын аккаунттары</h2>
+    <p>Балдардын аккаунту ата-эне же мыйзамдуу өкүл тарабынан гана түзүлүшү мүмкүн.</p>
+
+    <h2>4. Premium кызматтары</h2>
+    <p>Premium функциялар кошумча болуп саналат жана жазылуулар Google Play Billing системасы аркылуу жүргүзүлөт.</p>
+
+    <h2>5. Тыюу салынган аракеттер</h2>
+    <p>Тиркемени мыйзамсыз максаттарда колдонууга, башка колдонуучулардын аккаунттарына уруксатсыз кирүүгө жана тутумдун коопсуздугун бузууга аракет кылууга тыюу салынат.</p>
+
+    <h2>6. Интеллектуалдык менчик</h2>
+    <p>«Oila Hisobchi» тиркемесинин дизайны, логотиби, программалык коду жана бардык материалдары автордук укук менен корголгон.</p>
+
+    <h2>7. Жоопкерчиликти чектөө</h2>
+    <p>Биз интернеттин үзгүлтүккө учурашы, үчүнчү жактардын кызматтарындагы мүчүлүштүктөр же колдонуучунун туура эмес каржылык чечимдери үчүн жооптуу эмеспиз.</p>
+
+    <h2>8. Аккаунтту өчүрүү</h2>
+    <p>Колдонуучу каалаган убакта өз аккаунтун тиркеме аркылуу өчүрө алат.</p>
+
+    <h2>9. Шарттарга өзгөртүүлөр киргизүү</h2>
+    <p>Бул Колдонуу шарттары мезгил-мезгили менен жаңыланып турушу мүмкүн. Маанилүү өзгөрүүлөр колдонуучуларга билдирилет.</p>
+
+    <h2>10. Колдонулуучу мыйзамдар</h2>
+    <p>Бул Колдонуу шарттары Өзбекстан Республикасынын мыйзамдарына ылайык чечмеленет жана колдонулат.</p>
+
+    <h2>11. Байланыш</h2>
+    <p>Суроолоруңуз болсо, биз менен байланышыңыз:<br><strong>Электрондук почта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ TAJIK ═══════════════ -->
+  <div class="content" id="c-tg">
+    <h1>ШАРТҲОИ ИСТИФОДАБАРӢ</h1>
+    <div class="upd">Навсозии охирин: 9 июли соли 2026</div>
+    <p>Бо истифода аз барномаи «Oila Hisobchi», шумо ба ин Шартҳои истифодабарӣ розигии худро медиҳед. Агар шумо ба ин шартҳо розӣ набошед, бояд истифодаи барномаро қатъ кунед.</p>
+
+    <h2>1. Мақсади барнома</h2>
+    <p>«Oila Hisobchi» — барномаи мобилӣ мебошад, ки барои идоракунии молияи оилавӣ, баланд бардоштани саводнокии молиявии кӯдакон, идоракунии вазифаҳо, пасандозҳо ва расидан ба ҳадафҳои оилавӣ кумак мекунад.</p>
+    <p>Маълумот ва тавсияҳои барнома танҳо хусусияти ёрирасон дошта, маслиҳати расмии молиявӣ, ҳуқуқӣ ё андозӣ ба шумор намераванд.</p>
+
+    <h2>2. Ҳисобҳои корбарон (Аккаунтҳо)</h2>
+    <p>Корбар метавонад барои истифодаи барнома аккаунт созад. Корбар барои дурустии маълумоти аккаунт ва амнияти пароли худ масъул мебошад.</p>
+
+    <h2>3. Аккаунтҳои кӯдакон</h2>
+    <p>Аккаунтҳои кӯдакон танҳо аз ҷониби волидон ё васии қонунӣ сохта мешаванд.</p>
+
+    <h2>4. Хидматҳои Premium</h2>
+    <p>Хидматҳои Premium ихтиёрӣ мебошанд. Обунаҳо тавассути системаи Google Play Billing пардохт карда мешаванд.</p>
+
+    <h2>5. Амалҳои мамнӯъ</h2>
+    <p>Истифодаи барнома барои мақсадҳои ғайриқонунӣ, дастрасии беиҷозат ба аккаунтҳои дигарон ва кӯшиши халалдор кардани амнияти система қатъиян манъ аст.</p>
+
+    <h2>6. Моликияти зеҳнӣ</h2>
+    <p>Тарҳ, логотип, рамзи барномавӣ ва ҳама маводҳои «Oila Hisobchi» таҳти ҳимояи ҳуқуқи муаллиф қарор доранд.</p>
+
+    <h2>7. Маҳдудияти масъулият</h2>
+    <p>Мо барои қатъ шудани кори интернет, нуқсонҳо дар хидматрасонии тарафҳои сеюм ва қарорҳои нодурусти молиявии корбарон масъулият надорем.</p>
+
+    <h2>8. Нест кардани аккаунт</h2>
+    <p>Корбар ҳуқуқ дорад, ки аккаунти худро дар вақти дилхоҳ тавассути барнома нест кунад.</p>
+
+    <h2>9. Тағирот дар шартҳо</h2>
+    <p>Ин шартҳо метавонанд вақт ба вақт нав карда шаванд. Тағироти муҳим ба корбарон эълон карда мешаванд.</p>
+
+    <h2>10. Қонунгузории амалкунанда</h2>
+    <p>Ин Шартҳои истифодабарӣ мувофиқи қонунгузории Ҷумҳурии Ӯзбекистон тафсир ва татбиқ карда мешаванд.</p>
+
+    <h2>11. Тамос бо мо</h2>
+    <p>Агар шумо саволҳо дошта бошед, бо мо тамос гиред:<br><strong>Почтаи электронӣ:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   </div>
 </div>
 <script>
 (function(){
-  var LANGS=["uz","ru","en"];
+  var LANGS=["uz","en","ru","kk","ky","tg","qr"];
+  var LANG_LABELS={
+    uz: "🇺🇿 O'zbekcha",
+    en: "🇬🇧 English",
+    ru: "🇷🇺 Русский",
+    kk: "🇰🇿 Қазақша",
+    ky: "🇰🇬 Кыргызча",
+    tg: "🇹🇯 Тоҷикӣ",
+    qr: "🇺🇿 Qaraqalpaqsha"
+  };
+  
+  var dropdown = document.getElementById("langDropdown");
+  var trigger = document.getElementById("langTrigger");
+  var currentText = document.getElementById("currentLangText");
+  var menu = document.getElementById("langMenu");
+
+  trigger.addEventListener("click", function(e){
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", function(){
+    dropdown.classList.remove("open");
+  });
+
   function setLang(l){
     if(LANGS.indexOf(l)<0)l="uz";
     LANGS.forEach(function(x){
-      document.getElementById("c-"+x).classList.toggle("show",x===l);
+      var el = document.getElementById("c-"+x);
+      if(el) el.classList.toggle("show", x===l);
     });
-    document.querySelectorAll("#langSw button").forEach(function(b){
-      b.classList.toggle("on",b.dataset.l===l);
+    document.querySelectorAll("#langMenu button").forEach(function(b){
+      b.classList.toggle("on", b.dataset.l===l);
     });
+    currentText.innerText = LANG_LABELS[l] || LANG_LABELS.uz;
     document.documentElement.lang=l;
     try{localStorage.setItem("policy_lang",l);}catch(e){}
   }
-  document.querySelectorAll("#langSw button").forEach(function(b){
-    b.addEventListener("click",function(){setLang(b.dataset.l);});
+
+  document.querySelectorAll("#langMenu button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      setLang(b.dataset.l);
+      dropdown.classList.remove("open");
+    });
   });
+
   var q=new URLSearchParams(location.search).get("lang");
   var saved=null;try{saved=localStorage.getItem("policy_lang");}catch(e){}
   setLang(q||saved||"uz");

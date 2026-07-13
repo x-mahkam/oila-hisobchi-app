@@ -14,9 +14,78 @@
     .topbar{position:sticky;top:0;z-index:10;background:rgba(248,250,252,.92);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--t1);font-size:15px}
     .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#22c55e);display:flex;align-items:center;justify-content:center;font-size:17px}
-    .lang{display:flex;gap:6px;background:var(--sur);border:1.5px solid var(--bor);border-radius:12px;padding:4px}
-    .lang button{border:none;background:transparent;padding:7px 14px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .15s}
-    .lang button.on{background:var(--ac);color:#fff}
+    .lang-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-trigger {
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .dropdown-trigger:hover {
+      border-color: var(--ac);
+    }
+    .dropdown-trigger .arrow {
+      font-size: 10px;
+      color: var(--t3);
+      transition: transform 0.2s;
+    }
+    .lang-dropdown.open .dropdown-trigger .arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      max-height: 180px;
+      z-index: 100;
+      min-width: 165px;
+    }
+    .lang-dropdown.open .dropdown-menu {
+      display: block;
+    }
+    .dropdown-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t2);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .dropdown-menu button:hover {
+      background: #f1f5f9;
+    }
+    .dropdown-menu button.on {
+      background: #e0f2fe;
+      color: #0284c7;
+      font-weight: 700;
+    }
     h1{color:var(--t1);font-size:1.7rem;font-weight:800;margin:0 0 6px;line-height:1.3}
     .upd{font-size:.85rem;color:var(--t3);margin-bottom:24px;font-weight:600}
     h2{color:#1e293b;font-size:1.15rem;font-weight:700;margin:2rem 0 .7rem}
@@ -35,11 +104,21 @@
 <body>
 <div class="container">
   <div class="topbar">
-    <div class="brand"><span class="dot">💰</span>Oila Hisobchi</div>
-    <div class="lang" id="langSw">
-      <button data-l="uz">O'zbekcha</button>
-      <button data-l="ru">Русский</button>
-      <button data-l="en">English</button>
+    <div class="brand"><img src="/icon.svg" style="width:34px;height:34px;border-radius:10px" alt="Logo" />Oila Hisobchi</div>
+    <div class="lang-dropdown" id="langDropdown">
+      <button class="dropdown-trigger" id="langTrigger">
+        <span id="currentLangText">🇺🇿 O'zbekcha</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown-menu" id="langMenu">
+        <button data-l="uz">🇺🇿 O'zbekcha</button>
+        <button data-l="en">🇬🇧 English</button>
+        <button data-l="ru">🇷🇺 Русский</button>
+        <button data-l="kk">🇰🇿 Қазақша</button>
+        <button data-l="ky">🇰🇬 Кыргызча</button>
+        <button data-l="tg">🇹🇯 Тоҷикӣ</button>
+        <button data-l="qr">🇺🇿 Qaraqalpaqsha</button>
+      </div>
     </div>
   </div>
 
@@ -92,7 +171,7 @@
       <li>Oila a'zolari o'rtasida ma'lumotlarni sinxronlashtirish;</li>
       <li>Bolalar topshiriqlarini boshqarish;</li>
       <li>Bilim o'yinlari va mukofot tizimini ishlatish;</li>
-      <li>AI tavsiyalarini shakllantirish;</li>
+      <li>Foydali tavsiyalarni shakllantirish;</li>
       <li>Xavfsizlikni ta'minlash;</li>
       <li>Texnik nosozliklarni aniqlash va bartaraf etish;</li>
       <li>Ilovani takomillashtirish.</li>
@@ -152,7 +231,7 @@
 
     <h2>10. Bog'lanish</h2>
     <p>Agar sizda ushbu Maxfiylik siyosati bo'yicha savollar bo'lsa, biz bilan bog'lanishingiz mumkin.</p>
-    <p><strong>Elektron pochta:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Elektron pochta:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   <!-- ═══════════════ RUSSIAN ═══════════════ -->
@@ -202,7 +281,7 @@
       <li>Синхронизация данных между членами семьи;</li>
       <li>Управление заданиями детей;</li>
       <li>Работа обучающих игр и системы наград;</li>
-      <li>Формирование AI-рекомендаций;</li>
+      <li>Формирование полезных рекомендаций;</li>
       <li>Обеспечение безопасности;</li>
       <li>Выявление и устранение технических неполадок;</li>
       <li>Улучшение приложения.</li>
@@ -262,7 +341,7 @@
 
     <h2>10. Связь с нами</h2>
     <p>Если у вас есть вопросы по настоящей Политике конфиденциальности, вы можете связаться с нами.</p>
-    <p><strong>Электронная почта:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Электронная почта:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   <!-- ═══════════════ ENGLISH ═══════════════ -->
@@ -312,7 +391,7 @@
       <li>Synchronizing data between family members;</li>
       <li>Managing children's tasks;</li>
       <li>Running learning games and the reward system;</li>
-      <li>Generating AI recommendations;</li>
+      <li>Generating useful recommendations;</li>
       <li>Ensuring security;</li>
       <li>Detecting and fixing technical issues;</li>
       <li>Improving the app.</li>
@@ -372,28 +451,500 @@
 
     <h2>10. Contact Us</h2>
     <p>If you have any questions about this Privacy Policy, you can contact us.</p>
-    <p><strong>Email:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Email:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KAZAKH ═══════════════ -->
+  <div class="content" id="c-kk">
+    <h1>ҚҰПИЯЛЫҚ САЯСАТЫ</h1>
+    <div class="upd">Соңғы жаңарту: 9 шілде, 2026 жыл</div>
+    <p>«Oila Hisobchi» қосымшасы пайдаланушылардың жеке мәліметтерін қорғауды өзінің негізгі қағидаттарының бірі деп санайды. Бұл Құпиялылық саясаты қосымшаны пайдалану кезінде қандай ақпарат жиналатынын, қандай мақсаттарда қолданылатынын, қалай сақталатынын және пайдаланушының құқықтарын сипаттайды.</p>
+
+    <h2>1. Жиналатын мәліметтер</h2>
+    <p>Қосымшаның толық жұмыс істеуі үшін келесі ақпарат жиналуы мүмкін:</p>
+    <h3>Тіркелгі мәліметтері</h3>
+    <ul>
+      <li>Аты және жөні</li>
+      <li>Электрондық пошта мекенжайы</li>
+      <li>Телефон нөмірі (егер пайдаланушы енгізсе)</li>
+      <li>Профиль суреті (міндетті емес)</li>
+    </ul>
+    <h3>Қаржылық мәліметтер</h3>
+    <p>Пайдаланушы өз еркімен енгізген:</p>
+    <ul>
+      <li>Кірістер</li>
+      <li>Шығыстар</li>
+      <li>Қарыздар</li>
+      <li>Жинақтар</li>
+      <li>Мақсаттар</li>
+      <li>Отбасылық бюджет мәліметтері</li>
+    </ul>
+    <h3>Балалар аккаунты</h3>
+    <p>Егер ата-ана бала аккаунтын жасаса, келесі мәліметтер сақталуы мүмкін:</p>
+    <ul>
+      <li>Аты</li>
+      <li>Туған жылы</li>
+      <li>Жынысы (міндетті емес)</li>
+      <li>Орындалған тапсырмалар</li>
+      <li>Алынған марапаттар</li>
+      <li>Тиындар мен теңгерім</li>
+      <li>Арман-тілектер тізімі</li>
+      <li>Білім ойындарының нәтижелері</li>
+    </ul>
+    <p>Балаға қатысты барлық ақпаратты тек ата-ана жасайды және басқарады. Қосымша балалардан дербес түрде жеке мәліметтер жинамайды.</p>
+
+    <h2>2. Мәліметтерді пайдалану</h2>
+    <p>Ақпарат келесі мақсаттарда пайдаланылады:</p>
+    <ul>
+      <li>Отбасылық есептерді жүргізу;</li>
+      <li>Кірістер мен шығыстарды басқару;</li>
+      <li>Отбасы мүшелері арасында деректерді үндестіру;</li>
+      <li>Балалардың тапсырмаларын басқару;</li>
+      <li>Білім ойындары мен марапаттау жүйесін қолдану;</li>
+      <li>Пайдалы ұсыныстарды қалыптастыру;</li>
+      <li>Қауіпсіздікті қамтамасыз ету;</li>
+      <li>Техникалық ақауларды анықтау және жою;</li>
+      <li>Қосымшаны жетілдіру.</li>
+    </ul>
+
+    <h2>3. Балалар құпиялылығы</h2>
+    <p>«Oila Hisobchi» Google Play Families Policy талаптарын сақтайды.</p>
+    <ul>
+      <li>Бала аккаунты тек ата-ана тарапынан жасалады.</li>
+      <li>Бала туралы барлық ақпарат ата-ананың бақылауында болады.</li>
+      <li>Біз балалардан дербес түрде жеке ақпарат жинамаймыз.</li>
+      <li>Ата-ана кез келген уақытта бала аккаунтын өзгерте алады немесе толықтай өшіре алады.</li>
+    </ul>
+
+    <h2>4. Деректерді сақтау</h2>
+    <p>Деректер Google Firebase қызметтерін пайдалана отырып, қауіпсіз серверлерде сақталады.</p>
+    <p>Қызметтер:</p>
+    <ul>
+      <li>Firebase Authentication</li>
+      <li>Cloud Firestore</li>
+      <li>Firebase Cloud Messaging (егер хабарландырулар қосулы болса)</li>
+    </ul>
+    <p>Деректерді тасымалдау кезінде заманауи қауіпсіздік хаттамалары (TLS) қолданылады.</p>
+
+    <h2>5. Деректерді үшінші тұлғаларға беру</h2>
+    <p>Біз пайдаланушылардың жеке мәліметтерін сатпаймыз және коммерциялық мақсатта үшінші тұлғаларға бермейміз.</p>
+    <p>Деректер тек келесі жағдайларда берілуі мүмкин:</p>
+    <ul>
+      <li>заңнама талап еткенде;</li>
+      <li>пайдаланушының келісімімен;</li>
+      <li>Google Firebase инфрақұрылымы арқылы қызмет көрсету үшін.</li>
+    </ul>
+
+    <h2>6. Жарнама және талдау</h2>
+    <p>Қосымша қазіргі уақытта пайдаланушыларға мақсатты жарнама көрсетпейді.</p>
+    <p>Егер болашақта жарнама немесе аналитикалық қызметтер қосылса, бұл Құпиялылық саясаты жаңартылады.</p>
+
+    <h2>7. Premium қызметтер</h2>
+    <p>Premium жазылымдар Google Play Billing жүйесі арқылы жүзеге асырылады.</p>
+    <p>Төлем мәліметтерін Google өңдейді.</p>
+    <p>«Oila Hisobchi» пайдаланушылардың банк картасы деректерін сақтамайды және оларға қол жеткізе алмайды.</p>
+
+    <h2>8. Пайдаланушы құқықтары</h2>
+    <p>Пайдаланушы келесі құқықтарға ие:</p>
+    <ul>
+      <li>өз деректерін көру;</li>
+      <li>өз деректерін өңдеу;</li>
+      <li>аккаунтын өшіру;</li>
+      <li>бала аккаунттарын басқару;</li>
+      <li>қосымшаны пайдалануды кез келген уақытта тоқтату.</li>
+    </ul>
+    <p>Аккаунт өшірілгеннен кейін пайдаланушының жеке деректері қолданыстағы заңнамаға және техникалық мүмкіндіктерге сәйкес жойылады.</p>
+
+    <h2>9. Саясатқа өзгерістер енгізу</h2>
+    <p>Бұл Құпиялылық саясаты уақытылы жаңартылып тұруы мүмкін.</p>
+    <p>Маңызды өзгерістер қосымша ішінде немесе ресми арналар арқылы пайдаланушыларға хабарланады.</p>
+
+    <h2>10. Байланыс</h2>
+    <p>Егер сізде осы Құпиялылық саясаты бойынша сұрақтарыңыз болса, бізбен байланыса аласыз.</p>
+    <p><strong>Электрондық пошта:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ QARAQALPAQ ═══════════════ -->
+  <div class="content" id="c-qr">
+    <h1>MAXFIYLIK SIYOSATI</h1>
+    <div class="upd">Aqırgı jańalanıw: 9-iyul, 2026-jıl</div>
+    <p>"Oila Hisobchi" qosımshası paydalanıwshılardıń jeke maǵlıwmatların qorǵawdı óziniń tiykarǵı prinsiplerinen biri dep esaplaydı. Bul Maxfiylik siyasatı qosımshadan paydalanǵanda qanday maǵlıwmatlar jıynalatuǵını, qanday maqsetlerde isletiletuǵını, qanday saqlanatuǵını hám paydalanıwshınıń huqıqları haqqında maǵlıwmat beredi.</p>
+
+    <h2>1. Jıynalatuǵın maǵlıwmatlar</h2>
+    <p>Qosımshanıń tolıq islesi ushın tómendegi maǵlıwmatlar jıynaluy múmkin:</p>
+    <h3>Akkaunt maǵlıwmatları</h3>
+    <ul>
+      <li>Atı hám familiyası</li>
+      <li>Elektron pochta mánzili</li>
+      <li>Telefon nomeri (eger paydalanıwshı kiritse)</li>
+      <li>Profil súvretı (ıqtıyarsız)</li>
+    </ul>
+    <h3>Finanslıq maǵlıwmatlar</h3>
+    <p>Paydalanıwshı tárepinen ıqtıyarsız túrde kiritilgen:</p>
+    <ul>
+      <li>Dáramatar</li>
+      <li>Qárejetler</li>
+      <li>Qarızlar</li>
+      <li>Jıynaqlar</li>
+      <li>Maqsetler</li>
+      <li>Shańaraqlıq byudjet maǵlıwmatları</li>
+    </ul>
+    <h3>Balalar akkauntı</h3>
+    <p>Eger ata-ana bala akkauntın jaratsa, tómendegi maǵlıwmatlar saqlanuy múmkin:</p>
+    <ul>
+      <li>Atı</li>
+      <li>Tuwılǵan jılı</li>
+      <li>Jınısı (ıqtıyarsız)</li>
+      <li>Orınlanǵan tapsırmalar</li>
+      <li>Alınǵan sıylıqlar</li>
+      <li>Coin hám balans</li>
+      <li>Ármanlar dizimi</li>
+      <li>Bilim oyınları nátiyjeleri</li>
+    </ul>
+    <p>Balaǵa baylanıslı barlıq maǵlıwmatlar tek ata-ana tárepinen jaratılada hám basqarıladı. Qosımsha balalardan ǵárezsiz túrde jeke maǵlıwmat jıynamaydı.</p>
+
+    <h2>2. Maǵlıwmatlardan paydalanıw</h2>
+    <p>Maǵlıwmatlar tómendegi maqsetlerde isletiledi:</p>
+    <ul>
+      <li>Shańaraqlıq esap-kitaptı júrgiziw;</li>
+      <li>Dáramat hám qárejetlerdi basqarıw;</li>
+      <li>Shańaraq aǵzaları arasında maǵlıwmatlardı sinxronizaciya qılıw;</li>
+      <li>Balalar tapsırmaların basqarıw;</li>
+      <li>Bilim oyınları hám sıylıqlaw sistemasın isletiw;</li>
+      <li>Paydali usınıslardı qalıplastırıw;</li>
+      <li>Qawipsizlikti táminlew;</li>
+      <li>Texnikalıq aqawlardı anıqlaw hám saplastırıw;</li>
+      <li>Qosımshanı jetilistiriw.</li>
+    </ul>
+
+    <h2>3. Balalar maxfiyligi</h2>
+    <p>"Oila Hisobchi" Google Play Families Policy talaplarına ámel etedi.</p>
+    <ul>
+      <li>Bala akkauntı tek ata-ana tárepinen jaratıladı.</li>
+      <li>Bala haqqındaǵı barlıq maǵlıwmatlar ata-ana qadaǵalawında saqlanadı.</li>
+      <li>Biz balalardan ǵárezsiz túrde jeke maǵlıwmat jıynamaymız.</li>
+      <li>Ata-ana qálegen waqıtta bala akkauntın ózgertiwi yamasa pútinkillay óshiriwi múmkin.</li>
+    </ul>
+
+    <h2>4. Maǵlıwmatlardı saqlaw</h2>
+    <p>Maǵlıwmatlar Google Firebase xızmetlerinen paydalanılǵan halda qawipsiz serverlerde saqlanadı.</p>
+    <p>Xızmetler:</p>
+    <ul>
+      <li>Firebase Authentication</li>
+      <li>Cloud Firestore</li>
+      <li>Firebase Cloud Messaging (eger bildirisler qosılǵan bolsa)</li>
+    </ul>
+    <p>Maǵlıwmatlardı uzatıwda zamanagóy qawipsizlik protokolları (TLS) qollanıladı.</p>
+
+    <h2>5. Maǵlıwmatlardı úshinshi shaxslarǵa beriw</h2>
+    <p>Biz paydalanıwshılardıń jeke maǵlıwmatların satpaymız hám kommerciyalıq maqsetlerde úshinshi shaxslarǵa bermeymiz.</p>
+    <p>Maǵlıwmatlar tek tómendegi jaǵdaylarda uzatılıwı múmkin:</p>
+    <ul>
+      <li>nızamshılıq talap etkende;</li>
+      <li>paydalanıwshı razılıǵı menen;</li>
+      <li>Google Firebase infrastrukturası arqalı xızmet kórsetiw ushın.</li>
+    </ul>
+
+    <h2>6. Reklama hám analiz</h2>
+    <p>Qosımsha házirgi waqıtta paydalanıwshılarǵa jóneltirilgen reklama kórsetpeydi.</p>
+    <p>Eger keleshekte reklama yamasa analitika xızmetleri qosılsa, bul Maxfiylik siyasatı jańalanadı.</p>
+
+    <h2>7. Premium xızmetler</h2>
+    <p>Premium videolar hám jazılıwlar Google Play Billing sisteması arqalı ámelge asırıladı.</p>
+    <p>Tólem maǵlıwmatları Google tárepinen qayta islenedi.</p>
+    <p>"Oila Hisobchi" paydalanıwshılardıń bank kartası maǵlıwmatların saqlamaydı hám olarǵa kire almaydı.</p>
+
+    <h2>8. Paydalanıwshı huqıqları</h2>
+    <p>Paydalanıwshı tómendegi huqıqlarǵa ıye:</p>
+    <ul>
+      <li>maǵlıwmatların kóriw;</li>
+      <li>maǵlıwmatların redaktorlaw;</li>
+      <li>akkauntın óshiriw;</li>
+      <li>bala akkauntların basqarıw;</li>
+      <li>qosımshadan paydalanıwdı qálegen waqıtta toqtatıw.</li>
+    </ul>
+    <p>Akkaunt óshirilgennen soń, paydalanıwshınıń jeke maǵlıwmatları ámeldegı nızamshılıqqa muwapıq óshiriledi.</p>
+
+    <h2>9. Siyasatqa ózgerisler</h2>
+    <p>Bul Maxfiylik siyasatı waqıtı-vaqıtı menen jańalanıp turıwı múmkin.</p>
+    <p>Áhmiyetli ózgerisler qosımsha ishinde yamasa rásmiy arnalar arqalı paydalanıwshılarǵa málim qılınadı.</p>
+
+    <h2>10. Baylanıs</h2>
+    <p>Eger sizde usı Maxfiylik siyasatı boyınsha sorawlar bolsa, biz benen baylanıssańız boladı.</p>
+    <p><strong>Elektron regulatory:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KYRGYZ ═══════════════ -->
+  <div class="content" id="c-ky">
+    <h1>КУТТУКТОО ЖАНА КУПЫЯЛУУЛУК САЯСАТЫ</h1>
+    <div class="upd">Акыркы жаңыртуу: 9-июль, 2026-жыл</div>
+    <p>«Oila Hisobchi» тиркемеси колдонуучулардын жеке маалыматтарын коргоону өзүнүн негизги принциптеринин бири деп эсептейт. Бул Купуялуулук саясаты тиркемени колдонууда кандай маалыматтар чогултуларын, кандай максаттарда колдонуларын, кантип сакталарын жана колдонуучунун укуктарын түшүндүрөт.</p>
+
+    <h2>1. Чогултулган маалыматтар</h2>
+    <p>Тиркеменин толук иштеши үчүн төмөнкү маалыматтар чогултулушу мүмкүн:</p>
+    <h3>Каттоо эсебинин маалыматтары</h3>
+    <ul>
+      <li>Аты жана фамилиясы</li>
+      <li>Электрондук почта дареги</li>
+      <li>Телефон номери (эгер колдонуучу киргизсе)</li>
+      <li>Профиль сүрөтү (милдеттүү эмес)</li>
+    </ul>
+    <h3>Финансылык маалыматтар</h3>
+    <p>Колдонуучу тарабынан өз ыктыяры менен киргизилген:</p>
+    <ul>
+      <li>Кирешелер</li>
+      <li>Чыгымдар</li>
+      <li>Карыздар</li>
+      <li>Топтомдор</li>
+      <li>Максаттар</li>
+      <li>Үй-бүлөлүк бюджет маалыматтары</li>
+    </ul>
+    <h3>Балдар аккаунту</h3>
+    <p>Егерде ата-эне баланын аккаунтун түзсө, төмөнкү маалыматтар сакталышы мүмкүн:</p>
+    <ul>
+      <li>Аты</li>
+      <li>Туулган жылы</li>
+      <li>Жынысы (милдеттүү эмес)</li>
+      <li>Аткарылган тапшырмалар</li>
+      <li>Алынган сыйлыктар</li>
+      <li>Монеталар жана баланс</li>
+      <li>Каалоолор тизмеси</li>
+      <li>Окуу оюндарынын натыйжалары</li>
+    </ul>
+    <p>Балага тиешелүү бардык маалыматтар ата-эне тарабынан гана түзүлөт жана башкарылат. Тиркеме балдардан өз алдынча жеке маалыматтарды чогултпайт.</p>
+
+    <h2>2. Маалыматтарды колдонуу</h2>
+    <p>Маалыматтар төмөнкү максаттарда колдонулат:</p>
+    <ul>
+      <li>Үй-бүлөлүк эсептерди жүргүзүү;</li>
+      <li>Кирешелерди жана чыгашаларды башкаруу;</li>
+      <li>Үй-бүлө мүчөлөрүнүн ортосунда маалыматтарды шайкештештирүү;</li>
+      <li>Балдардын тапшырмаларын башкаруу;</li>
+      <li>Окуу оюндары жана сыйлоо системасын иштетүү;</li>
+      <li>Пайдалуу сунуштарды иштеп чыгуу;</li>
+      <li>Коопсуздукту камсыз кылуу;</li>
+      <li>Техникалык каталарды аныктоо жана жоюу;</li>
+      <li>Тиркемени жакшыртуу.</li>
+    </ul>
+
+    <h2>3. Балдардын купуялуулугу</h2>
+    <p>«Oila Hisobchi» Google Play Families Policy талаптарын аткарат.</p>
+    <ul>
+      <li>Баланын аккаунту ата-эне тарабынан гана түзүлөт.</li>
+      <li>Бала тууралуу бардык маалыматтар ата-эненин көзөмөлүндө сакталат.</li>
+      <li>Биз балдардан өз алдынча жеке маалыматтарды чогултпайбыз.</li>
+      <li>Ата-эне каалаган убакта баланын аккаунтун өзгөртө алат же толугу менен өчүрө алат.</li>
+    </ul>
+
+    <h2>4. Маалыматтарды сактоо</h2>
+    <p>Маалыматтар Google Firebase кызматтарын колдонуу менен коопсуз серверлерде сакталат.</p>
+    <p>Кызматтар:</p>
+    <ul>
+      <li>Firebase Authentication</li>
+      <li>Cloud Firestore</li>
+      <li>Firebase Cloud Messaging (эгерде билдирүүлөр күйгүзүлгөн болсо)</li>
+    </ul>
+    <p>Маалыматтарды өткөрүүдө заманбап коопсуздук протоколдору (TLS) колдонулат.</p>
+
+    <h2>5. Маалыматтарды үчүнчү жактарга берүү</h2>
+    <p>Биз колдонуучулардын жеке маалыматтарын сатпайбыз жана коммерциялык максатта үчүнчү жактарга бербейбиз.</p>
+    <p>Маалыматтар төмөнкү учурларда гана өткөрүлүшү мүмкүн:</p>
+    <ul>
+      <li>мыйзам талап кылганда;</li>
+      <li>колдонуучунун макулдугу менен;</li>
+      <li>Google Firebase инфраструктурасы аркылуу кызмат көрсөтүү үчүн.</li>
+    </ul>
+
+    <h2>6. Жарнама жана аналитика</h2>
+    <p>Тиркеме учурда колдонуучуларга максаттуу жарнама көрсөтпөйт.</p>
+    <p>Егерде келечекте жарнама же аналитикалык кызматтар кошулса, бул Купуялуулук саясаты жаңыртылат.</p>
+
+    <h2>7. Premium кызметтери</h2>
+    <p>Premium жазылуулар Google Play Billing системасы аркылуу жүргүзүлөт.</p>
+    <p>Төлөм маалыматтары Google тарабынан иштелип чыгат.</p>
+    <p>«Oila Hisobchi» колдонуучулардын банк картасынын маалыматтарын сактабайт жана аларга кире албайт.</p>
+
+    <h2>8. Колдонуучунун укуктары</h2>
+    <p>Колдонуучу төмөнкү укуктарга ээ:</p>
+    <ul>
+      <li>өз маалыматтарын көрүү;</li>
+      <li>өз маалыматтарын өзгөртүү;</li>
+      <li>каттоо эсебин өчүрүү;</li>
+      <li>баланын аккаунтун башкаруу;</li>
+      <li>тиркемени колдонууну каалаган убакта токтотуу.</li>
+    </ul>
+    <p>Каттоо эсеби өчүрүлгөндөн кийин, колдонуучунун жеке маалыматтары колдонуудагы мыйзамдарга ылайык өчүрүлөт.</p>
+
+    <h2>9. Саясатка өзгөртүүлөр</h2>
+    <p>Бул Купуялуулук саясаты мезгил-мезгили менен жаңыртылып турушу мүмкүн.</p>
+    <p>Маанилүү өзгөрүүлөр тиркеме ичинде же расмий каналдар аркылуу колдонуучуларга билдирилет.</p>
+
+    <h2>10. Байланыш</h2>
+    <p>Егерде сизде бул Купуялуулук саясаты боюнча суроолоруңуз болсо, биз менен байланышсаңыз болот.</p>
+    <p><strong>Электрондук почта:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ TAJIK ═══════════════ -->
+  <div class="content" id="c-tg">
+    <h1>СИЁСАТИ ХУСУСИЯТҲОИ ШАХСӢ</h1>
+    <div class="upd">Навсозии охирин: 9 июли соли 2026</div>
+    <p>Барномаи «Oila Hisobchi» ҳифзи маълумоти шахсии корбаронро яке аз принсипҳои асосии худ медонад. Ин Сиёсати махфият шарҳ медиҳад, ки ҳангоми истифодаи барнома кадом маълумотҳо ҷамъоварӣ мешаванд, бо кадом мақсадҳо истифода мешаванд, чӣ гуна нигоҳ дошта мешаванд ва корбар кадом ҳуқуқҳоро дорад.</p>
+
+    <h2>1. Маълумоти ҷамъшаванда</h2>
+    <p>Барои кори пурраи барнома маълумоти зерин метавонад ҷамъоварӣ карда шавад:</p>
+    <h3>Маълумоти ҳисоб (Аккаунт)</h3>
+    <ul>
+      <li>Ном ва насаб</li>
+      <li>Суроғаи почтаи электронӣ</li>
+      <li>Рақами телефон (агар корбар ворид кунад)</li>
+      <li>Акси профил (ихтиёрӣ)</li>
+    </ul>
+    <h3>Маълумоти молиявӣ</h3>
+    <p>Аз ҷониби корбар ихтиёран ворид карда шудааст:</p>
+    <ul>
+      <li>Даромадҳо</li>
+      <li>Хароҷотҳо</li>
+      <li>Қарзҳо</li>
+      <li>Пасандозҳо</li>
+      <li>Ҳадафҳо</li>
+      <li>Маълумоти буҷети оилавӣ</li>
+    </ul>
+    <h3>Аккаунти кӯдакон</h3>
+    <p>Агар волидон аккаунти кӯдакро созанд, маълумоти зерин метавонад нигоҳ дошта шавад:</p>
+    <ul>
+      <li>Ном</li>
+      <li>Соли таваллуд</li>
+      <li>Ҷинс (ихтиёрӣ)</li>
+      <li>Вазифаҳои иҷрошуда</li>
+      <li>Мукофотҳои гирифташуда</li>
+      <li>Тангаҳо ва тавозун</li>
+      <li>Рӯйхати орзуҳо</li>
+      <li>Натиҷаҳои бозиҳои омӯзишӣ</li>
+    </ul>
+    <p>Ҳама маълумоти марбут ба кӯдак танҳо аз ҷониби волидон сохта ва идора карда мешавад. Барнома мустақилона аз кӯдакон маълумоти шахсӣ ҷамъ намекунад.</p>
+
+    <h2>2. Истифодаи маълумот</h2>
+    <p>Маълумот барои мақсадҳои зерин истифода мешавад:</p>
+    <ul>
+      <li>Пешбурди ҳисобҳои оилавӣ;</li>
+      <li>Идоракунии даромад ва хароҷот;</li>
+      <li>Ҳамоҳангсозии маълумот байни аъзои оила;</li>
+      <li>Идоракунии вазифаҳои кӯдакон;</li>
+      <li>Истифодаи бозиҳои омӯзишӣ ва системаи мукофотҳо;</li>
+      <li>Ташаккули тавсияҳои муфид;</li>
+      <li>Таъмин кардани амният;</li>
+      <li>Муайян ва бартараф кардани камбудиҳои техникӣ;</li>
+      <li>Тармим ва такмили барнома.</li>
+    </ul>
+
+    <h2>3. Махфияти кӯдакон</h2>
+    <p>«Oila Hisobchi» ба талаботи Google Play Families Policy амал мекунад.</p>
+    <ul>
+      <li>Аккаунти кӯдак танҳо аз ҷониби волидон сохта мешавад.</li>
+      <li>Ҳама маълумот дар бораи кӯдак таҳти назорати волидон нигоҳ дошта мешавад.</li>
+      <li>Мо мустақилона аз кӯдакон маълумоти шахсӣ ҷамъ намекунем.</li>
+      <li>Волидон метавонанд дар вақти дилхоҳ аккаунти кӯдакро тағир диҳанд ё комилан нест кунанд.</li>
+    </ul>
+
+    <h2>4. Нигоҳдории маълумот</h2>
+    <p>Маълумот дар серверҳои амн бо истифода аз хидматҳои Google Firebase нигоҳ дошта мешавад.</p>
+    <p>Хидматҳо:</p>
+    <ul>
+      <li>Firebase Authentication</li>
+      <li>Cloud Firestore</li>
+      <li>Firebase Cloud Messaging (агар огоҳиномаҳо фаъол бошанд)</li>
+    </ul>
+    <p>Ҳангоми интиқоли маълумот протоколҳои муосири амниятӣ (TLS) истифода мешаванд.</p>
+
+    <h2>5. Интиқоли маълумот ба шахсони сеюм</h2>
+    <p>Мо маълумоти шахсии корбаронро намефурӯшем ва онҳоро бо мақсадҳои тиҷоратӣ ба шахсони сеюм намедиҳем.</p>
+    <p>Маълумот танҳо дар ҳолатҳои зерин интиқол дода мешавад:</p>
+    <ul>
+      <li>агар қонунгузорӣ талаб кунад;</li>
+      <li>бо розигии корбар;</li>
+      <li>барои пешниҳоди хидматҳо тавассути инфрасохтори Google Firebase.</li>
+    </ul>
+
+    <h2>6. Реклама ва таҳлил</h2>
+    <p>Дар ҳоли ҳозир барнома ба корбарон таблиғоти мақсаднок нишон намедиҳад.</p>
+    <p>Агар дар оянда таблиғот ё хидматҳои таҳлилӣ илова карда шаванд, ин Сиёсати махфият нав карда мешавад.</p>
+
+    <h2>7. Хидматҳои Premium</h2>
+    <p>Обунаҳои Premium тавассути системаи Google Play Billing амалӣ карда мешаванд.</p>
+    <p>Маълумоти пардохт аз ҷониби Google коркард карда мешавад.</p>
+    <p>«Oila Hisobchi» маълумоти кортҳои бонкии корбаронро нигоҳ намедорад ва ба онҳо дастрасӣ надорад.</p>
+
+    <h2>8. Ҳуқуқҳои корбар</h2>
+    <p>Корбар ҳуқуқҳои зеринро дорад:</p>
+    <ul>
+      <li>дидани маълумоти худ;</li>
+      <li>таҳрири маълумоти худ;</li>
+      <li>нест кардани аккаунти худ;</li>
+      <li>идора кардани аккаунтҳои кӯдакон;</li>
+      <li>қатъ кардани истифодаи барнома дар вақти дилхоҳ.</li>
+    </ul>
+    <p>Пас аз нест кардани аккаунт, маълумоти шахсии корбар мувофиқи қонунгузории амалкунанда ва имкониятҳои техникӣ нест карда мешавад.</p>
+
+    <h2>9. Тағирот дар Сиёсати махфият</h2>
+    <p>Ин Сиёсати махфият метавонад вақт ба вақт нав карда шавад.</p>
+    <p>Тағироти муҳим дар дохили барнома ё тавассути каналҳои расмии иртиботӣ ба корбарон хабар дода мешавад.</p>
+
+    <h2>10. Тамос бо мо</h2>
+    <p>Агар шумо дар бораи ин Сиёсати махфият саволҳо дошта бошед, метавонед бо мо тамос гиред.</p>
+    <p><strong>Почтаи электронӣ:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   </div>
 </div>
 <script>
 (function(){
-  var LANGS=["uz","ru","en"];
+  var LANGS=["uz","en","ru","kk","ky","tg","qr"];
+  var LANG_LABELS={
+    uz: "🇺🇿 O'zbekcha",
+    en: "🇬🇧 English",
+    ru: "🇷🇺 Русский",
+    kk: "🇰🇿 Қазақша",
+    ky: "🇰🇬 Кыргызча",
+    tg: "🇹🇯 Тоҷикӣ",
+    qr: "🇺🇿 Qaraqalpaqsha"
+  };
+  
+  var dropdown = document.getElementById("langDropdown");
+  var trigger = document.getElementById("langTrigger");
+  var currentText = document.getElementById("currentLangText");
+  var menu = document.getElementById("langMenu");
+
+  trigger.addEventListener("click", function(e){
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", function(){
+    dropdown.classList.remove("open");
+  });
+
   function setLang(l){
     if(LANGS.indexOf(l)<0)l="uz";
     LANGS.forEach(function(x){
-      document.getElementById("c-"+x).classList.toggle("show",x===l);
+      var el = document.getElementById("c-"+x);
+      if(el) el.classList.toggle("show", x===l);
     });
-    document.querySelectorAll("#langSw button").forEach(function(b){
-      b.classList.toggle("on",b.dataset.l===l);
+    document.querySelectorAll("#langMenu button").forEach(function(b){
+      b.classList.toggle("on", b.dataset.l===l);
     });
+    currentText.innerText = LANG_LABELS[l] || LANG_LABELS.uz;
     document.documentElement.lang=l;
     try{localStorage.setItem("policy_lang",l);}catch(e){}
   }
-  document.querySelectorAll("#langSw button").forEach(function(b){
-    b.addEventListener("click",function(){setLang(b.dataset.l);});
+
+  document.querySelectorAll("#langMenu button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      setLang(b.dataset.l);
+      dropdown.classList.remove("open");
+    });
   });
+
   var q=new URLSearchParams(location.search).get("lang");
   var saved=null;try{saved=localStorage.getItem("policy_lang");}catch(e){}
   setLang(q||saved||"uz");

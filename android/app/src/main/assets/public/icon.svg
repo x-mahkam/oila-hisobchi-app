@@ -1,48 +1,45 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="512" height="512">
   <defs>
-    <!-- Background Gradient -->
-    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e1b4b" />
-      <stop offset="50%" stop-color="#312e81" />
-      <stop offset="100%" stop-color="#4f46e5" />
-    </linearGradient>
-    
-    <!-- Gold Coin Gradient -->
-    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24" />
-      <stop offset="100%" stop-color="#f59e0b" />
+    <!-- Modern Gradient for Background -->
+    <linearGradient id="logoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E1B4B" />
     </linearGradient>
 
-    <!-- Emerald Glow Gradient -->
-    <linearGradient id="emGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#059669" />
-      <stop offset="100%" stop-color="#34d399" />
-    </linearGradient>
-
-    <!-- Soft Drop Shadow -->
-    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.3" />
+    <!-- Drop Shadow for Depth -->
+    <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.3" />
     </filter>
   </defs>
 
-  <!-- Rounded Background Card -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+  <!-- Background Squircle -->
+  <rect width="120" height="120" rx="28" fill="url(#logoBg)" />
 
-  <!-- Main Shield/Home Structure with Shadow -->
-  <g filter="url(#shadow)">
-    <!-- Stylized House roof and body -->
-    <path d="M256 120 L120 230 L160 230 L160 380 C160 391 169 400 180 400 L332 400 C343 400 352 391 352 380 L352 230 L392 230 Z" fill="url(#emGrad)" opacity="0.85" />
-    
-    <!-- White inner arch for elegance -->
-    <path d="M256 150 L150 236 L180 236 L180 370 L332 370 L332 236 L362 236 Z" fill="#ffffff" opacity="0.1" />
+  <!-- Main Visual Group with Shadow -->
+  <g filter="url(#logoShadow)">
+    <!-- House Chimney -->
+    <path d="M78 38 L78 28 L86 28 L86 45" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
 
-    <!-- Big Glowing Golden Coin in the Center representing savings -->
-    <circle cx="256" cy="290" r="68" fill="url(#goldGrad)" stroke="#ffffff" stroke-width="4" />
-    
-    <!-- Inset details on Gold Coin -->
-    <circle cx="256" cy="290" r="54" fill="none" stroke="#fbbf24" stroke-width="2" stroke-dasharray="8,6" />
-    
-    <!-- "Family/Oila" stylised plus/heart/growth icon in the center of the coin -->
-    <path d="M256 264 L256 316 M230 290 L282 290" stroke="#ffffff" stroke-width="10" stroke-linecap="round" />
+    <!-- House Roof -->
+    <path d="M22 52 L60 18 L98 52" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- House Walls -->
+    <path d="M32 52 L32 94 L88 94 L88 52" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- Tree Trunk & Branches -->
+    <path d="M60 94 L60 68" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" fill="none" />
+    <path d="M60 68 C54 68, 46 64, 44 56" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M60 68 C66 68, 74 64, 76 56" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M60 68 L60 52" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" />
+
+    <!-- Tree Leaves (Coins representing family & financial growth) -->
+    <!-- Top Leaf (Cyan/Teal) -->
+    <circle cx="60" cy="42" r="13" fill="#06B6D4" stroke="#FFFFFF" stroke-width="3" />
+
+    <!-- Left Leaf (Success Green) -->
+    <circle cx="42" cy="54" r="11" fill="#10B981" stroke="#FFFFFF" stroke-width="3" />
+
+    <!-- Right Leaf (Amber/Orange) -->
+    <circle cx="78" cy="54" r="11" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3" />
   </g>
 </svg>

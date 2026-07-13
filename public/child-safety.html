@@ -14,9 +14,78 @@
     .topbar{position:sticky;top:0;z-index:10;background:rgba(248,250,252,.92);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
     .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--t1);font-size:15px}
     .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#22c55e);display:flex;align-items:center;justify-content:center;font-size:17px}
-    .lang{display:flex;gap:6px;background:var(--sur);border:1.5px solid var(--bor);border-radius:12px;padding:4px}
-    .lang button{border:none;background:transparent;padding:7px 14px;border-radius:9px;font-family:inherit;font-size:13px;font-weight:700;color:var(--t2);cursor:pointer;transition:all .15s}
-    .lang button.on{background:var(--ac);color:#fff}
+    .lang-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-trigger {
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .dropdown-trigger:hover {
+      border-color: var(--ac);
+    }
+    .dropdown-trigger .arrow {
+      font-size: 10px;
+      color: var(--t3);
+      transition: transform 0.2s;
+    }
+    .lang-dropdown.open .dropdown-trigger .arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      max-height: 180px;
+      z-index: 100;
+      min-width: 165px;
+    }
+    .lang-dropdown.open .dropdown-menu {
+      display: block;
+    }
+    .dropdown-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t2);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .dropdown-menu button:hover {
+      background: #f1f5f9;
+    }
+    .dropdown-menu button.on {
+      background: #e0f2fe;
+      color: #0284c7;
+      font-weight: 700;
+    }
     h1{color:var(--t1);font-size:1.7rem;font-weight:800;margin:0 0 6px;line-height:1.3}
     .upd{font-size:.85rem;color:var(--t3);margin-bottom:24px;font-weight:600}
     h2{color:#1e293b;font-size:1.15rem;font-weight:700;margin:2rem 0 .7rem}
@@ -33,11 +102,21 @@
 <body>
 <div class="container">
   <div class="topbar">
-    <div class="brand"><span class="dot">👶</span>Oila Hisobchi</div>
-    <div class="lang" id="langSw">
-      <button data-l="uz">O'zbekcha</button>
-      <button data-l="ru">Русский</button>
-      <button data-l="en">English</button>
+    <div class="brand"><img src="/icon.svg" style="width:34px;height:34px;border-radius:10px" alt="Logo" />Oila Hisobchi</div>
+    <div class="lang-dropdown" id="langDropdown">
+      <button class="dropdown-trigger" id="langTrigger">
+        <span id="currentLangText">🇺🇿 O'zbekcha</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown-menu" id="langMenu">
+        <button data-l="uz">🇺🇿 O'zbekcha</button>
+        <button data-l="en">🇬🇧 English</button>
+        <button data-l="ru">🇷🇺 Русский</button>
+        <button data-l="kk">🇰🇿 Қазақша</button>
+        <button data-l="ky">🇰🇬 Кыргызча</button>
+        <button data-l="tg">🇹🇯 Тоҷикӣ</button>
+        <button data-l="qr">🇺🇿 Qaraqalpaqsha</button>
+      </div>
     </div>
   </div>
 
@@ -104,7 +183,7 @@
       <li>bilim o'yinlari natijalarini ko'rsatish;</li>
       <li>jamg'armalarni hisoblash;</li>
       <li>orzularni boshqarish;</li>
-      <li>AI tavsiyalarini shakllantirish;</li>
+      <li>Foydali tavsiyalarni shakllantirish;</li>
       <li>ota-onaga statistik ma'lumotlarni taqdim etish.</li>
     </ul>
     <p>Bolalarning shaxsiy ma'lumotlari reklama maqsadida ishlatilmaydi.</p>
@@ -142,15 +221,15 @@
     <p>Bolalar akkauntida uchinchi tomon reklamalari ko'rsatilmaydi.</p>
     <p>Kelajakda reklama qo'shilgan taqdirda, ular Google Play Families Policy talablariga to'liq mos bo'ladi.</p>
 
-    <h2>10. AI funksiyalari</h2>
-    <p>Ilovadagi AI tavsiyalari faqat:</p>
+    <h2>10. Foydali funksiyalar</h2>
+    <p>Ilovadagi foydali tavsiyalar faqat:</p>
     <ul>
       <li>ota-onaga yordam berish;</li>
       <li>bolalarning rivojlanishini tahlil qilish;</li>
       <li>o'quv tavsiyalarini berish</li>
     </ul>
     <p>uchun ishlatiladi.</p>
-    <p>AI avtomatik qaror qabul qilmaydi va ota-onaning o'rnini bosa olmaydi.</p>
+    <p>Tizim avtomatik qaror qabul qilmaydi va ota-onaning o'rnini bosa olmaydi.</p>
 
     <h2>11. Xavfsizlik</h2>
     <p>Barcha ma'lumotlar zamonaviy xavfsizlik texnologiyalari yordamida himoyalanadi.</p>
@@ -183,7 +262,7 @@
 
     <h2>15. Bog'lanish</h2>
     <p>Agar sizda ushbu siyosat bo'yicha savollar bo'lsa, biz bilan bog'lanishingiz mumkin.</p>
-    <p><strong>Elektron pochta:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Elektron pochta:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   <!-- ═══════════════ RUSSIAN ═══════════════ -->
@@ -246,7 +325,7 @@
       <li>отображение результатов обучающих игр;</li>
       <li>расчёт накоплений;</li>
       <li>управление желаниями;</li>
-      <li>формирование AI-рекомендаций;</li>
+      <li>формирование полезных рекомендаций;</li>
       <li>предоставление статистики родителю.</li>
     </ul>
     <p>Персональные данные детей не используются в рекламных целях.</p>
@@ -284,14 +363,14 @@
     <p>В детских аккаунтах не показывается реклама третьих лиц.</p>
     <p>Если в будущем реклама будет добавлена, она будет полностью соответствовать требованиям Google Play Families Policy.</p>
 
-    <h2>10. AI-функции</h2>
-    <p>AI-рекомендации в приложении используются только для:</p>
+    <h2>10. Полезные функции</h2>
+    <p>Полезные рекомендации в приложении используются только для:</p>
     <ul>
       <li>помощи родителям;</li>
       <li>анализа развития детей;</li>
       <li>предоставления учебных рекомендаций.</li>
     </ul>
-    <p>AI не принимает автоматических решений и не может заменить родителя.</p>
+    <p>Система не принимает автоматических решений и не может заменить родителя.</p>
 
     <h2>11. Безопасность</h2>
     <p>Все данные защищены с помощью современных технологий безопасности.</p>
@@ -323,7 +402,7 @@
 
     <h2>15. Связь с нами</h2>
     <p>Если у вас есть вопросы по настоящей политике, вы можете связаться с нами.</p>
-    <p><strong>Электронная почта:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Электронная почта:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   <!-- ═══════════════ ENGLISH ═══════════════ -->
@@ -386,7 +465,7 @@
       <li>displaying learning game results;</li>
       <li>calculating savings;</li>
       <li>managing wishes;</li>
-      <li>generating AI recommendations;</li>
+      <li>generating useful recommendations;</li>
       <li>providing statistics to the parent.</li>
     </ul>
     <p>Children's personal data is not used for advertising purposes.</p>
@@ -424,14 +503,14 @@
     <p>Third-party advertisements are not shown in child accounts.</p>
     <p>If advertising is added in the future, it will fully comply with the requirements of the Google Play Families Policy.</p>
 
-    <h2>10. AI Features</h2>
-    <p>AI recommendations in the app are used only to:</p>
+    <h2>10. Useful Features</h2>
+    <p>Useful recommendations in the app are used only to:</p>
     <ul>
       <li>help parents;</li>
       <li>analyze children's development;</li>
       <li>provide educational recommendations.</li>
     </ul>
-    <p>AI does not make automatic decisions and cannot replace a parent.</p>
+    <p>The system does not make automatic decisions and cannot replace a parent.</p>
 
     <h2>11. Security</h2>
     <p>All data is protected using modern security technologies.</p>
@@ -463,28 +542,185 @@
 
     <h2>15. Contact Us</h2>
     <p>If you have any questions about this policy, you can contact us.</p>
-    <p><strong>Email:</strong><br><a href="mailto:xmahkam1990@gmail.com">xmahkam1990@gmail.com</a></p>
+    <p><strong>Email:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KAZAKH ═══════════════ -->
+  <div class="content" id="c-kk">
+    <h1>БАЛАЛАР ҚАУІПСІЗДІГІ ЖӘНЕ АТА-АНА КЕЛІСІМІ САЯСАТЫ</h1>
+    <div class="upd">Соңғы жаңарту: 9 шілде, 2026 жыл</div>
+    <p>«Oila Hisobchi» қосымшасы балалардың қауіпсіздігі мен жеке мәліметтерін қорғауды басты басымдық деп санайды. Бұл саясат қосымшада балалар аккаунттары қалай жасалатынын, қалай басқарылатынын, сондай-ақ ата-аналардың құқықтары мен міндеттерін сипаттайды.</p>
+
+    <h2>1. Ата-ананың бақылауы және рұқсаты</h2>
+    <p>Бала аккаунты тек басты аккаунт иесі (ата-ана немесе заңды өкіл) тарапынан жасалуы мүмкін. Бала өз бетінше аккаунт жасай алмайды және бұл саясатпен тікелей келісе алмайды.</p>
+    <p>Бала аккаунтын жасай отырып, ата-ана баланың жеке деректерін осы саясатқа сәйкес өңдеуге және сақтауға рұқсат береді.</p>
+
+    <h2>2. Балалардан жиналатын мәліметтер</h2>
+    <p>Балалардың қауіпсіздігін қамтамасыз ету мақсатында біз тек келесі ақпаратты жинаймыз және сақтаймыз (оны ата-ана енгізеді):</p>
+    <ul>
+      <li>Баланың аты немесе лақап аты (толық атын жазу міндетті емес);</li>
+      <li>Туған жылы (жасына сәйкес тапсырмалар мен ойындарды ұсыну үшін);</li>
+      <li>Жынысы (міндетті емес, бейімдеу мақсатында);</li>
+      <li>Орындалған тапсырмалар және олардың күйі;</li>
+      <li>Алынған марапаттар, тиындар және олардың тарихы;</li>
+      <li>Баланың арман-тілектер тізімі (бала қосатын заттар мен мақсаттар);</li>
+      <li>Білім ойындарының нәтижелері мен статистикасы.</li>
+    </ul>
+
+    <h2>3. Жарнама және талдау</h2>
+    <p>Бала аккаунтында жарнамалар көрсетілмейді және олардың деректері үшінші тұлғаларға жарнамалық мақсаттарда берілмейді.</p>
+
+    <h2>4. Деректерді басқару және өшіру</h2>
+    <p>Ата-ана кез келген уақытта бала аккаунтын, оның статистикасын, тапсырмаларын және барлық деректерін толығымен жоюға құқылы.</p>
+
+    <h2>5. Байланыс</h2>
+    <p>Сұрақтарыңыз болса, бізге хабарласыңыз:<br><strong>Электрондық пошта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ QARAQALPAQ ═══════════════ -->
+  <div class="content" id="c-qr">
+    <h1>BALALAR QAWIPSIZLIGI HÁM ATA-ANA RAZILIǴI SIYASATI</h1>
+    <div class="upd">Aqırgı jańalanıw: 9-iyul, 2026-jıl</div>
+    <p>"Oila Hisobchi" qosımshası balalardıń qawipsizligi hám jeke maǵlıwmatların qorǵawdı birinshi dárejeli wazıypa dep biledi. Bul siyasat balalar akkauntı qalay jaratılıwı, basqarılywı hám ata-analardıń huquqların túsindiredi.</p>
+
+    <h2>1. Ata-ana qadaǵalawı hám ruxsatı</h2>
+    <p>Bala akkauntı tek ǵaga tiykarǵı akkaunt iyesi (ata-ana yamasa nızamlı qorǵawshı) tárepinen jaratıladı. Bala óz betinshe akkaunt jarata almaydı.</p>
+    <p>Bala akkauntın jaratıw arqalı ata-ana balasınıń jeke maǵlıwmatларын usı siyasatqa muwapıq saqlawǵa hám islewge óz razılıǵın beredi.</p>
+
+    <h2>2. Jıynalatuǵın maǵlıwmatlar</h2>
+    <p>Biz tek tómendegi maǵlıwmatlardı saqlaymız (ata-ana tárepinen kiritilgen):</p>
+    <ul>
+      <li>Atı yamasa laqabı;</li>
+      <li>Tuwılǵan jılı (tapsırmalar hám bilim oyınларын maslaw ushın);</li>
+      <li>Jınısı (ıqtıyarsız);</li>
+      <li>Orınlanǵan tapsırmalar hám sıylıqlar;</li>
+      <li>Balasınıń árman-niyetleri dizimi;</li>
+      <li>Bilim oyınları nátiyjeleri.</li>
+    </ul>
+
+    <h2>3. Reklama hám qawipsizlik</h2>
+    <p>Balalar akkauntında reklama kórsetilmeydi. Maǵlıwmatlar úshinshi táreplerge berilmeydi.</p>
+
+    <h2>4. Maǵlıwmatlardı óshiriw</h2>
+    <p>Ata-ana qálegen waqıtta bala akkauntın hám barlıq maǵlıwmatларын qosımshadan óshire aladı.</p>
+
+    <h2>5. Baylanıs</h2>
+    <p>Sorawlarıńız bolsa, biz benen baylanısıń:<br><strong>Elektron pochta:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KYRGYZ ═══════════════ -->
+  <div class="content" id="c-ky">
+    <h1>БАЛДАРДЫН КООПСУЗДУГУ ЖАНА АТА-ЭНЕНИН МАКУЛДУГУ САЯСАТЫ</h1>
+    <div class="upd">Акыркы жаңыртуу: 9-июль, 2026-жыл</div>
+    <p>«Oila Hisobchi» тиркемеси балдардын коопсуздугун жана жеке маалыматтарын коргоону башкы артыкчылык деп билет. Бул саясат тиркемеде балдардын аккаунттары кантип түзүлөрүн, башкарыларын жана ата-энелердин укуктары менен милдеттерин түшүндүрөт.</p>
+
+    <h2>1. Ата-эненин көзөмөлү жана макулдугу</h2>
+    <p>Баладын аккаунту негизги аккаунттун ээси (ата-эне же мыйзамдуу өкүл) тарабынан гана түзүлүшү мүмкүн. Бала өз алдынча аккаунт түзө албайт.</p>
+    <p>Баланын аккаунтун түзүү менен ата-эне баланын жеке маалыматтарын ушул саясатка ылайык иштетүүгө жана сактоого макулдук берет.</p>
+
+    <h2>2. Балдардан чогултулган маалыматтар</h2>
+    <p>Биз төмөнкү маалыматтарды гана сактайбыз (ата-эне киргизген):</p>
+    <ul>
+      <li>Баланын аты же каймана аты;</li>
+      <li>Туулган жылы (жашына ылайыктуу тапшырмаларды тандоо үчүн);</li>
+      <li>Жынысы (милдеттүү эмес);</li>
+      <li>Аткарылган тапшырмалар жана сыйлыктар;</li>
+      <li>Каалоолор тизмеси;</li>
+      <li>Окуу оюндарынын жыйынтыктары.</li>
+    </ul>
+
+    <h2>3. Жарнама жана коопсуздук</h2>
+    <p>Балдардын аккаунтунда жарнамалар көрсөтүлбөйт. Маалыматтар үчүнчү жактарга берилбейт.</p>
+
+    <h2>4. Маалыматтарды өчүрүү</h2>
+    <p>Ата-эне каалаган убакта баланын аккаунтун жана бардык маалыматтарын толугу менен өчүрө алат.</p>
+
+    <h2>5. Байланыш</h2>
+    <p>Суроолоруңуз болсо, биз менен байланышыңыз:<br><strong>Электрондук почта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ TAJIK ═══════════════ -->
+  <div class="content" id="c-tg">
+    <h1>СИЁСАТИ АМНИЯТИ КӮДАКОН ВА РОЗИГИИ ВОЛИДОН</h1>
+    <div class="upd">Навсозии охирин: 9 июли соли 2026</div>
+    <p>Барномаи «Oila Hisobchi» ҳифзи амният ва маълумоти шахсии кӯдаконро вазифаи аввалиндараҷаи худ медонад. Ин сиёсат нишон медиҳад, ки чӣ тавр аккаунти кӯдакон дар барнома сохта ва идора карда мешавад, инчунин ҳуқуқ ва уҳдадориҳои волидонро шарҳ медиҳад.</p>
+
+    <h2>1. Назорат ва розигии волидон</h2>
+    <p>Аккаунти кӯдак танҳо аз ҷониби соҳиби аккаунти асосӣ (волидон ё намояндаи қонунӣ) сохта мешавад. Кӯдак мустақилона аккаунт сохта наметавонад.</p>
+    <p>Бо сохтани аккаунти кӯдак, волидон ба ҷамъоварӣ ва коркарди маълумоти кӯдак мувофиқи ин сиёсат розигӣ медиҳанд.</p>
+
+    <h2>2. Маълумоти ҷамъшаванда дар бораи кӯдак</h2>
+    <p>Мо танҳо маълумоти зеринро нигоҳ медорем (ки аз ҷониби волидон ворид карда мешавад):</p>
+    <ul>
+      <li>Ном ё лақаби кӯдак;</li>
+      <li>Соли таваллуд (барои интихоби вазифаҳо мувофиқи синну сол);</li>
+      <li>Ҷинси кӯдак (ихтиёрӣ);</li>
+      <li>Вазифаҳои иҷрошуда ва мукофотҳо;</li>
+      <li>Рӯйхати орзуҳо;</li>
+      <li>Натиҷаҳои бозиҳои омӯзишӣ.</li>
+    </ul>
+
+    <h2>3. Таблиғот ва амният</h2>
+    <p>Дар аккаунти кӯдакон таблиғот нишон дода намешавад ва маълумоти онҳо ба шахсони сеюм дода намешавад.</p>
+
+    <h2>4. Нест кардани маълумот</h2>
+    <p>Волидон ҳуқуқ доранд, ки дар вақти дилхоҳ аккаунти кӯдакро бо ҳама маълумоташ аз барнома комилан нест кунанд.</p>
+
+    <h2>5. Тамос бо мо</h2>
+    <p>Агар шумо саволҳо дошта бошед, бо мо тамос гиред:<br><strong>Почтаи электронӣ:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
   </div>
 
   </div>
 </div>
 <script>
 (function(){
-  var LANGS=["uz","ru","en"];
+  var LANGS=["uz","en","ru","kk","ky","tg","qr"];
+  var LANG_LABELS={
+    uz: "🇺🇿 O'zbekcha",
+    en: "🇬🇧 English",
+    ru: "🇷🇺 Русский",
+    kk: "🇰🇿 Қазақша",
+    ky: "🇰🇬 Кыргызча",
+    tg: "🇹🇯 Тоҷикӣ",
+    qr: "🇺🇿 Qaraqalpaqsha"
+  };
+  
+  var dropdown = document.getElementById("langDropdown");
+  var trigger = document.getElementById("langTrigger");
+  var currentText = document.getElementById("currentLangText");
+  var menu = document.getElementById("langMenu");
+
+  trigger.addEventListener("click", function(e){
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", function(){
+    dropdown.classList.remove("open");
+  });
+
   function setLang(l){
     if(LANGS.indexOf(l)<0)l="uz";
     LANGS.forEach(function(x){
-      document.getElementById("c-"+x).classList.toggle("show",x===l);
+      var el = document.getElementById("c-"+x);
+      if(el) el.classList.toggle("show", x===l);
     });
-    document.querySelectorAll("#langSw button").forEach(function(b){
-      b.classList.toggle("on",b.dataset.l===l);
+    document.querySelectorAll("#langMenu button").forEach(function(b){
+      b.classList.toggle("on", b.dataset.l===l);
     });
+    currentText.innerText = LANG_LABELS[l] || LANG_LABELS.uz;
     document.documentElement.lang=l;
     try{localStorage.setItem("policy_lang",l);}catch(e){}
   }
-  document.querySelectorAll("#langSw button").forEach(function(b){
-    b.addEventListener("click",function(){setLang(b.dataset.l);});
+
+  document.querySelectorAll("#langMenu button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      setLang(b.dataset.l);
+      dropdown.classList.remove("open");
+    });
   });
+
   var q=new URLSearchParams(location.search).get("lang");
   var saved=null;try{saved=localStorage.getItem("policy_lang");}catch(e){}
   setLang(q||saved||"uz");
