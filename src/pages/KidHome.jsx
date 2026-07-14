@@ -299,6 +299,8 @@ export default function KidHome({
   const [xp, setXp] = useState(0);
   const [sessions, setSessions] = useState([]);
   const [offers, setOffers] = useState([]);
+  const [claimedAchievements, setClaimedAchievements] = useState([]);
+  const [claimedLoaded, setClaimedLoaded] = useState(false);
   
   const isToday = useCallback((sanaStr) => {
     if (!sanaStr) return false;
@@ -316,6 +318,12 @@ export default function KidHome({
     db.g("bilim_xp_" + user.id).then(v => { if (v != null) setXp(Number(v) || 0); }).catch(() => {});
     readSessions(user.id).then(setSessions).catch(() => {});
     if (user.oilaId) db.g("bilim_offer_" + user.oilaId).then(v => { if (Array.isArray(v)) setOffers(v); }).catch(() => {});
+    db.g("claimed_achievements_" + user.id).then(v => {
+      if (Array.isArray(v)) setClaimedAchievements(v);
+      setClaimedLoaded(true);
+    }).catch(() => {
+      setClaimedLoaded(true);
+    });
   }, [user?.id, user?.oilaId]);
 
   const lv = useMemo(() => levelFor(xp), [xp]);
@@ -382,6 +390,29 @@ export default function KidHome({
     return list.map((m, i) => ({ ...m, isNew: i === newIdx }));
   }, [uz, tasks.doneAll.length, coins, sessions.length, gardenData.level, bstreak]);
   const unlockedCount = medals.filter(m => m.unlocked).length;
+
+  // Auto-award newly unlocked achievements
+  useEffect(() => {
+    if (!user?.id || !claimedLoaded || !medals || medals.length === 0) return;
+    
+    // Unlocked but not yet saved in claimedAchievements list
+    const unclaimedUnlocked = medals.filter(m => m.unlocked && !claimedAchievements.includes(m.id));
+    if (unclaimedUnlocked.length === 0) return;
+    
+    // We found newly unlocked achievements! Let's award them
+    const newClaimed = [...claimedAchievements];
+    
+    unclaimedUnlocked.forEach(m => {
+      newClaimed.push(m.id);
+      addStar(1, uz ? `Yutuq: ${m.title}` : `Achievement: ${m.title}`);
+    });
+    
+    setClaimedAchievements(newClaimed);
+    db.s("claimed_achievements_" + user.id, newClaimed).catch(() => {});
+    
+    buzz(50);
+    if (typeof fireConfetti === "function") fireConfetti();
+  }, [medals, claimedAchievements, claimedLoaded, user?.id, addStar, uz, buzz, fireConfetti]);
 
   // ── Savdolashish takliflari (bilim_offer, faqat shu bola, pending va ota-onadan kelgan) ──
   const pendingOffersCount = useMemo(() => {
@@ -553,7 +584,6 @@ export default function KidHome({
               if (m.unlocked) {
                 buzz(25);
                 if (typeof fireConfetti === "function") fireConfetti();
-                addStar(1, uz ? `Yutuq: ${m.title}` : `Achievement: ${m.title}`);
               }
             }}
           />

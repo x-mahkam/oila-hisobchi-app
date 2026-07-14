@@ -221,7 +221,14 @@ export default function GoalsPage({
   parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad,
   ok$,
 }) {
-  const [addM, setAddM] = useState(false);
+  const [addM, setAddM] = useState(() => {
+    const flag = localStorage.getItem("open_add_goal");
+    if (flag === "true") {
+      localStorage.removeItem("open_add_goal");
+      return true;
+    }
+    return false;
+  });
   const [maqTab, setMaqTab] = useState("mine");
   const STY = useMemo(() => makeS(th), [th]);
   const [showToy, setShowToy] = useState(false);

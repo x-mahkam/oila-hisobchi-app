@@ -230,8 +230,8 @@ export function useGoals() {
     ok$(lg === "uz" ? "Ota-onangizga xabar yuborildi" : "Parent notified", "warn");
   }, [maq, setMaq, user, oila, azolar, ok$, lg]);
 
-  const confirmMaqBought = useCallback(async (info) => {
-    const u = maq.map(m => m.id === info.maqsadId ? { ...m, status: "completed", paid: true, completedAt: td() } : m);
+  const confirmMaqBought = useCallback(async (info, giftPhoto = null) => {
+    const u = maq.map(m => m.id === info.maqsadId ? { ...m, status: "completed", paid: true, completedAt: td(), ...(giftPhoto ? { giftPhoto } : {}) } : m);
     await db.s("maq_" + user.oilaId, u); setMaq(u);
     setMaqsadConfirmNotif(null); fireConfetti(); buzz(30);
     ok$(lg === "uz" ? "🎉 Tabriklaymiz!" : "🎉 Congratulations!");
