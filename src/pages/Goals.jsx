@@ -4,7 +4,7 @@ import {
   PageHeader, SectionHeader, AppCard, Badge, EmptyState,
   PrimaryButton, GhostButton, IconButton, LinearProgress, UIAvatar,
 } from "../components/ui/index.js";
-import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, CHART, OPACITY } from "../utils/tokens.js";
+import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, CHART, OPACITY, PREMIUM } from "../utils/tokens.js";
 import { Ico, EM_GOAL_ICONS } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { GOAL_PRESETS, KID_GOAL_PRESETS } from "../utils/constants.js";
@@ -220,6 +220,7 @@ export default function GoalsPage({
   addMq, tupMq, delMq, saveEditMq,
   parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad,
   ok$,
+  kidBalances,
 }) {
   const [addM, setAddM] = useState(() => {
     const flag = localStorage.getItem("open_add_goal");
@@ -293,6 +294,44 @@ export default function GoalsPage({
 
       <PageHeader th={th} title={isKid ? (lg === "uz" ? "Orzularim" : "My dreams") : t.goal} style={{ marginBottom: SPACE.s3 }}
         right={<IconButton th={th} label={lg === "uz" ? "Maqsad qo'shish" : "Add goal"} icon={Ico.add(th.ac)} onClick={() => setAddM(v => !v)} />} />
+
+      {/* ── Bola orzulari bosh slayd (vazifalar va bilim darslari sahifalari kabi premium gradient) ── */}
+      {isKid && (
+        <div className="ui-fadeUp" style={{ background: "linear-gradient(135deg, " + th.ac + " 0%, " + (th.ac2 || th.ac) + " 55%, " + PREMIUM.gold + " 100%)", borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + (SPACE.s6 - 2) + "px", marginBottom: SPACE.s4, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(th.ac) }}>
+          <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.12)" }} />
+          <div style={{ position: "relative" }}>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: "rgba(255,255,255,0.9)", marginBottom: SPACE.s1 }}>{lg === "uz" ? "Mening jamg'armalarim" : lg === "ru" ? "Мои сбережения" : "My savings"}</div>
+            <div style={{ ...TYPE.hero, fontSize: TYPE.hero.fontSize + 4, color: "#fff", marginBottom: SPACE.s1 + 2, fontVariantNumeric: "tabular-nums" }}>
+              {(() => {
+                const myDreams = Array.isArray(maq) ? maq.filter(m => m.uid === user.id) : [];
+                const totalSaved = myDreams.reduce((sum, m) => sum + Number(m.jamg || 0), 0);
+                return f(totalSaved, true);
+              })()}
+            </div>
+            <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", gap: SPACE.s1 + 2, flexWrap: "wrap" }}>
+              {(() => {
+                const myDreams = Array.isArray(maq) ? maq.filter(m => m.uid === user.id) : [];
+                const totalTarget = myDreams.reduce((sum, m) => sum + Number(m.maqsad || 0), 0);
+                const totalSaved = myDreams.reduce((sum, m) => sum + Number(m.jamg || 0), 0);
+                const totalProgress = totalTarget > 0 ? Math.round((totalSaved / totalTarget) * 100) : 0;
+                const money = (kidBalances && kidBalances[user.id]) || 0;
+                return (
+                  <>
+                    {GIco.target("#fff", 12)}
+                    {myDreams.length} {lg === "uz" ? "ta orzu" : lg === "ru" ? "целей" : "dreams"} · {totalProgress}% {lg === "uz" ? "to'plandi" : lg === "ru" ? "накоплено" : "saved"}
+                    {money > 0 && (
+                      <>
+                        {" · "}
+                        {lg === "uz" ? "Hamyonda" : lg === "ru" ? "В кошельке" : "Wallet"}: {f(money, true)}
+                      </>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
 
       {!isKid && canSeeReport && (
         <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, marginBottom: SPACE.s3 + 2, gap: 3 }}>
