@@ -22,7 +22,7 @@ const subjectCount = (sessions, cat) => sessions.filter(x => (x.gameId || "").sp
  * @param sessions [] (bilim_games_)
  * @returns achievement ro'yxati [{ id, title{uz,ru,en}, icon, color, unlocked, cur, goal }]
  */
-export function computeAchievements(totals, sessions = [], lg = "uz") {
+export function computeAchievements(totals, sessions = [], lg = "uz", behaviorData = {}) {
   const { coins = 0, xp = 0, streak = 0 } = totals || {};
   const games = sessions.length;
   const list = [
@@ -33,8 +33,13 @@ export function computeAchievements(totals, sessions = [], lg = "uz") {
     { id: "streak10",t: { uz: "10 kun ketma-ket", ru: "10 дней", en: "10-day streak" },  icon: B.flame, color: "#dc2626", cur: streak, goal: 10 },
     { id: "math",    t: { uz: "Matematika ustasi", ru: "Мастер математики", en: "Math master" }, icon: B.crown, color: "#6366f1", cur: subjectCount(sessions, "math"), goal: 10 },
     { id: "english", t: { uz: "Ingliz eksperti", ru: "Эксперт англ.", en: "English expert" },     icon: B.crown, color: "#059669", cur: subjectCount(sessions, "english"), goal: 10 },
-    { id: "reader",  t: { uz: "Top Reader", ru: "Топ-читатель", en: "Top Reader" },      icon: B.book,  color: "#d97706", cur: subjectCount(sessions, "book"), goal: 5 },
     { id: "logic",   t: { uz: "Logic Master", ru: "Мастер логики", en: "Logic Master" }, icon: B.brain, color: "#0ea5e9", cur: subjectCount(sessions, "logic"), goal: 10 },
+    
+    // Financial Behavior Achievements
+    { id: "firstTask",  t: { uz: "Birinchi vazifa", ru: "Первое задание", en: "First task" },       icon: B.play,  color: "#22c55e", cur: behaviorData.tasksApproved || 0, goal: 1 },
+    { id: "task10",     t: { uz: "10 ta vazifa",     ru: "10 заданий",     en: "10 tasks" },          icon: B.crown, color: "#16a34a", cur: behaviorData.tasksApproved || 0, goal: 10 },
+    { id: "firstGoal",  t: { uz: "Birinchi orzu",    ru: "Первая мечта",   en: "First dream" },       icon: B.xp,    color: "#f59e0b", cur: behaviorData.goalsCompleted || 0, goal: 1 },
+    { id: "trader",     t: { uz: "Birinchi savdo",   ru: "Первая сделка",  en: "First trade" },       icon: B.coin,  color: "#0ea5e9", cur: behaviorData.tradesAccepted || 0, goal: 1 },
   ];
   return list.map(a => ({ ...a, title: a.t[lg] || a.t.uz, unlocked: a.cur >= a.goal, pct: Math.min(100, Math.round(a.cur / a.goal * 100)) }));
 }

@@ -3,7 +3,7 @@
 //  Avatar · Level · XP · Coin · oxirgi o'yin · eng yaxshi/qiyin fan ·
 //  haftalik progress · AI bahosi. Barchasi MAVJUD bilim_* dan hosila.
 // ═══════════════════════════════════════════════════════════
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 import { AppCard, SectionHeader, StatCard, Badge, UIAvatar, LinearProgress } from "../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
@@ -11,6 +11,7 @@ import { levelFor, rankFor } from "./engine/xp.js";
 import { analyzeLearning, weeklyReport } from "./engine/analytics.js";
 import { computeAchievements } from "./engine/achievements.jsx";
 import { medalSvg } from "./registry.jsx";
+import { db } from "../firebase.js";
 
 // Level frame rangi (rank rangidan)
 const frameGrad = (color) => "linear-gradient(135deg," + color + "," + color + "cc)";
@@ -23,7 +24,53 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
   const rank = { color: rankObj.color, label: rankObj[lg] || rankObj.uz };
   const analysis = useMemo(() => analyzeLearning(sessions, lg, name, 30), [sessions, lg, name]);
   const week = useMemo(() => weeklyReport(sessions, lg, name), [sessions, lg, name]);
-  const achievements = useMemo(() => computeAchievements({ coins, xp, streak }, sessions, lg), [coins, xp, streak, sessions, lg]);
+
+  const [behavior, setBehavior] = useState({
+    tasksApproved: 0,
+    goalsCompleted: 0,
+    tradesAccepted: 0,
+  });
+
+  useEffect(() => {
+    if (!user?.oilaId) return;
+
+    // Load tasksApproved
+    db.g("vazifa_" + user.oilaId).then(v => {
+      if (Array.isArray(v)) {
+        const isMineTask = (tk) =>
+          tk.assignedTo === user.id ||
+          (tk.assignedLogin && user.login && tk.assignedLogin === user.login) ||
+          (tk.assignedName && user.ism && tk.assignedName.trim().toLowerCase() === user.ism.trim().toLowerCase());
+        
+        const tasksCount = v.filter(tk => isMineTask(tk) && tk.status === "approved").length;
+        setBehavior(b => ({ ...b, tasksApproved: tasksCount }));
+      }
+    }).catch(() => {});
+
+    // Load goalsCompleted
+    db.g("maq_" + user.oilaId).then(gList => {
+      if (Array.isArray(gList)) {
+        const goalsCount = gList.filter(m => 
+          m.uid === user.id && 
+          (m.completedAt || m.status === "completed" || (m.jamg >= m.maqsad && m.maqsad > 0))
+        ).length;
+        setBehavior(b => ({ ...b, goalsCompleted: goalsCount }));
+      }
+    }).catch(() => {});
+
+    // Load tradesAccepted
+    db.g("bilim_offer_" + user.oilaId).then(oList => {
+      if (Array.isArray(oList)) {
+        const tradesCount = oList.filter(o => o.kidId === user.id && o.status === "accepted").length;
+        setBehavior(b => ({ ...b, tradesAccepted: tradesCount }));
+      }
+    }).catch(() => {});
+  }, [user?.id, user?.oilaId]);
+
+  const achievements = useMemo(() => {
+    return computeAchievements({ coins, xp, streak }, sessions, lg, behavior);
+  }, [coins, xp, streak, sessions, lg, behavior]);
+
   const unlocked = useMemo(() => achievements.filter(a => a.unlocked), [achievements]);
   const last = sessions && sessions.length ? sessions[0] : null;
 

@@ -19,9 +19,6 @@ export const BIco = {
   english: S(["M16 5c-5 0-9 3-9 8s4 8 9 8 9-3 9-8-4-8-9-8z", "M16 5v16M7 13h18"]),
   logic:   S(["M16 4l10 6v12l-10 6-10-6V10z", "M16 4v12M16 16l10-6M16 16l-10-6"]),
   memory:  S(["M8 6h16a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z", "M11 12h4M11 16h10M11 20h7"]),
-  nature:  S(["M24 6c-9 0-14 4-14 11 0 1.5.3 3 .8 4.3C18 21 25 16 25 6z", "M11 21C14.5 15 19 11.5 24 8.5"]),
-  tech:    S(["M6 9h20v14H6z", "M11 15l3 3-3 3M17 21h4M13 4v5M19 4v5"]),
-  book:    S(["M16 8C13.5 5.5 9.5 5 5 5v20c4.5 0 8.5.5 11 3 2.5-2.5 6.5-3 11-3V5c-4.5 0-8.5.5-11 3z", "M16 8v20"]),
   other:   S(["M16 5a11 11 0 100 22 11 11 0 000-22z", "M16 11v6M16 21h.01"]),
   // o'yin ikonkalari
   plus:    S(["M9 9h14v14H9z", "M16 12v8M12 16h8"]),
@@ -30,9 +27,6 @@ export const BIco = {
   divide:   S(["M9 9h14v14H9z", "M12 16h8", "M16 12h.01M16 20h.01"]),
   palette: S(["M16 6C10 6 6 10 6 15c0 4 3 6 6 6 2 0 2-1 2-2 0-2 2-2 3-2 4 0 6-2 6-5 0-4-4-6-7-6z", "M11 13h.01M20 13h.01M14 19h.01"]),
   animal:  S(["M10 12c-2-4 2-6 3-3M22 12c2-4-2-6-3-3M8 18c0-5 4-8 8-8s8 3 8 8-4 6-8 6-8-1-8-6z", "M13 16h.01M19 16h.01"]),
-  science: S(["M13 4h6M14 4v7l-6 12a2 2 0 002 3h12a2 2 0 002-3l-6-12V4", "M11 19h10"]),
-  geo:     S(["M16 4a12 12 0 100 24 12 12 0 000-24z", "M4 16h24M16 4c4 4 4 20 0 24M16 4c-4 4-4 20 0 24"]),
-  code:    S(["M6 8h20v16H6z", "M12 14l-3 3 3 3M20 14l3 3-3 3M17 13l-2 8"]),
 };
 
 // ── Difficulty meta (rang FAQAT tokenlardan — th orqali) ──
@@ -74,10 +68,6 @@ export const CATEGORIES = [
   { id: "english",   name: { uz: "Ingliz tili", ru: "Английский", en: "English" }, icon: BIco.english, grad: ["gr", "ac"] },
   { id: "logic",     name: { uz: "Mantiq", ru: "Логика", en: "Logic" },            icon: BIco.logic,   grad: ["am", "rd"] },
   { id: "memory",    name: { uz: "Xotira", ru: "Память", en: "Memory" },           icon: BIco.memory,  grad: ["ac2", "gr"] },
-  { id: "science",   name: { uz: "Fan", ru: "Наука", en: "Science" },              icon: BIco.science, grad: ["gr", "am"] },
-  { id: "geography", name: { uz: "Geografiya", ru: "География", en: "Geography" }, icon: BIco.geo,     grad: ["ac", "gr"] },
-  { id: "book",      name: { uz: "Kitob", ru: "Книга", en: "Book" },               icon: BIco.book,    grad: ["am", "ac"] },
-  { id: "coding",    name: { uz: "Dasturlash", ru: "Программирование", en: "Coding" }, icon: BIco.code, grad: ["ac", "rd"] },
 ];
 
 // ── SUBJECT REWARDS: har fan bo'yicha coin/XP birligi (bitta to'g'ri javob uchun) ──
@@ -89,10 +79,6 @@ export const SUBJECT_REWARDS = {
   english:   { coin: 1.5, xp: 2.5 },
   logic:     { coin: 1.8, xp: 3 },
   memory:    { coin: 1.2, xp: 2 },
-  science:   { coin: 1.8, xp: 3 },
-  geography: { coin: 1.6, xp: 2.6 },
-  book:      { coin: 1.4, xp: 2.4 },
-  coding:    { coin: 2, xp: 4 },
   _default:  { coin: 1.5, xp: 2.5 },
 };
 export const rewardOf = (catId) => SUBJECT_REWARDS[catId] || SUBJECT_REWARDS._default;
@@ -162,11 +148,14 @@ export const GAMES = [
     desc: { uz: "To'g'ri va aqlli moliyaviy qarorlar qabul qilishni o'rgan", ru: "Учись принимать правильные финансовые решения", en: "Learn to make smart financial decisions" },
     icon: BIco.logic, difficulty: "medium", minutes: 8, maxCoin: 15, premium: false, load: "logic/decision"
   },
-  { id: "memory/pairs",     category: "memory",  name: { uz: "Juftliklar", ru: "Пары", en: "Pairs" },           desc: { uz: "Bir xil kartalarni top", ru: "Найди одинаковые карты", en: "Match the cards" },          icon: BIco.memory, difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
-  { id: "science/biology",   category: "science", name: { uz: "Biologiya", ru: "Биология", en: "Biology" },      desc: { uz: "Tabiat va tirik olam", ru: "Природа и жизнь", en: "Nature and life" },                   icon: BIco.nature, difficulty: "medium", minutes: 10, maxCoin: 15, premium: true },
-  { id: "coding/scratch",     category: "coding",  name: { uz: "Scratch asoslari", ru: "Основы Scratch", en: "Scratch basics" }, desc: { uz: "Blokli dasturlashga kirish", ru: "Введение в блочное программирование", en: "Intro to block coding" }, icon: BIco.tech, difficulty: "hard", minutes: 15, maxCoin: 25, premium: true },
-  { id: "geography/capitals", category: "geography", name: { uz: "Poytaxtlar", ru: "Столицы", en: "Capitals" }, desc: { uz: "Davlat poytaxtlarini top", ru: "Найди столицы", en: "Find capitals" }, icon: BIco.geo, difficulty: "medium", minutes: 10, maxCoin: 15, premium: false },
-  { id: "book/reading",     category: "book",    name: { uz: "Ertak o'qish", ru: "Чтение сказок", en: "Story reading" }, desc: { uz: "Qisqa ertaklarni o'qi", ru: "Читай короткие сказки", en: "Read short stories" }, icon: BIco.book, difficulty: "easy", minutes: 10, maxCoin: 15, premium: false },
+  {
+    id: "memory/pairs",
+    category: "memory",
+    name: { uz: "Narx xotirasi", ru: "Память цен", en: "Price memory" },
+    desc: { uz: "Mahsulot va narxini juftlashtir", ru: "Сопоставь товар и цену", en: "Match products to their prices" },
+    icon: BIco.memory, difficulty: "easy", minutes: 6, maxCoin: 12,
+    premium: false, load: "memory/pairs"
+  }
 ];
 
 export const gamesOf = (catId) => GAMES.filter(g => g.category === catId);

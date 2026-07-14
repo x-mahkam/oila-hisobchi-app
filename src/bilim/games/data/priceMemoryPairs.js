@@ -1,0 +1,14 @@
+export const priceMemoryPairs = [
+  { id: 1, product: { uz: "Non", ru: "Хлеб", en: "Bread" }, price: 3000 },
+  { id: 2, product: { uz: "Sut", ru: "Молоко", en: "Milk" }, price: 12000 },
+  { id: 3, product: { uz: "Konfet", ru: "Конфета", en: "Candy" }, price: 5000 },
+  { id: 4, product: { uz: "Daftar", ru: "Тетрадь", en: "Notebook" }, price: 4000 },
+  { id: 5, product: { uz: "Muzqaymoq", ru: "Мороженое", en: "Ice cream" }, price: 6000 },
+  { id: 6, product: { uz: "Ruchka", ru: "Ручка", en: "Pen" }, price: 2000 },
+  { id: 7, product: { uz: "Shokolad", ru: "Шоколад", en: "Chocolate" }, price: 10000 },
+  { id: 8, product: { uz: "Olma", ru: "Яблоко", en: "Apple" }, price: 7000 },
+  { id: 9, product: { uz: "Suv", ru: "Вода", en: "Water" }, price: 3000 },
+  { id: 10, product: { uz: "Sharbat", ru: "Сок", en: "Juice" }, price: 9000 },
+  { id: 11, product: { uz: "Pitsa", ru: "Пицца", en: "Pizza" }, price: 18000 },
+  { id: 12, product: { uz: "Kitob", ru: "Книга", en: "Book" }, price: 15000 }
+];

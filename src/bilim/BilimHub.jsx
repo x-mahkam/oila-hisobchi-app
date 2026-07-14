@@ -31,6 +31,7 @@ import MoneyWordsGame from "./games/MoneyWordsGame.jsx";
 import DecisionGame from "./games/DecisionGame.jsx";
 import SavingsSequenceGame from "./games/SavingsSequenceGame.jsx";
 import BankSimGame from "./games/BankSimGame.jsx";
+import PriceMemoryGame from "./games/PriceMemoryGame.jsx";
 
 const diffColor = (tone, th) => ({ gr: th.gr, am: th.am, rd: th.rd }[tone] || th.ac);
 const grad = (g, th) => "linear-gradient(135deg," + (th[g.grad[0]] || th.ac) + "," + (th[g.grad[1]] || th.ac2) + ")";
@@ -200,6 +201,9 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   }
   if (view === "play" && game && game.load === "finance/bank-sim") {
     return <BankSimGame user={user} lg={lg} dark={dark} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "memory/pairs") {
+    return <PriceMemoryGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
   }
 
   // ═══ LEARNING PROFILE (bola) ═══
