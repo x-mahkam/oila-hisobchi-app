@@ -13,7 +13,7 @@ import { useApp } from "../context/AppContext.jsx";
 import { useFamily } from "../hooks/useFamily.js";
 import { db, fbAuth } from "../firebase.js";
 import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { normTel } from "../utils/formatters.js";
+import { normTel, td } from "../utils/formatters.js";
 import KidCreatedModal from "../components/modals/KidCreatedModal.jsx";
 import {
   PageHeader, SectionHeader, SubHeader,
@@ -175,18 +175,18 @@ export default function ProfilePage({
 
   // Farzand batafsil ko'rinishi va formalar uchun statelar
   const [selectedKid, setSelectedKid] = useState(null);
-  const [kidTab, setKidTab] = useState("vazifalar"); // "vazifalar" | "bilim"
+  const [kidTab, setKidTab] = useState("vazifalar"); // "vazifalar" | "bilim" | "vaqt"
   const [kidCoins, setKidCoins] = useState(0);
   const [kidStreak, setKidStreak] = useState(0);
   const [kidLearnStats, setKidLearnStats] = useState({ games: 0, xp: 0 });
   const [kidBilimOffers, setKidBilimOffers] = useState([]);
+  const [kidVaqtStats, setKidVaqtStats] = useState({});
+  const [kidLimit, setKidLimit] = useState(0);
+  const [kidExtra, setKidExtra] = useState(0);
+  const [inputLimit, setInputLimit] = useState("");
+  const [savingLimit, setSavingLimit] = useState(false);
 
-  // Vazifa qo'shish formasi uchun local statelar
-  const [newVTitle, setNewVTitle] = useState("");
-  const [newVReward, setNewVReward] = useState("");
-  const [newVDeadline, setNewVDeadline] = useState("");
-
-  // Farzand tafsiloti o'zgarganda bilim ma'lumotlarini yuklash
+  // Farzand tafsiloti o'zgarganda bilim va ekran vaqti ma'lumotlarini yuklash
   useEffect(() => {
     if (selectedKid) {
       db.g("bilim_coins_" + selectedKid.id).then(c => setKidCoins(Number(c) || 0)).catch(() => {});
@@ -201,8 +201,51 @@ export default function ProfilePage({
           setKidBilimOffers(v.filter(x => x.kidId === selectedKid.id));
         }
       }).catch(() => {});
+
+      // Screen time data loading
+      db.g("screentime_" + (user?.oilaId || oila?.id)).then(st => {
+        if (st && st[selectedKid.id]) {
+          setKidVaqtStats(st[selectedKid.id]);
+        } else {
+          setKidVaqtStats({});
+        }
+      }).catch(() => {});
+      db.g("screentime_limits_" + (user?.oilaId || oila?.id)).then(lim => {
+        const currentLimit = lim && lim[selectedKid.id] ? Number(lim[selectedKid.id]) : 0;
+        setKidLimit(currentLimit);
+        setInputLimit(currentLimit > 0 ? String(currentLimit) : "");
+      }).catch(() => {});
+      db.g("screentime_extra_" + (user?.oilaId || oila?.id)).then(ext => {
+        const todayStr = td();
+        const currentExtra = ext && ext[selectedKid.id] && ext[selectedKid.id][todayStr] ? Number(ext[selectedKid.id][todayStr]) : 0;
+        setKidExtra(currentExtra);
+      }).catch(() => {});
     }
   }, [selectedKid, user?.oilaId, oila?.id]);
+
+  const saveKidLimit = async () => {
+    if (!selectedKid || !user?.oilaId) return;
+    setSavingLimit(true);
+    try {
+      const valNum = Number(inputLimit) || 0;
+      const limitsKey = "screentime_limits_" + user.oilaId;
+      const limitsData = (await db.g(limitsKey)) || {};
+      limitsData[selectedKid.id] = valNum;
+      await db.s(limitsKey, limitsData);
+      setKidLimit(valNum);
+      ok$(uz ? "Limit muvaffaqiyatli saqlandi!" : "Лимит успешно сохранен!");
+    } catch (e) {
+      console.error(e);
+      ok$(uz ? "Xato yuz berdi" : "Произошла ошибка", "err");
+    } finally {
+      setSavingLimit(false);
+    }
+  };
+
+  // Vazifa qo'shish formasi uchun local statelar
+  const [newVTitle, setNewVTitle] = useState("");
+  const [newVReward, setNewVReward] = useState("");
+  const [newVDeadline, setNewVDeadline] = useState("");
 
   // useFamily Hook instantiation for kid accounts
   const {
@@ -832,9 +875,13 @@ export default function ProfilePage({
                 const rel = RELATIONS.find(r => r.id === a.rel);
                 const isHead = a.rol === "bosh";
                 const me = a.id === user?.id;
+                const isKidMember = a.rol === "kid";
+                const relLabel = isKidMember
+                  ? (uz ? "Farzand" : lg === "ru" ? "Ребёнок" : "Child")
+                  : (rel ? (rel[lg] || rel.uz) : (isHead ? t.hd : t.mb2));
                 return (
                   <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (me ? " (" + t.me + ")" : "")}
-                    sub={rel ? (rel[lg] || rel.uz) : (isHead ? t.hd : t.mb2)}
+                    sub={relLabel}
                     divider={i < adults.length - 1}
                     badge={
                       <span style={{ display: "inline-flex", gap: SPACE.s1, flexShrink: 0 }}>
@@ -858,9 +905,13 @@ export default function ProfilePage({
                 const isAHead = a.rol === "bosh";
                 const hasAccess = isAHead || (oila?.reportAccess || []).includes(a.id);
                 const rel = RELATIONS.find(r => r.id === a.rel);
+                const isKidMember = a.rol === "kid";
+                const relLabel = isKidMember
+                  ? (uz ? "Farzand" : lg === "ru" ? "Ребёнок" : "Child")
+                  : (rel ? (rel[lg] || rel.uz) : (isAHead ? t.hd : t.mb2));
                 return (
                   <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
-                    sub={rel ? (rel[lg] || rel.uz) : (isAHead ? t.hd : t.mb2)}
+                    sub={relLabel}
                     divider={i < azolar.length - 1}
                     badge={isAHead
                       ? <Badge th={th} type="role">{uz ? "Oila boshi" : "Head"}</Badge>
@@ -1161,7 +1212,26 @@ export default function ProfilePage({
                 transition: "all 0.2s ease"
               }}
             >
-              {uz ? "🧠 BILIM BOZORI" : "🧠 KNOWLEDGE MARKET"}
+              {uz ? "🧠 BILIM" : "🧠 KNOWLEDGE"}
+            </button>
+            <button 
+              className="ui-press"
+              onClick={() => { buzz(10); setKidTab("vaqt"); }}
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                border: "none",
+                borderRadius: RADIUS.s + 2,
+                fontFamily: "inherit",
+                fontSize: TYPE.caption.fontSize,
+                fontWeight: 700,
+                cursor: "pointer",
+                background: kidTab === "vaqt" ? th.sur : "transparent",
+                color: kidTab === "vaqt" ? th.ac : th.t2,
+                transition: "all 0.2s ease"
+              }}
+            >
+              {uz ? "⏱ VAQT" : "⏱ TIME"}
             </button>
           </div>
 
@@ -1337,6 +1407,101 @@ export default function ProfilePage({
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* TAB 3: EKRAN VAQTI */}
+          {kidTab === "vaqt" && (
+            <div className="ui-fadeUp" style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
+              {/* Bugungi ko'rsatkichlar */}
+              <div style={{ display: "flex", gap: SPACE.s2 }}>
+                <AnimatedStat th={th} icon="⏱" value={kidVaqtStats[td()] || 0} label={uz ? "Bugun (daqiqa)" : "Сегодня (мин)"} tone={th.ac} />
+                <AnimatedStat th={th} icon="➕" value={kidExtra} label={uz ? "Qo'shimcha vaqt" : "Доп. tempo"} tone={th.gr} />
+                <AnimatedStat th={th} icon="🔒" value={kidLimit} label={uz ? "Joriy limit" : "Лимит"} tone={kidLimit > 0 ? th.rd : th.t3} />
+              </div>
+
+              {/* So'nggi 7 kunlik statistika */}
+              <AppCard th={th}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s3 }}>
+                  {uz ? "Oxirgi 7 kunlik faollik" : "Активность за последние 7 дней"}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
+                  {(() => {
+                    const daysList = [];
+                    const dayNamesUZ = ["Yak", "Dus", "Se", "Chor", "Pay", "Jum", "Shan"];
+                    const dayNamesRU = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+                    const dayNamesEN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+                    const dayNames = uz ? dayNamesUZ : lg === "ru" ? dayNamesRU : dayNamesEN;
+
+                    const today = new Date();
+                    for (let i = 6; i >= 0; i--) {
+                      const d = new Date();
+                      d.setDate(today.getDate() - i);
+                      const dStr = d.toISOString().slice(0, 10);
+                      const dOfWeek = d.getDay();
+                      const mins = kidVaqtStats[dStr] ? Number(kidVaqtStats[dStr]) : 0;
+                      daysList.push({
+                        dateStr: dStr,
+                        dayName: dayNames[dOfWeek],
+                        minutes: mins,
+                        isToday: dStr === td()
+                      });
+                    }
+
+                    const maxMins = Math.max(...daysList.map(d => d.minutes), 60);
+
+                    return daysList.map((d, idx) => {
+                      const pct = Math.min(100, Math.round((d.minutes / maxMins) * 100));
+                      return (
+                        <div key={idx} style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
+                          <span style={{ ...TYPE.caption, width: "40px", color: d.isToday ? th.ac : th.t2, fontWeight: d.isToday ? 800 : 500 }}>
+                            {d.dayName}
+                          </span>
+                          <div style={{ flex: 1, height: "10px", background: th.bg, borderRadius: RADIUS.pill, overflow: "hidden", position: "relative" }}>
+                            <div
+                              style={{
+                                height: "100%",
+                                width: `${pct}%`,
+                                background: d.isToday ? `linear-gradient(90deg, ${th.ac}, ${th.ac2 || th.ac})` : th.bor,
+                                borderRadius: RADIUS.pill,
+                                transition: "width 0.5s ease"
+                              }}
+                            />
+                          </div>
+                          <span style={{ ...TYPE.caption, width: "60px", textAlign: "right", color: d.minutes > 0 ? th.t1 : th.t3, fontWeight: d.minutes > 0 ? 700 : 400 }}>
+                            {d.minutes} {uz ? "daq" : "мин"}
+                          </span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </AppCard>
+
+              {/* Limit tahrirlash formasi */}
+              <AppCard th={th}>
+                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s2 }}>
+                  {uz ? "Kunlik ekran vaqti limiti" : "Дневной лимит экранного времени"}
+                </div>
+                <div style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s3, textTransform: "none", letterSpacing: 0 }}>
+                  {uz 
+                    ? "Farzandingiz uchun kunlik foydalanish vaqtini daqiqalarda belgilang. Limitga yetganda ilova avtomatik tarzda bloklanadi. O'chirish uchun 0 yoki bo'sh qoldiring."
+                    : "Укажите дневной лимит использования в минутах. При достижении лимита приложение заблокируется. Оставьте 0 или пустым для удаления ограничений."}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
+                  <TextInput
+                    th={th}
+                    label={uz ? "Kunlik limit (daqiqada)" : "Дневной лимит (мин)"}
+                    type="number"
+                    value={inputLimit}
+                    onChange={setInputLimit}
+                    placeholder={uz ? "Masalan: 60" : "Например: 60"}
+                  />
+                  <PrimaryButton th={th} onClick={saveKidLimit} disabled={savingLimit} style={{ width: "100%", marginTop: SPACE.s2 }}>
+                    {savingLimit ? (uz ? "Saqlanmoqda..." : "Сохранение...") : (uz ? "Limitni saqlash" : "Сохранить лимит")}
+                  </PrimaryButton>
+                </div>
+              </AppCard>
             </div>
           )}
         </div>

@@ -53,6 +53,7 @@ const TYPE_CAT = {
   premium_ended: "premium", trial_ended: "premium",
   ai_weekly: "ai", ai_monthly: "ai",
   reminder: "reminder", daily_reminder: "reminder",
+  vaqt_sorov: "family", vaqt_tasdiq: "family", vaqt_rad: "family",
 };
 export const catOf = (n) => (n && (n.cat || TYPE_CAT[n.type])) || "reminder";
 
@@ -66,6 +67,7 @@ const TYPE_PRIO = {
   goal_done: "normal", family_member: "normal", family_task_sent: "normal", family_task_done: "normal",
   garden_harvest: "normal", garden_energy: "low", garden_daily: "low",
   ai_weekly: "low", ai_monthly: "normal", reminder: "low", daily_reminder: "low",
+  vaqt_sorov: "high", vaqt_tasdiq: "high", vaqt_rad: "normal",
   // mavjud turlar
   maqsad_confirm: "high", maqsad_kid_confirm: "high", qarz: "high", budjet: "high", yangilik: "low",
 };

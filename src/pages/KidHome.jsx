@@ -17,9 +17,12 @@ import { AppCard, SectionHeader, PrimaryButton, Badge, UIAvatar, LinearProgress,
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
 import { levelFor, rankFor } from "../bilim/engine/xp.js";
-import { readSessions, calculateDailyStreak } from "../bilim/engine/persist.js";
+import { readSessions, calculateDailyStreak, readLifetimeCoins } from "../bilim/engine/persist.js";
 import { analyzeLearning } from "../bilim/engine/analytics.js";
 import { gameById } from "../bilim/registry.jsx";
+import { computeAchievements } from "../bilim/engine/achievements.jsx";
+import { motion, AnimatePresence } from "motion/react";
+import AvatarShopModal from "../components/modals/AvatarShopModal.jsx";
 
 // ── Outline SVG ikonkalar (emoji o'rniga) ──
 const KI = {
@@ -98,10 +101,76 @@ const SkillCard = memo(function SkillCard({ th, name, pct, games, coin, onClick 
   );
 });
 
-// ── Redesigned MedalCard (collectible) ──
-const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal, isNew, onClick }) {
+// ── Redesigned MedalCard (collectible with tier upgrades) ──
+const MedalCard = memo(function MedalCard({ id, th, unlocked, title, sub, cur, goal, isNew, icon, color, onClick }) {
   const pct = goal > 0 ? Math.min(100, Math.round(cur / goal * 100)) : 0;
-  
+  const tier = id ? parseInt(id.split("_")[1]) || 1 : 1;
+
+  // Premium design defaults
+  let bgGradient = unlocked 
+    ? "linear-gradient(135deg, " + (color || PREMIUM.gold) + ", " + (color || "#f59e0b") + "dd)" 
+    : th.surH;
+  let customShadow = unlocked 
+    ? "0 4px 12px " + (color || PREMIUM.gold) + "50, inset 0 -2px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.3)" 
+    : "none";
+  let customBorder = unlocked 
+    ? "2px solid #fff" 
+    : "2px dashed " + th.bor;
+  let starColor = "#fbbf24";
+  let shinyGlare = unlocked;
+  let doubleRing = false;
+  let outerOutline = "none";
+
+  if (unlocked) {
+    switch (tier) {
+      case 1: // Bronze
+        bgGradient = "linear-gradient(135deg, #a75d28, #cd7f32, #e59f6b)";
+        customShadow = "0 4px 10px rgba(167, 93, 40, 0.35), inset 0 -2px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.2)";
+        customBorder = "2px solid #e59f6b";
+        starColor = "#cd7f32";
+        break;
+      case 2: // Silver
+        bgGradient = "linear-gradient(135deg, #475569, #94a3b8, #cbd5e1)";
+        customShadow = "0 4px 12px rgba(71, 85, 105, 0.4), inset 0 -2px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.35)";
+        customBorder = "2px solid #e2e8f0";
+        starColor = "#94a3b8";
+        break;
+      case 3: // Gold
+        bgGradient = "linear-gradient(135deg, #d97706, #fbbf24, #fef08a)";
+        customShadow = "0 6px 16px rgba(245, 158, 11, 0.5), inset 0 -2px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.45)";
+        customBorder = "2px solid #fff";
+        starColor = "#fbbf24";
+        doubleRing = true;
+        break;
+      case 4: // Platinum (Cyan Glow)
+        bgGradient = "linear-gradient(135deg, #0284c7, #38bdf8, #e0f2fe)";
+        customShadow = "0 8px 18px rgba(56, 189, 248, 0.6), inset 0 -3px 0 rgba(0,0,0,0.15), inset 0 3px 0 rgba(255,255,255,0.5)";
+        customBorder = "2px solid #e0f2fe";
+        starColor = "#0ea5e9";
+        doubleRing = true;
+        outerOutline = "3px solid rgba(56, 189, 248, 0.25)";
+        break;
+      case 5: // Diamond (Mythic Pink Crystals)
+        bgGradient = "linear-gradient(135deg, #be185d, #ec4899, #fbcfe8)";
+        customShadow = "0 10px 22px rgba(236, 72, 153, 0.7), inset 0 -3px 0 rgba(0,0,0,0.2), inset 0 3px 0 rgba(255,255,255,0.6)";
+        customBorder = "2px solid #fff";
+        starColor = "#ec4899";
+        doubleRing = true;
+        outerOutline = "3px solid rgba(236, 72, 153, 0.3)";
+        break;
+      case 6: // Celestial/Legendary (Rainbow Master)
+        bgGradient = "linear-gradient(135deg, #6d28d9, #8b5cf6, #f472b6, #fbbf24)";
+        customShadow = "0 12px 28px rgba(139, 92, 246, 0.85), inset 0 -3px 0 rgba(0,0,0,0.2), inset 0 3px 0 rgba(255,255,255,0.6)";
+        customBorder = "2.5px solid #fbbf24";
+        starColor = "#fbbf24";
+        doubleRing = true;
+        outerOutline = "4px solid rgba(139, 92, 246, 0.35)";
+        break;
+      default:
+        break;
+    }
+  }
+
   return (
     <button 
       className="ui-press" 
@@ -133,15 +202,10 @@ const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: unlocked 
-            ? "linear-gradient(135deg, " + PREMIUM.gold + ", #f59e0b)" 
-            : th.surH,
-          boxShadow: unlocked 
-            ? "0 4px 12px " + PREMIUM.gold + "50, inset 0 -2px 0 rgba(0,0,0,0.15), inset 0 2px 0 rgba(255,255,255,0.3)" 
-            : "none",
-          border: unlocked 
-            ? "2px solid #fff" 
-            : "2px dashed " + th.bor,
+          background: bgGradient,
+          boxShadow: customShadow,
+          border: customBorder,
+          outline: outerOutline,
           transition: "all 0.3s ease",
           marginBottom: SPACE.s2
         }}
@@ -183,14 +247,47 @@ const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal,
           </svg>
         )}
 
+        {/* Shiny Glass Diagonal Glare Line */}
+        {shinyGlare && (
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            borderRadius: RADIUS.full,
+            background: "linear-gradient(115deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 30%, rgba(255,255,255,0) 31%, rgba(255,255,255,0) 100%)",
+            pointerEvents: "none",
+            zIndex: 2
+          }} />
+        )}
+
+        {/* Concentric Minted Inner Ring */}
+        {doubleRing && (
+          <div style={{
+            position: "absolute",
+            top: 4,
+            left: 4,
+            right: 4,
+            bottom: 4,
+            borderRadius: RADIUS.full,
+            border: "1.2px dashed rgba(255, 255, 255, 0.4)",
+            pointerEvents: "none",
+            zIndex: 1
+          }} />
+        )}
+
         {/* Medal icon or Lock icon */}
         <div style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          filter: unlocked ? "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" : "none"
+          filter: unlocked ? "drop-shadow(0 2px 4px rgba(0,0,0,0.15))" : "none",
+          zIndex: 3
         }}>
-          {unlocked ? KI.medal("#fff", 30) : KI.lock(th.t3, 20)}
+          {unlocked 
+            ? (icon ? icon("#fff", 30) : KI.medal("#fff", 30)) 
+            : (icon ? icon(th.t3, 22) : KI.lock(th.t3, 20))}
         </div>
 
         {/* Claim / New badge indicator */}
@@ -204,7 +301,8 @@ const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal,
             borderRadius: RADIUS.full,
             background: th.rd,
             border: "2px solid #fff",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            zIndex: 4
           }} />
         )}
       </div>
@@ -222,12 +320,23 @@ const MedalCard = memo(function MedalCard({ th, unlocked, title, sub, cur, goal,
       }}>
         {title}
       </div>
+
+      {/* Dynamic Star Progression */}
+      <div style={{ display: "flex", gap: 1.5, justifyContent: "center", margin: "3px 0 2px 0" }}>
+        {Array.from({ length: Math.max(3, tier) }).map((_, idx) => {
+          const isStarActive = unlocked && (idx < tier);
+          return (
+            <svg key={idx} width="9" height="9" viewBox="0 0 24 24" fill={isStarActive ? starColor : "none"} stroke={unlocked ? starColor : th.bor} strokeWidth="2.5">
+              <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+            </svg>
+          );
+        })}
+      </div>
       
       {/* Subtext or Progress number */}
       <div style={{ 
         fontSize: 10, 
         color: th.t3, 
-        marginTop: 2,
         maxWidth: 85,
         overflow: "hidden",
         textOverflow: "ellipsis",
@@ -289,18 +398,29 @@ export default function KidHome({
   vazifaDone, setShowGames, setShowGift, setShowBilim, setScr, setPTab,
   setShowAddVazifa,
 }) {
-  const { setBilimInitialView } = useApp();
+  const { setBilimInitialView, setUser, setAzolar, azolar, ok$ } = useApp();
   const uz = lg === "uz";
   const name = fullName(user);
   const money = kidBalances[user.id] || 0;
 
   // ── Bilim ma'lumoti — MAVJUD kollektsiyalardan, faqat o'qish (BilimHub naqshi) ──
   const [coins, setCoins] = useState(0);
+  const [showAvatarShop, setShowAvatarShop] = useState(false);
   const [xp, setXp] = useState(0);
   const [sessions, setSessions] = useState([]);
   const [offers, setOffers] = useState([]);
   const [claimedAchievements, setClaimedAchievements] = useState([]);
   const [claimedLoaded, setClaimedLoaded] = useState(false);
+  const [showAllMedals, setShowAllMedals] = useState(false);
+  const [medalFilter, setMedalFilter] = useState("all");
+
+  const handleAvatarChange = useCallback((newPhotoUrl, nextCoins) => {
+    setCoins(nextCoins);
+    const u2 = { ...user, photo: newPhotoUrl };
+    setUser(u2);
+    setAzolar(azolar.map(a => a.id === user.id ? { ...a, photo: newPhotoUrl } : a));
+    fireConfetti();
+  }, [user, setUser, setAzolar, azolar, fireConfetti]);
   
   const isToday = useCallback((sanaStr) => {
     if (!sanaStr) return false;
@@ -324,6 +444,40 @@ export default function KidHome({
     }).catch(() => {
       setClaimedLoaded(true);
     });
+  }, [user?.id, user?.oilaId]);
+
+  const [behavior, setBehavior] = useState({
+    goalsCompleted: 0,
+    tradesAccepted: 0,
+    lifetimeCoins: 0,
+  });
+
+  useEffect(() => {
+    if (!user?.id || !user?.oilaId) return;
+
+    // Load goalsCompleted
+    db.g("maq_" + user.oilaId).then(gList => {
+      if (Array.isArray(gList)) {
+        const goalsCount = gList.filter(m => 
+          m.uid === user.id && 
+          (m.completedAt || m.status === "completed" || (m.jamg >= m.maqsad && m.maqsad > 0))
+        ).length;
+        setBehavior(b => ({ ...b, goalsCompleted: goalsCount }));
+      }
+    }).catch(() => {});
+
+    // Load tradesAccepted
+    db.g("bilim_offer_" + user.oilaId).then(oList => {
+      if (Array.isArray(oList)) {
+        const tradesCount = oList.filter(o => o.kidId === user.id && o.status === "accepted").length;
+        setBehavior(b => ({ ...b, tradesAccepted: tradesCount }));
+      }
+    }).catch(() => {});
+
+    // Load lifetimeCoins
+    readLifetimeCoins(user.id).then(v => {
+      setBehavior(b => ({ ...b, lifetimeCoins: Number(v) || 0 }));
+    }).catch(() => {});
   }, [user?.id, user?.oilaId]);
 
   const lv = useMemo(() => levelFor(xp), [xp]);
@@ -378,17 +532,26 @@ export default function KidHome({
 
   // ── Yutuqlar (task + garden + bilim aralash) ──
   const medals = useMemo(() => {
-    const list = [
-      { id: "first",  title: uz ? "Ilk qadam" : "First step",  sub: uz ? "1 vazifa" : "1 task",     cur: tasks.doneAll.length, goal: 1 },
-      { id: "worker", title: uz ? "Mehnatkash" : "Worker",      sub: uz ? "5 vazifa" : "5 tasks",    cur: tasks.doneAll.length, goal: 5 },
-      { id: "coin",   title: uz ? "Boyvachcha" : "Collector",   sub: uz ? "50 coin" : "50 coins",    cur: coins,                goal: 50 },
-      { id: "player", title: uz ? "O'yinboz" : "Gamer",         sub: uz ? "10 o'yin" : "10 games",   cur: sessions.length,      goal: 10 },
-      { id: "garden", title: uz ? "Bog'bon" : "Gardener",       sub: uz ? "Bog' 3-daraja" : "Lvl 3", cur: gardenData.level || 0, goal: 3 },
-      { id: "streak", title: uz ? "Doimiy" : "Consistent",      sub: uz ? "3 kun" : "3d streak",     cur: bstreak,              goal: 3 },
-    ].map(m => ({ ...m, unlocked: m.cur >= m.goal }));
-    const newIdx = list.findIndex(m => m.unlocked && m.cur === m.goal);
-    return list.map((m, i) => ({ ...m, isNew: i === newIdx }));
-  }, [uz, tasks.doneAll.length, coins, sessions.length, gardenData.level, bstreak]);
+    const list = computeAchievements(
+      { coins, xp, streak: bstreak },
+      sessions,
+      lg,
+      {
+        tasksApproved: tasks.doneAll.length,
+        goalsCompleted: behavior.goalsCompleted,
+        tradesAccepted: behavior.tradesAccepted,
+        gardenLevel: gardenData.level || 0,
+        lifetimeCoins: behavior.lifetimeCoins,
+      }
+    );
+    return list.map(m => ({
+      ...m,
+      sub: m.unlocked 
+        ? (uz ? "Ochildi" : lg === "ru" ? "Открыто" : "Unlocked")
+        : `${m.cur}/${m.goal}`,
+      isNew: m.unlocked && !claimedAchievements.includes(m.id)
+    }));
+  }, [coins, xp, bstreak, sessions, lg, uz, tasks.doneAll.length, behavior, gardenData.level, claimedAchievements]);
   const unlockedCount = medals.filter(m => m.unlocked).length;
 
   // Auto-award newly unlocked achievements
@@ -453,7 +616,24 @@ export default function KidHome({
                 <circle cx={ring / 2} cy={ring / 2} r={R} fill="none" stroke="#fff" strokeWidth="4" strokeLinecap="round"
                   strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - lv.pct / 100)} style={{ transition: "stroke-dashoffset .6s ease" }} />
               </svg>
-              <UIAvatar th={th} src={user.photo} name={name} size={COMP.touchMin + SPACE.s6} />
+              <button
+                onClick={() => { buzz(10); setShowAvatarShop(true); }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  padding: 0,
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  borderRadius: "50%",
+                  outline: "none",
+                  zIndex: 10
+                }}
+                className="ui-press"
+              >
+                <UIAvatar th={th} src={user.photo} name={name} size={COMP.touchMin + SPACE.s6} />
+              </button>
               <span style={{ position: "absolute", bottom: -2, left: "50%", transform: "translateX(-50%)", background: "#fff", color: rankColor, ...TYPE.tiny, fontWeight: 800, letterSpacing: 0, borderRadius: RADIUS.pill, padding: "2px 9px", boxShadow: SHADOW.e1(rankColor) }}>
                 LVL {lv.level}
               </span>
@@ -566,29 +746,202 @@ export default function KidHome({
       )}
 
       {/* ═══ 6. SO'NGGI YUTUQLAR ═══ */}
-      <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlockedCount}/{medals.length}</Badge>}>{uz ? "So'nggi yutuqlar" : "Achievements"}</SectionHeader>
-      <div style={{ 
-        display: "grid", 
-        gridTemplateColumns: "repeat(3, 1fr)", 
-        gap: SPACE.s4 + "px " + SPACE.s2 + "px", 
-        background: th.sur, 
-        border: "1px solid " + th.bor, 
-        borderRadius: RADIUS.m, 
-        padding: SPACE.s4, 
-        marginBottom: SPACE.s3 
-      }}>
-        {medals.map(m => (
-          <MedalCard
-            key={m.id} th={th} unlocked={m.unlocked} title={m.title} sub={m.sub} cur={m.cur} goal={m.goal} isNew={m.isNew}
-            onClick={() => {
-              if (m.unlocked) {
-                buzz(25);
-                if (typeof fireConfetti === "function") fireConfetti();
-              }
-            }}
-          />
-        ))}
+      <SectionHeader th={th} right={
+        <button className="ui-press" onClick={() => { buzz(10); setShowAllMedals(true); }} style={{ background: "transparent", border: "none", cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 2, ...TYPE.caption, fontWeight: 700, color: th.ac }}>
+          {uz ? "Barchasi" : "All"}{KI.chev(th.ac, 14)}
+        </button>
+      }>{uz ? "So'nggi yutuqlar" : "Achievements"}</SectionHeader>
+      
+      <div style={{ marginBottom: SPACE.s3 }}>
+        <div style={{ 
+          display: "grid", 
+          gridTemplateColumns: "repeat(3, 1fr)", 
+          gap: SPACE.s4 + "px " + SPACE.s2 + "px", 
+          background: th.sur, 
+          border: "1px solid " + th.bor, 
+          borderTopLeftRadius: RADIUS.m, 
+          borderTopRightRadius: RADIUS.m, 
+          padding: SPACE.s4, 
+          boxSizing: "border-box"
+        }}>
+          {medals.slice(0, 3).map(m => (
+            <MedalCard
+              key={m.id} id={m.id} th={th} unlocked={m.unlocked} title={m.title} sub={m.sub} cur={m.cur} goal={m.goal} isNew={m.isNew}
+              icon={m.icon} color={m.color}
+              onClick={() => {
+                buzz(10);
+                setShowAllMedals(true);
+              }}
+            />
+          ))}
+        </div>
+        <button className="ui-press" onClick={() => { buzz(10); setShowAllMedals(true); }}
+          style={{
+            width: "100%",
+            background: th.surH,
+            border: "1px solid " + th.bor,
+            borderTop: "none",
+            borderBottomLeftRadius: RADIUS.m,
+            borderBottomRightRadius: RADIUS.m,
+            padding: "11px " + SPACE.s4 + "px",
+            fontFamily: "inherit",
+            cursor: "pointer",
+            ...TYPE.caption,
+            fontSize: TYPE.caption.fontSize + 1,
+            fontWeight: 700,
+            color: th.ac,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            boxSizing: "border-box"
+          }}
+        >
+          {uz ? `Barcha yutuqlarni ko'rish (${unlockedCount}/${medals.length})` : `View all achievements (${unlockedCount}/${medals.length})`}
+          {KI.chev(th.ac, 14)}
+        </button>
       </div>
+
+      {/* ── YUTUQLAR TO'LIQ RO'YXATI POPUP (Modal Overlay) ── */}
+      <AnimatePresence>
+        {showAllMedals && (
+          <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => { buzz(5); setShowAllMedals(false); }}
+              style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(6px)" }}
+            />
+            {/* Modal Sheet */}
+            <motion.div 
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              style={{ 
+                position: "relative", 
+                width: "100%", 
+                maxWidth: 480, 
+                height: "85vh", 
+                background: th.bg, 
+                borderTopLeftRadius: RADIUS.l, 
+                borderTopRightRadius: RADIUS.l, 
+                boxShadow: "0 -8px 32px rgba(0,0,0,0.2)",
+                display: "flex",
+                flexDirection: "column",
+                overflow: "hidden",
+                border: "1px solid " + th.bor,
+                borderBottom: "none"
+              }}
+            >
+              {/* Drag Handle */}
+              <div style={{ display: "flex", justifyContent: "center", padding: "12px 0 6px 0", cursor: "pointer" }} onClick={() => setShowAllMedals(false)}>
+                <div style={{ width: 40, height: 5, borderRadius: RADIUS.full, background: th.bor }} />
+              </div>
+
+              {/* Header */}
+              <div style={{ padding: "0 " + SPACE.s4 + "px " + SPACE.s3 + "px " + SPACE.s4 + "px", borderBottom: "1px solid " + th.bor, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div>
+                  <div style={{ ...TYPE.title, color: th.t1 }}>{uz ? "Sening yutuqlaring" : "Your Achievements"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t3, textTransform: "none", letterSpacing: 0, marginTop: 2 }}>
+                    {uz ? `Jami 40 dan ortiq yutuqlar! Senga ${unlockedCount} tasi ochiq.` : `Over 40 achievements! You have unlocked ${unlockedCount} so far.`}
+                  </div>
+                </div>
+                <button className="ui-press" onClick={() => { buzz(5); setShowAllMedals(false); }}
+                  style={{ width: 36, height: 36, borderRadius: RADIUS.full, background: th.surH, border: "none", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: th.t1 }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+
+              {/* Filters / Tabs */}
+              <div style={{ display: "flex", gap: SPACE.s2, padding: SPACE.s3 + "px " + SPACE.s4 + "px", background: th.sur, borderBottom: "1px solid " + th.bor }}>
+                {[
+                  { id: "all", label: uz ? "Hammasi" : "All", count: medals.length },
+                  { id: "unlocked", label: uz ? "Ochilganlar" : "Unlocked", count: unlockedCount },
+                  { id: "locked", label: uz ? "Kutilayotganlar" : "Locked", count: medals.length - unlockedCount },
+                ].map(tab => {
+                  const active = medalFilter === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      className="ui-press"
+                      onClick={() => { buzz(5); setMedalFilter(tab.id); }}
+                      style={{
+                        flex: 1,
+                        padding: "8px 4px",
+                        borderRadius: RADIUS.s + 2,
+                        border: "1px solid " + (active ? th.ac : th.bor),
+                        background: active ? th.ac + "15" : th.bg,
+                        color: active ? th.ac : th.t2,
+                        fontFamily: "inherit",
+                        ...TYPE.caption,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6
+                      }}
+                    >
+                      <span>{tab.label}</span>
+                      <span style={{ 
+                        fontSize: 10, 
+                        background: active ? th.ac : th.bor, 
+                        color: active ? "#fff" : th.t2, 
+                        padding: "1px 6px", 
+                        borderRadius: RADIUS.pill,
+                        fontWeight: 800 
+                      }}>{tab.count}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Scrollable grid */}
+              <div style={{ flex: 1, overflowY: "auto", padding: SPACE.s4, background: th.bg }}>
+                <div style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(3, 1fr)", 
+                  gap: SPACE.s4 + "px " + SPACE.s2 + "px",
+                  paddingBottom: SPACE.s12 // extra space at bottom
+                }}>
+                  {medals
+                    .filter(m => {
+                      if (medalFilter === "unlocked") return m.unlocked;
+                      if (medalFilter === "locked") return !m.unlocked;
+                      return true;
+                    })
+                    .map(m => (
+                      <MedalCard
+                        key={m.id} 
+                        id={m.id}
+                        th={th} 
+                        unlocked={m.unlocked} 
+                        title={m.title} 
+                        sub={m.sub} 
+                        cur={m.cur} 
+                        goal={m.goal} 
+                        isNew={m.isNew}
+                        icon={m.icon} 
+                        color={m.color}
+                        onClick={() => {
+                          if (m.unlocked) {
+                            buzz(25);
+                            if (typeof fireConfetti === "function") fireConfetti();
+                          }
+                        }}
+                      />
+                    ))
+                  }
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ═══ 7. OTA-ONA MAQTOVI ═══ */}
       <div style={{ background: th.gr + ALPHA.faint, border: "1px solid " + th.gr + ALPHA.med, borderRadius: RADIUS.m, padding: SPACE.s4, marginBottom: SPACE.s3, display: "flex", gap: SPACE.s3, alignItems: "flex-start" }}>
@@ -610,6 +963,19 @@ export default function KidHome({
             return <GameRow key={s.id || s.ts} th={th} name={nm} icon={ic} pct={Number(s.pct) || 0} coin={Number(s.coins) || 0} when={ago(s.date, bugun, uz)} onClick={openBilim} />;
           })}
         </>
+      )}
+
+      {showAvatarShop && (
+        <AvatarShopModal
+          user={user}
+          lg={lg}
+          th={th}
+          dark={th.sur !== "#fff"}
+          onClose={() => setShowAvatarShop(false)}
+          onAvatarChange={handleAvatarChange}
+          ok$={ok$}
+          buzz={buzz}
+        />
       )}
     </div>
   );
