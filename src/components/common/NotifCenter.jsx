@@ -54,6 +54,7 @@ export default function NotifCenter({
   onMarkRead, onMarkAll, onClear,
   onConfirmParent, onConfirmKid, setScr,
   setBilimInitialView,
+  onApproveTime, onDenyTime,
 }) {
   const uz = lg === "uz";
   const [filter, setFilter] = useState("all");     // all | unread | <cat>
@@ -110,6 +111,7 @@ export default function NotifCenter({
   const selColor = sel ? catColor(selCat, th, PREMIUM) : th.ac;
   const needParent = sel && sel.type === "maqsad_confirm" && sel.status === "pending" && !isKid;
   const needKid = sel && sel.type === "maqsad_kid_confirm" && sel.status === "pending" && isKid;
+  const needTimeApproval = sel && sel.type === "vaqt_sorov" && sel.status === "pending" && !isKid;
   const isBilimNotif = sel && (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done" || sel.type === "bilim_offer" || sel.type === "bilim_offer_accepted" || sel.type === "bilim_offer_rejected" || sel.type === "bilim_offer_countered" || sel.type.startsWith("bilim_"));
   const actLabel = isBilimNotif
     ? (uz ? "Bilim Bozoriga o'tish" : lg === "ru" ? "В рынок знаний" : "Go to Knowledge Market")
@@ -180,6 +182,15 @@ export default function NotifCenter({
                 <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onConfirmKid && onConfirmKid(n); }} style={{ background: PREMIUM.grad }}>
                   {uz ? "Ha, orzuim amalga oshdi!" : lg === "ru" ? "Да, мечта сбылась!" : "Yes, my dream came true!"}
                 </PrimaryButton>
+              ) : needTimeApproval ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s2 }}>
+                  <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onApproveTime && onApproveTime(n); }} style={{ background: "linear-gradient(135deg," + th.gr + "," + th.gr + ")" }}>
+                    {uz ? "Ha, qo'shimcha vaqt berish" : lg === "ru" ? "Да, дать доп. время" : "Yes, give extra time"}
+                  </PrimaryButton>
+                  <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onDenyTime && onDenyTime(n); }} style={{ background: "linear-gradient(135deg," + th.rd + "," + th.rd + ")" }}>
+                    {uz ? "Yo'q" : lg === "ru" ? "Нет" : "No"}
+                  </PrimaryButton>
+                </div>
               ) : actLabel ? (
                 <PrimaryButton th={th} onClick={goAction}>{actLabel}</PrimaryButton>
               ) : null}

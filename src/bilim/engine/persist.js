@@ -13,11 +13,24 @@ export const readCoins = async (uid) => {
   catch (e) { return 0; }
 };
 
+/** Lifetime coinni o'qish (bilim_coins_lifetime_<uid>). */
+export const readLifetimeCoins = async (uid) => {
+  try { const v = await db.g("bilim_coins_lifetime_" + uid); return Number(v) || 0; }
+  catch (e) { return 0; }
+};
+
 /** Topilgan coinni MAVJUD jamg'armaga qo'shib, yangi jamini qaytaradi. */
 export const addCoins = async (uid, earned) => {
   const cur = await readCoins(uid);
-  const next = cur + Math.max(0, Math.round(earned || 0));
+  const earnedClean = Math.max(0, Math.round(earned || 0));
+  const next = cur + earnedClean;
   try { await db.s("bilim_coins_" + uid, next); } catch (e) {}
+
+  // Update lifetime coins
+  const curLife = await readLifetimeCoins(uid);
+  const nextLife = curLife + earnedClean;
+  try { await db.s("bilim_coins_lifetime_" + uid, nextLife); } catch (e) {}
+
   return next;
 };
 
@@ -124,5 +137,17 @@ export const saveLevelProgress = async (uid, gameId, levelId, stars) => {
   } catch (e) {
     return {};
   }
+};
+
+/** Coin sarflash — yetarli bo'lmasa false qaytaradi, lifetime hisoblagichga TEGMAYDI. */
+export const spendCoins = async (uid, amount) => {
+  try {
+    const cur = await readCoins(uid);
+    const cost = Math.max(0, Math.round(amount || 0));
+    if (cur < cost) return false;
+    const next = cur - cost;
+    await db.s("bilim_coins_" + uid, next);
+    return next;
+  } catch (e) { return false; }
 };
 

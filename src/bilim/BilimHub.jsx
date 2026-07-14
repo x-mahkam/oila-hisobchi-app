@@ -24,6 +24,9 @@ import SubtractionGame from "./games/SubtractionGame.jsx";
 import MultiplicationGame from "./games/MultiplicationGame.jsx";
 import DivisionGame from "./games/DivisionGame.jsx";
 import LevelMap from "./games/LevelMap.jsx";
+import { LOGIC_LEVELS } from "./games/levels/logicLevels.js";
+import { MEMORY_LEVELS } from "./games/levels/memoryLevels.js";
+import { MATH_LEVELS } from "./games/levels/mathLevels.js";
 import SortGame from "./games/SortGame.jsx";
 import BudgetGame from "./games/BudgetGame.jsx";
 import PriceQuizGame from "./games/PriceQuizGame.jsx";
@@ -32,6 +35,9 @@ import DecisionGame from "./games/DecisionGame.jsx";
 import SavingsSequenceGame from "./games/SavingsSequenceGame.jsx";
 import BankSimGame from "./games/BankSimGame.jsx";
 import PriceMemoryGame from "./games/PriceMemoryGame.jsx";
+import PatternGame from "./games/PatternGame.jsx";
+import OddOneOutGame from "./games/OddOneOutGame.jsx";
+import SimonSequenceGame from "./games/SimonSequenceGame.jsx";
 
 const diffColor = (tone, th) => ({ gr: th.gr, am: th.am, rd: th.rd }[tone] || th.ac);
 const grad = (g, th) => "linear-gradient(135deg," + (th[g.grad[0]] || th.ac) + "," + (th[g.grad[1]] || th.ac2) + ")";
@@ -153,16 +159,48 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     if (game && isAvailable(game)) setView("play");
   }, [game]);
 
+  const handleNextLevel = useCallback((subject, currentLevelId) => {
+    let list = [];
+    if (subject === "math") list = MATH_LEVELS;
+    else if (subject === "logic") list = LOGIC_LEVELS;
+    else if (subject === "memory") list = MEMORY_LEVELS;
+
+    const nextLvl = list.find(l => l.id === currentLevelId + 1);
+    if (nextLvl) {
+      setActiveLevel(nextLvl);
+    } else {
+      setView("games"); // go back to map if no more levels
+    }
+  }, []);
+
   // ═══ PLAY — real o'yin (hozircha english/words → BilimBozor) ═══
   if (view === "play-level" && activeLevel) {
     if (activeLevel.game === "math/addition") {
-      return <AdditionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} />;
+      return <AdditionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("math", activeLevel.id)} />;
     }
     if (activeLevel.game === "math/subtraction") {
-      return <SubtractionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} />;
+      return <SubtractionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("math", activeLevel.id)} />;
     }
     if (activeLevel.game === "math/multiply") {
-      return <MultiplicationGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} />;
+      return <MultiplicationGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("math", activeLevel.id)} />;
+    }
+    if (activeLevel.game === "logic/pattern") {
+      return <SavingsSequenceGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("logic", activeLevel.id)} />;
+    }
+    if (activeLevel.game === "logic/pattern-shapes") {
+      return <PatternGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("logic", activeLevel.id)} />;
+    }
+    if (activeLevel.game === "logic/odd-one-out") {
+      return <OddOneOutGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("logic", activeLevel.id)} />;
+    }
+    if (activeLevel.game === "logic/decision") {
+      return <DecisionGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("logic", activeLevel.id)} />;
+    }
+    if (activeLevel.game === "memory/pairs") {
+      return <PriceMemoryGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("memory", activeLevel.id)} />;
+    }
+    if (activeLevel.game === "memory/simon") {
+      return <SimonSequenceGame user={user} lg={lg} dark={dark} gameId={activeLevel.game} name={fullName(user)} level={activeLevel} onBack={() => setView("games")} onNextLevel={() => handleNextLevel("memory", activeLevel.id)} />;
     }
   }
 
@@ -199,11 +237,20 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   if (view === "play" && game && game.load === "logic/pattern") {
     return <SavingsSequenceGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
   }
+  if (view === "play" && game && game.load === "logic/pattern-shapes") {
+    return <PatternGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "logic/odd-one-out") {
+    return <OddOneOutGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
   if (view === "play" && game && game.load === "finance/bank-sim") {
     return <BankSimGame user={user} lg={lg} dark={dark} onBack={() => setView("detail")} />;
   }
   if (view === "play" && game && game.load === "memory/pairs") {
     return <PriceMemoryGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "memory/simon") {
+    return <SimonSequenceGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
   }
 
   // ═══ LEARNING PROFILE (bola) ═══
@@ -358,6 +405,41 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
           user={user}
           lg={lg}
           dark={dark}
+          subject="math"
+          onSelectLevel={(lvl) => {
+            setActiveLevel(lvl);
+            setView("play-level");
+          }}
+          onBack={back}
+        />
+      );
+    }
+    if (cat.id === "logic") {
+      return (
+        <LevelMap
+          user={user}
+          lg={lg}
+          dark={dark}
+          subject="logic"
+          levels={LOGIC_LEVELS}
+          title={uz ? "Mantiq Yo'li" : lg === "ru" ? "Карта Логики" : "Logic Roadmap"}
+          onSelectLevel={(lvl) => {
+            setActiveLevel(lvl);
+            setView("play-level");
+          }}
+          onBack={back}
+        />
+      );
+    }
+    if (cat.id === "memory") {
+      return (
+        <LevelMap
+          user={user}
+          lg={lg}
+          dark={dark}
+          subject="memory"
+          levels={MEMORY_LEVELS}
+          title={uz ? "Xotira Yo'li" : lg === "ru" ? "Карта Памяти" : "Memory Roadmap"}
           onSelectLevel={(lvl) => {
             setActiveLevel(lvl);
             setView("play-level");

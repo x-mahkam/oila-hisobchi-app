@@ -54,6 +54,8 @@ import { useExchangeRates }  from "./hooks/useExchangeRates.js";
 import { useVoiceInput }     from "./hooks/useVoiceInput.js";
 import { useQRScanner }      from "./hooks/useQRScanner.js";
 import { useExport }         from "./hooks/useExport.js";
+import { useScreenTime }     from "./hooks/useScreenTime.js";
+import ScreenTimeLockScreen  from "./components/ScreenTimeLockScreen.jsx";
 
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
@@ -115,6 +117,7 @@ export default function App() {
   } = useFamily();
   const debts = useDebts();
   const aiAdvice = useAIAdvice();
+  const screenTime = useScreenTime();
 
   // Qarz sahifasi ochilganda avtomatik sinxronizatsiya (holat + balans)
   useEffect(() => {
@@ -779,8 +782,18 @@ export default function App() {
       <Tst msg={tst.msg} type={tst.type} th={th} />
 
       {/* Global Modals */}
+      {isKid && screenTime.isOverLimit && (
+        <ScreenTimeLockScreen
+          th={th}
+          lg={lg}
+          todayMinutes={screenTime.todayMinutes}
+          dailyLimit={screenTime.dailyLimit}
+          extraMinutesToday={screenTime.extraMinutesToday}
+          requestExtraTime={screenTime.requestExtraTime}
+        />
+      )}
       {confetti && <Confetti th={th} />}
-      {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} setBilimInitialView={setBilimInitialView} />}
+      {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} setBilimInitialView={setBilimInitialView} onApproveTime={screenTime.approveExtraTime} onDenyTime={screenTime.denyExtraTime} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
       {askTel && user && (
         <AskTelModal

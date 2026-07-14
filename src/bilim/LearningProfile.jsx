@@ -29,6 +29,8 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
     tasksApproved: 0,
     goalsCompleted: 0,
     tradesAccepted: 0,
+    gardenLevel: 0,
+    lifetimeCoins: 0,
   });
 
   useEffect(() => {
@@ -64,6 +66,18 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
         const tradesCount = oList.filter(o => o.kidId === user.id && o.status === "accepted").length;
         setBehavior(b => ({ ...b, tradesAccepted: tradesCount }));
       }
+    }).catch(() => {});
+
+    // Load gardenLevel
+    db.g("garden_" + user.oilaId).then(g => {
+      if (g) {
+        setBehavior(b => ({ ...b, gardenLevel: g.level || 0 }));
+      }
+    }).catch(() => {});
+
+    // Load lifetimeCoins
+    db.g("bilim_coins_lifetime_" + user.id).then(v => {
+      setBehavior(b => ({ ...b, lifetimeCoins: Number(v) || 0 }));
     }).catch(() => {});
   }, [user?.id, user?.oilaId]);
 

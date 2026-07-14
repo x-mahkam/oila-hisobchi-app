@@ -140,7 +140,27 @@ export const GAMES = [
   { id: "math/division",    category: "math",  name: { uz: "Bo'lish", ru: "Деление", en: "Division" },        desc: { uz: "Bo'lishni o'rganing", ru: "Учитесь делению", en: "Learn division" },                    icon: BIco.divide,  difficulty: "medium", minutes: 10, maxCoin: 15, premium: false, load: "math/division" },
   { id: "english/colors",   category: "english", name: { uz: "Ranglar", ru: "Цвета", en: "Colors" },          desc: { uz: "Inglizcha ranglarni o'rgan", ru: "Уchi tsvetlar", en: "Learn colors in English" },       icon: BIco.palette,difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
   { id: "english/animals",  category: "english", name: { uz: "Hayvonlar", ru: "Животные", en: "Animals" },    desc: { uz: "Hayvon nomlarini o'rgan", ru: "Названия животных", en: "Learn animal names" },           icon: BIco.animal, difficulty: "easy",   minutes: 5,  maxCoin: 10, premium: false },
-  { id: "logic/pattern",    category: "logic",   name: { uz: "Jamg'arma ketma-ketligi", ru: "Последовательность накоплений", en: "Savings Sequence" }, desc: { uz: "Jamg'arma o'sish qonuniyatlarini top", ru: "Найди закономерность роста сбережений", en: "Find pattern of savings growth" }, icon: BIco.finance, difficulty: "medium", minutes: 7, maxCoin: 12, premium: false, load: "logic/pattern" },
+  {
+    id: "logic/pattern",
+    category: "logic",
+    name: { uz: "Jamg'arma ketma-ketligi", ru: "Последовательность накоплений", en: "Savings Sequence" },
+    desc: { uz: "Jamg'arma o'sish qonuniyatlarini top", ru: "Найди закономерность роста сбережений", en: "Find pattern of savings growth" },
+    icon: BIco.finance, difficulty: "medium", minutes: 7, maxCoin: 12, premium: false, load: "logic/pattern"
+  },
+  {
+    id: "logic/pattern-shapes",
+    category: "logic",
+    name: { uz: "Naqsh davomi", ru: "Продолжи узор", en: "Pattern Continuation" },
+    desc: { uz: "Shakllar va piktogrammalar takrorlanishi qonuniyatini top", ru: "Найди закономерность повторения фигур", en: "Find the pattern of shapes and icons repetition" },
+    icon: BIco.logic, difficulty: "medium", minutes: 5, maxCoin: 12, premium: false, load: "logic/pattern-shapes"
+  },
+  {
+    id: "logic/odd-one-out",
+    category: "logic",
+    name: { uz: "Toq narsani top", ru: "Найди лишнее", en: "Odd One Out" },
+    desc: { uz: "Guruhdagi toq yoki noto'g'ri xususiyatga ega narsani top", ru: "Найди лишний или отличающийся предмет в группе", en: "Find the odd or different item in the group" },
+    icon: BIco.logic, difficulty: "medium", minutes: 6, maxCoin: 12, premium: false, load: "logic/odd-one-out"
+  },
   {
     id: "logic/decision",
     category: "logic",
@@ -155,6 +175,13 @@ export const GAMES = [
     desc: { uz: "Mahsulot va narxini juftlashtir", ru: "Сопоставь товар и цену", en: "Match products to their prices" },
     icon: BIco.memory, difficulty: "easy", minutes: 6, maxCoin: 12,
     premium: false, load: "memory/pairs"
+  },
+  {
+    id: "memory/simon",
+    category: "memory",
+    name: { uz: "Ketma-ketlikni takrorlash", ru: "Повтори последовательность", en: "Simon Sequence" },
+    desc: { uz: "Yonib-o'chadigan ranglar ketma-ketligini takrorla va xotirani rivojlantir", ru: "Повторяй вспышки цвета и тренируй память", en: "Repeat the sequence of light flashes to train your memory" },
+    icon: BIco.memory, difficulty: "medium", minutes: 5, maxCoin: 15, premium: false, load: "memory/simon"
   }
 ];
 

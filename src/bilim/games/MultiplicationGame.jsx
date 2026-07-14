@@ -89,7 +89,7 @@ const OptButton = memo(function OptButton({ th, value, state, onPick, disabled, 
   );
 });
 
-export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "math/multiply", name, onBack, level }) {
+export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "math/multiply", name, onBack, level, onNextLevel }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
   const uz = lg === "uz";
   const kidName = name || (user && (user.ism || "")) || "";
@@ -406,6 +406,11 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
           </div>
         </AppCard>
 
+        {activeLevel && onNextLevel && isWin && (
+          <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
+            {uz ? "Keyingi bosqich" : lg === "ru" ? "Следующий уровень" : "Next level"}
+          </PrimaryButton>
+        )}
         {activeLevel && (
           <PrimaryButton th={th} onClick={() => startLevel(activeLevel)} style={{ marginTop: SPACE.s2 }}>
             {uz ? "Qayta o'ynash" : lg === "ru" ? "Ещё раз" : "Play again"}

@@ -127,7 +127,7 @@ const OptButton = memo(function OptButton({ th, value, state, onPick, disabled, 
   );
 });
 
-export default function SubtractionGame({ user, lg = "uz", dark, gameId = "math/subtraction", name, onBack, level }) {
+export default function SubtractionGame({ user, lg = "uz", dark, gameId = "math/subtraction", name, onBack, level, onNextLevel }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
   const uz = lg === "uz";
   const kidName = name || (user && (user.ism || "")) || "";
@@ -669,8 +669,8 @@ export default function SubtractionGame({ user, lg = "uz", dark, gameId = "math/
     
     // Check level passing stars
     let finalStars = 0;
-    if (selectedLevel) {
-      if (r.pct >= selectedLevel.passThreshold) {
+    if (activeLevel) {
+      if (r.pct >= activeLevel.passThreshold) {
         if (r.pct === 100) finalStars = 3;
         else if (r.pct >= 80) finalStars = 2;
         else finalStars = 1;
@@ -777,6 +777,11 @@ export default function SubtractionGame({ user, lg = "uz", dark, gameId = "math/
           </div>
         </AppCard>
 
+        {activeLevel && onNextLevel && finalStars >= 1 && (
+          <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
+            {uz ? "Keyingi bosqich" : lg === "ru" ? "Следующий уровень" : "Next level"}
+          </PrimaryButton>
+        )}
         {activeLevel && (
           <PrimaryButton th={th} onClick={() => startLevel(activeLevel)} style={{ marginTop: SPACE.s2 }}>
             {uz ? "Qayta o'ynash" : lg === "ru" ? "Ещё раз" : "Play again"}

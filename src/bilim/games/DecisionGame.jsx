@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from "react";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../../utils/tokens.js";
-import { addCoins, logGameSession } from "../engine/persist.js";
+import { addCoins, logGameSession, saveLevelProgress } from "../engine/persist.js";
 import { addXp } from "../engine/xp.js";
 import { playSound } from "../engine/sound.js";
+import { starsFor } from "./levels/logicLevels.js";
 import { decisionScenarios } from "./data/decisionScenarios.js";
 import { 
   Compass, 
@@ -19,7 +20,7 @@ import {
   Star
 } from "lucide-react";
 
-export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/decision", name = "", onBack }) {
+export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/decision", name = "", level, onBack, onNextLevel }) {
   const uz = lg === "uz";
   const th = dark ? PALETTE.dark : PALETTE.light;
 
@@ -30,9 +31,14 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
   const [runningTotals, setRunningTotals] = useState({ coins: 0, xp: 0 });
   const [history, setHistory] = useState([]); // tracks choices made
 
-  // Start the game by picking 5 random scenarios
+  // Start the game by picking scenarios based on level/difficulty
   const startGame = () => {
-    const shuffled = [...decisionScenarios].sort(() => Math.random() - 0.5).slice(0, 5);
+    let scenarios = [...decisionScenarios];
+    if (level) {
+      scenarios = scenarios.filter(s => s.difficulty === level.difficulty);
+    }
+    const count = level ? level.questionCount : 5;
+    const shuffled = scenarios.sort(() => Math.random() - 0.5).slice(0, count);
     setSelectedScenarios(shuffled);
     setCurrentIndex(0);
     setChosenOption(null);
@@ -83,11 +89,20 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
   // Finish and save results
   const finishGame = () => {
     setPhase("result");
-    playSound.victory();
 
     const finalCoins = Math.max(0, runningTotals.coins);
     const finalXp = Math.max(0, runningTotals.xp);
     const correctCount = history.filter(h => h.isPositive).length;
+    const totalCount = selectedScenarios.length || 5;
+
+    const pct = Math.round((correctCount / totalCount) * 100);
+    const stars = level ? starsFor(pct, level.passPct) : (correctCount === totalCount ? 3 : correctCount >= totalCount - 1 ? 2 : correctCount >= totalCount - 2 ? 1 : 0);
+
+    if (stars > 0) {
+      playSound.victory();
+    } else {
+      playSound.wrong();
+    }
 
     if (user?.id) {
       addCoins(user.id, finalCoins);
@@ -95,12 +110,17 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
       logGameSession(user.id, {
         gameId,
         correct: correctCount,
-        total: 5,
+        total: totalCount,
+        pct,
         seconds: 120, // estimated
         coins: finalCoins,
         xp: finalXp,
-        difficulty: "hard"
+        difficulty: level ? level.difficulty : "hard"
       });
+
+      if (level && stars > 0) {
+        saveLevelProgress(user.id, "logic", level.id, stars);
+      }
     }
   };
 
@@ -150,7 +170,9 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
     const finalCoins = Math.max(0, runningTotals.coins);
     const finalXp = Math.max(0, runningTotals.xp);
     const correctCount = history.filter(h => h.isPositive).length;
-    const finalStars = correctCount === 5 ? 3 : correctCount >= 4 ? 2 : correctCount >= 3 ? 1 : 0;
+    const totalCount = selectedScenarios.length || 5;
+    const pct = Math.round((correctCount / totalCount) * 100);
+    const finalStars = level ? starsFor(pct, level.passPct) : (correctCount === totalCount ? 3 : correctCount >= totalCount - 1 ? 2 : correctCount >= totalCount - 2 ? 1 : 0);
 
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
@@ -173,13 +195,13 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
             {finalStars > 1 ? (uz ? "Siz mukammal moliyachisiz!" : "Вы отличный финансист!") : (uz ? "Yaxshi urinish!" : "Хорошая попытка!")}
           </div>
           <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>
-            5 tadan {correctCount} ta to'g'ri moliyaviy qaror qabul qilindi
+            {totalCount} tadan {correctCount} ta to'g'ri moliyaviy qaror qabul qilindi
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={`${correctCount}/5`} label={uz ? "Oqilona qarorlar" : "Разумные решения"} tone={th.gr} />
-          <StatCard th={th} value={`${5 - correctCount}/5`} label={uz ? "Nooqilona qarorlar" : "Нерациональные решения"} tone={th.rd} />
+          <StatCard th={th} value={`${correctCount}/${totalCount}`} label={uz ? "Oqilona qarorlar" : "Разумные решения"} tone={th.gr} />
+          <StatCard th={th} value={`${totalCount - correctCount}/${totalCount}`} label={uz ? "Nooqilona qarorlar" : "Нерациональные решения"} tone={th.rd} />
         </div>
 
         <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
@@ -202,6 +224,11 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
           </div>
         </AppCard>
 
+        {level && onNextLevel && finalStars >= 1 && (
+          <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
+            {uz ? "Keyingi bosqich" : lg === "ru" ? "Следующий уровень" : "Next level"}
+          </PrimaryButton>
+        )}
         <PrimaryButton th={th} onClick={startGame} style={{ marginTop: SPACE.s2 }}>
           {uz ? "Yana o'ynash" : "Играть снова"}
         </PrimaryButton>
@@ -223,15 +250,17 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
   }
 
   // Active question layout
+  const totalCount = selectedScenarios.length || 5;
+
   return (
     <div style={{ minHeight: "70vh", display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
       {/* Step progress */}
       <div style={{ display: "flex", justifySpace: "space-between", alignItems: "center" }}>
         <span style={{ ...TYPE.caption, color: th.t2, fontWeight: 700 }}>
-          {uz ? `Vaziyat ${currentIndex + 1}/5` : `Ситуация ${currentIndex + 1}/5`}
+          {uz ? `Vaziyat ${currentIndex + 1}/${totalCount}` : `Ситуация ${currentIndex + 1}/${totalCount}`}
         </span>
         <div style={{ width: 120, height: 6, background: th.bor, borderRadius: RADIUS.pill, overflow: "hidden" }}>
-          <div style={{ width: `${((currentIndex + 1) / 5) * 100}%`, height: "100%", background: th.ac, borderRadius: RADIUS.pill, transition: "width .3s" }} />
+          <div style={{ width: `${((currentIndex + 1) / totalCount) * 100}%`, height: "100%", background: th.ac, borderRadius: RADIUS.pill, transition: "width .3s" }} />
         </div>
       </div>
 
