@@ -179,17 +179,12 @@ export default function ProfilePage({
   const [kidCoins, setKidCoins] = useState(0);
   const [kidStreak, setKidStreak] = useState(0);
   const [kidLearnStats, setKidLearnStats] = useState({ games: 0, xp: 0 });
-  const [kidBilimVazifalar, setKidBilimVazifalar] = useState([]);
+  const [kidBilimOffers, setKidBilimOffers] = useState([]);
 
   // Vazifa qo'shish formasi uchun local statelar
   const [newVTitle, setNewVTitle] = useState("");
   const [newVReward, setNewVReward] = useState("");
   const [newVDeadline, setNewVDeadline] = useState("");
-
-  // Bilim mukofoti qo'shish formasi uchun local statelar
-  const [newBDesc, setNewBDesc] = useState("");
-  const [newBCoins, setNewBCoins] = useState("");
-  const [newBPul, setNewBPul] = useState("");
 
   // Farzand tafsiloti o'zgarganda bilim ma'lumotlarini yuklash
   useEffect(() => {
@@ -201,9 +196,9 @@ export default function ProfilePage({
           setKidLearnStats({ games: Number(st.games) || 0, xp: Number(st.xp) || 0 });
         }
       }).catch(() => {});
-      db.g("bilim_vazifa_" + (user?.oilaId || oila?.id)).then(v => {
+      db.g("bilim_offer_" + (user?.oilaId || oila?.id)).then(v => {
         if (Array.isArray(v)) {
-          setKidBilimVazifalar(v.filter(x => x.uid === selectedKid.id));
+          setKidBilimOffers(v.filter(x => x.kidId === selectedKid.id));
         }
       }).catch(() => {});
     }
@@ -650,75 +645,6 @@ export default function ProfilePage({
     ok$(uz ? "Vazifa qo'shildi! 🎉" : "Task added! 🎉");
   };
 
-  const handleAddBilimReward = async (desc, coinsRequired, realMoney) => {
-    buzz(12);
-    const newV = {
-      id: "bv_" + Date.now(),
-      desc: desc.trim(),
-      reward: Number(coinsRequired), // coinlar soni
-      pul: Number(realMoney) || 0,   // real pul so'mda
-      uid: selectedKid.id,
-      kidId: selectedKid.id,
-      kidName: selectedKid.ism,
-      done: false,
-      paid: false,
-      proposed: false,
-      approvedBy: user.id,
-      approvedAt: new Date().toISOString().slice(0, 10),
-    };
-
-    const current = (await db.g("bilim_vazifa_" + user.oilaId)) || [];
-    const upd = [newV, ...current];
-    await db.s("bilim_vazifa_" + user.oilaId, upd);
-    setKidBilimVazifalar(upd.filter(x => x.uid === selectedKid.id));
-    ok$(uz ? "Bilim mukofoti qo'shildi! 🎁" : "Knowledge reward added! 🎁");
-  };
-
-  const handleApproveBilimReward = async (v) => {
-    const myDar = dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
-    const myXar = xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);
-    const myBal = myDar - myXar;
-    if (myBal < v.pul) {
-      return ok$(uz ? "❌ Balansingizda yetarli mablag' yo'q! Kerak: " + f(v.pul, true) : "❌ Insufficient balance!", "err");
-    }
-
-    buzz(20);
-    // 1. Bilim vazifalarini yangilash (paid: true)
-    const current = (await db.g("bilim_vazifa_" + user.oilaId)) || [];
-    const upd = current.map(x => x.id === v.id ? { ...x, paid: true, paidSana: new Date().toISOString().slice(0, 10) } : x);
-    await db.s("bilim_vazifa_" + user.oilaId, upd);
-    setKidBilimVazifalar(upd.filter(x => x.uid === selectedKid.id));
-
-    // 2. Bolaning balansini oshirish
-    const kb = { ...kidBalances };
-    kb[selectedKid.id] = (kb[selectedKid.id] || 0) + v.pul;
-    await db.s("kidbal_" + user.oilaId, kb);
-    if (setKidBalances) {
-      setKidBalances(kb);
-    }
-
-    // 3. Ota-onaning xarajati
-    if (v.pul > 0) {
-      const xItem = {
-        id: Date.now(), 
-        kategoriya: "boshqa", 
-        summa: v.pul,
-        izoh: (uz ? "Bilim mukofoti to'lovi: " : "Knowledge reward payment: ") + (v.desc || ""),
-        sana: new Date().toISOString().slice(0, 10),
-        vaqt: new Date().toTimeString().slice(0, 5),
-        uid: user.id,
-        repeat: false
-      };
-      const xk = "x_" + user.oilaId + "_" + user.id;
-      const oParentXar = (await db.g(xk)) || [];
-      await db.s(xk, [xItem, ...oParentXar]);
-      if (setXar) {
-        setXar(x => [xItem, ...x]);
-      }
-    }
-
-    ok$(uz ? "Mukofot to'landi! 🎉" : "Reward paid! 🎉");
-  };
   const pickPhoto    = useCallback(() => fRef.current?.click(), [fRef]);
 
   const achTap = useCallback(tap => {
@@ -1335,85 +1261,80 @@ export default function ProfilePage({
 
               {/* Bilim Bozoriga to'g'ridan-to'g'ri kirish tugmasi */}
               <AppCard th={th} style={{ background: "linear-gradient(135deg, " + th.ac + ALPHA.tint + ", " + th.sur + ")", border: "1.5px solid " + th.ac + ALPHA.med, marginBottom: SPACE.s3 }}>
-                <div style={{ ...TYPE.title, fontWeight: 800, color: th.t1 }}>🧠 {uz ? "Bilim Bozoriga kirish" : "Enter Knowledge Market"}</div>
+                <div style={{ ...TYPE.title, fontWeight: 800, color: th.t1 }}>🧠 {uz ? "Bilim Bozori" : "Knowledge Market"}</div>
                 <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 4 }}>
-                  {uz ? "O'yinlar o'ynash, darslar o'qish va bolaning bilim tangalarini boshqarish uchun to'g'ridan-to'g'ri kiring!" : "Play games, read lessons and manage kid's knowledge coins directly!"}
+                  {uz ? "Bu yerda farzandingiz bilan uning to'plagan bilim tangalarini real cho'ntak puliga almashtirish bo'yicha savdolashishingiz va kelishishingiz mumkin!" : "Here you can bargain and agree with your child on exchanging their accumulated learning coins for real pocket money!"}
                 </div>
                 <SecondaryButton th={th} onClick={() => openBilim("market")} style={{ marginTop: SPACE.s3, width: "100%", color: th.ac, background: th.ac + ALPHA.soft, border: "1px solid " + th.ac + ALPHA.strong }}>
-                  {uz ? "Bozorga to'g'ridan-to'g'ri o'tish" : "Go to Market directly"}
+                  {uz ? "Bozorga kirish va savdolashish" : "Enter Market & Bargain"}
                 </SecondaryButton>
               </AppCard>
 
-              {/* Ota-ona mukofot qo'yishi */}
-              <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
-                <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 }}>
-                  <span>🎁</span> {uz ? "Ota-ona mukofot qo'yishi" : "Parent rewards placement"}
-                </div>
-                <TextInput th={th} label={uz ? "Mukofot nomi (masalan: Velosiped sotib olish)" : "Reward title"} value={newBDesc} onChange={setNewBDesc} placeholder={uz ? "Yangi velosiped..." : "New bicycle..."} />
-                <div style={{ display: "flex", gap: SPACE.s2, marginTop: 2 }}>
-                  <div style={{ flex: 1 }}>
-                    <TextInput th={th} label={uz ? "Kerakli tanga (coin)" : "Coins required"} type="number" value={newBCoins} onChange={setNewBCoins} placeholder="100" />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <TextInput th={th} label={uz ? "Sotib olinganda to'lanadigan pul (so'mda)" : "Real money reward"} type="number" value={newBPul} onChange={setNewBPul} placeholder="50000" />
-                  </div>
-                </div>
-                <PrimaryButton th={th} onClick={async () => {
-                  if (!newBDesc.trim() || !newBCoins || Number(newBCoins) <= 0) {
-                    return ok$(uz ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
-                  }
-                  await handleAddBilimReward(newBDesc, newBCoins, newBPul);
-                  setNewBDesc("");
-                  setNewBCoins("");
-                  setNewBPul("");
-                }} style={{ marginTop: SPACE.s2 }}>
-                  {uz ? "Mukofotni qo'shish" : "Add Reward"}
-                </PrimaryButton>
-              </AppCard>
-
-              {/* Qo'yilgan mukofotlar ro'yxati */}
-              <SectionHeader th={th}>{uz ? "Qo'yilgan mukofotlar" : "Placed rewards"}</SectionHeader>
-              {kidBilimVazifalar.length === 0 ? (
+              {/* Qo'yilgan takliflar ro'yxati */}
+              <SectionHeader th={th}>{uz ? "Bozordagi takliflar (Kelishuvlar)" : "Market deals (Offers)"}</SectionHeader>
+              {kidBilimOffers.length === 0 ? (
                 <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6, color: th.t3 }}>
-                  {uz ? "Hozircha bilim mukofotlari yo'q" : "No knowledge rewards yet"}
+                  {uz ? "Hozircha faol takliflar yoki savdolar yo'q" : "No active offers or deals yet"}
                 </AppCard>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
-                  {kidBilimVazifalar.map(v => (
-                    <AppCard key={v.id} th={th} style={{ borderLeft: "4px solid " + (v.paid ? th.gr : (v.done ? th.ye : th.ac)) }}>
-                      <div style={{ display: "flex", justifyContent: "between", alignItems: "center", width: "100%" }}>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ ...TYPE.title, color: th.t1, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{v.desc}</div>
-                          <div style={{ display: "flex", gap: SPACE.s3, alignItems: "center", marginTop: 4 }}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, ...TYPE.caption, fontWeight: 700, color: PREMIUM.gold }}>
-                              {PIco.star(PREMIUM.gold, 15)}
-                              {v.reward} coin
+                  {kidBilimOffers.map(o => {
+                    let statusLabel = o.status;
+                    let badgeType = "info";
+                    if (o.status === "pending") {
+                      statusLabel = uz ? "Kutilmoqda" : "Pending";
+                      badgeType = "warning";
+                    } else if (o.status === "accepted") {
+                      statusLabel = uz ? "Qabul qilindi" : "Accepted";
+                      badgeType = "success";
+                    } else if (o.status === "rejected") {
+                      statusLabel = uz ? "Rad etildi" : "Rejected";
+                      badgeType = "danger";
+                    } else if (o.status === "countered") {
+                      statusLabel = uz ? "Qarshi taklif" : "Counter-offer";
+                      badgeType = "info";
+                    }
+
+                    return (
+                      <AppCard key={o.id} th={th} style={{ borderLeft: "4px solid " + (o.status === "accepted" ? th.gr : (o.status === "pending" || o.status === "countered" ? th.ye : th.rd)) }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ ...TYPE.tiny, color: th.t2, fontWeight: 700 }}>
+                              {o.fromRole === "kid" ? (uz ? "Bola taklif qilgan" : "Proposed by kid") : (uz ? "Siz taklif qilganingiz" : "Proposed by you")}
                             </span>
-                            {v.pul > 0 && (
-                              <span style={{ display: "inline-flex", alignItems: "center", gap: 4, ...TYPE.caption, fontWeight: 700, color: th.gr }}>
-                                {PIco.coin(th.gr, 15)}
-                                {f(v.pul, true)}
-                              </span>
-                            )}
+                            <Badge th={th} type={badgeType}>{statusLabel}</Badge>
+                          </div>
+                          
+                          <div style={{ display: "flex", alignItems: "center", gap: 12, background: th.bg, padding: "8px 12px", borderRadius: 8 }}>
+                            <div>
+                              <div style={{ ...TYPE.tiny, color: th.t3 }}>{uz ? "Tanga" : "Coins"}</div>
+                              <div style={{ ...TYPE.title, fontWeight: 800, color: PREMIUM.gold, display: "flex", alignItems: "center", gap: 4 }}>
+                                🪙 {o.coins}
+                              </div>
+                            </div>
+                            <span style={{ color: th.t3 }}>➔</span>
+                            <div>
+                              <div style={{ ...TYPE.tiny, color: th.t3 }}>{uz ? "Summa" : "Amount"}</div>
+                              <div style={{ ...TYPE.title, fontWeight: 800, color: th.gr }}>
+                                {f(o.amount, true)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {o.note && (
+                            <div style={{ ...TYPE.caption, color: th.t2, fontStyle: "italic", background: th.bg, padding: "6px 10px", borderRadius: 6 }}>
+                              {o.note}
+                            </div>
+                          )}
+
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", ...TYPE.tiny, color: th.t3 }}>
+                            <span>ID: {o.id}</span>
+                            <span>{o.createdAt ? new Date(o.createdAt).toLocaleDateString() : ""}</span>
                           </div>
                         </div>
-                        <div style={{ marginLeft: SPACE.s2, flexShrink: 0 }}>
-                          {v.paid ? (
-                            <Badge th={th} type="success">{uz ? "To'langan" : "Paid"}</Badge>
-                          ) : v.done ? (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                              <Badge th={th} type="warning">{uz ? "Tugatildi" : "Completed"}</Badge>
-                              <SecondaryButton th={th} onClick={() => handleApproveBilimReward(v)} style={{ padding: "4px 8px", fontSize: TYPE.tiny.fontSize }}>
-                                {uz ? "Tasdiqlash va to'lash" : "Approve & Pay"}
-                              </SecondaryButton>
-                            </div>
-                          ) : (
-                            <Badge th={th} type="info">{uz ? "Kutilmoqda" : "Pending"}</Badge>
-                          )}
-                        </div>
-                      </div>
-                    </AppCard>
-                  ))}
+                      </AppCard>
+                    );
+                  })}
                 </div>
               )}
             </div>
