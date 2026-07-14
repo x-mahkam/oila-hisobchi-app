@@ -1,23 +1,14 @@
 import { memo, useState } from "react";
 import { ONB_SLIDES } from "../utils/constants.js";
-import { PrimaryButton, PremiumButton, GhostButton, Badge, injectUiCss } from "../components/ui/index.js";
+import { PrimaryButton, PremiumButton, GhostButton, injectUiCss } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, GARDEN, PREMIUM, OPACITY, COMP } from "../utils/tokens.js";
 
 // ═══ Slayd illyustratsiyalari — outline SVG (emoji YO'Q, DS 6-qoida) ═══
 // Garden slaydidan tashqari hammasi fintech outline uslubida.
 const ILLOS = {
-  // 1. Intro: uy + oila + tanga — brend metaforasi
-  intro: c => (
-    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-      <path d="M20 58L60 26l40 32" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-      <path d="M30 54v38h60V54" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill={c} opacity=".06"/>
-      <circle cx="60" cy="66" r="11" stroke={c} strokeWidth="2.5" fill={c} opacity=".12"/>
-      <circle cx="60" cy="66" r="11" stroke={c} strokeWidth="2.5" fill="none"/>
-      <path d="M60 60v12M56.5 63c0-1.4 1.5-2.2 3.5-2.2s3.5.8 3.5 2c0 3.2-7 2.6-7 5.8 0 1.3 1.5 2.1 3.5 2.1s3.5-.8 3.5-2.2" stroke={c} strokeWidth="2" strokeLinecap="round"/>
-      <circle cx="44" cy="86" r="4.5" stroke={c} strokeWidth="2.5"/>
-      <circle cx="76" cy="86" r="4.5" stroke={c} strokeWidth="2.5"/>
-      <circle cx="60" cy="88" r="3.5" stroke={c} strokeWidth="2.5"/>
-    </svg>
+  // 1. Intro: ilova logotipi
+  intro: () => (
+    <img src="/icon.svg" alt="Oila Hisobchi" width="120" height="120" style={{ display: "block", borderRadius: RADIUS.l }} />
   ),
   // 2. Byudjet: hamyon + kirim/chiqim o'qlari + qarz qo'li
   budget: c => (
@@ -52,16 +43,15 @@ const ILLOS = {
       <path d="M30 96c2-4 6-4 8 0M92 98c2-4 6-4 8 0" stroke={GARDEN.leafDeep} strokeWidth="2.5" strokeLinecap="round"/>
     </svg>
   ),
-  // 4. Hisobotlar: barlar + trend + AI uchquni
-  reports: c => (
+  // 4. Farzandlar uchun Bilim Bozori: bola + yulduz + tanga
+  farzand: c => (
     <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-      <rect x="26" y="66" width="14" height="28" rx="4" fill={c} opacity=".3"/>
-      <rect x="48" y="52" width="14" height="42" rx="4" fill={c} opacity=".55"/>
-      <rect x="70" y="36" width="14" height="58" rx="4" fill={c} opacity=".85"/>
-      <path d="M26 58L52 42l20-6 22-12" stroke={c} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="94" cy="24" r="3.5" fill={c}/>
-      <path d="M100 52l2.4 6.6 6.6 2.4-6.6 2.4-2.4 6.6-2.4-6.6-6.6-2.4 6.6-2.4 2.4-6.6z" fill={c} opacity=".8"/>
-      <path d="M22 100h76" stroke={c} strokeWidth="2.5" strokeLinecap="round" opacity=".3"/>
+      <circle cx="48" cy="40" r="14" stroke={c} strokeWidth="3" fill={c} opacity=".12"/>
+      <path d="M28 96c0-16 9-26 20-26s20 10 20 26" stroke={c} strokeWidth="3" strokeLinecap="round" fill={c} opacity=".06"/>
+      <path d="M28 96c0-16 9-26 20-26s20 10 20 26" stroke={c} strokeWidth="3" strokeLinecap="round" fill="none"/>
+      <path d="M84 30l4.6 9.4 10.4 1.5-7.5 7.3 1.8 10.3L84 53.5l-9.3 4.9 1.8-10.3-7.5-7.3 10.4-1.5L84 30z" fill={c} opacity=".85"/>
+      <circle cx="90" cy="86" r="12" stroke={c} strokeWidth="2.5" fill={c} opacity=".14"/>
+      <path d="M90 81v10M86 84c0-1.4 1.6-2.2 4-2.2s4 .9 4 2.2c0 3.6-8 3-8 6.6 0 1.4 1.6 2.2 4 2.2s4-.8 4-2.2" stroke={c} strokeWidth="1.8" strokeLinecap="round"/>
     </svg>
   ),
   // 5. Premium: olmos + nurlar
@@ -154,12 +144,6 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
       {/* ═══ Hero → illustration → title → subtitle ═══ */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: SPACE.s6 + "px " + SPACE.s8 + "px", position: "relative", textAlign: "center" }}>
         <Illo id={s.id} color={c} />
-        {/* 4-slayd: AI/Premium imkoniyatlar — PRO badge */}
-        {s.id === "reports" && (
-          <div className="ui-fadeUp" style={{ marginBottom: SPACE.s3 }}>
-            <Badge th={th} type="pro" />
-          </div>
-        )}
         <div className="ui-fadeUp" key={"t" + onbStep} style={{ ...TYPE.hero, color: th.t1, marginBottom: SPACE.s3, letterSpacing: "-0.5px" }}>{title}</div>
         <div className="ui-fadeUp" key={"d" + onbStep} style={{ ...TYPE.subtitle, fontWeight: 400, color: th.t2, lineHeight: 1.65, maxWidth: SPACE.s16 * 5 }}>{desc}</div>
         {/* 5-slayd: 3 asosiy foyda */}
