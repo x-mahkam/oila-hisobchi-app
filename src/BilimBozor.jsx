@@ -395,7 +395,6 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         db.s("bilim_coins_" + user.id, newCoins),
         db.s("bilim_correct_streak_" + user.id, newStreak),
       ]);
-      checkVazifalar(newCoins);
     } else {
       setStreak(0);
       setSessionScore(prev => ({...prev, wrong: prev.wrong+1}));
@@ -674,47 +673,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
     }
   };
 
-  const confirmCollected = async (task) => {
-    if (!task) return;
-    try {
-      const upd = vazifalar.map(v => v.id === task.id ? { ...v, status: "done", doneSana: new Date().toISOString().split('T')[0], done: true } : v);
-      await db.s("vazifa_" + user.oilaId, upd);
-      setVazifalar(upd);
-      showMsg(L("Vazifa bajarildi deb belgilandi! Ota-ona tasdiqlashini kuting. 🎉", "Задание отмечено как выполненное! Ожидайте подтверждения родителей. 🎉"));
-      
-      try {
-        const parents = (azolar || []).filter(a => a.rol !== "kid");
-        for (const p of parents) {
-          const pkn = (await db.g("notif_" + p.id)) || [];
-          const newNotifs = [{
-            id: Date.now() + Math.random(),
-            type: "vazifa_done",
-            text: lg === "uz"
-              ? `👶 ${user.ism || "Bola"} bilim vazifasini bajardi: "${task.desc || task.title}". Tasdiqlash kutilmoqda.`
-              : `👶 ${user.ism || "Ребенок"} выполнил учебное задание: "${task.desc || task.title}". Ожидает подтверждения.`,
-            sana: new Date().toISOString(),
-            read: false
-          }, ...pkn];
-          await db.s("notif_" + p.id, newNotifs);
-        }
-      } catch (e) {
-        console.error("Parent notification error:", e);
-      }
-    } catch (e) {
-      console.error(e);
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
-    }
-  };
-
-  const checkVazifalar = (newCoins) => {
-    if (myVazifaActive && newCoins >= myVazifaActive.targetCoins) {
-      showMsg(L("🎉 Tabriklaymiz! Vazifa maqsadiga erishdingiz! Uni topshirishingiz mumkin.", "🎉 Поздравляем! Вы достигли цели задания! Можете отправить его на проверку."));
-    }
-  };
-
   const curWord = sessionWords[curIdx];
   const curLvl = LEVELS.find(l => l.id===level);
-  const myVazifaActive = vazifalar.find(v => v.uid===user?.id && !v.done && !v.paid);
   const kids = (azolar||[]).filter(a => a.rol==="kid");
 
   // So'z uchun olish mumkin bo'lgan coinni hisoblash
@@ -807,44 +767,6 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       {/* ══════════ O'YIN ══════════════════════════════════════ */}
       {tab==="oyin" && (
         <div style={{flex:1,padding:"16px",overflow:"auto"}}>
-
-          {/* Aktiv vazifa banner */}
-          {myVazifaActive && (
-            <div style={{background:"linear-gradient(135deg,#f59e0b15,#f59e0b08)",border:"2px solid #f59e0b55",borderRadius:16,padding:"12px 16px",marginBottom:14}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:6}}>
-                <span style={{display:"inline-flex"}}>{BIco.target("#f59e0b", 22)}</span>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:13,fontWeight:700,color:dark?"#fbbf24":"#92400e"}}>{myVazifaActive.desc}</div>
-                  <div style={{fontSize:12,color:dark?"#94a3b8":"#666",display:"flex",alignItems:"center",gap:4,marginTop:2}}>
-                    {bilimCoins}/{myVazifaActive.targetCoins} {BIco.coin("#f59e0b", 12)} → {BIco.coin("#22c55e", 12)} {myVazifaActive.reward.toLocaleString()} so'm
-                  </div>
-                </div>
-              </div>
-              <div style={{background:dark?"#1e293b":"#fff",borderRadius:20,height:7,overflow:"hidden",marginBottom: bilimCoins >= myVazifaActive.targetCoins ? 10 : 0}}>
-                <div style={{width:`${Math.min(100,(bilimCoins/myVazifaActive.targetCoins)*100)}%`,height:"100%",background:"linear-gradient(90deg,#f59e0b,#d97706)",borderRadius:20,transition:"width .4s"}}/>
-              </div>
-              {bilimCoins >= myVazifaActive.targetCoins && (
-                <button
-                  onClick={() => confirmCollected(myVazifaActive)}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    borderRadius: 12,
-                    border: "none",
-                    background: `linear-gradient(135deg, ${th.gr}, #047857)`,
-                    color: "#fff",
-                    fontWeight: 800,
-                    fontSize: 13,
-                    cursor: "pointer",
-                    boxShadow: "0 4px 12px rgba(16,185,129,0.2)",
-                    transition: "all 0.2s"
-                  }}
-                >
-                  🎉 {L("Vazifa bajarildi! Topshirish", "Задание выполнено! Отправить")}
-                </button>
-              )}
-            </div>
-          )}
 
           {/* Daraja tanlash */}
           {isInitialLoading && (
