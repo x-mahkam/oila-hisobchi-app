@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hisobni o'chirish siyosati · Account Deletion Policy — Oila Hisobchi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f8fafc;--sur:#ffffff;--t1:#0f172a;--t2:#475569;--t3:#94a3b8;--ac:#0ea5e9;--bor:#e2e8f0;}
+    *{box-sizing:border-box}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.65;color:var(--t2);background:var(--bg);margin:0;padding:0}
+    .container{max-width:800px;margin:0 auto;padding:20px 16px 60px}
+    .card{background:var(--sur);border-radius:16px;padding:32px 28px;box-shadow:0 4px 6px -1px rgb(0 0 0/.05),0 2px 4px -2px rgb(0 0 0/.05)}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(248,250,252,.92);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--t1);font-size:15px}
+    .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#0ea5e9,#22c55e);display:flex;align-items:center;justify-content:center;font-size:17px}
+    .lang-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-trigger {
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .dropdown-trigger:hover {
+      border-color: var(--ac);
+    }
+    .dropdown-trigger .arrow {
+      font-size: 10px;
+      color: var(--t3);
+      transition: transform 0.2s;
+    }
+    .lang-dropdown.open .dropdown-trigger .arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      max-height: 180px;
+      z-index: 100;
+      min-width: 165px;
+    }
+    .lang-dropdown.open .dropdown-menu {
+      display: block;
+    }
+    .dropdown-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t2);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .dropdown-menu button:hover {
+      background: #f1f5f9;
+    }
+    .dropdown-menu button.on {
+      background: #e0f2fe;
+      color: #0284c7;
+      font-weight: 700;
+    }
+    h1{color:var(--t1);font-size:1.7rem;font-weight:800;margin:0 0 6px;line-height:1.3}
+    .upd{font-size:.85rem;color:var(--t3);margin-bottom:24px;font-weight:600}
+    h2{color:#1e293b;font-size:1.15rem;font-weight:700;margin:2rem 0 .7rem}
+    p,li{font-size:.95rem;color:var(--t2)}
+    ul{padding-left:1.4rem;margin:.4rem 0 1rem}
+    li{margin-bottom:.35rem}
+    a{color:var(--ac);font-weight:600}
+    .content{display:none}
+    .content.show{display:block;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    @media(max-width:520px){.card{padding:24px 18px}h1{font-size:1.4rem}}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand"><img src="/icon.svg" style="width:34px;height:34px;border-radius:10px" alt="Logo" />Oila Hisobchi</div>
+    <div class="lang-dropdown" id="langDropdown">
+      <button class="dropdown-trigger" id="langTrigger">
+        <span id="currentLangText">🇺🇿 O'zbekcha</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown-menu" id="langMenu">
+        <button data-l="uz">🇺🇿 O'zbekcha</button>
+        <button data-l="en">🇬🇧 English</button>
+        <button data-l="ru">🇷🇺 Русский</button>
+        <button data-l="kk">🇰🇿 Қазақша</button>
+        <button data-l="ky">🇰🇬 Кыргызча</button>
+        <button data-l="tg">🇹🇯 Тоҷикӣ</button>
+        <button data-l="qr">🇺🇿 Qaraqalpaqsha</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+
+  <!-- ═══════════════ UZBEK ═══════════════ -->
+  <div class="content" id="c-uz">
+    <h1>HISOBNI O‘CHIRISH SIYOSATI</h1>
+    <div class="upd">Oxirgi yangilangan sana: 13.07.2026</div>
+    
+    <h2>1. Umumiy qoidalar</h2>
+    <p>"Oila Hisobchi" ilovasi foydalanuvchilarga o‘z hisoblarini istalgan vaqtda butunlay o‘chirish imkoniyatini taqdim etadi.</p>
+    <p>Hisob o‘chirilgandan so‘ng foydalanuvchining barcha shaxsiy ma'lumotlari va ilovadagi faoliyatiga oid ma'lumotlar qayta tiklab bo‘lmaydigan tarzda o‘chiriladi.</p>
+
+    <h2>2. Hisobni qanday o‘chirish mumkin?</h2>
+    <p>Hisobni quyidagi tartibda o‘chirish mumkin:</p>
+    <p><strong>Profil → Sozlamalar → Hisobni o‘chirish</strong></p>
+    <p>Hisobni o‘chirishdan oldin:</p>
+    <ul>
+      <li>foydalanuvchi parolini qayta kiritishi;</li>
+      <li>o‘chirishni tasdiqlashi talab etiladi.</li>
+    </ul>
+    <p>Bu foydalanuvchi xavfsizligini ta'minlash uchun amalga oshiriladi.</p>
+
+    <h2>3. O‘chiriladigan ma'lumotlar</h2>
+    <p>Hisob o‘chirilganda quyidagi ma'lumotlar butunlay o‘chiriladi:</p>
+    <ul>
+      <li>Profil ma'lumotlari</li>
+      <li>Oilaviy ma'lumotlar</li>
+      <li>Daromadlar</li>
+      <li>Xarajatlar</li>
+      <li>Qarzlar</li>
+      <li>Maqsadlar</li>
+      <li>Statistikalar</li>
+      <li>Coin ma'lumotlari</li>
+      <li>Orzular (Wish)</li>
+      <li>Vazifalar</li>
+      <li>Rag'bat pullari</li>
+      <li>Bildirishnomalar</li>
+      <li>Firebase Authentication hisob ma'lumoti</li>
+      <li>Firestore ma'lumotlari</li>
+      <li>Firebase Storage fayllari</li>
+      <li>FCM tokenlari</li>
+    </ul>
+
+    <h2>4. Bola akkauntlari</h2>
+    <p>Bola akkauntlari mustaqil ravishda o‘z hisoblarini o‘chira olmaydi.</p>
+    <p>Faqat ota-ona (asosiy oila administratori) quyidagi huquqlarga ega:</p>
+    <ul>
+      <li>bola akkauntini o‘chirish;</li>
+      <li>bola ma'lumotlarini boshqarish;</li>
+      <li>bola akkauntini oiladan chiqarish.</li>
+    </ul>
+    <p>Agar ota-ona butun oilaviy hisobni o‘chirsa, barcha bog‘langan bola akkauntlari ham birgalikda o‘chiriladi.</p>
+
+    <h2>5. Qayta tiklash</h2>
+    <p>Hisob o‘chirilgandan keyin ma'lumotlarni qayta tiklashning imkoni ma'vjud emas.</p>
+    <p>Shu sababli foydalanuvchidan hisobni o‘chirishdan oldin qarorini diqqat bilan ko‘rib chiqishi tavsiya etiladi.</p>
+
+    <h2>6. Biz bilan bog‘lanish</h2>
+    <p>Savollar bo‘lsa ilova ichidagi "Biz bilan bog‘lanish" bo‘limi yoki ishlab chiquvchi elektron pochta manzili orqali murojaat qilishingiz mumkin:<br><strong>Elektron pochta:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ ENGLISH ═══════════════ -->
+  <div class="content" id="c-en">
+    <h1>ACCOUNT DELETION POLICY</h1>
+    <div class="upd">Last updated: 13.07.2026</div>
+
+    <h2>1. General Provisions</h2>
+    <p>The "Oila Hisobchi" app provides users with the option to completely delete their accounts at any time.</p>
+    <p>Once the account is deleted, all personal data of the user and data related to their activity in the app are permanently and irreversibly deleted.</p>
+
+    <h2>2. How to delete an account?</h2>
+    <p>An account can be deleted in the following way:</p>
+    <p><strong>Profile → Settings → Delete Account</strong></p>
+    <p>Before deleting:</p>
+    <ul>
+      <li>the user must re-enter their password;</li>
+      <li>confirm the deletion.</li>
+    </ul>
+    <p>This is done to ensure user security.</p>
+
+    <h2>3. Deleted Data</h2>
+    <p>When an account is deleted, the following data is completely wiped:</p>
+    <ul>
+      <li>Profile details</li>
+      <li>Family details</li>
+      <li>Income</li>
+      <li>Expenses</li>
+      <li>Debts</li>
+      <li>Goals</li>
+      <li>Statistics</li>
+      <li>Coin data</li>
+      <li>Wishes (Wish)</li>
+      <li>Tasks</li>
+      <li>Incentives / Allowance</li>
+      <li>Notifications</li>
+      <li>Firebase Authentication credentials</li>
+      <li>Firestore data</li>
+      <li>Firebase Storage files</li>
+      <li>FCM tokens</li>
+    </ul>
+
+    <h2>4. Child Accounts</h2>
+    <p>Child accounts cannot independently delete their own accounts.</p>
+    <p>Only the parent (the main family administrator) has the following rights:</p>
+    <ul>
+      <li>delete a child account;</li>
+      <li>manage child data;</li>
+      <li>remove a child account from the family.</li>
+    </ul>
+    <p>If the parent deletes the entire family account, all linked child accounts will be deleted as well.</p>
+
+    <h2>5. Recovery</h2>
+    <p>Once an account is deleted, it is impossible to recover any data.</p>
+    <p>Therefore, users are advised to carefully consider their decision before deleting the account.</p>
+
+    <h2>6. Contact Us</h2>
+    <p>If you have any questions, you can contact us via the "Contact Us" section inside the app or through the developer's email address:<br><strong>Email:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ RUSSIAN ═══════════════ -->
+  <div class="content" id="c-ru">
+    <h1>ПОЛИТИКА УДАЛЕНИЯ АККАУНТА</h1>
+    <div class="upd">Дата последнего обновления: 13.07.2026</div>
+
+    <h2>1. Общие положения</h2>
+    <p>Приложение «Oila Hisobchi» предоставляет пользователям возможность полностью удалить свои аккаунты в любое время.</p>
+    <p>После удаления аккаунта все персональные данные пользователя и информация о его активности в приложении удаляются безвозвратно.</p>
+
+    <h2>2. Как удалить аккаунт?</h2>
+    <p>Удалить аккаунт можно следующим образом:</p>
+    <p><strong>Профиль → Настройки → Удалить аккаунт</strong></p>
+    <p>Перед удалением аккаунта требуется:</p>
+    <ul>
+      <li>повторно ввести пароль пользователя;</li>
+      <li>подтвердить удаление.</li>
+    </ul>
+    <p>Это делается для обеспечения безопасности пользователя.</p>
+
+    <h2>3. Удаляемые данные</h2>
+    <p>При удалении аккаунта полностью удаляются следующие данные:</p>
+    <ul>
+      <li>Данные профиля</li>
+      <li>Семейные данные</li>
+      <li>Доходы</li>
+      <li>Расходы</li>
+      <li>Долги</li>
+      <li>Цели</li>
+      <li>Статистика</li>
+      <li>Данные о коинах</li>
+      <li>Желания (Wish)</li>
+      <li>Задачи</li>
+      <li>Поощрительные средства</li>
+      <li>Уведомления</li>
+      <li>Учетные данные Firebase Authentication</li>
+      <li>Данные Firestore</li>
+      <li>Файлы Firebase Storage</li>
+      <li>Токены FCM</li>
+    </ul>
+
+    <h2>4. Детские аккаунты</h2>
+    <p>Детские аккаунты не могут самостоятельно удалить свои профили.</p>
+    <p>Только родитель (главный администратор семьи) имеет следующие права:</p>
+    <ul>
+      <li>удалить детский аккаунт;</li>
+      <li>управлять детскими данными;</li>
+      <li>исключить детский аккаунт из семьи.</li>
+    </ul>
+    <p>Если родитель удаляет весь семейный аккаунт, все связанные детские аккаунты также удаляются.</p>
+
+    <h2>5. Восстановление данных</h2>
+    <p>После удаления аккаунта восстановление данных невозможно.</p>
+    <p>По этой причине пользователям рекомендуется внимательно обдумать свое решение перед удалением аккаунта.</p>
+
+    <h2>6. Свяжитесь с нами</h2>
+    <p>Если у вас возникнут вопросы, вы можете обратиться через раздел «Связаться с нами» в приложении или по электронной почте разработчика:<br><strong>Электронная почта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KAZAKH ═══════════════ -->
+  <div class="content" id="c-kk">
+    <h1>АККАУНТТЫ ӨШІРУ САЯСАТЫ</h1>
+    <div class="upd">Соңғы жаңартылған күні: 13.07.2026</div>
+
+    <h2>1. Жалпы ережелер</h2>
+    <p>"Oila Hisobchi" қолданбасы пайдаланушыларға өз аккаунттарын кез келген уақытта толығымен өшіру мүмкіндігін ұсынады.</p>
+    <p>Аккаунт өшірілгеннен кейін пайдаланушының барлық жеке деректері мен қолданбадағы әрекеттеріне қатысты деректер қайтарылмайтындай етіп жойылады.</p>
+
+    <h2>2. Аккаунтты қалай өшіруге болады?</h2>
+    <p>Аккаунтты келесі ретпен өшіруге болады:</p>
+    <p><strong>Профиль → Баптаулар → Аккаунтты өшіру</strong></p>
+    <p>Аккаунтты өшірмес бұрын:</p>
+    <ul>
+      <li>пайдаланушы құпия сөзін қайта енгізуі;</li>
+      <li>өшіруді растауы қажет.</li>
+    </ul>
+    <p>Бұл пайдаланушының қауіпсіздігін қамтамасыз ету үшін жасалады.</p>
+
+    <h2>3. Өшірілетін деректер</h2>
+    <p>Аккаунт өшірілген кезде келесі деректер толығымен жойылады:</p>
+    <ul>
+      <li>Профиль деректері</li>
+      <li>Отбасылық деректер</li>
+      <li>Кірістер</li>
+      <li>Шығыстар</li>
+      <li>Қарыздар</li>
+      <li>Мақсаттар</li>
+      <li>Статистика</li>
+      <li>Коин деректері</li>
+      <li>Тілектер (Wish)</li>
+      <li>Тапсырмалар</li>
+      <li>Ынталандыру қаражаты</li>
+      <li>Хабарламалар</li>
+      <li>Firebase Authentication есептік деректері</li>
+      <li>Firestore деректері</li>
+      <li>Firebase Storage файлдары</li>
+      <li>FCM токендері</li>
+    </ul>
+
+    <h2>4. Балалар аккаунттары</h2>
+    <p>Балалар аккаунттары өз аккаунттарын дербес өшіре алмайды.</p>
+    <p>Тек ата-ана (отбасының негізгі әкімшісі) келесі құқықтарға ие:</p>
+    <ul>
+      <li>бала аккаунтын өшіру;</li>
+      <li>бала деректерін басқару;</li>
+      <li>бала аккаунтын отбасынан шығару.</li>
+    </ul>
+    <p>Егер ата-ана бүкіл отбасылық аккаунтты өшірсе, барлық байланыстырылған бала аккаунттары да бірге өшіріледі.</p>
+
+    <h2>5. Қалпына келтіру</h2>
+    <p>Аккаунт өшірілгеннен кейін деректерді қалпына келтіру мүмкін емес.</p>
+    <p>Сондықтан пайдаланушыларға аккаунтты өшірмес бұрын шешімдерін мұқият қарастыру ұсынылады.</p>
+
+    <h2>6. Бізбен байланыс</h2>
+    <p>Сұрақтарыңыз болса, қолданба ішіндегі «Бізбен байланыс» бөлімі немесе әзірлеушінің электрондық поштасы арқылы хабарласуға болады:<br><strong>Электрондық пошта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KYRGYZ ═══════════════ -->
+  <div class="content" id="c-ky">
+    <h1>АККАУНТТУ ӨЧҮРҮҮ САЯСАТЫ</h1>
+    <div class="upd">Акыркы жаңыртылган күнү: 13.07.2026</div>
+
+    <h2>1. Жалпы жоболор</h2>
+    <p>"Oila Hisobchi" тиркемеси колдонуучуларга өз аккаунттарын каалаган убакта толугу менен өчүрүү мүмкүнчүлүгүн берет.</p>
+    <p>Аккаунт өчүрүлгөндөн кийин, колдонуучунун бардык жеке маалыматтары жана тиркемедеги иш-аракеттерине байланыштуу маалыматтар биротоло өчүрүлөт.</p>
+
+    <h2>2. Аккаунтту кантип өчүрүү керек?</h2>
+    <p>Аккаунтту төмөнкүдөй өчүрүүгө болот:</p>
+    <p><strong>Профиль → Орнотуулар → Аккаунтту өчүрүү</strong></p>
+    <p>Аккаунтту өчүрүүдөн мурун:</p>
+    <ul>
+      <li>колдонуучу сырсөзүн кайра киргизиши;</li>
+      <li>өчүрүүнү ырасташы керек.</li>
+    </ul>
+    <p>Бул колдонуучунун коопсуздугун камсыз кылуу максатында жасалат.</p>
+
+    <h2>3. Өчүрүлүүчү маалыматтар</h2>
+    <p>Аккаунт өчүрүлгөндө төмөнкү маалыматтар толугу менен жок кылынат:</p>
+    <ul>
+      <li>Профиль маалыматтары</li>
+      <li>Үй-бүлөлүк маалыматтар</li>
+      <li>Кирешелер</li>
+      <li>Чыгымдар</li>
+      <li>Карыздар</li>
+      <li>Максаттар</li>
+      <li>Статистика</li>
+      <li>Коин маалыматтары</li>
+      <li>Каалоолор (Wish)</li>
+      <li>Тапсырмалар</li>
+      <li>Сыйлыктар/Аванстар</li>
+      <li>Билдирүүлөр</li>
+      <li>Firebase Authentication каттоо маалыматтары</li>
+      <li>Firestore маалыматтары</li>
+      <li>Firebase Storage файлдары</li>
+      <li>FCM токендери</li>
+    </ul>
+
+    <h2>4. Балдардын аккаунттары</h2>
+    <p>Балдардын аккаунттары өз алдынча аккаунттарын өчүрө алышпайт.</p>
+    <p>Тек гана ата-эне (үй-бүлөнүн башкы администратору) төмөнкү укуктарга ээ:</p>
+    <ul>
+      <li>баланын аккаунтун өчүрүү;</li>
+      <li>баланын маалыматтарын башкаруу;</li>
+      <li>баланын аккаунтун үй-бүлөдөн чыгаруу.</li>
+    </ul>
+    <p>Егерде ата-эне бүтүндөй үй-бүлөлүк аккаунтту өчүрсө, бардык байланышкан балдардын аккаунттары да бирге өчүрүлөт.</p>
+
+    <h2>5. Калыбына келтирүү</h2>
+    <p>Аккаунт өчүрүлгөндөн кийин маалыматтарды калыбына келтирүү мүмкүн эмес.</p>
+    <p>Ошондуктан, колдонуучуларга өчүрүүдөн мурун чечимин кылдат ойлонуу сунушталат.</p>
+
+    <h2>6. Биз менен байланышуу</h2>
+    <p>Суроолоруңуз болсо, тиркеменин ичиндеги "Биз менен байланышуу" бөлүмү же иштеп чыгуучунун электрондук почтасы аркылуу кайрылсаңыз болот:<br><strong>Электрондук почта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ TAJIK ═══════════════ -->
+  <div class="content" id="c-tg">
+    <h1>СИЁСАТИ НЕСТ КАРДАНИ АККАУНТ</h1>
+    <div class="upd">Санаи охирини навсозӣ: 13.07.2026</div>
+
+    <h2>1. Қоидаҳои умумӣ</h2>
+    <p>Барномаи "Oila Hisobchi" ба корбарон имконият медиҳад, ки аккаунти худро дар ҳар вақти дилхоҳ комилан нест кунанд.</p>
+    <p>Пас аз нест кардани аккаунт, ҳамаи маълумоти шахсии корбар ва маълумоти марбут ба фаъолияти ӯ дар барнома ба таври доимӣ ва бебозгашт нест карда мешаванд.</p>
+
+    <h2>2. Чӣ тавр бояд аккаунтро нест кард?</h2>
+    <p>Аккаунтро бо тартиби зерин нест кардан мумкин аст:</p>
+    <p><strong>Профил → Танзимот → Нест кардани аккаунт</strong></p>
+    <p>Пеш аз нест кардани аккаунт:</p>
+    <ul>
+      <li>корбар бояд пароли худро аз нав ворид кунад;</li>
+      <li>нест карданро тасдиқ намояд.</li>
+    </ul>
+    <p>Ин барои таъмин намудани амнияти корбар амалӣ карда мешавад.</p>
+
+    <h2>3. Маълумоте, ки нест карда мешавад</h2>
+    <p>Ҳангоми нест кардани аккаунт маълумоти зерин комилан нест карда мешаванд:</p>
+    <ul>
+      <li>Маълумоти профил</li>
+      <li>Маълумоти оилавӣ</li>
+      <li>Даромадҳо</li>
+      <li>Хароҷотҳо</li>
+      <li>Қарзҳо</li>
+      <li>Ҳадафҳо</li>
+      <li>Омор</li>
+      <li>Маълумот дар бораи коинҳо</li>
+      <li>Орзуҳо (Wish)</li>
+      <li>Вазифаҳо</li>
+      <li>Маблағҳои ҳавасмандкунӣ</li>
+      <li>Огоҳиномаҳо</li>
+      <li>Маълумоти бақайдгирии Firebase Authentication</li>
+      <li>Маълумоти Firestore</li>
+      <li>Файлҳои Firebase Storage</li>
+      <li>Токенҳои FCM</li>
+    </ul>
+
+    <h2>4. Аккаунтҳои кӯдакон</h2>
+    <p>Аккаунтҳои кӯдакон наметавонанд мустақилона профилҳои худро нест кунанд.</p>
+    <p>Танҳо волидайн (администратори асосии оила) ҳуқуқҳои зеринро дорад:</p>
+    <ul>
+      <li>нест кардани аккаунти кӯдак;</li>
+      <li>идоракунии маълумоти кӯдак;</li>
+      <li>хориҷ кардани аккаунти кӯдак аз оила.</li>
+    </ul>
+    <p>Агар волидайн тамоми аккаунти оиларо нест кунад, ҳамаи аккаунтҳои кӯдакони вобасташуда низ якҷоя нест карда мешаванд.</p>
+
+    <h2>5. Барқарорсозӣ</h2>
+    <p>Пас аз нест кардани аккаунт барқарор кардани маълумот ғайриимкон аст.</p>
+    <p>Бинобар ин, ба корбарон тавсия дода мешавад, ки пеш аз нест кардани аккаунт қарори худро бодиққат андешанд.</p>
+
+    <h2>6. Бо мо тамос гиред</h2>
+    <p>Агар ягон савол дошта бошед, метавонед тавассути бахши "Бо мо тамос гиред" дар дохили барнома ё почтаи электронии таҳиягар муроҷиат кунед:<br><strong>Почтаи электронӣ:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KARAKALPAK ═══════════════ -->
+  <div class="content" id="c-qr">
+    <h1>AKKAUNTI ÓSHIRIW SIYASATI</h1>
+    <div class="upd">Aqırǵı jańalanǵan sáne: 13.07.2026</div>
+
+    <h2>1. Ulıwma qaǵıydalar</h2>
+    <p>"Oila Hisobchi" ilovası paydalanıwshılarǵa óz akkauntların qálegen waqıtta barlay óshiriw múmkinshiligin usınadı.</p>
+    <p>Akkaunt óshirilgennen soń paydalanıwshınıń barlıq jeke maǵlıwmatları hám ilovadaǵı belsendiligine baylanıslı maǵlıwmatlar qayta tiklep bolmaytuǵın etip óshiriledi.</p>
+
+    <h2>2. Akkauntı qalay óshiriw múmkin?</h2>
+    <p>Akkauntı tómendegi tártipte óshiriw múmkin:</p>
+    <p><strong>Profil → Sazlamalar → Akkauntı óshiriw</strong></p>
+    <p>Akkauntı óshiriwden aldın:</p>
+    <ul>
+      <li>paydalanıwshı parolin qayta kirgiziwi;</li>
+      <li>óshiriwdi tastıyıqlawı talap etiledi.</li>
+    </ul>
+    <p>Bul paydalanıwshı qáwipsizligin táminlew ushın ámelge asırıladı.</p>
+
+    <h2>3. Óshiriletuǵın maǵlıwmatlar</h2>
+    <p>Akkaunt óshirilgende tómendegi maǵlıwmatlar barlay óshiriledi:</p>
+    <ul>
+      <li>Profil maǵlıwmatları</li>
+      <li>Shańaraq maǵlıwmatları</li>
+      <li>Dáramatlar</li>
+      <li>Qárejetler</li>
+      <li>Qarızlar</li>
+      <li>Maqsetler</li>
+      <li>Statistikalar</li>
+      <li>Koin maǵlıwmatları</li>
+      <li>Arzıwlar (Wish)</li>
+      <li>Tapsırmalar</li>
+      <li>Xoshametlew pulları</li>
+      <li>Bildirgi xatları</li>
+      <li>Firebase Authentication akkaunt maǵlıwmatı</li>
+      <li>Firestore maǵlıwmatları</li>
+      <li>Firebase Storage faylları</li>
+      <li>FCM tokenleri</li>
+    </ul>
+
+    <h2>4. Bala akkauntları</h2>
+    <p>Bala akkauntları ózbetinshe óz akkauntların óshire almaydı.</p>
+    <p>Tek ata-ana (shańaraqtıń tiykarǵı administratorı) tómendegi huqıqlarǵa iye:</p>
+    <ul>
+      <li>bala akkauntın óshiriw;</li>
+      <li>bala maǵlıwmatların basqarıw;</li>
+      <li>bala akkauntın shańaraqtan shıǵarıw.</li>
+    </ul>
+    <p>Eger ata-ana barlıq shańaraqlıq akkauntı óshirse, barlıq baylanısqan bala akkauntları da birge óshiriledi.</p>
+
+    <h2>5. Qayta tiklew</h2>
+    <p>Akkaunt óshirilgennen keyin maǵlıwmatlardı qayta tiklewdiń ilajı joq.</p>
+    <p>Sol sebepli paydalanıwshıdan akkauntı óshiriwden aldın qararın dıqqat penen kórip shıǵıw usınıladı.</p>
+
+    <h2>6. Biz benen baylanıs</h2>
+    <p>Sorawlarıńız bolsa ilova ishindegi "Biz benen baylanıs" bólimi yamasa islep shıǵarıwshınıń elektron pochta mánzili arqalı múrájat etiwińiz múmkin:<br><strong>Elektron pochta:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  var LANGS = ["uz", "en", "ru", "kk", "ky", "tg", "qr"];
+  var LANG_LABELS = {
+    uz: "🇺🇿 O'zbekcha",
+    en: "🇬🇧 English",
+    ru: "🇷🇺 Русский",
+    kk: "🇰🇿 Қазақша",
+    ky: "🇰🇬 Кыргызча",
+    tg: "🇹🇯 Тоҷикӣ",
+    qr: "🇺🇿 Qaraqalpaqsha"
+  };
+  
+  var dropdown = document.getElementById("langDropdown");
+  var trigger = document.getElementById("langTrigger");
+  var currentText = document.getElementById("currentLangText");
+  var menu = document.getElementById("langMenu");
+
+  trigger.addEventListener("click", function(e){
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", function(){
+    dropdown.classList.remove("open");
+  });
+
+  function setLang(l){
+    if(LANGS.indexOf(l)<0)l="uz";
+    LANGS.forEach(function(x){
+      var el = document.getElementById("c-"+x);
+      if(el) el.classList.toggle("show", x===l);
+    });
+    document.querySelectorAll("#langMenu button").forEach(function(b){
+      b.classList.toggle("on", b.dataset.l===l);
+    });
+    currentText.innerText = LANG_LABELS[l] || LANG_LABELS.uz;
+    document.documentElement.lang=l;
+    try{localStorage.setItem("policy_lang",l);}catch(e){}
+  }
+
+  document.querySelectorAll("#langMenu button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      setLang(b.dataset.l);
+      dropdown.classList.remove("open");
+    });
+  });
+
+  var q=new URLSearchParams(location.search).get("lang");
+  var saved=null;try{saved=localStorage.getItem("policy_lang");}catch(e){}
+  setLang(q||saved||"uz");
+})();
+</script>
+</body>
+</html>

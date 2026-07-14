@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="512" height="512">
+  <defs>
+    <!-- Modern Gradient for Background -->
+    <linearGradient id="logoBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E1B4B" />
+    </linearGradient>
+
+    <!-- Drop Shadow for Depth -->
+    <filter id="logoShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.3" />
+    </filter>
+  </defs>
+
+  <!-- Background Squircle -->
+  <rect width="120" height="120" rx="28" fill="url(#logoBg)" />
+
+  <!-- Main Visual Group with Shadow -->
+  <g filter="url(#logoShadow)">
+    <!-- House Chimney -->
+    <path d="M78 38 L78 28 L86 28 L86 45" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- House Roof -->
+    <path d="M22 52 L60 18 L98 52" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- House Walls -->
+    <path d="M32 52 L32 94 L88 94 L88 52" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+
+    <!-- Tree Trunk & Branches -->
+    <path d="M60 94 L60 68" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" fill="none" />
+    <path d="M60 68 C54 68, 46 64, 44 56" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M60 68 C66 68, 74 64, 76 56" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+    <path d="M60 68 L60 52" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" />
+
+    <!-- Tree Leaves (Coins representing family & financial growth) -->
+    <!-- Top Leaf (Cyan/Teal) -->
+    <circle cx="60" cy="42" r="13" fill="#06B6D4" stroke="#FFFFFF" stroke-width="3" />
+
+    <!-- Left Leaf (Success Green) -->
+    <circle cx="42" cy="54" r="11" fill="#10B981" stroke="#FFFFFF" stroke-width="3" />
+
+    <!-- Right Leaf (Amber/Orange) -->
+    <circle cx="78" cy="54" r="11" fill="#F59E0B" stroke="#FFFFFF" stroke-width="3" />
+  </g>
+</svg>

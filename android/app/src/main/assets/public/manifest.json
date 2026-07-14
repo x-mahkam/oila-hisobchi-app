@@ -1,0 +1,30 @@
+{
+  "name": "Oila Hisobchi",
+  "short_name": "Hisobchi",
+  "description": "Smart oilaviy budjet va xarajatlar nazorati",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090e1c",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
