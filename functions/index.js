@@ -294,3 +294,46 @@ async function disablePremiumForOila(oilaId) {
     }
   }
 }
+
+/**
+ * sendNotificationPush trigger - sends real-time FCM push notifications when a new in-app notification is created.
+ */
+exports.sendNotificationPush = functions.firestore
+  .document("appdata/{docId}")
+  .onWrite(async (change, context) => {
+    const docId = context.params.docId;
+    // Only target notifications (safeKey("notif_" + uid) results in "oilaV7_notif_<uid>")
+    const prefix = "oilaV7_notif_";
+    if (!docId.startsWith(prefix)) return null;
+    const uid = docId.slice(prefix.length);
+
+    const beforeArr = (change.before.exists ? change.before.data()?.v : []) || [];
+    const afterArr = (change.after.exists ? change.after.data()?.v : []) || [];
+    if (!Array.isArray(afterArr) || afterArr.length === 0) return null;
+
+    // Detect new items added (usually prepended by notifyTo at index 0)
+    const beforeIds = new Set(beforeArr.map(n => n.id));
+    const newItems = afterArr.filter(n => !beforeIds.has(n.id));
+    if (newItems.length === 0) return null;
+
+    // Read target user's registered FCM tokens
+    const tokDoc = await db.collection("appdata").doc(safeKey("fcm_tokens_" + uid)).get();
+    const tokens = (tokDoc.exists ? tokDoc.data()?.v : []) || [];
+    if (!Array.isArray(tokens) || tokens.length === 0) return null;
+
+    // Send push for the latest notification (index 0 of newItems)
+    const latest = newItems[0];
+    try {
+      await admin.messaging().sendEachForMulticast({
+        tokens,
+        notification: {
+          title: latest.title || "Oila Hisobchi",
+          body: latest.text || "",
+        },
+      });
+    } catch (e) {
+      console.error("FCM push error", e);
+    }
+    return null;
+  });
+
