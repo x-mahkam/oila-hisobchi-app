@@ -8,7 +8,7 @@ export function useFamily() {
   const { user, oila, azolar, setAzolar, setOila,
           vazifalar, setVazifalar, kidBalances, setKidBalances,
           xar, setXar, dar, setDar,
-          ok$, buzz, addStar, addNotif, fireConfetti, lg } = useApp();
+          ok$, buzz, addStar, addNotif, fireConfetti, lg, setShowPremModal } = useApp();
 
   // ── Kid / Gift local states ──
   const [showGift,  setShowGift]  = useState(false);
@@ -178,6 +178,18 @@ export function useFamily() {
     buzz(12);
     const loginKey = kidLogin.trim().toLowerCase();
     if (await db.gFresh("kidlogin_" + loginKey)) return ok$(lg === "uz" ? "Bu login band, boshqa login tanlang" : "Login taken, choose another", "err");
+    
+    // Check for Premium limit (max 2 members in free version)
+    if ((oila?.azolarIds || oila?.azolar || []).length >= 2 && !oila?.premium) {
+      setShowPremModal(true);
+      return ok$(
+        lg === "uz"
+          ? "Bu oilada a'zolar limiti to'lgan (2). Cheksiz a'zo qo'shish uchun Premium'ga o'ting."
+          : "Family member limit reached (2). Upgrade to Premium for unlimited members.",
+        "err"
+      );
+    }
+
     try {
       const uid = "kid" + Date.now();
       const ph = await hp(kidPw);

@@ -59,6 +59,7 @@ import { useQRScanner }      from "./hooks/useQRScanner.js";
 import { useExport }         from "./hooks/useExport.js";
 import { useScreenTime }     from "./hooks/useScreenTime.js";
 import { useDailyReminder }  from "./hooks/useDailyReminder.js";
+import { usePushToken }      from "./hooks/usePushToken.js";
 import ScreenTimeLockScreen  from "./components/ScreenTimeLockScreen.jsx";
 
 // Utils
@@ -124,6 +125,9 @@ export default function App() {
   const aiAdvice = useAIAdvice();
   const screenTime = useScreenTime();
   const dailyReminder = useDailyReminder();
+  
+  // Register push tokens on native platforms for authenticated users
+  usePushToken(user?.id);
 
   // Qarz sahifasi ochilganda avtomatik sinxronizatsiya (holat + balans)
   useEffect(() => {
