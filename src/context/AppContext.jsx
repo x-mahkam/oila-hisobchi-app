@@ -74,6 +74,7 @@ export function AppProvider({ children }) {
 
   // ── Maqsad confirm modal ─────────────────────────────────
   const [maqsadConfirmNotif, setMaqsadConfirmNotif] = useState(null);
+  const syncDailyReminderRef = useRef(null);
 
   // ── Computed ─────────────────────────────────────────────
   const th = useMemo(() => MK(dark), [dark]);
@@ -180,6 +181,7 @@ export function AppProvider({ children }) {
     maqsadConfirmNotif, setMaqsadConfirmNotif,
     coinEarnedTrigger,
     showPremModal, setShowPremModal,
+    syncDailyReminderRef,
     // Functions
     ok$, buzz, addStar, addNotif, logout, fireConfetti, activatePremium,
   };

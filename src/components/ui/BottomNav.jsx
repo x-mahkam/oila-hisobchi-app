@@ -14,6 +14,7 @@ export default function BottomNav({
     }}>
       {navItems.map(item => item.pr
         ? <button key="add"
+            id="tour-add-btn"
             onClick={() => {
               buzz(15);
               setShowAddModal(true);
@@ -26,6 +27,7 @@ export default function BottomNav({
             {Ico.add("#fff")}
           </button>
         : <button key={item.id}
+            id={"tour-nav-" + item.id}
             onClick={() => {
               buzz(8);
               if (item.id === "bilim" && setBilimInitialView) {
