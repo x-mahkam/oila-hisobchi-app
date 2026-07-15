@@ -30,32 +30,42 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
   const [rcOfferings, setRcOfferings] = useState(null);
   const [rcError, setRcError] = useState("");
 
+  const L = (uz, ru, en, kk, ky, tg, qr) => {
+    return lg === "uz" ? uz :
+           lg === "ru" ? ru :
+           lg === "kk" ? kk :
+           lg === "ky" ? ky :
+           lg === "tg" ? tg :
+           lg === "qr" ? qr :
+           en;
+  };
+
   const uz = lg === "uz";
   const gold = PREMIUM.gold;
 
   const TIERS = {
     monthly: {
       id: "monthly",
-      title: uz ? "Oylik" : "Monthly",
+      title: L("Oylik", "Ежемесячно", "Monthly", "Ай сайын", "Ай сайын", "Ҳармоҳа", "Aylıq"),
       price: "15 000 UZS",
-      sub: uz ? "Har oy to'lanadi" : "Billed monthly",
+      sub: L("Har oy to'lanadi", "Оплачивается ежемесячно", "Billed monthly", "Ай сайын төленеді", "Ай сайын төлөнөт", "Ҳар моҳ пардохт мешавад", "Ha'r ay to'lenedi"),
       tag: null,
       val: 15000,
     },
     yearly: {
       id: "yearly",
-      title: uz ? "Yillik obuna" : "Yearly Plan",
+      title: L("Yillik obuna", "Годовая подписка", "Yearly Plan", "Жылдық жазылым", "Жылдык жазылуу", "Обунаи солона", "Jıllıq obuna"),
       price: "99 000 UZS",
-      sub: uz ? "Yiliga bir marta to'lov" : "Billed annually",
-      tag: uz ? "Eng ommabop (-45%)" : "Popular (-45%)",
+      sub: L("Yiliga bir marta to'lov", "Оплата раз в год", "Billed annually", "Жылына бір рет төлеу", "Жылына бир жолу төлөө", "Пардохт як бор дар сол", "Jılına bir ma'rte to'lew"),
+      tag: L("Eng ommabop (-45%)", "Самый популярный (-45%)", "Popular (-45%)", "Ең танымал (-45%)", "Эң популярдуу (-45%)", "Маҳбубтарин (-45%)", "En' ommabop (-45%)"),
       val: 99000,
     },
     lifetime: {
       id: "lifetime",
-      title: uz ? "Umrbod (Lifetime)" : "Lifetime Access",
+      title: L("Umrbod (Lifetime)", "Пожизненно (Lifetime)", "Lifetime Access", "Өмір бойы (Lifetime)", "Өмүр бою (Lifetime)", "Барои ҳамеша (Lifetime)", "U'mrbod (Lifetime)"),
       price: "199 000 UZS",
-      sub: uz ? "Bir martalik to'lov, abadiy!" : "One-time payment, forever!",
-      tag: uz ? "Eng yaxshi qiymat" : "Best value",
+      sub: L("Bir martalik to'lov, abadiy!", "Единоразовый платеж, навсегда!", "One-time payment, forever!", "Бір реттік төлем, мәңгілікке!", "Бир жолку төлөм, түбөлүккө!", "Пардохти яккарата, барои ҳамеша!", "Bir ma'rtelik to'lew, a'badiy!"),
+      tag: L("Eng yaxshi qiymat", "Лучшая цена", "Best value", "Ең жақсы баға", "Эң жакшы баа", "Арзиши олӣ", "En' jaqsı qıymat"),
       val: 199000,
     }
   };
@@ -102,7 +112,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
       }
 
       if (!selectedPackage) {
-        throw new Error(uz ? "RevenueCat obuna paketi topilmadi" : "No active RevenueCat packages found");
+        throw new Error(L("RevenueCat obuna paketi topilmadi", "Пакет подписки RevenueCat не найден", "No active RevenueCat packages found", "RevenueCat жазылым пакеті табылмады", "RevenueCat жазылуу пакети табылган жок", "Бастаи обунаи RevenueCat ёфт нашуд", "RevenueCat obuna paketi tabılmadı"));
       }
 
       const res = await Purchases.purchasePackage({ aPackage: selectedPackage });
@@ -118,7 +128,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
     } catch (e) {
       console.error("RevenueCat purchase error:", e);
       if (!e.userCancelled) {
-        alert(uz ? "To'lov amalga oshmadi: " + (e.message || e) : "Payment failed: " + (e.message || e));
+        alert(L("To'lov amalga oshmadi: ", "Ошибка оплаты: ", "Payment failed: ", "Төлем сәтсіз аяқталды: ", "Төлөм ишке ашкан жок: ", "Пардохт ноком шуд: ", "To'lew a'melge aspadi: ") + (e.message || e));
       }
     } finally {
       setIsLoading(false);
@@ -137,38 +147,99 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
         const ent = Object.values(entitlements)[0];
         const verifyRes = await activatePremium(ent.transactionIdentifier || "restore_token", ent.productIdentifier);
         if (verifyRes.success) {
-          alert(uz ? "Xaridlar muvaffaqiyatli tiklandi!" : "Purchases restored successfully!");
+          alert(L("Xaridlar muvaffaqiyatli tiklandi!", "Покупки успешно восстановлены!", "Purchases restored successfully!", "Сатып алулар сәтті қалпына келтірілді!", "Сатып алуулар ийгиликтүү калыбына келтирилди!", "Харидҳо бомуваффақият барқарор шуданд!", "Satıp alıwlar tabıslı qalpına keltirildi!"));
           onClose();
         } else {
-          alert(uz ? "Xaridni tasdiqlashda xatolik: " + verifyRes.message : "Verification error: " + verifyRes.message);
+          alert(L("Xaridni tasdiqlashda xatolik: ", "Ошибка подтверждения покупки: ", "Verification error: ", "Сатып алуды растау қатесі: ", "Сатып алууну ырастоо катасы: ", "Хатогии тасдиқи харид: ", "Satıp alıwdı tastıyıqlawda qa'telik: ") + verifyRes.message);
         }
       } else {
-        alert(uz ? "Faol premium xaridlar topilmadi." : "No active premium purchases found.");
+        alert(L("Faol premium xaridlar topilmadi.", "Активные премиум покупки не найдены.", "No active premium purchases found.", "Белсенді премиум сатып алулар табылмады.", "Активдүү премиум сатып алуулар табылган жок.", "Харидҳои фаъоли премиум ёфт нашуданд.", "Faol premium satıp alıwlar tabılmadı."));
       }
     } catch (e) {
       console.error("Restore Purchases Error:", e);
-      alert(uz ? "Xaridlarni tiklashda xatolik: " + e.message : "Error restoring purchases: " + e.message);
+      alert(L("Xaridlarni tiklashda xatolik: ", "Ошибка восстановления покупок: ", "Error restoring purchases: ", "Сатып алуларды қалпына келтіру қатесі: ", "Сатып алууларды калыбына келтирүү катасы: ", "Хатогии барқарорсозии харидҳо: ", "Satıp alıwlardı qalpına keltiriwde qa'telik: ") + e.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const FEATURES = [
-    { ico: PIco.target, uz: "Cheksiz maqsad", en: "Unlimited goals" },
-    { ico: PIco.family, uz: "Cheksiz oila a'zosi", en: "Unlimited members" },
-    { ico: PIco.doc, uz: "PDF/Excel eksport", en: "PDF/Excel export" },
-    { ico: PIco.mic, uz: "Ovozli boshqaruv (Smart)", en: "Voice input (Smart)" },
-    { ico: PIco.qr, uz: "Tushum cheklarini QR skanerlash", en: "QR receipt scanner" },
-    { ico: PIco.ai, uz: "Foydali moliyaviy maslahatlar", en: "Useful financial insights" },
+    { ico: PIco.target,
+      uz: "Cheksiz maqsad",
+      ru: "Безлимитные цели",
+      en: "Unlimited goals",
+      kk: "Шексіз мақсаттар",
+      ky: "Чексиз максаттар",
+      tg: "Ҳадафҳои номаҳдуд",
+      qr: "Sheksiz maqset"
+    },
+    { ico: PIco.family,
+      uz: "Cheksiz oila a'zosi",
+      ru: "Безлимитные члены семьи",
+      en: "Unlimited members",
+      kk: "Шексіз отбасы мүшелері",
+      ky: "Үй-бүлөнүн чексиз мүчөлөрү",
+      tg: "Аъзоёни номаҳдуди оила",
+      qr: "Sheksiz shan'araq ag'zası"
+    },
+    { ico: PIco.doc,
+      uz: "PDF/Excel eksport",
+      ru: "Экспорт в PDF/Excel",
+      en: "PDF/Excel export",
+      kk: "PDF/Excel экспорты",
+      ky: "PDF/Excel экспорту",
+      tg: "Интиқоли PDF/Excel",
+      qr: "PDF/Excel eksport"
+    },
+    { ico: PIco.mic,
+      uz: "Ovozli boshqaruv (Smart)",
+      ru: "Голосовое управление (Smart)",
+      en: "Voice input (Smart)",
+      kk: "Дауыспен басқару (Smart)",
+      ky: "Үн менен башкаруу (Smart)",
+      tg: "Идоракунии овозӣ (Smart)",
+      qr: "Ovozlı basqarıw (Smart)"
+    },
+    { ico: PIco.qr,
+      uz: "Tushum cheklarini QR skanerlash",
+      ru: "QR-сканирование чеков",
+      en: "QR receipt scanner",
+      kk: "Чектерді QR сканерлеу",
+      ky: "Чектерди QR сканерлөө",
+      tg: "Сканери QR-и квитанцияҳо",
+      qr: "Tu'sum cheklerin QR skanerlew"
+    },
+    { ico: PIco.ai,
+      uz: "Foydali moliyaviy maslahatlar",
+      ru: "Полезные финансовые советы",
+      en: "Useful financial insights",
+      kk: "Пайдалы қаржылық кеңестер",
+      ky: "Пайдалуу каржылык кеңештер",
+      tg: "Маслиҳатҳои муфиди молиявӣ",
+      qr: "Paydalı moliyaviy ma'slahatlar"
+    },
   ];
 
-  const FREE_ITEMS = uz ? ["3 ta maqsad", "2 oila a'zosi", "Asosiy hisobot"] : ["3 goals", "2 members", "Basic report"];
-  const PREM_ITEMS = FEATURES.map(f => (uz ? f.uz : f.en));
+  const FREE_ITEMS = [
+    L("3 ta maqsad", "3 цели", "3 goals", "3 мақсат", "3 максат", "3 ҳадаф", "3 maqset"),
+    L("2 oila a'zosi", "2 члена семьи", "2 members", "2 отбасы мүшесі", "2 үй-бүлө мүчөсү", "2 аъзои оила", "2 shan'araq ag'zası"),
+    L("Asosiy hisobot", "Базовый отчет", "Basic report", "Негізгі есеп", "Негизги отчет", "Ҳисоботи асосӣ", "Asosiy esabat")
+  ];
+  const PREM_ITEMS = FEATURES.map(f => L(f.uz, f.ru, f.en, f.kk, f.ky, f.tg, f.qr));
 
   const FAQ = [
-    { q: uz ? "Premium nimani beradi?" : "What does Premium include?", a: uz ? "Cheksiz maqsad va a'zolar, PDF/Excel eksport, ovoz kiritish, QR skaner va foydali tavsiyalar — barcha cheklovlar olib tashlanadi." : "Unlimited goals & members, PDF/Excel export, voice input, QR scanner and useful insights — all limits removed." },
-    { q: uz ? "Butun oilaga ta'sir qiladimi?" : "Does it apply to the whole family?", a: uz ? "Ha. Oila boshlig'i faollashtirsa, Premium obunasi butun oila a'zolariga avtomatik qo'llanadi." : "Yes. When the family head activates, Premium applies to the whole family." },
-    { q: uz ? "Bekor qilsam ma'lumotlarim yo'qoladimi?" : "Do I lose data if I cancel?", a: uz ? "Yo'q. Barcha yozuvlaringiz saqlanib qoladi, faqat Premium imkoniyatlar cheklanadi." : "No. All your records stay — only Premium features become limited." },
+    {
+      q: L("Premium nimani beradi?", "Что дает Premium?", "What does Premium include?", "Premium не береді?", "Premium эмнени берет?", "Premium чӣ медиҳад?", "Premium ne beredi?"),
+      a: L("Cheksiz maqsad va a'zolar, PDF/Excel eksport, ovoz kiritish, QR skaner va foydali tavsiyalar — barcha cheklovlar olib tashlanadi.", "Безлимитные цели и члены семьи, экспорт в PDF/Excel, голосовой ввод, QR-сканер и полезные рекомендации — все ограничения снимаются.", "Unlimited goals & members, PDF/Excel export, voice input, QR scanner and useful insights — all limits removed.", "Шексіз мақсаттар мен мүшелер, PDF/Excel экспорты, дауыспен енгізу, QR сканер және пайдалы ұсыныстар — барлық шектеулер алынып тасталады.", "Чексиз максаттар жана мүчөлөр, PDF/Excel экспорту, үн менен киргизүү, QR сканер жана пайдалуу сунуштар — бардык чектөөлөр алынып салынат.", "Ҳадафҳо ва аъзоёни номаҳдуд, интиқоли PDF/Excel, воридоти овозӣ, сканери QR ва тавсияҳои муфид — ҳамаи маҳдудиятҳо бардошта мешаванд.", "Sheksiz maqset ha'm ag'zalar, PDF/Excel eksport, ovoz kirgiziw, QR skaner ha'm paydalı ma'slahatlar — barlıq sheklewler alıp taslanadı.")
+    },
+    {
+      q: L("Butun oilaga ta'sir qiladimi?", "Влияет ли это на всю семью?", "Does it apply to the whole family?", "Бүкіл отбасыға әсер ете ме?", "Бүткүл үй-бүлөгө таасир этеби?", "Оё ин ба тамоми оила дахл дорад?", "Butun shan'araqqa ta'sir qılamadı ma?"),
+      a: L("Ha. Oila boshlig'i faollashtirsa, Premium obunasi butun oila a'zolariga avtomatik qo'llanadi.", "Да. Если глава семьи активирует, Premium автоматически применяется ко всем членам семьи.", "Yes. When the family head activates, Premium applies to the whole family.", "Иә. Егер отбасы басшысы белсендірсе, Premium жазылымы барлық отбасы мүшелеріне автоматты түрде қолданылады.", "Ооба. Эгер үй-бүлө башчысы активдештирсе, Premium жазылуусу бардык үй-бүлө мүчөлөрүнө автоматтык түрдө қолдонулат.", "Бале. Агар сарвари оила фаъол кунад, обунаи Premium ба таври автоматӣ ба тамоми аъзоёни оила татбиқ мешавад.", "Awa. Shan'araq basshısı belsendirse, Premium obunası butun shan'araq ag'zalarına avtomatik qollanıladı.")
+    },
+    {
+      q: L("Bekor qilsam ma'lumotlarim yo'qoladimi?", "Пропадут ли мои данные при отмене?", "Do I lose data if I cancel?", "Бас тартсам, деректерім жоғала ма?", "Жокко чыгарсам, маалыматтарым жоголобу?", "Оё ҳангоми бекор кардан маълумоти ман гум мешавад?", "Bekor qilsam mag'luwmatlarım jo'qoladı ma?"),
+      a: L("Yo'q. Barcha yozuvlaringiz saqlanib qoladi, faqat Premium imkoniyatlar cheklanadi.", "Нет. Все ваши записи сохранятся, только функции Premium станут ограниченными.", "No. All your records stay — only Premium features become limited.", "Жоқ. Барлық жазбаларыңыз сақталады, тек Premium мүмкіндіктері шектеледі.", "Жок. Бардык жазууларыңыз сакталат, болгону Premium мүмкүнчүлүктөрү чектелет.", "Не. Ҳамаи сабтҳои шумо боқӣ мемонанд, танҳо имкониятҳои Premium маҳдуд мешаванд.", "Jo'q. Barlıq jazıwların'ız saqlanıp qaladı, tek Premium imkaniyatlar sheklenedi.")
+    }
   ];
 
   const handleSuccessDone = () => {

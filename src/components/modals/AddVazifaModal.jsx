@@ -33,6 +33,16 @@ export default function AddVazifaModal({
     return r;
   };
 
+  const L = (uz, ru, en, kk, ky, tg, qr) => {
+    return lg === "uz" ? uz :
+           lg === "ru" ? ru :
+           lg === "kk" ? kk :
+           lg === "ky" ? ky :
+           lg === "tg" ? tg :
+           lg === "qr" ? qr :
+           en;
+  };
+
   const parents = azolar.filter(a => a.rol !== "kid");
 
   React.useEffect(() => {
@@ -65,26 +75,26 @@ export default function AddVazifaModal({
   };
 
   const categories = [
-    {e:"📚",uz:"Kitob o'qish",en:"Reading", id:"kitob"},
-    {e:"🧹",uz:"Xona yig'ish",en:"Clean room", id:"xona"},
-    {e:"🍽️",uz:"Idish yuvish",en:"Wash dishes", id:"idish"},
-    {e:"🛒",uz:"Do'kon xarid",en:"Grocery run", id:"dokon"},
-    {e:"🌱",uz:"Gul sug'orish",en:"Water plants", id:"gul"},
-    {e:"🚮",uz:"Axlat to'kish",en:"Take out trash", id:"axlat"},
-    {e:"🛏️",uz:"O'rin yig'ish",en:"Make the bed", id:"orin"},
-    {e:"📝",uz:"Dars qilish",en:"Homework", id:"darslik"},
-    {e:"🧺",uz:"Kir yig'ish",en:"Laundry help", id:"kir"},
-    {e:"🍳",uz:"Ovqat tayyorlash",en:"Help cooking", id:"ovqat"},
-    {e:"🚴",uz:"Sport qilish",en:"Exercise", id:"sport"},
-    {e:"🎹",uz:"Musiqa mashqi",en:"Music practice", id:"musiqa"},
-    {e:"🧸",uz:"O'yinchoq yig'ish",en:"Tidy toys", id:"oyinchoq"},
-    {e:"🐕",uz:"Hayvon boqish",en:"Pet care", id:"hayvon"},
-    {e:"🪟",uz:"Deraza artish",en:"Clean windows", id:"deraza"},
-    {e:"🧠",uz:"So'z yodlash",en:"Learn words", id:"soz"},
-    {e:"🤲",uz:"Kattalarga ko'mak",en:"Help elders", id:"buvi"},
-    {e:"🎨",uz:"Rasm chizish",en:"Drawing", id:"rasm"},
-    {e:"🏃",uz:"Hovli sayri",en:"Outdoor walk", id:"sayr"},
-    {e:"✨",uz:"Boshqa",en:"Other", id:"boshqa"},
+    {e:"📚", uz:"Kitob o'qish", ru:"Чтение книги", en:"Reading", kk:"Кітап оқу", ky:"Китеп окуу", tg:"Китобхонӣ", qr:"Kitap oqıw", id:"kitob"},
+    {e:"🧹", uz:"Xona yig'ish", ru:"Уборка комнаты", en:"Clean room", kk:"Бөлмені жинау", ky:"Бөлмөнү жыйноо", tg:"Тоза кардани хона", qr:"Xona jıynaw", id:"xona"},
+    {e:"🍽️", uz:"Idish yuvish", ru:"Мытье посуды", en:"Wash dishes", kk:"Ыдыс жуу", ky:"Идиш жуу", tg:"Шустани зарфҳо", qr:"Idis qasıw", id:"idish"},
+    {e:"🛒", uz:"Do'kon xarid", ru:"Покупка продуктов", en:"Grocery run", kk:"Дүкеннен сатып алу", ky:"Дүкөндөн сатып алуу", tg:"Хариди мағоза", qr:"Du'kon xarid", id:"dokon"},
+    {e:"🌱", uz:"Gul sug'orish", ru:"Полив цветов", en:"Water plants", kk:"Гүл суару", ky:"Гүл сугаруу", tg:"Гулёрӣ", qr:"Gu'l sug'arıw", id:"gul"},
+    {e:"🚮", uz:"Axlat to'kish", ru:"Вынос мусора", en:"Take out trash", kk:"Қоқыс тастау", ky:"Таштанды төгүү", tg:"Партофтани партов", qr:"Axlat to'giw", id:"axlat"},
+    {e:"🛏️", uz:"O'rin yig'ish", ru:"Заправка постели", en:"Make the bed", kk:"Орын жинау", ky:"Төшөк жыйноо", tg:"Ҷамъ кардани ҷойгаҳ", qr:"Orın jıynaw", id:"orin"},
+    {e:"📝", uz:"Dars qilish", ru:"Делать уроки", en:"Homework", kk:"Сабақ оқу", ky:"Сабак окуу", tg:"Дарс тайёр кардан", qr:"Sabas' oqıw", id:"darslik"},
+    {e:"🧺", uz:"Kir yig'ish", ru:"Стирка белья", en:"Laundry help", kk:"Кір жинау", ky:"Кир жуу", tg:"Шустани либос", qr:"Kir jıynaw", id:"kir"},
+    {e:"🍳", uz:"Ovqat tayyorlash", ru:"Приготовление еды", en:"Help cooking", kk:"Тамақ дайындау", ky:"Тамак даярдоо", tg:"Хӯрокпазӣ", qr:"Awqat tayarlaw", id:"ovqat"},
+    {e:"🚴", uz:"Sport qilish", ru:"Занятие спортом", en:"Exercise", kk:"Секцияларға қатысу", ky:"Спорт менен машыгуу", tg:"Варзиш кардан", qr:"Sport penen shug'ıllanıw", id:"sport"},
+    {e:"🎹", uz:"Musiqa mashqi", ru:"Музыкальная практика", en:"Music practice", kk:"Музыкалық жаттығу", ky:"Музыкалык машыгуу", tg:"Машқи мусиқӣ", qr:"Muzıka shınıg'ıwı", id:"musiqa"},
+    {e:"🧸", uz:"O'yinchoq yig'ish", ru:"Сбор игрушек", en:"Tidy toys", kk:"Ойыншықтарды жинау", ky:"Оюнчуктарды жыйноо", tg:"Ҷамъ кардани бозичаҳо", qr:"Oyınshıq jıynaw", id:"oyinchoq"},
+    {e:"🐕", uz:"Hayvon boqish", ru:"Уход за питомцем", en:"Pet care", kk:"Үй жануарларын бағу", ky:"Үй жаныбарын багуу", tg:"Нигоҳубини ҳайвонот", qr:"Haywan bag'ıw", id:"hayvon"},
+    {e:"🪟", uz:"Deraza artish", ru:"Мытье окон", en:"Clean windows", kk:"Терезе жуу", ky:"Терезе тазалоо", tg:"Шустани тиреза", qr:"Ayna su'rtiw", id:"deraza"},
+    {e:"🧠", uz:"So'z yodlash", ru:"Учить слова", en:"Learn words", kk:"Сөз жаттау", ky:"Сөз жаттоо", tg:"Ёд кардани калимаҳо", qr:"So'z yadlaw", id:"soz"},
+    {e:"🤲", uz:"Kattalarga ko'mak", ru:"Помощь взрослым", en:"Help elders", kk:"Үлкендерге көмек", ky:"Улууларга жардам", tg:"Кӯмак ба калонсолон", qr:"U'lkenlerge ko'mek", id:"buvi"},
+    {e:"🎨", uz:"Rasm chizish", ru:"Рисование", en:"Drawing", kk:"Сурет салу", ky:"Сүрөт тартуу", tg:"Расмкашӣ", qr:"Su'vret salıw", id:"rasm"},
+    {e:"🏃", uz:"Hovli sayri", ru:"Прогулка во дворе", en:"Outdoor walk", kk:"Аула серуені", ky:"Короодо сейилдөө", tg:"Сайри ҳавли", qr:"Abat sayr", id:"sayr"},
+    {e:"✨", uz:"Boshqa", ru:"Другое", en:"Other", kk:"Басқа", ky:"Башка", tg:"Дигар", qr:"Basqa", id:"boshqa"},
   ];
 
   return (
@@ -94,16 +104,16 @@ export default function AddVazifaModal({
         <div style={{ fontSize:18, fontWeight:800, color:th.t1, marginBottom:20, textAlign:"center" }}>
           {"📋 "}
           {isKid
-            ? (lg === "uz" ? "Yangi vazifa taklif qilish" : "Propose new task")
-            : (lg === "uz" ? "Yangi vazifa berish" : "Add new task")
+            ? L("Yangi vazifa taklif qilish", "Предложить новую задачу", "Propose new task", "Жаңа тапсырма ұсыну", "Жаңы тапшырма сунуштоо", "Пешниҳод кардани супориши нав", "Jan'a tapsırma usınıs etiw")
+            : L("Yangi vazifa berish", "Добавить новую задачу", "Add new task", "Жаңа тапсырма беру", "Жаңы тапшырма берүү", "Супориши нав додан", "Jan'a tapsırma beriw")
           }
         </div>
         
         {!isKid ? (
           <>
-            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Kim uchun?":"For whom?"}</label>
+            <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{L("Kim uchun?", "Для кого?", "For whom?", "Кім үшін?", "Ким үчүн?", "Барои кӣ?", "Kim ushın?")}</label>
             {azolar.filter(a=>a.rol==="kid").length === 0
-              ? <div style={{ background:th.am+"15", border:"1px solid "+th.am+"44", borderRadius:12, padding:"12px 14px", marginBottom:14, fontSize:12, color:th.am }}>{"⚠️ "}{lg==="uz"?"Avval bola akkaunti yarating (Profil)":"Create a kid account first (Profile)"}</div>
+              ? <div style={{ background:th.am+"15", border:"1px solid "+th.am+"44", borderRadius:12, padding:"12px 14px", marginBottom:14, fontSize:12, color:th.am }}>{"⚠️ "}{L("Avval bola akkaunti yarating (Profil)", "Сначала создайте детский аккаунт (Профиль)", "Create a kid account first (Profile)", "Алдымен бала аккаунтын жасаңыз (Профиль)", "Адегенде баланын аккаунтун түзүңүз (Профиль)", "Аввал аккаунти кӯдакро созед (Профил)", "Aldımen bala akkauntın jaratın' (Profil)")}</div>
               : <div style={{ display:"flex", gap:8, marginBottom:14, overflowX:"auto", paddingBottom:4 }}>
                   {azolar.filter(a=>a.rol==="kid").map(k => (
                     <button key={k.id} onClick={() => setVAssignee(k.id)} style={{ flexShrink:0, background:vAssignee===k.id?th.ac+"18":th.surH, border:"2px solid "+(vAssignee===k.id?th.ac:th.bor), borderRadius:14, padding:"10px 16px", cursor:"pointer", color:vAssignee===k.id?th.ac:th.t2, fontWeight:700, fontSize:13 }}>{"👶 "}{k.ism}</button>
@@ -115,11 +125,11 @@ export default function AddVazifaModal({
           <>
             <div style={{ background:th.ac+"12", borderRadius:14, padding:"12px 14px", marginBottom:14, fontSize:13, color:th.t1, fontWeight:500, display:"flex", alignItems:"center", gap:8 }}>
               <span>💡</span>
-              <span>{lg === "uz" ? "Ushbu vazifani o'zingiz bajarish uchun taklif qilasiz." : "You are proposing this task for yourself to complete."}</span>
+              <span>{L("Ushbu vazifani o'zingiz bajarish uchun taklif qilasiz.", "Вы предлагаете эту задачу для себя для выполнения.", "You are proposing this task for yourself to complete.", "Бұл тапсырманы өзіңіз орындауға ұсынасыз.", "Бул тапшырманы өзүңүз аткарууну сунуштайсыз.", "Шумо ин супоришро барои иҷрои худ пешниҳод мекунед.", "Bul tapsırmanı o'zin'iz orınlaw ushın usınıs etesiz.")}</span>
             </div>
             {parents.length > 0 && (
               <div style={{ marginBottom: 14 }}>
-                <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Kimga taklif yuboriladi?":"Whom to propose to?"}</label>
+                <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{L("Kimga taklif yuboriladi?", "Кому отправить предложение?", "Whom to propose to?", "Ұсыныс кімге жіберіледі?", "Сунуш кимге жөнөтүлөт?", "Ба кӣ пешниҳод шуд?", "Kimge usınıs jiberiledi?")}</label>
                 <div style={{ display:"flex", gap:8, overflowX:"auto", paddingBottom:4 }}>
                   <button
                     type="button"
@@ -136,7 +146,7 @@ export default function AddVazifaModal({
                       fontSize:13
                     }}
                   >
-                    {lg === "uz" ? "👨‍👩‍👧‍👦 Ikkalasiga ham / Barchaga" : "👨‍👩‍👧‍👦 Everyone / All parents"}
+                    {L("👨‍👩‍👧‍👦 Ikkalasiga ham / Barchaga", "👨‍👩‍👧‍👦 Обоим / Всем", "👨‍👩‍👧‍👦 Everyone / All parents", "👨‍👩‍👧‍👦 Екеуіне де / Барлығына", "👨‍👩‍👧‍👦 Экөө тең / Бардыгына", "👨‍👩‍👧‍👦 Ба ҳарду / Ба ҳама", "👨‍👩‍👧‍👦 Ekevine de / Barlıg'ına")}
                   </button>
                   {parents.map(p => (
                     <button
@@ -163,14 +173,14 @@ export default function AddVazifaModal({
             )}
           </>
         )}
-        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa turi":"Task type"}</label>
+        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{L("Vazifa turi", "Тип задачи", "Task type", "Тапсырма түрі", "Тапшырма түрү", "Намуди супориш", "Tapsırma tu'ri")}</label>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(4, 1fr)", gap:8, marginBottom:20 }}>
           {categories.map(p => {
             const active = vEmoji === p.e;
             const activeColor = active ? th.ac : th.t2;
             const renderIco = lIco[p.id] || lIco.task;
             return (
-              <button key={p.e} className="ui-press" onClick={() => { setVEmoji(p.e); setVTitle(lg==="uz"?p.uz:p.en); }}
+              <button key={p.e} className="ui-press" onClick={() => { setVEmoji(p.e); setVTitle(L(p.uz, p.ru, p.en, p.kk, p.ky, p.tg, p.qr)); }}
                 style={{
                   background: active ? th.ac + "18" : th.surH,
                   border: "2px solid " + (active ? th.ac : th.bor),
@@ -190,15 +200,15 @@ export default function AddVazifaModal({
                   {renderIco(activeColor)}
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 700, color: active ? th.ac : th.t2, textAlign: "center", lineHeight: 1.2, wordBreak: "break-word" }}>
-                  {lg === "uz" ? p.uz : p.en}
+                  {L(p.uz, p.ru, p.en, p.kk, p.ky, p.tg, p.qr)}
                 </span>
               </button>
             );
           })}
         </div>
-        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Vazifa nomi":"Task title"}</label>
-        <input style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:14 }} value={vTitle} onChange={e => setVTitle(e.target.value)} placeholder={lg==="uz"?"Masalan: Xonani yig'ishtirish":"e.g. Clean the room"} />
-        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Mukofot (so'm)":"Reward (UZS)"}</label>
+        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{L("Vazifa nomi", "Название задачи", "Task title", "Тапсырма атауы", "Тапшырма аталышы", "Номи супориш", "Tapsırma atı")}</label>
+        <input style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:14 }} value={vTitle} onChange={e => setVTitle(e.target.value)} placeholder={L("Masalan: Xonani yig'ishtirish", "Например: Уборка комнаты", "e.g. Clean the room", "Мысалы: Бөлмені жинау", "Мисалы: Бөлмөнү жыйноо", "Масалан: Тоза кардани хона", "Mısalı: Xonanı jıynaw")} />
+        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{L("Mukofot (so'm)", "Награда (сум)", "Reward (UZS)", "Сыйлық (сум)", "Сыйлык (сом)", "Мукофот (сӯм)", "Sıylıq (so'm)")}</label>
         <input
           type="text"
           inputMode="numeric"
@@ -210,22 +220,27 @@ export default function AddVazifaModal({
           }}
           placeholder="0"
         />
-        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{lg==="uz"?"Muddat (ixtiyoriy)":"Deadline (optional)"}</label>
+        <label style={{ fontSize:11, color:th.t2, fontWeight:700, textTransform:"uppercase", letterSpacing:1, marginBottom:8, display:"block" }}>{L("Muddat (ixtiyoriy)", "Срок (необязательно)", "Deadline (optional)", "Мерзімі (міндетті емес)", "Мөөнөтү (милдеттүү эмес)", "Мӯҳлат (ихтиёрӣ)", "Mu'ddet (ıqtıyorıy)")}</label>
         <div style={{ display:"flex", gap:6, marginBottom:8, flexWrap:"wrap" }}>
-          {[{n:0,uz:"Bugun",en:"Today"},{n:1,uz:"Ertaga",en:"Tomorrow"},{n:3,uz:"3 kun",en:"3 days"},{n:7,uz:"1 hafta",en:"1 week"}].map(o => {
+          {[
+            {n:0, uz:"Bugun", ru:"Сегодня", en:"Today", kk:"Бүгін", ky:"Бүгүн", tg:"Имрӯз", qr:"Bu'gin"},
+            {n:1, uz:"Ertaga", ru:"Завтра", en:"Tomorrow", kk:"Ертең", ky:"Эртең", tg:"Фардо", qr:"Erten'"},
+            {n:3, uz:"3 kun", ru:"3 дня", en:"3 days", kk:"3 күн", ky:"3 күн", tg:"3 рӯз", qr:"3 ku'n"},
+            {n:7, uz:"1 hafta", ru:"1 неделя", en:"1 week", kk:"1 апта", ky:"1 жума", tg:"1 ҳафта", qr:"1 ha'pte"}
+          ].map(o => {
             const d = new Date(); d.setDate(d.getDate()+o.n);
             const ds = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
             const on = vDeadline===ds;
-            return <button key={o.n} onClick={() => setVDeadline(on?"":ds)} style={{ flex:"1 0 auto", background:on?th.ac+"18":th.surH, border:"1.5px solid "+(on?th.ac:th.bor), borderRadius:10, padding:"9px 12px", cursor:"pointer", color:on?th.ac:th.t2, fontWeight:700, fontSize:12 }}>{lg==="uz"?o.uz:o.en}</button>;
+            return <button key={o.n} onClick={() => setVDeadline(on?"":ds)} style={{ flex:"1 0 auto", background:on?th.ac+"18":th.surH, border:"1.5px solid "+(on?th.ac:th.bor), borderRadius:10, padding:"9px 12px", cursor:"pointer", color:on?th.ac:th.t2, fontWeight:700, fontSize:12 }}>{L(o.uz, o.ru, o.en, o.kk, o.ky, o.tg, o.qr)}</button>;
           })}
-          <button onClick={() => setVDeadline("")} style={{ flex:"1 0 auto", background:!vDeadline?th.ac+"18":th.surH, border:"1.5px solid "+(!vDeadline?th.ac:th.bor), borderRadius:10, padding:"9px 12px", cursor:"pointer", color:!vDeadline?th.ac:th.t2, fontWeight:700, fontSize:12 }}>{lg==="uz"?"Muddatsiz":"None"}</button>
+          <button onClick={() => setVDeadline("")} style={{ flex:"1 0 auto", background:!vDeadline?th.ac+"18":th.surH, border:"1.5px solid "+(!vDeadline?th.ac:th.bor), borderRadius:10, padding:"9px 12px", cursor:"pointer", color:!vDeadline?th.ac:th.t2, fontWeight:700, fontSize:12 }}>{L("Muddatsiz", "Без срока", "None", "Мерзімсіз", "Мөөнөтсүз", "Бемуҳлат", "Mu'ddetsiz")}</button>
         </div>
         <input type="date" value={vDeadline||""} onChange={e => setVDeadline(e.target.value)} style={{ width:"100%", background:th.surH, border:"1.5px solid "+th.bor, borderRadius:13, padding:"12px 14px", color:th.t1, fontSize:15, outline:"none", boxSizing:"border-box", marginBottom:vDeadline?6:20, colorScheme:dark?"dark":"light" }} />
-        {vDeadline && <div style={{ fontSize:12, color:th.t2, marginBottom:20 }}>{lg==="uz"?"Muddatida bajarilmasa, mukofot berilmaydi.":"No reward if the deadline is missed."}</div>}
+        {vDeadline && <div style={{ fontSize:12, color:th.t2, marginBottom:20 }}>{L("Muddatida bajarilmasa, mukofot berilmaydi.", "Если не выполнить в срок, награда не выдается.", "No reward if the deadline is missed.", "Мерзімінде орындалмаса, сыйлық берілмейді.", "Мөөнөтүндө аткарылбаса, сыйлык берилбейт.", "Агар дар мӯҳлат иҷро нашавад, мукофот дода намешавад.", "Mu'ddetinde orınlanbasa, sıylıq berilmeydi.")}</div>}
         <button onClick={addVazifa} style={{ width:"100%", background:"linear-gradient(135deg,"+th.ac+","+th.ac2+")", border:"none", borderRadius:14, padding:"15px", color:"#fff", fontWeight:800, fontSize:16, cursor:"pointer" }}>
           {isKid
-            ? (lg === "uz" ? "Taklif jo'natish" : "Send proposal")
-            : (lg === "uz" ? "Vazifa berish" : "Assign task")
+            ? L("Taklif jo'natish", "Отправить предложение", "Send proposal", "Ұсыныс жіберу", "Сунуш жөнөтүү", "Фиристодани пешниҳод", "Usınıs jiberiw")
+            : L("Vazifa berish", "Назначить задачу", "Assign task", "Тапсырма беру", "Тапшырма берүү", "Супориш додан", "Tapsırma beriw")
           }
         </button>
       </div>

@@ -120,12 +120,21 @@ const fTime = s => {
 const ago = (t, lg) => {
   const d = Date.now() - t;
   const m = Math.floor(d / 60000);
-  if (m < 1) return lg === "uz" ? "hozirgina" : "только что";
-  if (m < 60) return m + (lg === "uz" ? " daqiqa oldin" : " мин назад");
+  const L = (uz, ru, en, kk, ky, tg, qr) => {
+    return lg === "uz" ? uz :
+           lg === "ru" ? ru :
+           lg === "kk" ? kk :
+           lg === "ky" ? ky :
+           lg === "tg" ? tg :
+           lg === "qr" ? qr :
+           en;
+  };
+  if (m < 1) return L("hozirgina", "только что", "just now", "жаңа ғана", "жаңы эле", "ҳозиргина", "hazir g'ana");
+  if (m < 60) return m + L(" daqiqa oldin", " мин назад", " min ago", " минут бұрын", " мүнөт мурун", " дақиқа пеш", " minut burın");
   const h = Math.floor(m / 60);
-  if (h < 24) return h + (lg === "uz" ? " soat oldin" : " ч назад");
+  if (h < 24) return h + L(" soat oldin", " ч назад", " hours ago", " сағат бұрын", " саат мурун", " соат пеш", " saat burın");
   const days = Math.floor(h / 24);
-  return days + (lg === "uz" ? " kun oldin" : " дн назад");
+  return days + L(" kun oldin", " дн назад", " days ago", " күн бұрын", " күн мурун", " рӯз пеш", " ku'n burın");
 };
 
 // ── Modal (bog' uslubida, RADIUS.l, E3) ─────────────────────

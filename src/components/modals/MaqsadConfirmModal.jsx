@@ -66,7 +66,15 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
     if (!file) return;
     
     if (file.size > 3 * 1024 * 1024) {
-      alert(lg === "uz" ? "Rasm hajmi juda katta! 3 MB gacha yuklang." : "File is too large! Please upload under 3 MB.");
+      alert(
+        lg === "uz" ? "Rasm hajmi juda katta! 3 MB gacha yuklang." :
+        lg === "ru" ? "Размер изображения слишком велик! Пожалуйста, загрузите файл размером менее 3 МБ." :
+        lg === "kk" ? "Сурет өлшемі тым үлкен! 3 МБ-тан аспайтын файл жүктеңіз." :
+        lg === "ky" ? "Сүрөттүн өлчөмү өтө чоң! 3 МБ чейин жүктөп бериңиз." :
+        lg === "tg" ? "Андозаи акс хеле калон аст! Лутфан то 3 МБ боргирӣ кунед." :
+        lg === "qr" ? "Su'vret o'lshemi ju'da u'lken! 3 MBg'a shekem ju'klen'." :
+        "File is too large! Please upload under 3 MB."
+      );
       return;
     }
     
@@ -96,6 +104,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
       newDreamPrompt: "Yana bir yangi orzu qo'yasizmi?",
       addDreamBtn: "Ha, yangi orzu qo'yish",
       laterBtn: "Keyinroq",
+      member: "A'zo",
     },
     ru: {
       gReached: "Цель достигнута!",
@@ -112,6 +121,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
       newDreamPrompt: "Хотите поставить новую мечту?",
       addDreamBtn: "Да, поставить новую",
       laterBtn: "Позже",
+      member: "Участник",
     },
     en: {
       gReached: "Goal reached!",
@@ -128,6 +138,75 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
       newDreamPrompt: "Would you like to set a new dream?",
       addDreamBtn: "Yes, set new dream",
       laterBtn: "Later",
+      member: "Member",
+    },
+    kk: {
+      gReached: "Мақсатқа жеттіңіз!",
+      didBuy: "Сатып алдыңыз ба?",
+      noCancel: "Жоқ, бас тарттым",
+      yesBought: "Иә, сатып алдым!",
+      summaryTitle: "Саяхат қорытындысы",
+      daysDone: (days) => `Сиз ${days} күнде арманыңызға жеттіңіз!`,
+      contribTitle: "Кім қанша үлес қосты:",
+      uploadLabel: "Сыйлық суреті (міндетті емес):",
+      uploadPrompt: "Сурет жүктеу",
+      continueBtn: "Жалғастыру",
+      newDreamTitle: "Жаңа арман?",
+      newDreamPrompt: "Тағы бір жаңа арман қоясыз ба?",
+      addDreamBtn: "Иә, жаңа арман қою",
+      laterBtn: "Кейінірек",
+      member: "Мүше",
+    },
+    ky: {
+      gReached: "Максатка жеттиңиз!",
+      didBuy: "Сатып алдыңызбы?",
+      noCancel: "Жок, баш тарттым",
+      yesBought: "Ооба, сатып алдым!",
+      summaryTitle: "Саякаттын корутундусу",
+      daysDone: (days) => `Сиз ${days} күндө кыялыңызга жеттиңиз!`,
+      contribTitle: "Ким канча салым кошту:",
+      uploadLabel: "Сыйлыктын сүрөтү (милдеттүү эмес):",
+      uploadPrompt: "Сүрөт жүктөө",
+      continueBtn: "Улантуу",
+      newDreamTitle: "Жаңы кыял?",
+      newDreamPrompt: "Дагы бир жаңы кыял коёсузбу?",
+      addDreamBtn: "Ооба, жаңы кыял коюу",
+      laterBtn: "Кийинчерээк",
+      member: "Мүчө",
+    },
+    tg: {
+      gReached: "Шумо ба мақсад расидед!",
+      didBuy: "Шумо харид кардед?",
+      noCancel: "Не, даст кашидам",
+      yesBought: "Бале, харидам!",
+      summaryTitle: "Хулосаи сафар",
+      daysDone: (days) => `Шумо дар ${days} рӯз ба орзуятон расидед!`,
+      contribTitle: "Кӣ чӣ қадар ҳисса гузошт:",
+      uploadLabel: "Акси тӯҳфа (ихтиёрӣ):",
+      uploadPrompt: "Боргирии акс",
+      continueBtn: "Идома додан",
+      newDreamTitle: "Орзуи нав?",
+      newDreamPrompt: "Боз як орзуи нав мегузоред?",
+      addDreamBtn: "Бале, гузоштани орзуи нав",
+      laterBtn: "Дертар",
+      member: "Аъзо",
+    },
+    qr: {
+      gReached: "Maqsetke jettin'iz!",
+      didBuy: "Satıp aldın'ız ba?",
+      noCancel: "Yaq, bas tarttım",
+      yesBought: "Awa, satıp aldım!",
+      summaryTitle: "Sayohat ju'wmag'ı",
+      daysDone: (days) => `Siz ${days} ku'nde armanın'ızg'a jettin'iz!`,
+      contribTitle: "Kim qansha u'les qostı:",
+      uploadLabel: "Sıylıq su'vreti (ıqtıyorıy):",
+      uploadPrompt: "Su'vret ju'klew",
+      continueBtn: "Dawam etiw",
+      newDreamTitle: "Jan'a arman?",
+      newDreamPrompt: "Yana bir jan'a arman qoyasız ba?",
+      addDreamBtn: "Awa, jan'a arman qoyıw",
+      laterBtn: "Keyinirek",
+      member: "Ag'za",
     }
   };
 
@@ -205,7 +284,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                     return (
                       <div key={m.uid} style={{ fontSize: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", color: th.t1, marginBottom: 4 }}>
-                          <span>{m.ism || (lg === "uz" ? "A'zo" : "Member")}</span>
+                          <span>{m.ism || t.member}</span>
                           <span style={{ fontWeight: 700 }}>{f(m.total, true)} ({pct}%)</span>
                         </div>
                         <div style={{ width: "100%", height: 6, background: th.bor, borderRadius: 3, overflow: "hidden" }}>
