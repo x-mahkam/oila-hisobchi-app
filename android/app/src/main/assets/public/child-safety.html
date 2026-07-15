@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bolalar xavfsizligi va ota-ona roziligi siyosati · Child Safety Policy — Oila Hisobchi</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f8fafc;--sur:#ffffff;--t1:#0f172a;--t2:#475569;--t3:#94a3b8;--ac:#0ea5e9;--bor:#e2e8f0;}
+    *{box-sizing:border-box}
+    body{font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;line-height:1.65;color:var(--t2);background:var(--bg);margin:0;padding:0}
+    .container{max-width:800px;margin:0 auto;padding:20px 16px 60px}
+    .card{background:var(--sur);border-radius:16px;padding:32px 28px;box-shadow:0 4px 6px -1px rgb(0 0 0/.05),0 2px 4px -2px rgb(0 0 0/.05)}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(248,250,252,.92);backdrop-filter:blur(8px);padding:14px 0;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800;color:var(--t1);font-size:15px}
+    .brand .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#22c55e);display:flex;align-items:center;justify-content:center;font-size:17px}
+    .lang-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dropdown-trigger {
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--t1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .dropdown-trigger:hover {
+      border-color: var(--ac);
+    }
+    .dropdown-trigger .arrow {
+      font-size: 10px;
+      color: var(--t3);
+      transition: transform 0.2s;
+    }
+    .lang-dropdown.open .dropdown-trigger .arrow {
+      transform: rotate(180deg);
+    }
+    .dropdown-menu {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 6px;
+      background: var(--sur);
+      border: 1.5px solid var(--bor);
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      overflow-y: auto;
+      max-height: 180px;
+      z-index: 100;
+      min-width: 165px;
+    }
+    .lang-dropdown.open .dropdown-menu {
+      display: block;
+    }
+    .dropdown-menu button {
+      width: 100%;
+      border: none;
+      background: transparent;
+      padding: 10px 16px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--t2);
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: background 0.15s;
+    }
+    .dropdown-menu button:hover {
+      background: #f1f5f9;
+    }
+    .dropdown-menu button.on {
+      background: #e0f2fe;
+      color: #0284c7;
+      font-weight: 700;
+    }
+    h1{color:var(--t1);font-size:1.7rem;font-weight:800;margin:0 0 6px;line-height:1.3}
+    .upd{font-size:.85rem;color:var(--t3);margin-bottom:24px;font-weight:600}
+    h2{color:#1e293b;font-size:1.15rem;font-weight:700;margin:2rem 0 .7rem}
+    p,li{font-size:.95rem;color:var(--t2)}
+    ul{padding-left:1.4rem;margin:.4rem 0 1rem}
+    li{margin-bottom:.35rem}
+    a{color:var(--ac);font-weight:600}
+    .content{display:none}
+    .content.show{display:block;animation:fade .25s ease}
+    @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+    @media(max-width:520px){.card{padding:24px 18px}h1{font-size:1.4rem}}
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="topbar">
+    <div class="brand"><img src="/icon.svg" style="width:34px;height:34px;border-radius:10px" alt="Logo" />Oila Hisobchi</div>
+    <div class="lang-dropdown" id="langDropdown">
+      <button class="dropdown-trigger" id="langTrigger">
+        <span id="currentLangText">🇺🇿 O'zbekcha</span>
+        <span class="arrow">▼</span>
+      </button>
+      <div class="dropdown-menu" id="langMenu">
+        <button data-l="uz">🇺🇿 O'zbekcha</button>
+        <button data-l="en">🇬🇧 English</button>
+        <button data-l="ru">🇷🇺 Русский</button>
+        <button data-l="kk">🇰🇿 Қазақша</button>
+        <button data-l="ky">🇰🇬 Кыргызча</button>
+        <button data-l="tg">🇹🇯 Тоҷикӣ</button>
+        <button data-l="qr">🇺🇿 Qaraqalpaqsha</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+
+  <!-- ═══════════════ UZBEK ═══════════════ -->
+  <div class="content" id="c-uz">
+    <h1>BOLALAR XAVFSIZLIGI VA OTA-ONA ROZILIGI SIYOSATI</h1>
+    <div class="upd">Oxirgi yangilanish: 9-iyul, 2026-yil</div>
+    <p>"Oila Hisobchi" ilovasi bolalarning xavfsizligi va shaxsiy ma'lumotlarini himoya qilishni ustuvor vazifa deb biladi. Ushbu siyosat ilovadagi bolalar akkauntlari qanday yaratilishi, qanday boshqarilishi va ota-onalarning huquq hamda majburiyatlarini tushuntiradi.</p>
+
+    <h2>1. Siyosatning maqsadi</h2>
+    <p>Mazkur siyosat quyidagi maqsadlarda ishlab chiqilgan:</p>
+    <ul>
+      <li>bolalarning shaxsiy ma'lumotlarini himoya qilish;</li>
+      <li>ota-onalarning nazoratini ta'minlash;</li>
+      <li>Google Play Families Policy talablariga rioya qilish;</li>
+      <li>bolalar uchun xavfsiz va foydali raqamli muhit yaratish.</li>
+    </ul>
+
+    <h2>2. Bola akkauntini kim yaratishi mumkin?</h2>
+    <p>Bola akkaunti faqat:</p>
+    <ul>
+      <li>ota-ona;</li>
+      <li>qonuniy vasiy;</li>
+      <li>yoki oilaning bosh hisob egasi</li>
+    </ul>
+    <p>tomonidan yaratilishi mumkin.</p>
+    <p>Bolalar mustaqil ravishda akkaunt yarata olmaydi.</p>
+
+    <h2>3. Ota-onaning roziligi</h2>
+    <p>Bola akkaunti yaratilganda ota-ona quyidagilarga rozilik bildiradi:</p>
+    <ul>
+      <li>bola akkauntini yaratishga;</li>
+      <li>bola haqidagi ma'lumotlarni saqlashga;</li>
+      <li>topshiriqlarni boshqarishga;</li>
+      <li>mukofot tizimidan foydalanishga;</li>
+      <li>bilim o'yinlari natijalarini saqlashga.</li>
+    </ul>
+    <p>Roziliksiz bola akkaunti yaratilmaydi.</p>
+
+    <h2>4. Bola haqidagi qanday ma'lumotlar saqlanadi?</h2>
+    <p>Ilovada quyidagi ma'lumotlar saqlanishi mumkin:</p>
+    <ul>
+      <li>ism;</li>
+      <li>tug'ilgan yil;</li>
+      <li>jinsi (ixtiyoriy);</li>
+      <li>avatar;</li>
+      <li>bajarilgan topshiriqlar;</li>
+      <li>coin va mukofotlar;</li>
+      <li>balans;</li>
+      <li>jamg'armalar;</li>
+      <li>orzular ro'yxati;</li>
+      <li>bilim o'yinlari natijalari;</li>
+      <li>XP va Achievementlar.</li>
+    </ul>
+    <p>Biz bolaning pasport ma'lumotlari, biometrik ma'lumotlari yoki aniq geolokatsiyasini yig'maymiz.</p>
+
+    <h2>5. Ma'lumotlardan foydalanish</h2>
+    <p>Bolaga oid ma'lumotlar faqat quyidagi maqsadlarda ishlatiladi:</p>
+    <ul>
+      <li>topshiriqlarni boshqarish;</li>
+      <li>mukofot tizimini yuritish;</li>
+      <li>bilim o'yinlari natijalarini ko'rsatish;</li>
+      <li>jamg'armalarni hisoblash;</li>
+      <li>orzularni boshqarish;</li>
+      <li>Foydali tavsiyalarni shakllantirish;</li>
+      <li>ota-onaga statistik ma'lumotlarni taqdim etish.</li>
+    </ul>
+    <p>Bolalarning shaxsiy ma'lumotlari reklama maqsadida ishlatilmaydi.</p>
+
+    <h2>6. Ota-onaning nazorati</h2>
+    <p>Ota-ona istalgan vaqtda:</p>
+    <ul>
+      <li>bola akkauntini ko'rishi;</li>
+      <li>topshiriq berishi;</li>
+      <li>mukofot miqdorini belgilashi;</li>
+      <li>coin qiymatini belgilashi;</li>
+      <li>orzularni tasdiqlashi;</li>
+      <li>jamg'armalarni kuzatishi;</li>
+      <li>bola akkauntini tahrirlashi;</li>
+      <li>bola akkauntini butunlay o'chirishi mumkin.</li>
+    </ul>
+
+    <h2>7. Bilim o'yinlari</h2>
+    <p>Bilim o'yinlari quyidagi maqsadlarga xizmat qiladi:</p>
+    <ul>
+      <li>matematik fikrlashni rivojlantirish;</li>
+      <li>ingliz tilini o'rganish;</li>
+      <li>mantiqiy tafakkurni rivojlantirish;</li>
+      <li>moliyaviy savodxonlikni oshirish.</li>
+    </ul>
+    <p>O'yinlar bolalarda sog'lom raqobat va o'rganishga qiziqishni shakllantirish uchun ishlab chiqilgan.</p>
+
+    <h2>8. Mukofot tizimi</h2>
+    <p>Ilovadagi Coin va virtual mukofotlar faqat ilova ichidagi motivatsiya tizimining bir qismidir.</p>
+    <p>Coinning haqiqiy pulga aylantirilishi faqat ota-ona tomonidan amalga oshiriladi.</p>
+    <p>"Oila Hisobchi" hech qanday virtual valyutani sotmaydi va foydalanuvchilarga pul to'lamaydi.</p>
+    <p>Barcha mukofotlar ota-ona va bola o'rtasidagi kelishuv asosida beriladi.</p>
+
+    <h2>9. Reklama</h2>
+    <p>Bolalar akkauntida uchinchi tomon reklamalari ko'rsatilmaydi.</p>
+    <p>Kelajakda reklama qo'shilgan taqdirda, ular Google Play Families Policy talablariga to'liq mos bo'ladi.</p>
+
+    <h2>10. Foydali funksiyalar</h2>
+    <p>Ilovadagi foydali tavsiyalar faqat:</p>
+    <ul>
+      <li>ota-onaga yordam berish;</li>
+      <li>bolalarning rivojlanishini tahlil qilish;</li>
+      <li>o'quv tavsiyalarini berish</li>
+    </ul>
+    <p>uchun ishlatiladi.</p>
+    <p>Tizim avtomatik qaror qabul qilmaydi va ota-onaning o'rnini bosa olmaydi.</p>
+
+    <h2>11. Xavfsizlik</h2>
+    <p>Barcha ma'lumotlar zamonaviy xavfsizlik texnologiyalari yordamida himoyalanadi.</p>
+    <p>Ma'lumotlar Google Firebase infratuzilmasida saqlanadi va xavfsiz ulanish (TLS) orqali uzatiladi.</p>
+
+    <h2>12. Akkauntni o'chirish</h2>
+    <p>Ota-ona istalgan vaqtda:</p>
+    <ul>
+      <li>bola akkauntini;</li>
+      <li>bola ma'lumotlarini;</li>
+      <li>barcha topshiriqlarni;</li>
+      <li>coin va tarixni</li>
+    </ul>
+    <p>o'chirish huquqiga ega.</p>
+    <p>Asosiy akkaunt o'chirilganda unga bog'langan barcha bola akkauntlari ham o'chiriladi.</p>
+
+    <h2>13. Google Play Families Policy</h2>
+    <p>"Oila Hisobchi" Google Play Families Policy va Google Play Developer Policy talablariga amal qiladi.</p>
+    <p>Biz:</p>
+    <ul>
+      <li>bolalardan mustaqil ravishda shaxsiy ma'lumot yig'maymiz;</li>
+      <li>bolalarga mo'ljallangan akkauntlarni ota-ona nazoratisiz yaratishga ruxsat bermaymiz;</li>
+      <li>bolalarning shaxsiy ma'lumotlarini sotmaymiz;</li>
+      <li>bolalarga oid ma'lumotlardan maqsadli reklama uchun foydalanmaymiz.</li>
+    </ul>
+
+    <h2>14. Siyosatdagi o'zgarishlar</h2>
+    <p>Mazkur siyosat vaqti-vaqti bilan yangilanishi mumkin.</p>
+    <p>Muhim o'zgarishlar ilova ichida yoki rasmiy aloqa kanallari orqali foydalanuvchilarga ma'lum qilinadi.</p>
+
+    <h2>15. Bog'lanish</h2>
+    <p>Agar sizda ushbu siyosat bo'yicha savollar bo'lsa, biz bilan bog'lanishingiz mumkin.</p>
+    <p><strong>Elektron pochta:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ RUSSIAN ═══════════════ -->
+  <div class="content" id="c-ru">
+    <h1>ПОЛИТИКА БЕЗОПАСНОСТИ ДЕТЕЙ И РОДИТЕЛЬСКОГО СОГЛАСИЯ</h1>
+    <div class="upd">Последнее обновление: 9 июля 2026 года</div>
+    <p>Приложение «Oila Hisobchi» считает безопасность детей и защиту их персональных данных своей приоритетной задачей. Настоящая политика объясняет, как создаются и управляются детские аккаунты в приложении, а также права и обязанности родителей.</p>
+
+    <h2>1. Цель политики</h2>
+    <p>Настоящая политика разработана в следующих целях:</p>
+    <ul>
+      <li>защита персональных данных детей;</li>
+      <li>обеспечение родительского контроля;</li>
+      <li>соблюдение требований Google Play Families Policy;</li>
+      <li>создание безопасной и полезной цифровой среды для детей.</li>
+    </ul>
+
+    <h2>2. Кто может создать детский аккаунт?</h2>
+    <p>Детский аккаунт может быть создан только:</p>
+    <ul>
+      <li>родителем;</li>
+      <li>законным опекуном;</li>
+      <li>или владельцем главного семейного аккаунта.</li>
+    </ul>
+    <p>Дети не могут создавать аккаунты самостоятельно.</p>
+
+    <h2>3. Согласие родителя</h2>
+    <p>При создании детского аккаунта родитель даёт согласие на:</p>
+    <ul>
+      <li>создание детского аккаунта;</li>
+      <li>хранение данных о ребёнке;</li>
+      <li>управление заданиями;</li>
+      <li>использование системы наград;</li>
+      <li>сохранение результатов обучающих игр.</li>
+    </ul>
+    <p>Без согласия детский аккаунт не создаётся.</p>
+
+    <h2>4. Какие данные о ребёнке хранятся?</h2>
+    <p>В приложении могут храниться следующие данные:</p>
+    <ul>
+      <li>имя;</li>
+      <li>год рождения;</li>
+      <li>пол (необязательно);</li>
+      <li>аватар;</li>
+      <li>выполненные задания;</li>
+      <li>coin и награды;</li>
+      <li>баланс;</li>
+      <li>накопления;</li>
+      <li>список желаний;</li>
+      <li>результаты обучающих игр;</li>
+      <li>XP и достижения (Achievements).</li>
+    </ul>
+    <p>Мы не собираем паспортные данные ребёнка, биометрические данные или точную геолокацию.</p>
+
+    <h2>5. Использование данных</h2>
+    <p>Данные о ребёнке используются только в следующих целях:</p>
+    <ul>
+      <li>управление заданиями;</li>
+      <li>работа системы наград;</li>
+      <li>отображение результатов обучающих игр;</li>
+      <li>расчёт накоплений;</li>
+      <li>управление желаниями;</li>
+      <li>формирование полезных рекомендаций;</li>
+      <li>предоставление статистики родителю.</li>
+    </ul>
+    <p>Персональные данные детей не используются в рекламных целях.</p>
+
+    <h2>6. Родительский контроль</h2>
+    <p>Родитель может в любое время:</p>
+    <ul>
+      <li>просматривать детский аккаунт;</li>
+      <li>давать задания;</li>
+      <li>устанавливать размер награды;</li>
+      <li>устанавливать стоимость coin;</li>
+      <li>подтверждать желания;</li>
+      <li>отслеживать накопления;</li>
+      <li>редактировать детский аккаунт;</li>
+      <li>полностью удалить детский аккаунт.</li>
+    </ul>
+
+    <h2>7. Обучающие игры</h2>
+    <p>Обучающие игры служат следующим целям:</p>
+    <ul>
+      <li>развитие математического мышления;</li>
+      <li>изучение английского языка;</li>
+      <li>развитие логического мышления;</li>
+      <li>повышение финансовой грамотности.</li>
+    </ul>
+    <p>Игры разработаны для формирования у детей здоровой конкуренции и интереса к обучению.</p>
+
+    <h2>8. Система наград</h2>
+    <p>Coin и виртуальные награды в приложении являются лишь частью внутренней системы мотивации.</p>
+    <p>Конвертация coin в реальные деньги осуществляется только родителем.</p>
+    <p>«Oila Hisobchi» не продаёт никакую виртуальную валюту и не выплачивает деньги пользователям.</p>
+    <p>Все награды предоставляются на основе договорённости между родителем и ребёнком.</p>
+
+    <h2>9. Реклама</h2>
+    <p>В детских аккаунтах не показывается реклама третьих лиц.</p>
+    <p>Если в будущем реклама будет добавлена, она будет полностью соответствовать требованиям Google Play Families Policy.</p>
+
+    <h2>10. Полезные функции</h2>
+    <p>Полезные рекомендации в приложении используются только для:</p>
+    <ul>
+      <li>помощи родителям;</li>
+      <li>анализа развития детей;</li>
+      <li>предоставления учебных рекомендаций.</li>
+    </ul>
+    <p>Система не принимает автоматических решений и не может заменить родителя.</p>
+
+    <h2>11. Безопасность</h2>
+    <p>Все данные защищены с помощью современных технологий безопасности.</p>
+    <p>Данные хранятся в инфраструктуре Google Firebase и передаются через защищённое соединение (TLS).</p>
+
+    <h2>12. Удаление аккаунта</h2>
+    <p>Родитель имеет право в любое время удалить:</p>
+    <ul>
+      <li>детский аккаунт;</li>
+      <li>данные ребёнка;</li>
+      <li>все задания;</li>
+      <li>coin и историю.</li>
+    </ul>
+    <p>При удалении основного аккаунта также удаляются все связанные с ним детские аккаунты.</p>
+
+    <h2>13. Google Play Families Policy</h2>
+    <p>«Oila Hisobchi» соблюдает требования Google Play Families Policy и Google Play Developer Policy.</p>
+    <p>Мы:</p>
+    <ul>
+      <li>не собираем персональные данные от детей самостоятельно;</li>
+      <li>не разрешаем создание детских аккаунтов без родительского контроля;</li>
+      <li>не продаём персональные данные детей;</li>
+      <li>не используем данные детей для таргетированной рекламы.</li>
+    </ul>
+
+    <h2>14. Изменения в политике</h2>
+    <p>Настоящая политика может периодически обновляться.</p>
+    <p>О существенных изменениях пользователи будут уведомлены внутри приложения или через официальные каналы связи.</p>
+
+    <h2>15. Связь с нами</h2>
+    <p>Если у вас есть вопросы по настоящей политике, вы можете связаться с нами.</p>
+    <p><strong>Электронная почта:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ ENGLISH ═══════════════ -->
+  <div class="content" id="c-en">
+    <h1>CHILD SAFETY & PARENTAL CONSENT POLICY</h1>
+    <div class="upd">Last updated: July 9, 2026</div>
+    <p>The "Oila Hisobchi" app considers children's safety and the protection of their personal data a top priority. This policy explains how child accounts in the app are created and managed, as well as the rights and responsibilities of parents.</p>
+
+    <h2>1. Purpose of This Policy</h2>
+    <p>This policy has been developed for the following purposes:</p>
+    <ul>
+      <li>to protect children's personal data;</li>
+      <li>to ensure parental control;</li>
+      <li>to comply with the Google Play Families Policy;</li>
+      <li>to create a safe and beneficial digital environment for children.</li>
+    </ul>
+
+    <h2>2. Who Can Create a Child Account?</h2>
+    <p>A child account can only be created by:</p>
+    <ul>
+      <li>a parent;</li>
+      <li>a legal guardian;</li>
+      <li>or the owner of the main family account.</li>
+    </ul>
+    <p>Children cannot create accounts on their own.</p>
+
+    <h2>3. Parental Consent</h2>
+    <p>When a child account is created, the parent consents to:</p>
+    <ul>
+      <li>creating the child account;</li>
+      <li>storing information about the child;</li>
+      <li>managing tasks;</li>
+      <li>using the reward system;</li>
+      <li>saving learning game results.</li>
+    </ul>
+    <p>A child account is not created without consent.</p>
+
+    <h2>4. What Data About the Child Is Stored?</h2>
+    <p>The following data may be stored in the app:</p>
+    <ul>
+      <li>name;</li>
+      <li>year of birth;</li>
+      <li>gender (optional);</li>
+      <li>avatar;</li>
+      <li>completed tasks;</li>
+      <li>coins and rewards;</li>
+      <li>balance;</li>
+      <li>savings;</li>
+      <li>wish list;</li>
+      <li>learning game results;</li>
+      <li>XP and Achievements.</li>
+    </ul>
+    <p>We do not collect the child's passport details, biometric data, or precise geolocation.</p>
+
+    <h2>5. Use of Data</h2>
+    <p>Data related to the child is used only for the following purposes:</p>
+    <ul>
+      <li>managing tasks;</li>
+      <li>running the reward system;</li>
+      <li>displaying learning game results;</li>
+      <li>calculating savings;</li>
+      <li>managing wishes;</li>
+      <li>generating useful recommendations;</li>
+      <li>providing statistics to the parent.</li>
+    </ul>
+    <p>Children's personal data is not used for advertising purposes.</p>
+
+    <h2>6. Parental Control</h2>
+    <p>At any time, the parent may:</p>
+    <ul>
+      <li>view the child account;</li>
+      <li>assign tasks;</li>
+      <li>set reward amounts;</li>
+      <li>set the value of coins;</li>
+      <li>approve wishes;</li>
+      <li>monitor savings;</li>
+      <li>edit the child account;</li>
+      <li>completely delete the child account.</li>
+    </ul>
+
+    <h2>7. Learning Games</h2>
+    <p>Learning games serve the following purposes:</p>
+    <ul>
+      <li>developing mathematical thinking;</li>
+      <li>learning English;</li>
+      <li>developing logical thinking;</li>
+      <li>improving financial literacy.</li>
+    </ul>
+    <p>The games are designed to foster healthy competition and an interest in learning among children.</p>
+
+    <h2>8. Reward System</h2>
+    <p>Coins and virtual rewards in the app are only part of the in-app motivation system.</p>
+    <p>Conversion of coins into real money is carried out only by the parent.</p>
+    <p>"Oila Hisobchi" does not sell any virtual currency and does not pay money to users.</p>
+    <p>All rewards are given based on an agreement between the parent and the child.</p>
+
+    <h2>9. Advertising</h2>
+    <p>Third-party advertisements are not shown in child accounts.</p>
+    <p>If advertising is added in the future, it will fully comply with the requirements of the Google Play Families Policy.</p>
+
+    <h2>10. Useful Features</h2>
+    <p>Useful recommendations in the app are used only to:</p>
+    <ul>
+      <li>help parents;</li>
+      <li>analyze children's development;</li>
+      <li>provide educational recommendations.</li>
+    </ul>
+    <p>The system does not make automatic decisions and cannot replace a parent.</p>
+
+    <h2>11. Security</h2>
+    <p>All data is protected using modern security technologies.</p>
+    <p>Data is stored in the Google Firebase infrastructure and transmitted over a secure connection (TLS).</p>
+
+    <h2>12. Account Deletion</h2>
+    <p>At any time, the parent has the right to delete:</p>
+    <ul>
+      <li>the child account;</li>
+      <li>the child's data;</li>
+      <li>all tasks;</li>
+      <li>coins and history.</li>
+    </ul>
+    <p>When the main account is deleted, all child accounts linked to it are also deleted.</p>
+
+    <h2>13. Google Play Families Policy</h2>
+    <p>"Oila Hisobchi" complies with the Google Play Families Policy and the Google Play Developer Policy.</p>
+    <p>We:</p>
+    <ul>
+      <li>do not collect personal data from children independently;</li>
+      <li>do not allow child-directed accounts to be created without parental control;</li>
+      <li>do not sell children's personal data;</li>
+      <li>do not use children's data for targeted advertising.</li>
+    </ul>
+
+    <h2>14. Changes to This Policy</h2>
+    <p>This policy may be updated from time to time.</p>
+    <p>Users will be notified of significant changes within the app or through official communication channels.</p>
+
+    <h2>15. Contact Us</h2>
+    <p>If you have any questions about this policy, you can contact us.</p>
+    <p><strong>Email:</strong><br><a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KAZAKH ═══════════════ -->
+  <div class="content" id="c-kk">
+    <h1>БАЛАЛАР ҚАУІПСІЗДІГІ ЖӘНЕ АТА-АНА КЕЛІСІМІ САЯСАТЫ</h1>
+    <div class="upd">Соңғы жаңарту: 9 шілде, 2026 жыл</div>
+    <p>«Oila Hisobchi» қосымшасы балалардың қауіпсіздігі мен жеке мәліметтерін қорғауды басты басымдық деп санайды. Бұл саясат қосымшада балалар аккаунттары қалай жасалатынын, қалай басқарылатынын, сондай-ақ ата-аналардың құқықтары мен міндеттерін сипаттайды.</p>
+
+    <h2>1. Ата-ананың бақылауы және рұқсаты</h2>
+    <p>Бала аккаунты тек басты аккаунт иесі (ата-ана немесе заңды өкіл) тарапынан жасалуы мүмкін. Бала өз бетінше аккаунт жасай алмайды және бұл саясатпен тікелей келісе алмайды.</p>
+    <p>Бала аккаунтын жасай отырып, ата-ана баланың жеке деректерін осы саясатқа сәйкес өңдеуге және сақтауға рұқсат береді.</p>
+
+    <h2>2. Балалардан жиналатын мәліметтер</h2>
+    <p>Балалардың қауіпсіздігін қамтамасыз ету мақсатында біз тек келесі ақпаратты жинаймыз және сақтаймыз (оны ата-ана енгізеді):</p>
+    <ul>
+      <li>Баланың аты немесе лақап аты (толық атын жазу міндетті емес);</li>
+      <li>Туған жылы (жасына сәйкес тапсырмалар мен ойындарды ұсыну үшін);</li>
+      <li>Жынысы (міндетті емес, бейімдеу мақсатында);</li>
+      <li>Орындалған тапсырмалар және олардың күйі;</li>
+      <li>Алынған марапаттар, тиындар және олардың тарихы;</li>
+      <li>Баланың арман-тілектер тізімі (бала қосатын заттар мен мақсаттар);</li>
+      <li>Білім ойындарының нәтижелері мен статистикасы.</li>
+    </ul>
+
+    <h2>3. Жарнама және талдау</h2>
+    <p>Бала аккаунтында жарнамалар көрсетілмейді және олардың деректері үшінші тұлғаларға жарнамалық мақсаттарда берілмейді.</p>
+
+    <h2>4. Деректерді басқару және өшіру</h2>
+    <p>Ата-ана кез келген уақытта бала аккаунтын, оның статистикасын, тапсырмаларын және барлық деректерін толығымен жоюға құқылы.</p>
+
+    <h2>5. Байланыс</h2>
+    <p>Сұрақтарыңыз болса, бізге хабарласыңыз:<br><strong>Электрондық пошта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ QARAQALPAQ ═══════════════ -->
+  <div class="content" id="c-qr">
+    <h1>BALALAR QAWIPSIZLIGI HÁM ATA-ANA RAZILIǴI SIYASATI</h1>
+    <div class="upd">Aqırgı jańalanıw: 9-iyul, 2026-jıl</div>
+    <p>"Oila Hisobchi" qosımshası balalardıń qawipsizligi hám jeke maǵlıwmatların qorǵawdı birinshi dárejeli wazıypa dep biledi. Bul siyasat balalar akkauntı qalay jaratılıwı, basqarılywı hám ata-analardıń huquqların túsindiredi.</p>
+
+    <h2>1. Ata-ana qadaǵalawı hám ruxsatı</h2>
+    <p>Bala akkauntı tek ǵaga tiykarǵı akkaunt iyesi (ata-ana yamasa nızamlı qorǵawshı) tárepinen jaratıladı. Bala óz betinshe akkaunt jarata almaydı.</p>
+    <p>Bala akkauntın jaratıw arqalı ata-ana balasınıń jeke maǵlıwmatларын usı siyasatqa muwapıq saqlawǵa hám islewge óz razılıǵın beredi.</p>
+
+    <h2>2. Jıynalatuǵın maǵlıwmatlar</h2>
+    <p>Biz tek tómendegi maǵlıwmatlardı saqlaymız (ata-ana tárepinen kiritilgen):</p>
+    <ul>
+      <li>Atı yamasa laqabı;</li>
+      <li>Tuwılǵan jılı (tapsırmalar hám bilim oyınларын maslaw ushın);</li>
+      <li>Jınısı (ıqtıyarsız);</li>
+      <li>Orınlanǵan tapsırmalar hám sıylıqlar;</li>
+      <li>Balasınıń árman-niyetleri dizimi;</li>
+      <li>Bilim oyınları nátiyjeleri.</li>
+    </ul>
+
+    <h2>3. Reklama hám qawipsizlik</h2>
+    <p>Balalar akkauntında reklama kórsetilmeydi. Maǵlıwmatlar úshinshi táreplerge berilmeydi.</p>
+
+    <h2>4. Maǵlıwmatlardı óshiriw</h2>
+    <p>Ata-ana qálegen waqıtta bala akkauntın hám barlıq maǵlıwmatларын qosımshadan óshire aladı.</p>
+
+    <h2>5. Baylanıs</h2>
+    <p>Sorawlarıńız bolsa, biz benen baylanısıń:<br><strong>Elektron pochta:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ KYRGYZ ═══════════════ -->
+  <div class="content" id="c-ky">
+    <h1>БАЛДАРДЫН КООПСУЗДУГУ ЖАНА АТА-ЭНЕНИН МАКУЛДУГУ САЯСАТЫ</h1>
+    <div class="upd">Акыркы жаңыртуу: 9-июль, 2026-жыл</div>
+    <p>«Oila Hisobchi» тиркемеси балдардын коопсуздугун жана жеке маалыматтарын коргоону башкы артыкчылык деп билет. Бул саясат тиркемеде балдардын аккаунттары кантип түзүлөрүн, башкарыларын жана ата-энелердин укуктары менен милдеттерин түшүндүрөт.</p>
+
+    <h2>1. Ата-эненин көзөмөлү жана макулдугу</h2>
+    <p>Баладын аккаунту негизги аккаунттун ээси (ата-эне же мыйзамдуу өкүл) тарабынан гана түзүлүшү мүмкүн. Бала өз алдынча аккаунт түзө албайт.</p>
+    <p>Баланын аккаунтун түзүү менен ата-эне баланын жеке маалыматтарын ушул саясатка ылайык иштетүүгө жана сактоого макулдук берет.</p>
+
+    <h2>2. Балдардан чогултулган маалыматтар</h2>
+    <p>Биз төмөнкү маалыматтарды гана сактайбыз (ата-эне киргизген):</p>
+    <ul>
+      <li>Баланын аты же каймана аты;</li>
+      <li>Туулган жылы (жашына ылайыктуу тапшырмаларды тандоо үчүн);</li>
+      <li>Жынысы (милдеттүү эмес);</li>
+      <li>Аткарылган тапшырмалар жана сыйлыктар;</li>
+      <li>Каалоолор тизмеси;</li>
+      <li>Окуу оюндарынын жыйынтыктары.</li>
+    </ul>
+
+    <h2>3. Жарнама жана коопсуздук</h2>
+    <p>Балдардын аккаунтунда жарнамалар көрсөтүлбөйт. Маалыматтар үчүнчү жактарга берилбейт.</p>
+
+    <h2>4. Маалыматтарды өчүрүү</h2>
+    <p>Ата-эне каалаган убакта баланын аккаунтун жана бардык маалыматтарын толугу менен өчүрө алат.</p>
+
+    <h2>5. Байланыш</h2>
+    <p>Суроолоруңуз болсо, биз менен байланышыңыз:<br><strong>Электрондук почта:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  <!-- ═══════════════ TAJIK ═══════════════ -->
+  <div class="content" id="c-tg">
+    <h1>СИЁСАТИ АМНИЯТИ КӮДАКОН ВА РОЗИГИИ ВОЛИДОН</h1>
+    <div class="upd">Навсозии охирин: 9 июли соли 2026</div>
+    <p>Барномаи «Oila Hisobchi» ҳифзи амният ва маълумоти шахсии кӯдаконро вазифаи аввалиндараҷаи худ медонад. Ин сиёсат нишон медиҳад, ки чӣ тавр аккаунти кӯдакон дар барнома сохта ва идора карда мешавад, инчунин ҳуқуқ ва уҳдадориҳои волидонро шарҳ медиҳад.</p>
+
+    <h2>1. Назорат ва розигии волидон</h2>
+    <p>Аккаунти кӯдак танҳо аз ҷониби соҳиби аккаунти асосӣ (волидон ё намояндаи қонунӣ) сохта мешавад. Кӯдак мустақилона аккаунт сохта наметавонад.</p>
+    <p>Бо сохтани аккаунти кӯдак, волидон ба ҷамъоварӣ ва коркарди маълумоти кӯдак мувофиқи ин сиёсат розигӣ медиҳанд.</p>
+
+    <h2>2. Маълумоти ҷамъшаванда дар бораи кӯдак</h2>
+    <p>Мо танҳо маълумоти зеринро нигоҳ медорем (ки аз ҷониби волидон ворид карда мешавад):</p>
+    <ul>
+      <li>Ном ё лақаби кӯдак;</li>
+      <li>Соли таваллуд (барои интихоби вазифаҳо мувофиқи синну сол);</li>
+      <li>Ҷинси кӯдак (ихтиёрӣ);</li>
+      <li>Вазифаҳои иҷрошуда ва мукофотҳо;</li>
+      <li>Рӯйхати орзуҳо;</li>
+      <li>Натиҷаҳои бозиҳои омӯзишӣ.</li>
+    </ul>
+
+    <h2>3. Таблиғот ва амният</h2>
+    <p>Дар аккаунти кӯдакон таблиғот нишон дода намешавад ва маълумоти онҳо ба шахсони сеюм дода намешавад.</p>
+
+    <h2>4. Нест кардани маълумот</h2>
+    <p>Волидон ҳуқуқ доранд, ки дар вақти дилхоҳ аккаунти кӯдакро бо ҳама маълумоташ аз барнома комилан нест кунанд.</p>
+
+    <h2>5. Тамос бо мо</h2>
+    <p>Агар шумо саволҳо дошта бошед, бо мо тамос гиред:<br><strong>Почтаи электронӣ:</strong> <a href="mailto:oilahisobchi@gmail.com">oilahisobchi@gmail.com</a></p>
+  </div>
+
+  </div>
+</div>
+<script>
+(function(){
+  var LANGS=["uz","en","ru","kk","ky","tg","qr"];
+  var LANG_LABELS={
+    uz: "🇺🇿 O'zbekcha",
+    en: "🇬🇧 English",
+    ru: "🇷🇺 Русский",
+    kk: "🇰🇿 Қазақша",
+    ky: "🇰🇬 Кыргызча",
+    tg: "🇹🇯 Тоҷикӣ",
+    qr: "🇺🇿 Qaraqalpaqsha"
+  };
+  
+  var dropdown = document.getElementById("langDropdown");
+  var trigger = document.getElementById("langTrigger");
+  var currentText = document.getElementById("currentLangText");
+  var menu = document.getElementById("langMenu");
+
+  trigger.addEventListener("click", function(e){
+    e.stopPropagation();
+    dropdown.classList.toggle("open");
+  });
+
+  document.addEventListener("click", function(){
+    dropdown.classList.remove("open");
+  });
+
+  function setLang(l){
+    if(LANGS.indexOf(l)<0)l="uz";
+    LANGS.forEach(function(x){
+      var el = document.getElementById("c-"+x);
+      if(el) el.classList.toggle("show", x===l);
+    });
+    document.querySelectorAll("#langMenu button").forEach(function(b){
+      b.classList.toggle("on", b.dataset.l===l);
+    });
+    currentText.innerText = LANG_LABELS[l] || LANG_LABELS.uz;
+    document.documentElement.lang=l;
+    try{localStorage.setItem("policy_lang",l);}catch(e){}
+  }
+
+  document.querySelectorAll("#langMenu button").forEach(function(b){
+    b.addEventListener("click",function(e){
+      e.stopPropagation();
+      setLang(b.dataset.l);
+      dropdown.classList.remove("open");
+    });
+  });
+
+  var q=new URLSearchParams(location.search).get("lang");
+  var saved=null;try{saved=localStorage.getItem("policy_lang");}catch(e){}
+  setLang(q||saved||"uz");
+})();
+</script>
+</body>
+</html>
