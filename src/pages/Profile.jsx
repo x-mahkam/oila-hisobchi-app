@@ -14,7 +14,8 @@ import { useFamily } from "../hooks/useFamily.js";
 import { useDailyReminder } from "../hooks/useDailyReminder.js";
 import { db, fbAuth } from "../firebase.js";
 import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
-import { normTel, td } from "../utils/formatters.js";
+import { normTel, td, hp } from "../utils/formatters.js";
+import { NativeBiometric } from "capacitor-native-biometric";
 import KidCreatedModal from "../components/modals/KidCreatedModal.jsx";
 import {
   PageHeader, SectionHeader, SubHeader,
@@ -162,6 +163,21 @@ export default function ProfilePage({
   const [pinVal, setPinVal] = useState("");
   const [pinCfm, setPinCfm] = useState("");
   const [finger, setFinger] = useState(false);
+  const [pinHash, setPinHash] = useState(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      db.g("security_" + user.id).then(sec => {
+        if (sec && typeof sec === "object") {
+          setPinHash(sec.pinHash || null);
+          setFinger(!!sec.biometricEnabled);
+        } else {
+          setPinHash(null);
+          setFinger(false);
+        }
+      }).catch(e => console.error(e));
+    }
+  }, [user?.id, pTab]);
   const [showReferral, setShowReferral] = useState(false);
   const [fbRating, setFbRating] = useState(0);
   const [fbText, setFbText] = useState("");
@@ -1841,8 +1857,30 @@ export default function ProfilePage({
         <div>
           <PageHeader th={th} title={t.xav} onBack={backToMain} />
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t.pin} sub={uz ? "4 raqamli maxfiy kod" : "4-digit code"}
-              right={<SecondaryButton th={th} onClick={() => setPinStep(pinStep === "idle" ? "enter" : "idle")} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>{pinStep === "idle" ? (uz ? "O'zgartirish" : "Change") : (uz ? "Bekor" : "Cancel")}</SecondaryButton>}
+            <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t.pin} sub={pinHash ? (uz ? "PIN o'rnatilgan ✓" : "PIN set ✓") : (uz ? "4 raqamli maxfiy kod" : "4-digit code")}
+              right={
+                <div style={{ display: "flex", gap: SPACE.s2 }}>
+                  {pinHash && pinStep === "idle" && (
+                    <SecondaryButton th={th} onClick={async () => {
+                      try {
+                        const cur = (await db.g("security_" + user.id)) || {};
+                        await db.s("security_" + user.id, { ...cur, pinHash: null, biometricEnabled: false });
+                        setPinHash(null);
+                        setFinger(false);
+                        ok$(uz ? "PIN o'chirildi" : "PIN deleted");
+                      } catch (e) {
+                        console.error(e);
+                        ok$(uz ? "Xatolik yuz berdi" : "An error occurred", "err");
+                      }
+                    }} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, borderColor: th.rd, color: th.rd }}>
+                      {uz ? "O'chirish" : "Delete"}
+                    </SecondaryButton>
+                  )}
+                  <SecondaryButton th={th} onClick={() => setPinStep(pinStep === "idle" ? "enter" : "idle")} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>
+                    {pinStep === "idle" ? (uz ? "O'zgartirish" : "Change") : (uz ? "Bekor" : "Cancel")}
+                  </SecondaryButton>
+                </div>
+              }
               divider={pinStep !== "idle"} />
             {pinStep !== "idle" && (
               <div style={{ padding: SPACE.s4 }}>
@@ -1861,7 +1899,28 @@ export default function ProfilePage({
                       setter(next);
                       if (next.length === 4) {
                         if (pinStep === "enter") { setTimeout(() => setPinStep("confirm"), 300); }
-                        else { if (next === pinVal) { setPinStep("idle"); setPinVal(""); setPinCfm(""); ok$(uz ? "PIN saqlandi" : "PIN saved"); } else { setPinCfm(""); ok$(uz ? "PIN mos kelmadi" : "PIN mismatch", "err"); } }
+                        else {
+                          if (next === pinVal) {
+                            (async () => {
+                              try {
+                                const hashed = await hp(next);
+                                const curData = (await db.g("security_" + user.id)) || {};
+                                await db.s("security_" + user.id, { ...curData, pinHash: hashed });
+                                setPinHash(hashed);
+                                setPinStep("idle");
+                                setPinVal("");
+                                setPinCfm("");
+                                ok$(uz ? "PIN saqlandi" : "PIN saved");
+                              } catch (e) {
+                                console.error(e);
+                                ok$(uz ? "PIN saqlashda xatolik" : "Error saving PIN", "err");
+                              }
+                            })();
+                          } else {
+                            setPinCfm("");
+                            ok$(uz ? "PIN mos kelmadi" : "PIN mismatch", "err");
+                          }
+                        }
                       }
                     }} aria-label={num === "del" ? (uz ? "O'chirish" : "Delete") : String(num)}
                       style={{ background: typeof num === "number" ? th.surH : "transparent", border: typeof num === "number" ? "1px solid " + th.bor : "none", borderRadius: RADIUS.s + 2, padding: SPACE.s3 + 2 + "px", fontSize: TYPE.heading.fontSize + 1, fontWeight: 700, color: th.t1, cursor: num === "" ? "default" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", minHeight: COMP.touchMin }}>
@@ -1876,7 +1935,46 @@ export default function ProfilePage({
           </AppCard>
           <AppCard th={th} pad={0}>
             <ListItem th={th} icon={Ico.finger(th.gr)} iconTone={th.gr} title={t.barmoq} sub={uz ? "Tez va xavfsiz" : "Fast & secure"} divider={false}
-              right={<Switch th={th} checked={!!finger} onChange={() => setFinger(v => !v)} label={t.barmoq} />} />
+              right={<Switch th={th} checked={!!finger} onChange={async () => {
+                if (!finger) {
+                  // Turning ON
+                  if (!pinHash) {
+                    ok$(uz ? "Avval PIN kod o'rnating" : "Set a PIN first", "err");
+                    return;
+                  }
+                  try {
+                    const result = await NativeBiometric.isAvailable();
+                    if (!result.isAvailable) {
+                      ok$(uz ? "Qurilmangizda biometrika mavjud emas" : "Biometrics not available on device", "err");
+                      return;
+                    }
+                    await NativeBiometric.verifyIdentity({
+                      reason: uz ? "Barmoq izini faollashtirish" : "Activate biometrics",
+                      title: uz ? "Biometrika" : "Biometrics",
+                      subtitle: uz ? "Tasdiqlang" : "Confirm",
+                      description: uz ? "Barmoq izi datchigiga teging" : "Touch the biometric sensor"
+                    });
+                    const curData = (await db.g("security_" + user.id)) || {};
+                    await db.s("security_" + user.id, { ...curData, biometricEnabled: true });
+                    setFinger(true);
+                    ok$(uz ? "Barmoq izi muvaffaqiyatli yoqildi" : "Biometrics activated successfully");
+                  } catch (e) {
+                    console.error("Biometrics activation failed", e);
+                    ok$(uz ? "Biometrik tasdiqlash muvaffaqiyatsiz bo'ldi" : "Biometric verification failed", "err");
+                  }
+                } else {
+                  // Turning OFF
+                  try {
+                    const curData = (await db.g("security_" + user.id)) || {};
+                    await db.s("security_" + user.id, { ...curData, biometricEnabled: false });
+                    setFinger(false);
+                    ok$(uz ? "Barmoq izi o'chirildi" : "Biometrics deactivated");
+                  } catch (e) {
+                    console.error("Biometrics deactivation failed", e);
+                    ok$(uz ? "Xatolik yuz berdi" : "Error occurred", "err");
+                  }
+                }
+              }} label={t.barmoq} />} />
           </AppCard>
         </div>
       )}

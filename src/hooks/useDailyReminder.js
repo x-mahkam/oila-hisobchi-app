@@ -87,13 +87,21 @@ export function useDailyReminder() {
       const titleText = {
         uz: "Kunlik eslatma",
         ru: "Ежедневное напоминание",
-        en: "Daily Reminder"
+        en: "Daily Reminder",
+        kk: "Күнделікті ескерту",
+        ky: "Күнүмдүк эскертүү",
+        tg: "Огоҳии рӯзона",
+        qr: "Ku'ndelikli eskertiw"
       }[lg] || "Daily Reminder";
 
       const bodyText = {
         uz: "Bugungi xarajat va daromadlaringizni kiritishni unutmang!",
         ru: "Не забудьте внести сегодняшние расходы и доходы!",
-        en: "Don't forget to log today's expenses and income!"
+        en: "Don't forget to log today's expenses and income!",
+        kk: "Бүгінгі кірістер мен шығыстарды енгізуді ұмытпаңыз!",
+        ky: "Бүгүнкү киреше жана чыгашаларды киргизүүнү унутпаңыз!",
+        tg: "Ворид кардани даромад ва хароҷоти имрӯзаро фаромӯш накунед!",
+        qr: "Bug'ingi kirisler ha'm shig'islardi kirgiziwdi umitpan'iz!"
       }[lg] || "Don't forget to log today's expenses and income!";
 
       await LocalNotifications.schedule({

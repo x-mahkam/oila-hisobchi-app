@@ -82,106 +82,160 @@ export const COUNTRIES = [
 ];
 
 export const QUICK_ADD = [
-  {id:"ovqat",    emoji:"🍔",kat:"oziq",    uz:"Ovqat",    ru:"Еда",        en:"Food"},
-  {id:"taxi",     emoji:"🚕",kat:"transport",uz:"Transport",ru:"Транспорт",  en:"Transport"},
-  {id:"kofe",     emoji:"☕",kat:"oziq",    uz:"Kofe",     ru:"Кофе",       en:"Coffee"},
-  {id:"bozor",    emoji:"🛒",kat:"oziq",    uz:"Bozor",    ru:"Продукты",   en:"Groceries"},
-  {id:"benzin",   emoji:"⛽",kat:"transport",uz:"Benzin",   ru:"Бензин",     en:"Fuel"},
-  {id:"dorixona", emoji:"💊",kat:"sog",     uz:"Dorixona", ru:"Аптека",     en:"Pharmacy"},
+  {id:"ovqat",    emoji:"🍔",kat:"oziq",    uz:"Ovqat",    ru:"Еда",        en:"Food", kk:"Тамақ", ky:"Тамак", tg:"Хӯрок", qr:"Awqat"},
+  {id:"taxi",     emoji:"🚕",kat:"transport",uz:"Transport",ru:"Транспорт",  en:"Transport", kk:"Көлік", ky:"Транспорт", tg:"Нақлиёт", qr:"Transport"},
+  {id:"kofe",     emoji:"☕",kat:"oziq",    uz:"Kofe",     ru:"Кофе",       en:"Coffee", kk:"Кофе", ky:"Кофе", tg:"Кофе", qr:"Kofe"},
+  {id:"bozor",    emoji:"🛒",kat:"oziq",    uz:"Bozor",    ru:"Продукты",   en:"Groceries", kk:"Азық-түлік", ky:"Азык-түлүк", tg:"Бозор", qr:"Bozor"},
+  {id:"benzin",   emoji:"⛽",kat:"transport",uz:"Benzin",   ru:"Бензин",     en:"Fuel", kk:"Жанармай", ky:"Бензин", tg:"Бензин", qr:"Benzin"},
+  {id:"dorixona", emoji:"💊",kat:"sog",     uz:"Dorixona", ru:"Аптека",     en:"Pharmacy", kk:"Дәріхана", ky:"Дарыкана", tg:"Дорухона", qr:"Da'rixana"},
 ];
 
 export const VAZIFA_PRESETS = [
-  {emoji:"🧹",uz:"Xonani yig'ishtirish",ru:"Убрать комнату",    en:"Clean room",          reward:20000},
-  {emoji:"📚",uz:"Kitob o'qish",         ru:"Читать книгу",      en:"Read a book",         reward:15000},
-  {emoji:"🛏️",uz:"To'shakni yig'ish",   ru:"Заправить кровать", en:"Make the bed",        reward:5000},
-  {emoji:"🍽️",uz:"Idishlarni yuvish",   ru:"Помыть посуду",     en:"Wash dishes",         reward:10000},
-  {emoji:"🦷",uz:"Tish yuvish",          ru:"Почистить зубы",    en:"Brush teeth",         reward:3000},
-  {emoji:"🕌",uz:"Namoz o'qish",         ru:"Совершить намаз",   en:"Pray",                reward:10000},
-  {emoji:"🎓",uz:"Dars tayyorlash",      ru:"Сделать уроки",     en:"Do homework",         reward:25000},
-  {emoji:"🏃",uz:"Mashq qilish",         ru:"Зарядка",           en:"Exercise",            reward:8000},
-  {emoji:"🌱",uz:"Gullarni sug'orish",   ru:"Полить цветы",      en:"Water plants",        reward:5000},
-  {emoji:"🐕",uz:"Hayvonga qarash",      ru:"Покормить питомца", en:"Feed pet",            reward:7000},
-  {emoji:"🗑️",uz:"Axlatni chiqarish",   ru:"Вынести мусор",     en:"Take out trash",      reward:5000},
-  {emoji:"📖",uz:"Ingliz tili so'z yodlash",ru:"Учить англ. слова",en:"Learn English words",reward:20000},
+  {emoji:"🧹",uz:"Xonani yig'ishtirish",ru:"Убрать комнату",    en:"Clean room", kk:"Бөлмені жинау", ky:"Бөлмөнү жыйноо", tg:"Рӯбучини хона", qr:"Xonani jiyishtiriw", reward:20000},
+  {emoji:"📚",uz:"Kitob o'qish",         ru:"Читать книгу",      en:"Read a book", kk:"Кітап оқу", ky:"Китеп окуу", tg:"Китобхонӣ", qr:"Kitap oqiwi", reward:15000},
+  {emoji:"🛏️",uz:"To'shakni yig'ish",   ru:"Заправить кровать", en:"Make the bed", kk:"Төсекті жинау", ky:"Төшөктү жыйноо", tg:"Ҷамъ кардани бистар", qr:"To'sekti jiyishtiriw", reward:5000},
+  {emoji:"🍽️",uz:"Idishlarni yuvish",   ru:"Помыть посуду",     en:"Wash dishes", kk:"Ыдыс жуу", ky:"Идиш жуу", tg:"Шустани косаву табақ", qr:"Idislardi juwiw", reward:10000},
+  {emoji:"🦷",uz:"Tish yuvish",          ru:"Почистить зубы",    en:"Brush teeth", kk:"Тіс тазалау", ky:"Тишти тазалоо", tg:"Шустани дандон", qr:"Tislerdi juwiw", reward:3000},
+  {emoji:"🕌",uz:"Namoz o'qish",         ru:"Совершить намаз",   en:"Pray", kk:"Намаз оқу", ky:"Намаз окуу", tg:"Намоз хондан", qr:"Namaz oqiw", reward:10000},
+  {emoji:"🎓",uz:"Dars tayyorlash",      ru:"Сделать уроки",     en:"Do homework", kk:"Үй тапсырмасын орындау", ky:"Үй тапшырмасын аткаруу", tg:"Иҷрои вазифаи хонагӣ", qr:"Sabaq tayarlaw", reward:25000},
+  {emoji:"🏃",uz:"Mashq qilish",         ru:"Зарядка",           en:"Exercise", kk:"Шынығу жасау", ky:"Дене тарбия жасаоо", tg:"Варзиш кардан", qr:"Shinig'iw jasaw", reward:8000},
+  {emoji:"🌱",uz:"Gullarni sug'orish",   ru:"Полить цветы",      en:"Water plants", kk:"Гүлдерді суару", ky:"Гүлдөрдү сугаруу", tg:"Обёрии гулҳо", qr:"Gu'llerdi sug'ariw", reward:5000},
+  {emoji:"🐕",uz:"Hayvonga qarash",      ru:"Покормить питомца", en:"Feed pet", kk:"Үй жануарына қарау", ky:"Үй жаныбарын багуу", tg:"Хӯрондани ҳайвони хонагӣ", qr:"Haywang'a qaraw", reward:7000},
+  {emoji:"🗑️",uz:"Axlatni chiqarish",   ru:"Вынести мусор",     en:"Take out trash", kk:"Қоқыс шығару", ky:"Таштандыны чыгаруу", tg:"Партовро партофтан", qr:"Axlatti shig'ariw", reward:5000},
+  {emoji:"📖",uz:"Ingliz tili so'z yodlash",ru:"Учить англ. слова",en:"Learn English words", kk:"Ағылшын сөздерін жаттау", ky:"Англис сөздөрүн жаттоо", tg:"Ёд гирифтани калимаҳои англисӣ", qr:"Anglis tili so'zlerin yadlaw", reward:20000},
 ];
 
 export const GOAL_PRESETS = [
-  {emoji:"🏠",uz:"Uy xarid qilish",    ru:"Покупка дома",     en:"Buy a house",    rang:"#10b981"},
-  {emoji:"🚗",uz:"Mashina xarid qilish",ru:"Покупка машины",  en:"Buy a car",      rang:"#3b82f6"},
-  {emoji:"✈️",uz:"Sayohat",            ru:"Путешествие",       en:"Travel",         rang:"#f59e0b"},
-  {emoji:"🕋",uz:"Umra ziyorati",       ru:"Умра",             en:"Umrah",          rang:"#8b5cf6"},
-  {emoji:"🕌",uz:"Haj amallari",        ru:"Хадж",             en:"Hajj",           rang:"#06b6d4"},
-  {emoji:"💍",uz:"To'y marosimi",       ru:"Свадьба",          en:"Wedding",        rang:"#ec4899"},
-  {emoji:"📱",uz:"Telefon / Texnika",   ru:"Телефон",          en:"Phone / Gadget", rang:"#6366f1"},
-  {emoji:"🎓",uz:"Ta'lim / O'qish",    ru:"Образование",       en:"Education",      rang:"#ef4444"},
-  {emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",           en:"Emergency",      rang:"#14b8a6"},
-  {emoji:"💼",uz:"Biznes boshlash",     ru:"Бизнес",           en:"Business",       rang:"#f97316"},
-  {emoji:"💻",uz:"Kompyuter / Noutbuk", ru:"Компьютер",       en:"Computer",     rang:"#0ea5e9"},
-  {emoji:"🛠️",uz:"Uy ta'miri",         ru:"Ремонт",           en:"Home repair",  rang:"#84cc16"},
-  {emoji:"💎",uz:"Tilla taqinchoq",     ru:"Украшения",       en:"Jewelry",      rang:"#eab308"},
-  {emoji:"🐑",uz:"Qurbonlik",           ru:"Курбан",           en:"Qurbani",      rang:"#a855f7"},
-  {emoji:"🏍️",uz:"Mototsikl",          ru:"Мотоцикл",       en:"Motorcycle",   rang:"#f43f5e"},
-  {emoji:"🎉",uz:"Bayram / Marosim",    ru:"Праздник",         en:"Celebration",  rang:"#22c55e"},
+  {emoji:"🏠",uz:"Uy xarid qilish",    ru:"Покупка дома",     en:"Buy a house", kk:"Үй сатып алу", ky:"Үй сатып алуу", tg:"Харидани хона", qr:"Uy satip aliw", rang:"#10b981"},
+  {emoji:"🚗",uz:"Mashina xarid qilish",ru:"Покупка машины",  en:"Buy a car", kk:"Көлік сатып алу", ky:"Унаа сатып алуу", tg:"Харидани мошин", qr:"Mashina satip aliw", rang:"#3b82f6"},
+  {emoji:"✈️",uz:"Sayohat",            ru:"Путешествие",       en:"Travel", kk:"Саяхат", ky:"Саякат", tg:"Саёҳат", qr:"Sayohat", rang:"#f59e0b"},
+  {emoji:"🕋",uz:"Umra ziyorati",       ru:"Умра",             en:"Umrah", kk:"Ұмра сапары", ky:"Умра зыяраты", tg:"Зиёрати Умра", qr:"Umra ziyorati", rang:"#8b5cf6"},
+  {emoji:"🕌",uz:"Haj amallari",        ru:"Хадж",             en:"Hajj", kk:"Қажылық сапары", ky:"Ажылык", tg:"Ҳаҷ", qr:"Haj amallari", rang:"#06b6d4"},
+  {emoji:"💍",uz:"To'y marosimi",       ru:"Свадьба",          en:"Wedding", kk:"Үйлену тойы", ky:"Үйлөнүү тою", tg:"Тӯй", qr:"Toy saltanati", rang:"#ec4899"},
+  {emoji:"📱",uz:"Telefon / Texnika",   ru:"Телефон",          en:"Phone / Gadget", kk:"Телефон / Техника", ky:"Телефон / Техника", tg:"Телефон / Техника", qr:"Telefon / Texnika", rang:"#6366f1"},
+  {emoji:"🎓",uz:"Ta'lim / O'qish",    ru:"Образование",       en:"Education", kk:"Білім алу / Оқу", ky:"Билим алуу / Окуу", tg:"Таҳсилот / Хониш", qr:"Bilim / Oqiwi", rang:"#ef4444"},
+  {emoji:"🏥",uz:"Favqulodda jamg'arma",ru:"Резерв",           en:"Emergency", kk:"Төтенше жағдай қоры", ky:"Күтүлбөгөн чыгымдар", tg:"Фонди фавқулодда", qr:"Qawipli jag'day qori", rang:"#14b8a6"},
+  {emoji:"💼",uz:"Biznes boshlash",     ru:"Бизнес",           en:"Business", kk:"Бизнес бастау", ky:"Бизнес баштоо", tg:"Оғози бизнес", qr:"Biznes baslaw", rang:"#f97316"},
+  {emoji:"💻",uz:"Kompyuter / Noutbuk", ru:"Компьютер",       en:"Computer", kk:"Компьютер / Ноутбук", ky:"Компьютер / Ноутбук", tg:"Компютер / Ноутбук", qr:"Kompyuter / Noutbuk", rang:"#0ea5e9"},
+  {emoji:"🛠️",uz:"Uy ta'miri",         ru:"Ремонт",           en:"Home repair", kk:"Үй жөндеу", ky:"Үй ремонттоо", tg:"Таъмири хона", qr:"Uy t'amiri", rang:"#84cc16"},
+  {emoji:"💎",uz:"Tilla taqinchoq",     ru:"Украшения",       en:"Jewelry", kk:"Алтын бұйымдар", ky:"Алтын жасалгалар", tg:"Ҷавоҳироти тиллоӣ", qr:"Tilla taqinshaq", rang:"#eab308"},
+  {emoji:"🐑",uz:"Qurbonlik",           ru:"Курбан",           en:"Qurbani", kk:"Құрбандық шалу", ky:"Курмандык", tg:"Қурбонӣ", qr:"Qurbanlik", rang:"#a855f7"},
+  {emoji:"🏍️",uz:"Mototsikl",          ru:"Мотоцикл",       en:"Motorcycle", kk:"Мотоцикл", ky:"Мотоцикл", tg:"Мотосикл", qr:"Mototsikl", rang:"#f43f5e"},
+  {emoji:"🎉",uz:"Bayram / Marosim",    ru:"Праздник",         en:"Celebration", kk:"Мереке / Шара", ky:"Майрам / Салтанат", tg:"Ҷашнвора", qr:"Bayram / Saltanat", rang:"#22c55e"},
 ];
 
 export const KID_GOAL_PRESETS = [
-  {emoji:"🚲",uz:"Velosiped",               ru:"Велосипед",             en:"Bicycle",     rang:"#10b981"},
-  {emoji:"📱",uz:"Telefon",                 ru:"Телефон",               en:"Phone",       rang:"#6366f1"},
-  {emoji:"🎮",uz:"O'yin pristavka",         ru:"Игровая приставка",     en:"Game console",rang:"#8b5cf6"},
-  {emoji:"🧸",uz:"O'yinchoq",              ru:"Игрушка",               en:"Toy",         rang:"#ec4899"},
-  {emoji:"⚽",uz:"Futbol to'pi",           ru:"Мяч",                   en:"Football",    rang:"#f59e0b"},
-  {emoji:"📚",uz:"Kitoblar",               ru:"Книги",                 en:"Books",       rang:"#ef4444"},
-  {emoji:"🎨",uz:"Rasm chizish to'plami", ru:"Набор для рисования",   en:"Art set",     rang:"#06b6d4"},
-  {emoji:"🛴",uz:"Samokat",               ru:"Самокат",               en:"Scooter",     rang:"#14b8a6"},
-  {emoji:"🎧",uz:"Naushnik",              ru:"Наушники",              en:"Headphones",  rang:"#a855f7"},
-  {emoji:"👟",uz:"Krossovka",             ru:"Кроссовки",             en:"Sneakers",    rang:"#f97316"},
-  {emoji:"🎂",uz:"Tug'ilgan kun",         ru:"День рождения",         en:"Birthday",    rang:"#ec4899"},
-  {emoji:"💰",uz:"Jamg'arma",             ru:"Накопления",            en:"Savings",     rang:"#10b981"},
-  {emoji:"⌚",uz:"Aqlli soat",            ru:"Смарт-часы",       en:"Smart watch",  rang:"#0ea5e9"},
-  {emoji:"🛹",uz:"Skeytbord",            ru:"Скейтборд",        en:"Skateboard",   rang:"#84cc16"},
-  {emoji:"🎸",uz:"Gitara",               ru:"Гитара",            en:"Guitar",       rang:"#f43f5e"},
-  {emoji:"🐹",uz:"Uy hayvoni",           ru:"Питомец",          en:"Pet",          rang:"#eab308"},
+  {emoji:"🚲",uz:"Velosiped",               ru:"Велосипед",             en:"Bicycle", kk:"Велосипед", ky:"Велосипед", tg:"Дучарха", qr:"Velosiped", rang:"#10b981"},
+  {emoji:"📱",uz:"Telefon",                 ru:"Телефон",               en:"Phone", kk:"Телефон", ky:"Телефон", tg:"Телефон", qr:"Telefon", rang:"#6366f1"},
+  {emoji:"🎮",uz:"O'yin pristavka",         ru:"Игровая приставка",     en:"Game console", kk:"Ойын приставкасы", ky:"Оюн приставкасы", tg:"Приставкаи бозӣ", qr:"Oyin pristavkasi", rang:"#8b5cf6"},
+  {emoji:"🧸",uz:"O'yinchoq",              ru:"Игрушка",               en:"Toy", kk:"Ойыншық", ky:"Оюнчук", tg:"Бозича", qr:"Oyinshaq", rang:"#ec4899"},
+  {emoji:"⚽",uz:"Futbol to'pi",           ru:"Мяч",                   en:"Football", kk:"Футбол добы", ky:"Футбол тобу", tg:"Тӯби футбол", qr:"Futbol topi", rang:"#f59e0b"},
+  {emoji:"📚",uz:"Kitoblar",               ru:"Книги",                 en:"Books", kk:"Кітаптар", ky:"Китептер", tg:"Китобҳо", qr:"Kitaplar", rang:"#ef4444"},
+  {emoji:"🎨",uz:"Rasm chizish to'plami", ru:"Набор для рисования",   en:"Art set", kk:"Сурет салу жиынтығы", ky:"Сүрөт тартуу топтому", tg:"Маҷмӯаи расмкашӣ", qr:"Su'vret siziw toplami", rang:"#06b6d4"},
+  {emoji:"🛴",uz:"Samokat",               ru:"Самокат",               en:"Scooter", kk:"Самокат", ky:"Самокат", tg:"Самокат", qr:"Samokat", rang:"#14b8a6"},
+  {emoji:"🎧",uz:"Naushnik",              ru:"Наушники",              en:"Headphones", kk:"Құлаққап", ky:"Наушник", tg:"Гӯшмонак", qr:"Naushnik", rang:"#a855f7"},
+  {emoji:"👟",uz:"Krossovka",             ru:"Кроссовки",             en:"Sneakers", kk:"Кроссовка", ky:"Кроссовка", tg:"Кроссовка", qr:"Krossovka", rang:"#f97316"},
+  {emoji:"🎂",uz:"Tug'ilgan kun",         ru:"День рождения",         en:"Birthday", kk:"Туған күн", ky:"Туулган күн", tg:"Рӯзи таваллуд", qr:"Tuwilg'an ku'n", rang:"#ec4899"},
+  {emoji:"💰",uz:"Jamg'arma",             ru:"Накопления",            en:"Savings", kk:"Жинақ", ky:"Топтом", tg:"Пасандоз", qr:"Jamg'arma", rang:"#10b981"},
+  {emoji:"⌚",uz:"Aqlli soat",            ru:"Смарт-часы",       en:"Smart watch", kk:"Ақылды сағат", ky:"Акырдуу саат", tg:"Соати ҳуشمند", qr:"Aqli soat", rang:"#0ea5e9"},
+  {emoji:"🛹",uz:"Skeytbord",            ru:"Скейтборд",        en:"Skateboard", kk:"Скейтборд", ky:"Скейтборд", tg:"Скейтборд", qr:"Skeytbord", rang:"#84cc16"},
+  {emoji:"🎸",uz:"Gitara",               ru:"Гитара",            en:"Guitar", kk:"Гитара", ky:"Гитара", tg:"Гитара", qr:"Gitara", rang:"#f43f5e"},
+  {emoji:"🐹",uz:"Uy hayvoni",           ru:"Питомец",          en:"Pet", kk:"Үй жануары", ky:"Үй жаныбары", tg:"Ҳайвони хонагӣ", qr:"Haywan", rang:"#eab308"},
 ];
 
 export const ONB_SLIDES = [
-  // color: token kaliti — komponentda th/GARDEN/PREMIUM orqali yechiladi (hex YO'Q)
-  {id:"intro", color:"ac",
-   titleUz:"Oila Hisobchi", titleRu:"Oila Hisobchi", titleEn:"Oila Hisobchi",
-   descUz:"Oilangizning moliyaviy hamrohi. Sodda. Ishonchli. Sizniki.",
-   descRu:"Финансовый помощник вашей семьи. Просто. Надёжно. Ваше.",
-   descEn:"Your family's financial companion. Simple. Trusted. Yours."},
-  {id:"budget", color:"gr",
-   titleUz:"Oilaviy byudjet", titleRu:"Семейный бюджет", titleEn:"Family budget",
-   descUz:"Daromad, xarajat va qarzlar — butun oila uchun bir joyda.",
-   descRu:"Доходы, расходы и долги — всё в одном месте для всей семьи.",
-   descEn:"Income, expenses and debts — all in one place for the family."},
-  {id:"garden", color:"garden",
-   titleUz:"Baraka Bog'i", titleRu:"Сад Барака", titleEn:"Baraka Garden",
-   descUz:"Tejamkorlik daraxtingizni oila bilan birga o'stiring.",
-   descRu:"Растите дерево бережливости всей семьёй.",
-   descEn:"Grow your savings tree together as a family."},
-  {id:"farzand", color:"ac",
-   titleUz:"Farzandlar uchun Bilim Bozori", titleRu:"Базар знаний для детей", titleEn:"Knowledge Market for kids",
-   descUz:"Farzandingiz vazifa bajarib, o'ynab pul ishlaydi va moliyani boshqarishni o'rganadi.",
-   descRu:"Ваш ребёнок выполняет задания, играет и учится управлять деньгами.",
-   descEn:"Your child completes tasks, plays and learns to manage money."},
-  {id:"premium", color:"gold",
-   titleUz:"Premium bilan cheksiz", titleRu:"Безгранично с Premium", titleEn:"Unlimited with Premium",
-   descUz:"Cheksiz maqsad, PDF/Excel eksport va foydali tavsiyalar.",
-   descRu:"Безлимитные цели, экспорт PDF/Excel и полезные советы.",
-   descEn:"Unlimited goals, PDF/Excel export and useful insights."},
+  {
+    id: "intro", color: "ac",
+    title: {
+      uz: "Oila Hisobchi", ru: "Oila Hisobchi", en: "Oila Hisobchi",
+      kk: "Отбасылық Бюджет", ky: "Үй-бүлөлүк Бюджет", tg: "Бюдҷети Оилавӣ", qr: "Oila Hisobchisi"
+    },
+    desc: {
+      uz: "Oilangizning moliyaviy hamrohi. Sodda. Ishonchli. Sizniki.",
+      ru: "Финансовый помощник вашей семьи. Просто. Надёжно. Ваше.",
+      en: "Your family's financial companion. Simple. Trusted. Yours.",
+      kk: "Отбасыңыздың қаржылық серігі. Қарапайым. Сенімді. Сіздікі.",
+      ky: "Үй-бүлөңүздүн каржылык шериги. Жөнөкөй. Ишеничтүү. Сиздики.",
+      tg: "Ҳамроҳи молиявии оилаи шумо. Оддӣ. Боэътимод. Аз они шумо.",
+      qr: "Shan'aran'izdin' qarjiliq joldasi. A'piwayi. Senimli. Sizin'iki."
+    }
+  },
+  {
+    id: "budget", color: "gr",
+    title: {
+      uz: "Oilaviy byudjet", ru: "Семейный бюджет", en: "Family budget",
+      kk: "Отбасылық бюджет", ky: "Үй-бүлөлүк бюджет", tg: "Бюдҷети оилавӣ", qr: "Oilaliq budjet"
+    },
+    desc: {
+      uz: "Daromad, xarajat va qarzlar — butun oila uchun bir joyda.",
+      ru: "Доходы, расходы и долги — всё в одном месте для всей семьи.",
+      en: "Income, expenses and debts — all in one place for the family.",
+      kk: "Кіріс, шығыс және қарыздар — бүкіл отбасы үшін бір жерде.",
+      ky: "Киреше, чыгым жана карыздар — бүткүл үй-бүлө үчүн бир жерде.",
+      tg: "Даромад, хароҷот ва қарзҳо — ҳама дар як ҷо барои тамоми оила.",
+      qr: "Kirim, shig'is ha'm qarizlar — barlik oila ushin bir jerde."
+    }
+  },
+  {
+    id: "garden", color: "garden",
+    title: {
+      uz: "Baraka Bog'i", ru: "Сад Барака", en: "Baraka Garden",
+      kk: "Береке бағы", ky: "Береке багы", tg: "Боғи Барака", qr: "Bereket bag'i"
+    },
+    desc: {
+      uz: "Tejamkorlik daraxtingizni oila bilan birga o'stiring.",
+      ru: "Растите дерево бережливости всей семьёй.",
+      en: "Grow your savings tree together as a family.",
+      kk: "Үнемдеу ағашыңызды отбасыңызбен бірге өсіріңіз.",
+      ky: "Үнөмдөө дарагыңызды үй-бүлөңүз менен бирге өстүрүңүз.",
+      tg: "Дарахти пасандози худро ҳамроҳи оила парвариш кунед.",
+      qr: "U'nemlew treg'in'izdi oilan'iz benen birge o'sirin'."
+    }
+  },
+  {
+    id: "farzand", color: "ac",
+    title: {
+      uz: "Farzandlar uchun Bilim Bozori", ru: "Базар знаний для детей", en: "Knowledge Market for kids",
+      kk: "Балаларға арналған білім базары", ky: "Балдар үчүн билим базары", tg: "Бозори дониш барои кӯдакон", qr: "Perzentler ushin bilim bazari"
+    },
+    desc: {
+      uz: "Farzandingiz vazifa bajarib, o'ynab pul ishlaydi va moliyani boshqarishni o'rganadi.",
+      ru: "Ваш ребёнок выполняет задания, играет и учится управлять деньгами.",
+      en: "Your child completes tasks, plays and learns to manage money.",
+      kk: "Балаңыз тапсырмаларды орындап, ойнап ақша табады және қаржыны басқаруды үйренеді.",
+      ky: "Балаңыз тапшырмаларды аткарып, ойноп акча табат жана каржыны башкарууну үйрөнөт.",
+      tg: "Фарзанди шумо вазифаҳоро иҷро карда, бозӣ мекунад, пул кор мекунад ва идоракунии молияро меомӯзад.",
+      qr: "Perzentin'iz tapsirma orinlap, oynap pul tabadi ha'm qarjini basqariwdi u'yrenedi."
+    }
+  },
+  {
+    id: "premium", color: "gold",
+    title: {
+      uz: "Premium bilan cheksiz", ru: "Безгранично с Premium", en: "Unlimited with Premium",
+      kk: "Premium-мен шексіз", ky: "Premium менен чексиз", tg: "Беҳдуд бо Premium", qr: "Premium benen sheksiz"
+    },
+    desc: {
+      uz: "Cheksiz maqsad, PDF/Excel eksport va foydali tavsiyalar.",
+      ru: "Безлимитные цели, экспорт PDF/Excel и полезные советы.",
+      en: "Unlimited goals, PDF/Excel export and useful insights.",
+      kk: "Шексіз мақсаттар, PDF/Excel экспорты және пайдалы кеңестер.",
+      ky: "Чексиз максаттар, PDF/Excel экспорту жана пайдалуу кеңештер.",
+      tg: "Ҳадафҳои бемаҳдуд, содироти PDF/Excel ва маслиҳатҳои муфид.",
+      qr: "Sheksiz maqset, PDF/Excel eksport ha'm paydali ma'sla'hatler."
+    }
+  },
 ];
 
 export const RELATIONS = [
-  {id:"ota",     emoji:"👨", uz:"Ota",          ru:"Отец",           en:"Father"},
-  {id:"ona",     emoji:"👩", uz:"Ona",          ru:"Мать",           en:"Mother"},
-  {id:"turmush", emoji:"💑", uz:"Turmush o'rtoq",ru:"Супруг(а)",     en:"Spouse"},
-  {id:"farzand", emoji:"👦", uz:"Farzand (Katta farzand)", ru:"Ребёнок (Старший ребёнок)", en:"Child (Older child)"},
-  {id:"aka",     emoji:"👨", uz:"Aka",           ru:"Старший брат",  en:"Older brother"},
-  {id:"uka",     emoji:"👦", uz:"Uka",           ru:"Младший брат",  en:"Younger brother"},
-  {id:"opa",     emoji:"👩", uz:"Opa",           ru:"Старшая сестра",en:"Older sister"},
-  {id:"singil",  emoji:"👧", uz:"Singil",        ru:"Младшая сестра",en:"Younger sister"},
-  {id:"boshqa",  emoji:"👤", uz:"Boshqa",        ru:"Другое",        en:"Other"},
+  {id:"ota",     emoji:"👨", uz:"Ota",          ru:"Отец",           en:"Father", kk:"Әке", ky:"Ата", tg:"Падар", qr:"A'ke"},
+  {id:"ona",     emoji:"👩", uz:"Ona",          ru:"Мать",           en:"Mother", kk:"Ана", ky:"Эне", tg:"Модар", qr:"Ana"},
+  {id:"turmush", emoji:"💑", uz:"Turmush o'rtoq",ru:"Супруг(а)",     en:"Spouse", kk:"Жұбайы", ky:"Жубайы", tg:"Ҳамсар", qr:"Zayip/Ku'yeu'"},
+  {id:"farzand", emoji:"👦", uz:"Farzand (Katta farzand)", ru:"Ребёнок (Старший ребёнок)", en:"Child (Older child)", kk:"Бала (Үлкен бала)", ky:"Бала (Улуу бала)", tg:"Фарзанд (Фарзанди калонӣ)", qr:"Perzent (U'lken bala)"},
+  {id:"aka",     emoji:"👨", uz:"Aka",           ru:"Старший брат",  en:"Older brother", kk:"Аға", ky:"Ага", tg:"Бародар (калонӣ)", qr:"A'ke/Aga"},
+  {id:"uka",     emoji:"👦", uz:"Uka",           ru:"Младший брат",  en:"Younger brother", kk:"Іні", ky:"Ини", tg:"Бародар (хурдӣ)", qr:"Ini"},
+  {id:"opa",     emoji:"👩", uz:"Opa",           ru:"Старшая сестра",en:"Older sister", kk:"Әпке", ky:"Эже", tg:"Апа", qr:"Opa/A'pke"},
+  {id:"singil",  emoji:"👧", uz:"Singil",        ru:"Младшая сестра",en:"Younger sister", kk:"Қарындас/Сіңлі", ky:"Сиңди", tg:"Хоҳар", qr:"Sin'il"},
+  {id:"boshqa",  emoji:"👤", uz:"Boshqa",        ru:"Другое",        en:"Other", kk:"Басқа", ky:"Башка", tg:"Дигар", qr:"Basqa"},
 ];
 
 // XAVFSIZLIK: admin endi ILOVA ICHIDA yo'q. Admin statistikasi alohida,
@@ -219,6 +273,46 @@ export const FAQS = {
     {q:"What are 'My dreams' (Goals) and how to save?", a:"Kids can create custom target goals (e.g., 'New bicycle') and set the target price. They can transfer money from their wallet into their goals. Once fully saved, parents confirm the purchase."},
     {q:"What are the Learning Hub and financial games?", a:"Under the 'Learning Hub' or 'Knowledge Market', kids can play educational games focused on finance, math, and budget planning to earn coins and stars. This teaches money management from an early age."},
     {q:"Where can I set the PIN code and security?", a:"To secure your application, go to 'Profile > App Settings > Security' to activate a 4-digit PIN access lock or fingerprint biometric authentication."},
+  ],
+  kk:[
+    {q:"Отбасы коды дегеніміз не және мүшелерді қалай қосамын?", a:"Отбасы коды — бұл отбасыңызды біріктіретін арнайы код. Оны 'Профиль > Жеке мәліметтер' бөлімінен алуға болады. Басқа мүшелер тіркеліп, 'Отбасына қосылу' түймесі арқылы осы кодты енгізсе, барлық деректер автоматты түрде синхрондалады."},
+    {q:"Бала аккаунты қалай жасалады?", a:"Ата-аналар 'Профиль' бетінде 'Жаңа бала қосу' түймесі арқылы балаларына жеке профильдер жасай алады. Бала өз құрылғысынан бала режимімен кіріп, тапсырмаларды орындап, білім ойындарын ойнай алады және мақсаттарына ақша жинай алады."},
+    {q:"Дауыспен енгізу және чектерді сканерлеу қалай жұмыс істейді?", a:"Транзакция қосу терезесінде микрофон белгішесін басып дауыспен (мысалы: 'Бүгін түскі асқа 5000 теңге жұмсадым') немесе чек суретін сканерлеу арқылы транзакцияларды жылдам қосуға болады. Жасанды интеллект мәтінді автоматты түрде түсініп, қажетті санатпен транзакцияны жасайды."},
+    {q:"Айлық бюджет және санат лимиттері дегеніміз не?", a:"Отағасы жалпы айлық бюджетті және әр санатқа (мысалы, азық-түлік, көлік) бөлек айлық лимиттерді белгілей алады. Лимит 90%-ға жеткенде немесе асқанда қосымша ескерту жібереді."},
+    {q:"Тапсырмалар, сыйақылар мен сыйлықтар қалай жұмыс істейді?", a:"Ата-аналар 'Тапсырмалар' бөлімінде балаларға пайдалы жұмыстар тапсырып (мысалы: 'Кітап оқу', 'Бөлмені жинау'), оған ақшалай сыйақы тағайындай алады. Бала тапсырманы орындап сурет жүктейді, ата-ана мақұлдаған соң ақша баланың әмиянына түседі. Сондай-ақ, бала ата-анасынан сыйлық сұрай алады."},
+    {q:"Менің мақсаттарым не және ақша қалай жиналады?", a:"Бала өзіне мақсаттар құрып (мысалы: 'Жаңа велосипед'), оған қажетті соманы белгілейді. Өз әмиянынан осы мақсатқа ақша аударып отырады. Мақсат толық жиналғаннан кейін ата-ана мақұлдап, мақсат орындалады."},
+    {q:"Білім хабы мен қаржы ойындарының қандай пайдасы бар?", a:"Балалар 'Білім базары' немесе 'Білім хабы' бөлімінде қаржылық сауаттылық, математика, жоспарлау бойынша қызықты ойындар ойнап, тиындар мен ұпайлар жинайды. Бұл оларға жастайынан ақшаны дұрыс басқаруды үйретеді."},
+    {q:"PIN код пен қауіпсіздік параметрлері қайда орналасқан?", a:"Қосымшаны басқалар ашпауы үшін 'Профиль > Қосымша параметрлері > Қауіпсіздік' бөлімінде 4 таңбалы PIN-кодты немесе саусақ ізі арқылы кіруді белсендіруге болады."},
+  ],
+  ky:[
+    {q:"Үй-бүлө коду деген эмне жана мүчөлөрдү кантип кошом?", a:"Үй-бүлө коду — бул үй-бүлөңүздү бириктирген атайын код. Аны 'Профиль > Жеке маалыматтар' бөлүмүнөн табасыз. Башка үй-бүлө мүчөлөрү тиркемеге катталып, 'Үй-бүлөгө кошулуу' баскычы арқылуу ушул кодду киргизсе, бардык маалыматтар автоматтык түрдө синхрондолот."},
+    {q:"Баланын аккаунту кантип түзүлөт?", a:"Ата-энелер 'Профиль' баракчасындагы 'Жаңы бала кошуу' баскычы арқылуу балдарына жеке профилдерди түзө алышат. Бала өз түзмөгүнөн бала режими менен кирип, тапсырмаларды аткарып, финансылык оюндарды ойноп, максаттарына акча топтой алат."},
+    {q:"Үн менен киргизүү жана чектерди сканерлөө кантип иштейт?", a:"Транзакция кошуу терезесинде микрофонду басып үн менен (мисалы: 'Бүгүн таксиге 200 сом короттум') же чекти сканерлөө аркылуу транзакцияларды тез эле кошсоңуз болот. Жасалма интеллект текстти автоматтык түрдө түшүнүп, керектүү категория менен транзакцияны түзөт."},
+    {q:"Айлык бюджет жана категория чектөөлөрү эмне?", a:"Үй-бүлө башчысы жалпы айлык бюджетти жана ар бир категория үчүн (мисалы, азык-түлүк, транспорт) өзүнчө айлык чектөөлөрдү белгилей алат. Чектөө 90%га жеткенде же ашканда тиркеме эскертүү жөнөтөт."},
+    {q:"Тапшырмалар, сыйлыктар жана белектер кантип иштейт?", a:"Ата-энелер 'Тапшырмалар' бөлүмүндө балдарга пайдалуу иштерди тапшырып (мисалы: 'Китеп окуу', 'Бөлмөнү жыйноо') акчалай сыйлык белгилей алышат. Бала тапшырманы аткарып сүрөт жүктөйт, ата-эне ырастагандан кийин акча баланын капчыгына которулат."},
+    {q:"Менин максаттарым эмне жана акча кантип чогултулат?", a:"Бала өзүнө максаттарды түзүп (мисалы: 'Жаңы велосипед') керектүү сумманы белгилейт. Өз капчыгынан ага акча которуп турат. Максат толук чогултулгандан кийин ата-эне сатып алууну ырастайт."},
+    {q:"Билим хабы жана каржы оюндары кандай пайда берет?", a:"Балдар 'Билим базары' же 'Билим хабы' бөлүмүндө финансылык сабаттуулук, математика, пландаштыруу боюнча кызыктуу оюндарды ойноп, тыйын жана упайларды иштеп табышат. Бул аларга кичинекейинен акчаны туура башкарууну үйрөтөт."},
+    {q:"PIN код жана коопсуздук жөндөөлөрү кайда?", a:"Тиркемени башкалар ачпашы үчүн 'Профиль > Тиркеме жөндөөлөрү > Коопсуздук' бөлүмүнөн 4 орундуу PIN-кодду же манжа изи менен кирүүнү иштете аласыз."},
+  ],
+  tg:[
+    {q:"Коди оила чист ва ман чӣ тавр аъзоёнро пайваст кунам?", a:"Коди оила — коди махсусест, ки оилаи шуморо муттаҳид мекунад. Шумо онро аз бахши 'Профил > Маълумоти шахсӣ' мегиред. Дигар аъзоёни оила аз барнома сабти ном шуда, тавассути тугмаи 'Ҳамроҳ шудан ба оилаи мавҷуда' ин кодро ворид мекунанд ва ҳамаи маълумотҳо автоматӣ ҳамоҳанг мешаванд."},
+    {q:"Профили кӯдак чӣ тавр сохта мешавад?", a:"Волидон метавонанд дар саҳифаи 'Профил' тавассути тугмаи 'Иловаи кӯдаки нав' барои фарзандони худ профили алоҳида созанд. Фарзанди шумо метавонад аз дастгоҳи худ тавассути режими кӯдакона вориди система шуда, вазифаҳоро иҷро кунад, бозиҳои омӯзишӣ кунад ва барои орзуҳояш пул ҷамъ кунад."},
+    {q:"Воридкунии овозӣ ва сканеркунии чекҳо чӣ гуна кор мекунанд?", a:"Дар равзанаи иловаи транзаксия тугмаи микрофонро пахш карда бо овоз (масалан: 'Имрӯз барои хӯроки нисфирӯзӣ 50 сомонӣ сарф кардам') ё тавассути сканер кардани акси чек транзаксияҳоро илова кунед. AI матнро автоматӣ мефаҳмад ва бо категорияи лозима транзаксия месозад."},
+    {q:"Бюдҷети моҳона ва лимитҳои категорияҳо чист?", a:"Сарвари оила метавонад бюджетти умумии моҳона ва лимитҳои алоҳида барои ҳар як категория (масалан, хӯрокворӣ, нақлиёт) муайян кунад. Вақте ки лимит ба 90% мерасад ё мегузарад, барнома огоҳӣ мефиристад."},
+    {q:"Вазифаҳо, мукофотҳо ва туҳфаҳо чӣ гуна кор мекунанд?", a:"Волидон метавонанд дар бахши 'Вазифаҳо' ба кӯдакон корҳои муфид (масалан: 'Китобхонӣ', 'Рӯбучини хона') супорида, мукофоти пулӣ муайян кунанд. Кӯдак вазифаро иҷро карда, акс мефиристад ва пас аз тасдиқи волидон пул ба ҳамёни кӯдак мегузарад. Кӯдак инчунин метавонад туҳфа дархост кунад."},
+    {q:"Ҳадафҳои ман чист ва пул чӣ тавр ҷамъ карда мешается?", a:"Кӯдак барои худ ҳадафҳо сохта (масалан: 'Дучархаи нав') ва маблағи лозимаро муайян мекунад. Ӯ аз ҳамёни худ ба ин ҳадаф пул мегузаронад. Пас аз пурра ҷамъ шудани маблағ, волидон онро тасдиқ мекунанд."},
+    {q:"Бозиҳои молиявӣ ва маркази дониш чӣ фоида доранд?", a:"Кӯдакон дар бахши 'Бозори дониш' бозиҳои ҷолиби молиявӣ, математика ва банақшагириро бозӣ карда, тангаҳо ва холҳо ба даст меоранд. Ин ба онҳо аз хурдсолӣ идоракунии дурусти пулро меомӯзонад."},
+    {q:"PIN код ва танзимоти амният дар куҷоянд?", a:"Барои он ки дигарон барномаро кушода натавонанд, шумо метавонед дар бахши 'Профил > Танзимоти барнома > Амният' коди PIN-и 4-рақама ё вуруд бо изи ангуштро фаъол созед."},
+  ],
+  qr:[
+    {q:"Oila kodi neme ha'm ag'zalardi qalay qosaman?", a:"Oila kodi — oilan'izdi birlestiretug'in arnawli kod. Oni 'Profil > Shaxsey mag'lu'matlar' bo'liminen alasiz. Oilan'izdin' basqa ag'zalari ilovadan dizimnen o'tip, 'Bar oilag'a qosiliv' tu'ymesi arqali usib kodti kirgizse, barlik mag'lu'matlar avtomatli sinxronlanadi."},
+    {q:"Perzent akkaunti qalay jaratiladi?", a:"Ata-analar 'Profil' betinde 'Jan'a bala qosiw' tu'ymesi arqali perzentleri ushin bo'lek bala profillerin jaratadi. Perzentin'iz o'z apparatinan bala rejimi arqali dizimge kirip, tapsirmalardi orinlawi, bilim oyinlarin oynawi ha'm o'z maqsetleri ushin pul jiynawi mu'mkin."},
+    {q:"Ovozli kirgiziw ha'm cheklardi skanerlew qalay isleydi?", a:"Xarij yaki kirim kirgiziw betinde mikrofong'a basip ovoz arqali (masalan: 'Bug'in tu'slikke 45000 swm sarpladim') yaki chek su'vretin skanerlew arqali tranzaksiyalardi tez qosivg'a boladi. AI tekstti avtomatli tu'sinip kerekli kategoriya menen tranzaksiyani jaratadi."},
+    {q:"Ayliq budjet ha'm kategoriya limitleri neme?", a:"Oila baslig'i u'mivmiy ayliq budjetti ha'm oziq-awqat, transport siyaqli ha'r bir kategoriya ushin bo'lek ayliq limitlerdi belgilewi mu'mkin. Limitler 90% g'a jetkende yaki asip ketkende ilova eskertiw jiberedi."},
+    {q:"Tapsirmalar, siyliqlar qalay isleydi?", a:"Ata-analar 'Tapsirmalar' bo'liminde balag'a paydali tapsirmalar (masalan: 'Kitap oqiw', 'Xonani jiyishtiriw') berip, evazine pul siylig'in belgilewi mu'mkin. Bala tapsirma orinlap su'vret ju'kleydi, ata-ana tastiyqlag'ach pul balanin' hamyonig'a o'tedi."},
+    {q:"Menin' maqsetlerim neme ha'm pul qalay jiynaladi?", a:"Bala o'zi ushin maqsetler jaratip (masalan: 'Jan'a velosiped') og'ar kerekli summani belgileyi. O'z hamyoninan og'ar pul o'tkerip baradi. Maqset to'liq jiynalg'ach, ata-ana tastiyqlaydi ha'm maqsetke erisiledi."},
+    {q:"Bilim bozori ha'm finans oyinlari qanday payda beredi?", a:"Balalar 'Bilim bozori' yaki 'Bilim bo'liminde' qarjiliq sawatliqliq, matematika, jobalastiriw boyinsha qiziqli oyinlardi oynap, tang'alar ha'm ballar islep aladi. Bul olarg'a jaslig'inan puldi duris basqariwdi u'yretedi."},
+    {q:"PIN kod ha'm qa'wipsizlik sozlamalari qayerde?", a:"Ilovani basqalar ashpawi ushin 'Profil > Ilova sozlamalari > Qa'wipsizlik' bo'liminde 4 sanli PIN-kod yaki barmoq izi arqali kiriwdi belsendire alasiz."},
   ],
 };
 

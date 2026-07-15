@@ -143,10 +143,25 @@ export function useScreenTime() {
 
     const kidId = user.id;
     const kidIsm = user.ism || "Farzand";
-    const title = lg === "uz" ? "⏱ Qo'shimcha vaqt so'rovi" : "⏱ Запрос доп. времени";
-    const text = lg === "uz"
-      ? `${kidIsm} bugun uchun ${minutes} daqiqa qo'shimcha ekran vaqti so'ramoqda.`
-      : `${kidIsm} запрашивает дополнительные ${minutes} мин. экранного времени на сегодня.`;
+    const title = {
+      uz: "⏱ Qo'shimcha vaqt so'rovi",
+      ru: "⏱ Запрос доп. времени",
+      en: "⏱ Extra time request",
+      kk: "⏱ Қосымша уақыт сұранысы",
+      ky: "⏱ Кошумча убакыт сурамы",
+      tg: "⏱ Дархости вақти иловагӣ",
+      qr: "⏱ Qosimsha waqit sorawi"
+    }[lg] || "⏱ Extra time request";
+
+    const text = {
+      uz: `${kidIsm} bugun uchun ${minutes} daqiqa qo'shimcha ekran vaqti so'ramoqda.`,
+      ru: `${kidIsm} запрашивает дополнительные ${minutes} мин. экранного времени на сегодня.`,
+      en: `${kidIsm} is requesting an extra ${minutes} minutes of screen time for today.`,
+      kk: `${kidIsm} бүгінге ${minutes} минут қосымша экран уақытын сұрап жатыр.`,
+      ky: `${kidIsm} бүгүнкүгө ${minutes} мүнөт кошумча экран убактысын сурап жатат.`,
+      tg: `${kidIsm} барои имрӯз ${minutes} дақиқа вақти иловагӣ талаб дорад.`,
+      qr: `${kidIsm} bug'in' ushin ${minutes} minut qosimsha ekran waqtin soramaqta.`
+    }[lg] || `${kidIsm} is requesting an extra ${minutes} minutes of screen time for today.`;
 
     await notifyTo(boshId, "vaqt_sorov", title, text, {
       kidId,
@@ -179,10 +194,25 @@ export function useScreenTime() {
       setNotifs(updatedParentNotifs);
 
       // 3. Notify the kid
-      const title = lg === "uz" ? "⏱ Qo'shimcha vaqt berildi!" : "⏱ Доп. время одобрено!";
-      const text = lg === "uz"
-        ? `Sizga bugun uchun ${reqMins} daqiqa qo'shimcha vaqt ajratildi!`
-        : `Вам выделено дополнительные ${reqMins} мин. на сегодня!`;
+      const title = {
+        uz: "⏱ Qo'shimcha vaqt berildi!",
+        ru: "⏱ Доп. время одобрено!",
+        en: "⏱ Extra time approved!",
+        kk: "⏱ Қосымша уақыт берілді!",
+        ky: "⏱ Кошумча убакыт берилди!",
+        tg: "⏱ Вақти иловагӣ дода шуд!",
+        qr: "⏱ Qosimsha waqit berildi!"
+      }[lg] || "⏱ Extra time approved!";
+
+      const text = {
+        uz: `Sizga bugun uchun ${reqMins} daqiqa qo'shimcha vaqt ajratildi!`,
+        ru: `Вам выделено дополнительные ${reqMins} мин. на сегодня!`,
+        en: `You have been granted an extra ${reqMins} minutes for today!`,
+        kk: `Сізге бүгінге ${reqMins} минут қосымша уақыт бөлінді!`,
+        ky: `Сизге бүгүнкүгө ${reqMins} мүнөт кошумча убакыт берилди!`,
+        tg: `Барои имрӯз ба шумо ${reqMins} дақиқа вақти иловагӣ ҷудо карда шуд!`,
+        qr: `Sizge bug'in' ushin ${reqMins} minut qosimsha waqit ajratildi!`
+      }[lg] || `You have been granted an extra ${reqMins} minutes for today!`;
 
       await notifyTo(kidId, "vaqt_tasdiq", title, text, {
         requestedMinutes: reqMins,
@@ -207,10 +237,25 @@ export function useScreenTime() {
 
       // 2. Notify the kid
       if (kidId) {
-        const title = lg === "uz" ? "⏱ So'rov rad etildi" : "⏱ Запрос отклонен";
-        const text = lg === "uz"
-          ? "Qo'shimcha vaqt so'rovingiz rad etildi."
-          : "Запрос на дополнительное время был отклонен.";
+        const title = {
+          uz: "⏱ So'rov rad etildi",
+          ru: "⏱ Запрос отклонен",
+          en: "⏱ Request denied",
+          kk: "⏱ Сұраныс қабылданбады",
+          ky: "⏱ Сурам четке кагылды",
+          tg: "⏱ Дархост рад карда шуд",
+          qr: "⏱ Soraw biykar etildi"
+        }[lg] || "⏱ Request denied";
+
+        const text = {
+          uz: "Qo'shimcha vaqt so'rovingiz rad etildi.",
+          ru: "Запрос на дополнительное время был отклонен.",
+          en: "Your request for extra screen time was denied.",
+          kk: "Қосымша уақыт сұранысыңыз қабылданбады.",
+          ky: "Кошумча убакыт сурамыңыз четке кагылды.",
+          tg: "Дархости вақти иловагии шумо рад карда шуд.",
+          qr: "Qosimsha waqit sorawin'iz biykar etildi."
+        }[lg] || "Your request for extra screen time was denied.";
 
         await notifyTo(kidId, "vaqt_rad", title, text, {
           status: "denied"

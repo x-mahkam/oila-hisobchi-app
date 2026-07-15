@@ -109,8 +109,8 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
   const finish = () => { try { localStorage.setItem("oilaV7Onb", "1"); } catch {} setOnbStep(-1); };
   const c = slideColor(s.color, th);
   const last = onbStep === ONB_SLIDES.length - 1;
-  const title = (lg === "uz" || lg === "qr") ? s.titleUz : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? s.titleRu : s.titleEn;
-  const desc = (lg === "uz" || lg === "qr") ? s.descUz : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? s.descRu : s.descEn;
+  const title = s.title[lg] || s.title.uz || "";
+  const desc = s.desc[lg] || s.desc.uz || "";
   const isPremiumSlide = s.id === "premium";
 
   return (

@@ -61,6 +61,9 @@ import { useScreenTime }     from "./hooks/useScreenTime.js";
 import { useDailyReminder }  from "./hooks/useDailyReminder.js";
 import { usePushToken }      from "./hooks/usePushToken.js";
 import ScreenTimeLockScreen  from "./components/ScreenTimeLockScreen.jsx";
+import AppLockScreen         from "./components/AppLockScreen.jsx";
+import { Capacitor }         from "@capacitor/core";
+import { App as CapApp }     from "@capacitor/app";
 
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
@@ -84,6 +87,64 @@ export default function App() {
     ok$, buzz, addStar, addNotif, logout,
     syncDailyReminderRef,
   } = useApp();
+
+  const [appUnlocked, setAppUnlocked] = useState(false);
+  const [hasPin, setHasPin] = useState(false);
+
+  // Load PIN status
+  useEffect(() => {
+    if (user?.id) {
+      db.g("security_" + user.id).then(sec => {
+        if (sec && typeof sec === "object" && sec.pinHash) {
+          setHasPin(true);
+        } else {
+          setHasPin(false);
+        }
+      }).catch(err => {
+        console.error("Failed to load security settings", err);
+        setHasPin(false);
+      });
+    } else {
+      setHasPin(false);
+      setAppUnlocked(false);
+    }
+  }, [user?.id]);
+
+  // Background state lock listener
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const active = document.visibilityState === "visible";
+      if (!active && user?.id && hasPin) {
+        setAppUnlocked(false);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    let capListener = null;
+    if (Capacitor.isNativePlatform()) {
+      try {
+        CapApp.addListener("appStateChange", ({ isActive }) => {
+          if (!isActive && user?.id && hasPin) {
+            setAppUnlocked(false);
+          }
+        }).then(listener => {
+          capListener = listener;
+        });
+      } catch (e) {
+        console.warn("Capacitor state listener error", e);
+      }
+    }
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (capListener) {
+        try {
+          capListener.remove();
+        } catch (e) {}
+      }
+    };
+  }, [user?.id, hasPin]);
 
   // ── Hooks ────────────────────────────────────────────────
   const { loadFam } = useAuth();
@@ -794,6 +855,11 @@ export default function App() {
       setVal={setVal}
     />
   );
+
+  // Application Lock Screen Security Check
+  if (user?.id && hasPin && !appUnlocked) {
+    return <AppLockScreen th={th} lg={lg} uid={user.id} onUnlock={() => setAppUnlocked(true)} />;
+  }
 
   // ── Nav items ─────────────────────────────────────────────
   const navItems = isKid
