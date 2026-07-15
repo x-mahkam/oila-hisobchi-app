@@ -11,6 +11,7 @@ import { useMemo, useState, useEffect, useRef, useCallback, memo } from "react";
 import { KatIco } from "../components/common/index.jsx";
 import { useApp } from "../context/AppContext.jsx";
 import { useFamily } from "../hooks/useFamily.js";
+import { useDailyReminder } from "../hooks/useDailyReminder.js";
 import { db, fbAuth } from "../firebase.js";
 import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { normTel, td } from "../utils/formatters.js";
@@ -141,7 +142,10 @@ export default function ProfilePage({
     th, t, ok$, buzz, addStar, logout,
   } = useApp();
 
+  const dailyReminder = useDailyReminder();
+
   const [showValDD, setShowValDD] = useState(false);
+  const [showLgDD, setShowLgDD] = useState(false);
   const STY = useMemo(() => makeS(th), [th]);
   const uz = lg === "uz";
 
@@ -1689,20 +1693,28 @@ export default function ProfilePage({
 
           {/* Til */}
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={Ico.globe(th.ac)} title={t.til} sub={{uz: "O'zbek", ru: "Русский", en: "English", kk: "Қазақша", ky: "Кыргызча", tg: "Тоҷикӣ", qr: "Qaraqalpaqsha"}[lg] || lg.toUpperCase()} right={null} />
-            <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 }}>
-              {[
-                { id: "uz", l: "O'zbek" },
-                { id: "ru", l: "Русский" },
-                { id: "kk", l: "Қазақша" },
-                { id: "ky", l: "Кыргызча" },
-                { id: "tg", l: "Тоҷикӣ" },
-                { id: "qr", l: "Qaraqalpaqsha" },
-                { id: "en", l: "English" }
-              ].map(l => (
-                <ChoiceChip key={l.id} th={th} on={lg === l.id} onClick={() => { setLg(l.id); localStorage.setItem("oilaV7L", l.id); }}>{l.l}</ChoiceChip>
-              ))}
-            </div>
+            <ListItem th={th} icon={Ico.globe(th.ac)} title={t.til} sub={{uz: "O'zbek", ru: "Русский", en: "English", kk: "Қазақша", ky: "Кыргызча", tg: "Тоҷикӣ", qr: "Qaraqalpaqsha"}[lg] || lg.toUpperCase()} onClick={() => setShowLgDD(v => !v)}
+              right={<span style={{ transform: showLgDD ? "rotate(90deg)" : "none", transition: MOTION.trFast("transform"), display: "flex" }}>{Ico.right(th.t2)}</span>}
+              divider={showLgDD} />
+            {showLgDD && (
+              <div style={{ maxHeight: SPACE.s16 * 4 + SPACE.s4, overflowY: "auto" }}>
+                {[
+                  { id: "uz", l: "O'zbek", emoji: "🇺🇿" },
+                  { id: "ru", l: "Русский", emoji: "🇷🇺" },
+                  { id: "kk", l: "Қазақша", emoji: "🇰🇿" },
+                  { id: "ky", l: "Кыргызча", emoji: "🇰🇬" },
+                  { id: "tg", l: "Тоҷикӣ", emoji: "🇹🇯" },
+                  { id: "qr", l: "Qaraqalpaqsha", emoji: "🇺🇿" },
+                  { id: "en", l: "English", emoji: "🇬🇧" }
+                ].map((l, i, arr) => (
+                  <ListItem key={l.id} th={th} divider={i < arr.length - 1}
+                    icon={<span style={{ fontSize: 20 }}>{l.emoji}</span>}
+                    title={l.l}
+                    onClick={() => { setLg(l.id); localStorage.setItem("oilaV7L", l.id); setShowLgDD(false); }}
+                    right={lg === l.id ? Ico.check(th.ac) : <span />} />
+                ))}
+              </div>
+            )}
           </AppCard>
 
           {/* Mavzu */}
@@ -1752,6 +1764,69 @@ export default function ProfilePage({
               </div>
             )}
           </AppCard>
+
+          {/* Kunlik mahalliy eslatma (faqat ota-ona) */}
+          {!isKid && (
+            <AppCard th={th} pad={0}>
+              <ListItem th={th} icon={PIco.bell(dailyReminder.settings.enabled ? th.gr : th.t2)} iconTone={dailyReminder.settings.enabled ? th.gr : th.t2}
+                title={uz ? "Kunlik eslatma (Android)" : "Daily Reminder (Android)"}
+                sub={dailyReminder.settings.enabled ? (uz ? "Yoqilgan — har kuni " + String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0") : "On — daily at " + String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0")) : (uz ? "O'chirilgan" : "Off")}
+                right={<Switch th={th} checked={!!dailyReminder.settings.enabled} onChange={() => dailyReminder.updateReminderSettings({ ...dailyReminder.settings, enabled: !dailyReminder.settings.enabled })} label={uz ? "Kunlik eslatma" : "Daily Reminder"} />}
+                divider={!!dailyReminder.settings.enabled} />
+              {dailyReminder.settings.enabled && (
+                <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px" }}>
+                  <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{uz ? "Eslatma vaqti" : "Reminder time"}</div>
+                  <div style={{ display: "flex", gap: SPACE.s2, alignItems: "center", flexWrap: "wrap" }}>
+                    {["08:00", "12:00", "18:00", "20:00", "21:00", "22:00"].map(time => {
+                      const curTimeStr = String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0");
+                      const isSelected = curTimeStr === time;
+                      return (
+                        <ChoiceChip
+                          key={time}
+                          th={th}
+                          on={isSelected}
+                          onClick={() => {
+                            const [h, m] = time.split(":").map(Number);
+                            dailyReminder.updateReminderSettings({ ...dailyReminder.settings, hour: h, minute: m });
+                          }}
+                          style={{ padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", minHeight: 0 }}
+                        >
+                          {time}
+                        </ChoiceChip>
+                      );
+                    })}
+                    
+                    {/* Custom time input */}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
+                      <span style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Boshqa vaqt:" : "Custom:"}</span>
+                      <input
+                        type="time"
+                        value={String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0")}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val) {
+                            const [h, m] = val.split(":").map(Number);
+                            dailyReminder.updateReminderSettings({ ...dailyReminder.settings, hour: h, minute: m });
+                          }
+                        }}
+                        style={{
+                          background: "transparent",
+                          border: "1px solid " + th.bor,
+                          borderRadius: RADIUS.s + "px",
+                          color: th.t1,
+                          padding: "4px 8px",
+                          fontSize: 13,
+                          fontFamily: "inherit",
+                          outline: "none",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </AppCard>
+          )}
 
           {/* Premium banner */}
           <PremiumCard th={th} active={isPremium} onClick={openPremium}

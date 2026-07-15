@@ -6,7 +6,7 @@ import { KATS, KN } from "../utils/constants.js";
 
 export function useTransactions() {
   const { user, oila, xar, setXar, dar, setDar,
-          ok$, buzz, addStar, lg, isPremium } = useApp();
+          ok$, buzz, addStar, lg, isPremium, syncDailyReminderRef } = useApp();
 
   // Xarajat qo'shish
   const addX = useCallback(async ({ kategoriya, summa, izoh, sana, repeat, forMember, mode }) => {
@@ -37,6 +37,7 @@ export function useTransactions() {
       await db.s(key, [xItem, ...(xar.filter(x=>x.uid===user.id))]);
       setXar(prev => [xItem, ...prev]);
       ok$(lg==="uz"?"So'rov yuborildi! -"+f(sum,true):"Request sent! -"+f(sum,true));
+      syncDailyReminderRef.current?.();
       return;
     }
 
@@ -91,7 +92,8 @@ export function useTransactions() {
     }
     addStar(1, lg==="uz"?"Xarajat kiritildi":"Expense added");
     ok$(lg==="uz"?"Xarajat qo'shildi":"Expense added");
-  }, [user, oila, xar, ok$, buzz, addStar, lg]);
+    syncDailyReminderRef.current?.();
+  }, [user, oila, xar, ok$, buzz, addStar, lg, syncDailyReminderRef]);
 
   // Daromad qo'shish
   const addD = useCallback(async ({ tur, summa, izoh, sana }) => {
@@ -109,7 +111,8 @@ export function useTransactions() {
     setDar(prev => [item, ...prev]);
     addStar(1, lg==="uz"?"Daromad kiritildi":"Income added");
     ok$(lg==="uz"?"Daromad qo'shildi":"Income added");
-  }, [user, dar, ok$, buzz, addStar, lg]);
+    syncDailyReminderRef.current?.();
+  }, [user, dar, ok$, buzz, addStar, lg, syncDailyReminderRef]);
 
   // O'chirish (delTx)
   const delTx = useCallback(async (item) => {

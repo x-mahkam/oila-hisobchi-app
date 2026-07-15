@@ -38,6 +38,9 @@ import AskTelModal           from "./components/modals/AskTelModal.jsx";
 import VoiceInputModal       from "./components/modals/VoiceInputModal.jsx";
 import ReceiptScannerModal   from "./components/modals/ReceiptScannerModal.jsx";
 import TilxatViewModal       from "./components/modals/TilxatViewModal.jsx";
+import HelpModal             from "./components/modals/HelpModal.jsx";
+import ProductTour           from "./components/ProductTour.jsx";
+import { DASHBOARD_TOUR_STEPS } from "./utils/tourSteps.js";
 import { BarakaLeafFloating } from "./components/ui/BarakaLeafFloating.jsx";
 
 // Hooks
@@ -55,6 +58,7 @@ import { useVoiceInput }     from "./hooks/useVoiceInput.js";
 import { useQRScanner }      from "./hooks/useQRScanner.js";
 import { useExport }         from "./hooks/useExport.js";
 import { useScreenTime }     from "./hooks/useScreenTime.js";
+import { useDailyReminder }  from "./hooks/useDailyReminder.js";
 import ScreenTimeLockScreen  from "./components/ScreenTimeLockScreen.jsx";
 
 // Utils
@@ -77,6 +81,7 @@ export default function App() {
     th, t, confetti, fireConfetti,
     maqsadConfirmNotif, setMaqsadConfirmNotif,
     ok$, buzz, addStar, addNotif, logout,
+    syncDailyReminderRef,
   } = useApp();
 
   // ── Hooks ────────────────────────────────────────────────
@@ -118,6 +123,7 @@ export default function App() {
   const debts = useDebts();
   const aiAdvice = useAIAdvice();
   const screenTime = useScreenTime();
+  const dailyReminder = useDailyReminder();
 
   // Qarz sahifasi ochilganda avtomatik sinxronizatsiya (holat + balans)
   useEffect(() => {
@@ -234,6 +240,8 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showNotifs]);
   const [showS,        setShowS]        = useState(false);
+  const [showHelp,     setShowHelp]     = useState(false);
+  const [showTour,     setShowTour]     = useState(false);
   // ── Ovoz bilan kiritish ──
   const authBusyRef = useRef(false);  // ro'yxatdan o'tish/kirish davomida onChange'ni to'xtatadi
   // Boshqa sahifaga o'tilganda qidiruv yopiladi
@@ -274,6 +282,31 @@ export default function App() {
   // Admin ilova ichida YO'Q — statistika alohida admin-sayt orqali ko'riladi.
   const isAdmin = false;
   const canSeeReport = isBosh || (oila?.reportAccess || []).includes(user?.id);
+
+  // Auto-start Product Tour for parents on first load of Dashboard
+  useEffect(() => {
+    if (scr === "bosh" && user && !isKid && localStorage.getItem("oilaV7Tour") !== "1") {
+      const timer = setTimeout(() => {
+        setShowTour(true);
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [scr, isKid, user]);
+
+  // Sync daily local notification reminder for parents when transactions or user changes
+  useEffect(() => {
+    if (user && !isKid) {
+      dailyReminder.syncDailyReminder();
+    }
+  }, [xar, dar, user, isKid, dailyReminder]);
+
+  // Assign dailyReminder.syncDailyReminder to the shared context ref
+  useEffect(() => {
+    syncDailyReminderRef.current = dailyReminder.syncDailyReminder;
+    return () => {
+      syncDailyReminderRef.current = null;
+    };
+  }, [dailyReminder.syncDailyReminder, syncDailyReminderRef]);
 
   const gN = useCallback(uid => azolar.find(a => a.id === uid)?.ism || "?", [azolar]);
   const gP = useCallback(uid => azolar.find(a => a.id === uid)?.photo || null, [azolar]);
@@ -794,6 +827,8 @@ export default function App() {
       )}
       {confetti && <Confetti th={th} />}
       {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} setBilimInitialView={setBilimInitialView} onApproveTime={screenTime.approveExtraTime} onDenyTime={screenTime.denyExtraTime} />}
+      {showHelp && <HelpModal th={th} lg={lg} onClose={() => setShowHelp(false)} onReplayTour={() => { setShowHelp(false); setShowTour(true); }} />}
+      {showTour && <ProductTour th={th} lg={lg} steps={DASHBOARD_TOUR_STEPS} onFinish={() => { localStorage.setItem("oilaV7Tour", "1"); setShowTour(false); }} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
       {askTel && user && (
         <AskTelModal
@@ -889,9 +924,16 @@ export default function App() {
             <button onClick={() => { setShowS(v => !v); setSrch(""); }} style={{ background: showS ? th.ac + "18" : "transparent", border: "1px solid " + (showS ? th.ac : th.bor), borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }}>
               {Ico.search(showS ? th.ac : th.t2)}
             </button>
-            <button onClick={() => setShowNotifs(true)} style={{ background: "transparent", border: "1px solid " + th.bor, borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", position: "relative" }}>
+            <button id="tour-notifs" onClick={() => setShowNotifs(true)} style={{ background: "transparent", border: "1px solid " + th.bor, borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center", position: "relative" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2a4.5 4.5 0 00-4.5 4.5v2.7L3 12h12l-1.5-2.8V6.5A4.5 4.5 0 009 2z" fill={th.t2} opacity=".15" stroke={th.t2} strokeWidth="1.3" strokeLinejoin="round" /><path d="M7.5 14.5a1.5 1.5 0 003 0" stroke={th.t2} strokeWidth="1.3" strokeLinecap="round" /></svg>
               {unreadCount > 0 && <div style={{ position: "absolute", top: 2, right: 2, minWidth: 16, height: 16, borderRadius: 8, background: th.rd, color: "#fff", fontSize: 9, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>{unreadCount > 99 ? "99+" : unreadCount}</div>}
+            </button>
+            <button id="tour-help" onClick={() => setShowHelp(true)} style={{ background: showHelp ? th.ac + "18" : "transparent", border: "1px solid " + (showHelp ? th.ac : th.bor), borderRadius: 10, padding: "6px 10px", cursor: "pointer", display: "flex", alignItems: "center" }} aria-label="Help">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={showHelp ? th.ac : th.t2} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                <line x1="12" y1="17" x2="12.01" y2="17" />
+              </svg>
             </button>
           </div>
         </div>
