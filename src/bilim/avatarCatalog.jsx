@@ -6,7 +6,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Olovli Geymer Sher",
       en: "Fire Gamer Lion",
-      ru: "Огненный Лев-Геймер"
+      ru: "Огненный Лев-Геймер",
+      kk: "Отты Геймер Арыстан",
+      ky: "Оттуу Геймер Арстан",
+      tg: "Шери Геймери Оташин",
+      qr: "Alangli Geymer Arslan"
     },
     price: 0,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -81,7 +85,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Geymer Baqacha",
       en: "Neon Gamer Frog",
-      ru: "Неоновый Лягушонок"
+      ru: "Неоновый Лягушонок",
+      kk: "Геймер Бақа",
+      ky: "Геймер Бака",
+      tg: "Қурбоққаи Геймер",
+      qr: "Geymer Baqasha"
     },
     price: 0,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -135,7 +143,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Koinot Pandasi",
       en: "Cosmo Panda",
-      ru: "Космо-Панда"
+      ru: "Космо-Панда",
+      kk: "Ғарыш Пандасы",
+      ky: "Космос Пандасы",
+      tg: "Пандаи Кайҳонӣ",
+      qr: "Kosmos Pandasi"
     },
     price: 20,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -195,7 +207,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Alpinist Tulkivoy",
       en: "Explorer Fox",
-      ru: "Лис-Исследователь"
+      ru: "Лис-Исследователь",
+      kk: "Саяхатшы Түлкі",
+      ky: "Саякатчы Түлкү",
+      tg: "Рӯбоҳи Сайёҳ",
+      qr: "Alpinist Tu'lki"
     },
     price: 40,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -263,7 +279,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Musiqachi Koala",
       en: "DJ Koala",
-      ru: "Коала-Диджей"
+      ru: "Коала-Диджей",
+      kk: "Диджей Коала",
+      ky: "Диджей Коала",
+      tg: "Коалаи Диджей",
+      qr: "Musiqashi Koala"
     },
     price: 60,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -323,7 +343,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Malika Mushuk",
       en: "Princess Kitty",
-      ru: "Кошка-Принцесса"
+      ru: "Кошка-Принцесса",
+      kk: "Ханшайым Мысық",
+      ky: "Ханбийке Мышык",
+      tg: "Маликаи Гурба",
+      qr: "Xan'shajim Pishiq"
     },
     price: 100,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -388,7 +412,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Uchar Kosmo-Quyon",
       en: "Cosmo Bunny",
-      ru: "Космо-Кролик"
+      ru: "Космо-Кролик",
+      kk: "Ұшатын Ғарыш Қояны",
+      ky: "Учуучу Космос Коёну",
+      tg: "Харгӯши Кайҳонӣ",
+      qr: "Ushar Kosmos Qoyani"
     },
     price: 150,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -441,7 +469,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Super CyberBot-3000",
       en: "Super CyberBot 3000",
-      ru: "Робот СайберБот-3000"
+      ru: "Робот СайберБот-3000",
+      kk: "Супер КиберБот-3000",
+      ky: "Супер КиберБот-3000",
+      tg: "Супер КиберБот-3000",
+      qr: "Super KiberBot-3000"
     },
     price: 200,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -505,7 +537,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Tungi Qalqon Ninja",
       en: "Cosmic Knight Ninja",
-      ru: "Ночной Ниндзя-Герой"
+      ru: "Ночной Ниндзя-Герой",
+      kk: "Түнгі Ниндзя-Қорған",
+      ky: "Түнкү Ниндзя-Калкан",
+      tg: "Ниндзяи Қалқони Шабона",
+      qr: "Tu'ngi Qalxan Ninja"
     },
     price: 250,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
@@ -559,7 +595,11 @@ export const AVATAR_CATALOG = [
     name: {
       uz: "Sehrli Alanga Ajdari",
       en: "Cosmic Flame Dragon",
-      ru: "Космический Дракоша"
+      ru: "Космический Дракоша",
+      kk: "Сиқырлы Жалын Айдаһары",
+      ky: "Сыйкырдуу Жалын Ажыдаары",
+      tg: "Аждаҳои Оташини Сеҳрнок",
+      qr: "A'jajip Alanga Ajdari"
     },
     price: 300,
     svgString: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">

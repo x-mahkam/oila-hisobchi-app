@@ -11,14 +11,14 @@ const shuffle = (arr) => {
 // Available shape symbols
 // Each symbol has an ID, and we can draw beautiful SVG outline icons in the game
 export const PATTERN_SHAPES_META = {
-  coin: { uz: "Tanga", ru: "Монета", en: "Coin" },
-  note: { uz: "Banknota", ru: "Банкнота", en: "Banknote" },
-  card: { uz: "Karta", ru: "Карта", en: "Card" },
-  piggy: { uz: "Hamyon", ru: "Копилка", en: "Piggy Bank" },
-  star: { uz: "Yulduz", ru: "Звезда", en: "Star" },
-  heart: { uz: "Yurak", ru: "Сердце", en: "Heart" },
-  shield: { uz: "Qalqon", ru: "Щит", en: "Shield" },
-  gem: { uz: "Olmos", ru: "Кристалл", en: "Gem" },
+  coin: { uz: "Tanga", ru: "Монета", en: "Coin", kk: "Тиын", ky: "Тыйын", tg: "Танга", qr: "Tanga" },
+  note: { uz: "Banknota", ru: "Банкнота", en: "Banknote", kk: "Банкнота", ky: "Банкнота", tg: "Бонкнота", qr: "Banknota" },
+  card: { uz: "Karta", ru: "Карта", en: "Card", kk: "Карта", ky: "Карта", tg: "Корт", qr: "Karta" },
+  piggy: { uz: "Hamyon", ru: "Копилка", en: "Piggy Bank", kk: "Жинақ сауыты", ky: "Тыйын топтогуч", tg: "Қуттичаи пасандоз", qr: "Kopilka" },
+  star: { uz: "Yulduz", ru: "Звезда", en: "Star", kk: "Жұлдыз", ky: "Жылдыз", tg: "Ситора", qr: "Yulduz" },
+  heart: { uz: "Yurak", ru: "Сердце", en: "Heart", kk: "Жүрек", ky: "Жүрөк", tg: "Дил", qr: "Ju'rek" },
+  shield: { uz: "Qalqon", ru: "Щит", en: "Shield", kk: "Қалқан", ky: "Калкан", tg: "Қалқон", qr: "Qalxan" },
+  gem: { uz: "Olmos", ru: "Кристалл", en: "Gem", kk: "Асыл тас", ky: "Асыл таш", tg: "Алмос", qr: "Almas" },
 };
 
 export const patternShapesGenerator = (difficulty = "easy") => {

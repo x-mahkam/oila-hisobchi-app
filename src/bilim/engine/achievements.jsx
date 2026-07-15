@@ -43,84 +43,84 @@ export function computeAchievements(totals, sessions = [], lg = "uz", behaviorDa
   const colors3 = ["#cd7f32", "#94a3b8", "#f59e0b"];
 
   const t_tasks = [
-    { uz: "Mehnatkash I", ru: "Труженик I", en: "Worker I" },
-    { uz: "Mehnatkash II", ru: "Труженик II", en: "Worker II" },
-    { uz: "Mehnatkash III", ru: "Труженик III", en: "Worker III" },
-    { uz: "Mehnatkash IV", ru: "Труженик IV", en: "Worker IV" },
-    { uz: "Mehnatkash V", ru: "Труженик V", en: "Worker V" },
+    { uz: "Mehnatkash I", ru: "Труженик I", en: "Worker I", kk: "Еңбекқор I", ky: "Эмгекчил I", tg: "Кордӯст I", qr: "Miynetkesh I" },
+    { uz: "Mehnatkash II", ru: "Труженик II", en: "Worker II", kk: "Еңбекқор II", ky: "Эмгекчил II", tg: "Кордӯст II", qr: "Miynetkesh II" },
+    { uz: "Mehnatkash III", ru: "Труженик III", en: "Worker III", kk: "Еңбекқор III", ky: "Эмгекчил III", tg: "Кордӯст III", qr: "Miynetkesh III" },
+    { uz: "Mehnatkash IV", ru: "Труженик IV", en: "Worker IV", kk: "Еңбекқор IV", ky: "Эмгекчил IV", tg: "Кордӯст IV", qr: "Miynetkesh IV" },
+    { uz: "Mehnatkash V", ru: "Труженик V", en: "Worker V", kk: "Еңбекқор V", ky: "Эмгекчил V", tg: "Кордӯст V", qr: "Miynetkesh V" },
   ];
   const t_games = [
-    { uz: "O'yinboz I", ru: "Игрок I", en: "Gamer I" },
-    { uz: "O'yinboz II", ru: "Игрок II", en: "Gamer II" },
-    { uz: "O'yinboz III", ru: "Игрок III", en: "Gamer III" },
-    { uz: "O'yinboz IV", ru: "Игрок IV", en: "Gamer IV" },
-    { uz: "O'yinboz V", ru: "Игрок V", en: "Gamer V" },
+    { uz: "O'yinboz I", ru: "Игрок I", en: "Gamer I", kk: "Ойыншы I", ky: "Оюнчу I", tg: "Бозигар I", qr: "Oyinshi I" },
+    { uz: "O'yinboz II", ru: "Игрок II", en: "Gamer II", kk: "Ойыншы II", ky: "Оюнчу II", tg: "Бозигар II", qr: "Oyinshi II" },
+    { uz: "O'yinboz III", ru: "Игрок III", en: "Gamer III", kk: "Ойыншы III", ky: "Оюнчу III", tg: "Бозигар III", qr: "Oyinshi III" },
+    { uz: "O'yinboz IV", ru: "Игрок IV", en: "Gamer IV", kk: "Ойыншы IV", ky: "Оюнчу IV", tg: "Бозигар IV", qr: "Oyinshi IV" },
+    { uz: "O'yinboz V", ru: "Игрок V", en: "Gamer V", kk: "Ойыншы V", ky: "Оюнчу V", tg: "Бозигар V", qr: "Oyinshi V" },
   ];
   const t_coins = [
-    { uz: "Boyvachcha I", ru: "Богач I", en: "Wealthy I" },
-    { uz: "Boyvachcha II", ru: "Богач II", en: "Wealthy II" },
-    { uz: "Boyvachcha III", ru: "Богач III", en: "Wealthy III" },
-    { uz: "Boyvachcha IV", ru: "Богач IV", en: "Wealthy IV" },
-    { uz: "Boyvachcha V", ru: "Богач V", en: "Wealthy V" },
+    { uz: "Boyvachcha I", ru: "Богач I", en: "Wealthy I", kk: "Бай I", ky: "Бай I", tg: "Бой I", qr: "Bay I" },
+    { uz: "Boyvachcha II", ru: "Богач II", en: "Wealthy II", kk: "Бай II", ky: "Бай II", tg: "Бой II", qr: "Bay II" },
+    { uz: "Boyvachcha III", ru: "Богач III", en: "Wealthy III", kk: "Бай III", ky: "Бай III", tg: "Бой III", qr: "Bay III" },
+    { uz: "Boyvachcha IV", ru: "Богач IV", en: "Wealthy IV", kk: "Бай IV", ky: "Бай IV", tg: "Бой IV", qr: "Bay IV" },
+    { uz: "Boyvachcha V", ru: "Богач V", en: "Wealthy V", kk: "Бай V", ky: "Бай V", tg: "Бой V", qr: "Bay V" },
   ];
   const t_xp = [
-    { uz: "Bilimdon I", ru: "Знаток I", en: "Scholar I" },
-    { uz: "Bilimdon II", ru: "Знаток II", en: "Scholar II" },
-    { uz: "Bilimdon III", ru: "Знаток III", en: "Scholar III" },
-    { uz: "Bilimdon IV", ru: "Знаток IV", en: "Scholar IV" },
-    { uz: "Bilimdon V", ru: "Знаток V", en: "Scholar V" },
+    { uz: "Bilimdon I", ru: "Знаток I", en: "Scholar I", kk: "Білгір I", ky: "Билгич I", tg: "Доно I", qr: "Bilimli I" },
+    { uz: "Bilimdon II", ru: "Знаток II", en: "Scholar II", kk: "Білгір II", ky: "Билгич II", tg: "Доно II", qr: "Bilimli II" },
+    { uz: "Bilimdon III", ru: "Знаток III", en: "Scholar III", kk: "Білгір III", ky: "Билгич III", tg: "Доно III", qr: "Bilimli III" },
+    { uz: "Bilimdon IV", ru: "Знаток IV", en: "Scholar IV", kk: "Білгір IV", ky: "Билгич IV", tg: "Доно IV", qr: "Bilimli IV" },
+    { uz: "Bilimdon V", ru: "Знаток V", en: "Scholar V", kk: "Білгір V", ky: "Билгич V", tg: "Доно V", qr: "Bilimli V" },
   ];
   const t_streak = [
-    { uz: "Doimiy I", ru: "Постоянный I", en: "Consistent I" },
-    { uz: "Doimiy II", ru: "Постоянный II", en: "Consistent II" },
-    { uz: "Doimiy III", ru: "Постоянный III", en: "Consistent III" },
-    { uz: "Doimiy IV", ru: "Постоянный IV", en: "Consistent IV" },
-    { uz: "Doimiy V", ru: "Постоянный V", en: "Consistent V" },
+    { uz: "Doimiy I", ru: "Постоянный I", en: "Consistent I", kk: "Тұрақты I", ky: "Туруктуу I", tg: "Мунтазам I", qr: "Turaqli I" },
+    { uz: "Doimiy II", ru: "Постоянный II", en: "Consistent II", kk: "Тұрақты II", ky: "Туруктуу II", tg: "Мунтазам II", qr: "Turaqli II" },
+    { uz: "Doimiy III", ru: "Постоянный III", en: "Consistent III", kk: "Тұрақты III", ky: "Туруктуу III", tg: "Мунтазам III", qr: "Turaqli III" },
+    { uz: "Doimiy IV", ru: "Постоянный IV", en: "Consistent IV", kk: "Тұрақты IV", ky: "Туруктуу IV", tg: "Мунтазам IV", qr: "Turaqli IV" },
+    { uz: "Doimiy V", ru: "Постоянный V", en: "Consistent V", kk: "Тұрақты V", ky: "Туруктуу V", tg: "Мунтазам V", qr: "Turaqli V" },
   ];
   const t_garden = [
-    { uz: "Bog'bon I", ru: "Садовник I", en: "Gardener I" },
-    { uz: "Bog'bon II", ru: "Садовник II", en: "Gardener II" },
-    { uz: "Bog'bon III", ru: "Садовник III", en: "Gardener III" },
-    { uz: "Bog'bon IV", ru: "Садовник IV", en: "Gardener IV" },
-    { uz: "Bog'bon V", ru: "Садовник V", en: "Gardener V" },
-    { uz: "Bog'bon VI", ru: "Садовник VI", en: "Gardener VI" },
+    { uz: "Bog'bon I", ru: "Садовник I", en: "Gardener I", kk: "Бағбан I", ky: "Бакчачы I", tg: "Боғбон I", qr: "Bag'ban I" },
+    { uz: "Bog'bon II", ru: "Садовник II", en: "Gardener II", kk: "Бағбан II", ky: "Бакчачы II", tg: "Боғбон II", qr: "Bag'ban II" },
+    { uz: "Bog'bon III", ru: "Садовник III", en: "Gardener III", kk: "Бағбан III", ky: "Бакчачы III", tg: "Боғбон III", qr: "Bag'ban III" },
+    { uz: "Bog'bon IV", ru: "Садовник IV", en: "Gardener IV", kk: "Бағбан IV", ky: "Бакчачы IV", tg: "Боғбон IV", qr: "Bag'ban IV" },
+    { uz: "Bog'bon V", ru: "Садовник V", en: "Gardener V", kk: "Бағбан V", ky: "Бакчачы V", tg: "Боғбон V", qr: "Bag'ban V" },
+    { uz: "Bog'bon VI", ru: "Садовник VI", en: "Gardener VI", kk: "Бағбан VI", ky: "Бакчачы VI", tg: "Боғбон VI", qr: "Bag'ban VI" },
   ];
   const t_goals = [
-    { uz: "Orzular sari I", ru: "Мечтатель I", en: "Dreamer I" },
-    { uz: "Orzular sari II", ru: "Мечтатель II", en: "Dreamer II" },
-    { uz: "Orzular sari III", ru: "Мечтатель III", en: "Dreamer III" },
-    { uz: "Orzular sari IV", ru: "Мечтатель IV", en: "Dreamer IV" },
+    { uz: "Orzular sari I", ru: "Мечтатель I", en: "Dreamer I", kk: "Арманшыл I", ky: "Кыялкеч I", tg: "Орзуманд I", qr: "Maqsetkesh I" },
+    { uz: "Orzular sari II", ru: "Мечтатель II", en: "Dreamer II", kk: "Арманшыл II", ky: "Кыялкеч II", tg: "Орзуманд II", qr: "Maqsetkesh II" },
+    { uz: "Orzular sari III", ru: "Мечтатель III", en: "Dreamer III", kk: "Арманшыл III", ky: "Кыялкеч III", tg: "Орзуманд III", qr: "Maqsetkesh III" },
+    { uz: "Orzular sari IV", ru: "Мечтатель IV", en: "Dreamer IV", kk: "Арманшыл IV", ky: "Кыялкеч IV", tg: "Орзуманд IV", qr: "Maqsetkesh IV" },
   ];
   const t_trades = [
-    { uz: "Tadbirkor I", ru: "Предприниматель I", en: "Entrepreneur I" },
-    { uz: "Tadbirkor II", ru: "Предприниматель II", en: "Entrepreneur II" },
-    { uz: "Tadbirkor III", ru: "Предприниматель III", en: "Entrepreneur III" },
-    { uz: "Tadbirkor IV", ru: "Предприниматель IV", en: "Entrepreneur IV" },
+    { uz: "Tadbirkor I", ru: "Предприниматель I", en: "Entrepreneur I", kk: "Кәсіпкер I", ky: "Ишкер I", tg: "Тадбиркор I", qr: "Isbilmen I" },
+    { uz: "Tadbirkor II", ru: "Предприниматель II", en: "Entrepreneur II", kk: "Кәсіпкер II", ky: "Ишкер II", tg: "Тадбиркор II", qr: "Isbilmen II" },
+    { uz: "Tadbirkor III", ru: "Предприниматель III", en: "Entrepreneur III", kk: "Кәсіпкер III", ky: "Ишкер III", tg: "Тадбиркор III", qr: "Isbilmen III" },
+    { uz: "Tadbirkor IV", ru: "Предприниматель IV", en: "Entrepreneur IV", kk: "Кәсіпкер IV", ky: "Ишкер IV", tg: "Тадбиркор IV", qr: "Isbilmen IV" },
   ];
   const t_math = [
-    { uz: "Matematika ustasi I", ru: "Мастер математики I", en: "Math master I" },
-    { uz: "Matematika ustasi II", ru: "Мастер математики II", en: "Math master II" },
-    { uz: "Matematika ustasi III", ru: "Мастер математики III", en: "Math master III" },
+    { uz: "Matematika ustasi I", ru: "Мастер математики I", en: "Math master I", kk: "Математика шебері I", ky: "Математика чебери I", tg: "Устои математика I", qr: "Matematika ustasi I" },
+    { uz: "Matematika ustasi II", ru: "Мастер математики II", en: "Math master II", kk: "Математика шебері II", ky: "Математика чебери II", tg: "Устои matematika II", qr: "Matematika ustasi II" },
+    { uz: "Matematika ustasi III", ru: "Мастер математики III", en: "Math master III", kk: "Математика шебері III", ky: "Математика чебери III", tg: "Устои математика III", qr: "Matematika ustasi III" },
   ];
   const t_english = [
-    { uz: "Ingliz tili ustasi I", ru: "Мастер английского I", en: "English master I" },
-    { uz: "Ingliz tili ustasi II", ru: "Мастер английского II", en: "English master II" },
-    { uz: "Ingliz tili ustasi III", ru: "Мастер английского III", en: "English master III" },
+    { uz: "Ingliz tili ustasi I", ru: "Мастер английского I", en: "English master I", kk: "Ағылшын тілі шебері I", ky: "Англис тили чебери I", tg: "Устои забони англисӣ I", qr: "Inglis tili ustasi I" },
+    { uz: "Ingliz tili ustasi II", ru: "Мастер английского II", en: "English master II", kk: "Ағылшын тілі шебері II", ky: "Англис тили чебери II", tg: "Устои забони англисӣ II", qr: "Inglis tili ustasi II" },
+    { uz: "Ingliz tili ustasi III", ru: "Мастер английского III", en: "English master III", kk: "Ағылшын тілі шебері III", ky: "Англис тили чебери III", tg: "Устои забони англисӣ III", qr: "Inglis tili ustasi III" },
   ];
   const t_logic = [
-    { uz: "Mantiq ustasi I", ru: "Мастер логики I", en: "Logic master I" },
-    { uz: "Mantiq ustasi II", ru: "Мастер логики II", en: "Logic master II" },
-    { uz: "Mantiq ustasi III", ru: "Мастер логики III", en: "Logic master III" },
+    { uz: "Mantiq ustasi I", ru: "Мастер логики I", en: "Logic master I", kk: "Логика шебері I", ky: "Логика чебери I", tg: "Устои мантиқ I", qr: "Mantiq ustasi I" },
+    { uz: "Mantiq ustasi II", ru: "Мастер логики II", en: "Logic master II", kk: "Логика шебері II", ky: "Логика чебери II", tg: "Устои мантиқ II", qr: "Mantiq ustasi II" },
+    { uz: "Mantiq ustasi III", ru: "Мастер логики III", en: "Logic master III", kk: "Логика шебері III", ky: "Логика чебери III", tg: "Устои мантиқ III", qr: "Mantiq ustasi III" },
   ];
   const t_finance = [
-    { uz: "Moliya ustasi I", ru: "Мастер финансов I", en: "Finance master I" },
-    { uz: "Moliya ustasi II", ru: "Мастер финансов II", en: "Finance master II" },
-    { uz: "Moliya ustasi III", ru: "Мастер финансов III", en: "Finance master III" },
+    { uz: "Moliya ustasi I", ru: "Мастер финансов I", en: "Finance master I", kk: "Қаржы шебері I", ky: "Финансы чебери I", tg: "Устои молия I", qr: "Qarji ustasi I" },
+    { uz: "Moliya ustasi II", ru: "Мастер финансов II", en: "Finance master II", kk: "Қаржы шебері II", ky: "Финансы чебери II", tg: "Устои молия II", qr: "Qarji ustasi II" },
+    { uz: "Moliya ustasi III", ru: "Мастер финансов III", en: "Finance master III", kk: "Қаржы шебері III", ky: "Финансы чебери III", tg: "Устои молия III", qr: "Qarji ustasi III" },
   ];
   const t_memory = [
-    { uz: "Xotira ustasi I", ru: "Мастер памяти I", en: "Memory master I" },
-    { uz: "Xotira ustasi II", ru: "Мастер памяти II", en: "Memory master II" },
-    { uz: "Xotira ustasi III", ru: "Мастер памяти III", en: "Memory master III" },
+    { uz: "Xotira ustasi I", ru: "Мастер памяти I", en: "Memory master I", kk: "Есте сақтау шебері I", ky: "Эс тутум чебери I", tg: "Устои хотира I", qr: "Yadlaw ustasi I" },
+    { uz: "Xotira ustasi II", ru: "Мастер памяти II", en: "Memory master II", kk: "Есте сақтау шебері II", ky: "Эс тутум чебери II", tg: "Устои хотира II", qr: "Yadlaw ustasi II" },
+    { uz: "Xotira ustasi III", ru: "Мастер памяти III", en: "Memory master III", kk: "Есте сақтау шебері III", ky: "Эс тутум чебери III", tg: "Устои хотира III", qr: "Yadlaw ustasi III" },
   ];
 
   const list = [

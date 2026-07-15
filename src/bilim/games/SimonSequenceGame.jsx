@@ -9,23 +9,207 @@ import { Star, Zap, Flame, Award } from "lucide-react";
 
 // Color maps for the 4 Simon buttons
 const BUTTONS = [
-  { id: 0, color: "#22c55e", name: { uz: "Yashil", ru: "Зеленый", en: "Green" }, sound: "correct" },
-  { id: 1, color: "#ef4444", name: { uz: "Qizil", ru: "Красный", en: "Red" }, sound: "wrong" }, // We will use playSound.tick or pitch shifts
-  { id: 2, color: "#3b82f6", name: { uz: "Moviy", ru: "Синий", en: "Blue" }, sound: "tick" },
-  { id: 3, color: "#eab308", name: { uz: "Sariq", ru: "Желтый", en: "Желтый" }, sound: "victory" }
+  { id: 0, color: "#22c55e", name: { uz: "Yashil", ru: "Зеленый", en: "Green", kk: "Жасыл", ky: "Жашыл", tg: "Сабз", qr: "Jasıl" }, sound: "correct" },
+  { id: 1, color: "#ef4444", name: { uz: "Qizil", ru: "Красный", en: "Red", kk: "Қызыл", ky: "Кызыл", tg: "Сурх", qr: "Qızıl" }, sound: "wrong" },
+  { id: 2, color: "#3b82f6", name: { uz: "Moviy", ru: "Синий", en: "Blue", kk: "Көк", ky: "Көк", tg: "Кӯҳна", qr: "Ko'k" }, sound: "tick" },
+  { id: 3, color: "#eab308", name: { uz: "Sariq", ru: "Желтый", en: "Yellow", kk: "Сары", ky: "Сары", tg: "Зард", qr: "Sarı" }, sound: "victory" }
 ];
+
+const T = {
+  title: {
+    uz: "Ketma-ketlikni takrorlash",
+    ru: "Повтори последовательность",
+    en: "Simon Sequence",
+    kk: "Өрнекті қайтала",
+    ky: "Катарды кайтала",
+    tg: "Такрори пайдарпайӣ",
+    qr: "Ketpe-ketlikti ta'kirlew"
+  },
+  rememberFlash: {
+    uz: "Chiroqlar ketma-ketligini eslab qoling",
+    ru: "Запоминайте вспышки света",
+    en: "Remember the Flash Sequence",
+    kk: "Жарықтар кезегін есіңізде сақтаңыз",
+    ky: "Жарыктардын катарын эстеп калыңыз",
+    tg: "Пайдарпайии дурахшҳоро ба ёд гиред",
+    qr: "Chiraqlar ketpe-ketligin eslep qalin'iz"
+  },
+  introDesc: {
+    uz: "Rang-barang tugmalarning yonish ketma-ketligini diqqat bilan tomosha qiling, ularni xuddi shu tartibda takrorlang va xotirangizni sinang!",
+    ru: "Следите за вспышками разноцветных кнопок и повторяйте их в точности шаг за шагом!",
+    en: "Watch the sequence of colorful button flashes carefully, repeat them in the exact order, and test your memory boundaries!",
+    kk: "Түрлі-түсті түймелердің жану кезегін мұқият бақылаңыз, оларды дәл солай қайталаңыз және жадыңызды тексеріңіз!",
+    ky: "Түркүн түстүү баскычтардын жануу катарын кунт коюп байкаңыз, аларды так ушундай тартипте кайталап, эс тутумуңузду сынап көрүңүз!",
+    tg: "Дурахши тугмаҳои рангорангро бодиққат назорат кунед, онҳоро дар ҳамон тартиб такрор кунед ва хотираи худро санҷед!",
+    qr: "Tu'rli-tu'sli tu'ymelerdin' janiw ketpe-ketligin diqqat penen baqlan'iz, olardi tap sonday ta'rtipte ta'kirlep, yadın'izdi sinap ko'rin'iz!"
+  },
+  growsTitle: {
+    uz: "Dinamik ravishda o'sadi",
+    ru: "Увеличивающаяся длина",
+    en: "Grows dynamically",
+    kk: "Динамикалық өсу",
+    ky: "Динамикалык өсүш",
+    tg: "Рушди динамикӣ",
+    qr: "Dinamikalıq o'siw"
+  },
+  growsDesc: (targetLength) => ({
+    uz: `Har bir muvaffaqiyatli bosqichdan so'ng, ketma-ketlik yana 1 taga uzayadi. Maqsad: kamida ${targetLength} ta chiroqni topish.`,
+    ru: `После каждого верного шага длина увеличивается на 1. Цель: повторить минимум ${targetLength} вспышек.`,
+    en: `After each successful round, the pattern length grows by 1. Target: match at least ${targetLength} steps.`,
+    kk: `Әрбір сәтті қадамнан кейін кезектілік тағы 1-ге ұзарады. Мақсат: кемінде ${targetLength} жарықты табу.`,
+    ky: `Ар бир ийгиликтүү кадамдан кийин катар дагы 1ге узарат. Максат: кеминде ${targetLength} жарыкты табу.`,
+    tg: `Пас аз ҳар як марҳилаи муваффақ, пайдарпайӣ боз 1 адад зиёд мешавад. Мақсад: ҳадди аққал ${targetLength} дурахшро ёфтан.`,
+    qr: `Ha'r bir tabisli qademnen keyin, ketpe-ketlik ja'ne 1 ge uzayadi. Maqset: keminde ${targetLength} chiraqti tabiw.`
+  }),
+  startGame: {
+    uz: "O'yinni boshlash",
+    ru: "Начать игру",
+    en: "Start Game",
+    kk: "Ойынды бастау",
+    ky: "Оюнду баштоо",
+    tg: "Оғози бозӣ",
+    qr: "Oyindi baslaw"
+  },
+  roundLabel: {
+    uz: "Bosqich",
+    ru: "Раунд",
+    en: "Round",
+    kk: "Раунд",
+    ky: "Раунд",
+    tg: "Марҳила",
+    qr: "Basqish"
+  },
+  watch: {
+    uz: "Kuzating...",
+    ru: "Наблюдайте...",
+    en: "Watch carefully...",
+    kk: "Бақылаңыз...",
+    ky: "Байкаңыз...",
+    tg: "Назорат кунед...",
+    qr: "Baqlan'iz..."
+  },
+  yourTurn: {
+    uz: "Sizning navbatingiz!",
+    ru: "Ваш ход!",
+    en: "Your turn!",
+    kk: "Сіздің кезегіңіз!",
+    ky: "Сиздин кезегиңиз!",
+    tg: "Навбати шумо!",
+    qr: "Sizdin' na'wbetin'iz!"
+  },
+  observeTip: {
+    uz: "Ranglar ketma-ket yona boshlaydi, ularning ketma-ketligini eslab qoling.",
+    ru: "Кнопки будут загораться по очереди. Запомните порядок.",
+    en: "Observe the light pattern carefully. Memorize the exact order.",
+    kk: "Түстер кезекпен жанады, олардың ретін есіңізде сақтаңыз.",
+    ky: "Түстөр кезек менен жана баштайт, алардын катарын эстеп калыңыз.",
+    tg: "Рангҳо пайдарпай медурахшанд, пайдарпайии онҳоро ба ёд гиред.",
+    qr: "Ren'ler ketpe-ket jana baslaydi, olardin' ketpe-ketligin eslep qalin'iz."
+  },
+  pressTip: {
+    uz: "Rangli tugmalarni xuddi o'sha tartibda bosing!",
+    ru: "Нажимайте на кнопки in том же порядке!",
+    en: "Press the colorful pads in the exact same sequence!",
+    kk: "Түрлі-түсті түймелерді дәл солай басыңыз!",
+    ky: "Түркүн түстүү баскычтарды дал ошол тартипте басыңыз!",
+    tg: "Тугмаҳои рангаро дар ҳамон тартиб пахш кунед!",
+    qr: "Ren'li tu'ymelerdi tap sonday ta'rtipte basin'iz!"
+  },
+  fantastic: {
+    uz: "Fantastik xotira! 🚀",
+    ru: "Фантастическая память! 🚀",
+    en: "Fantastic Memory! 🚀",
+    kk: "Ғажайып жад! 🚀",
+    ky: "Укмуштуудай эс тутум! 🚀",
+    tg: "Хотираи аҷиб! 🚀",
+    qr: "Fantastikalıq yad! 🚀"
+  },
+  goodEffort: {
+    uz: "Yaxshi harakat! 👍",
+    ru: "Хорошая попытка! 👍",
+    en: "Good Effort! 👍",
+    kk: "Жақсы әрекет! 👍",
+    ky: "Жакшы аракет! 👍",
+    tg: "Кӯшиши хуб! 👍",
+    qr: "Yaqshi ha'reket! 👍"
+  },
+  matchedCount: (score) => ({
+    uz: `Siz ${score} ta tugmani to'g'ri takrorladingiz!`,
+    ru: `Вы правильно повторили ${score} кнопок!`,
+    en: `You successfully matched ${score} flashes!`,
+    kk: `Сіз ${score} түймені дұрыс қайталадыңыз!`,
+    ky: `Сиз ${score} баскычты туура кайталадыңыз!`,
+    tg: `Шумо ${score} тугмаро дуруст такрор кардед!`,
+    qr: `Siz ${score} tu'ymeni duris ta'kirledin'iz!`
+  }),
+  matchedLabel: {
+    uz: "Topilgan",
+    ru: "Повторено",
+    en: "Matched",
+    kk: "Қайталанған",
+    ky: "Кайталанган",
+    tg: "Такроршуда",
+    qr: "Tabilg'an"
+  },
+  elapsedLabel: {
+    uz: "Sarflandi",
+    ru: "Время",
+    en: "Time",
+    kk: "Уақыт",
+    ky: "Убакыт",
+    tg: "Вақт",
+    qr: "Sarplandi"
+  },
+  accuracyLabel: {
+    uz: "To'g'rilik",
+    ru: "Точность",
+    en: "Accuracy",
+    kk: "Дәлдік",
+    ky: "Тактык",
+    tg: "Дақиқӣ",
+    qr: "Durisliq"
+  },
+  earnedCoinsLabel: {
+    uz: "Topilgan coin",
+    ru: "Полученные монеты",
+    en: "Earned Coins",
+    kk: "Табылған монеталар",
+    ky: "Табылган монеталар",
+    tg: "Тангаҳои ёфтшуда",
+    qr: "Tabilg'an coin"
+  },
+  nextLevel: {
+    uz: "Keyingi bosqich",
+    ru: "Следующий уровень",
+    en: "Next Level",
+    kk: "Келесі деңгей",
+    ky: "Кийинки деңгээл",
+    tg: "Марҳилаи навбатӣ",
+    qr: "Keyingi basqish"
+  },
+  playAgain: {
+    uz: "Qayta o'ynash",
+    ru: "Играть еще раз",
+    en: "Play Again",
+    kk: "Қайта ойнау",
+    ky: "Кайра ойноо",
+    tg: "Бозии дубора",
+    qr: "Qayta oynaw"
+  },
+  back: {
+    uz: "Ortga qaytish",
+    ru: "Назад",
+    en: "Back",
+    kk: "Артқа",
+    ky: "Артка",
+    tg: "Қафо",
+    qr: "Izg'a"
+  }
+};
 
 export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "memory/simon", name = "", level, onBack, onNextLevel }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
-  const ru = lg === "ru";
-  const en = lg === "en";
-
-  const L = (uzVal, ruVal, enVal) => {
-    if (ru) return ruVal || uzVal;
-    if (en) return enVal || uzVal;
-    return uzVal;
-  };
+  const l = lg || "uz";
 
   const startLength = level ? (level.startLength || 3) : 3;
   const targetLength = level ? (level.targetLength || 7) : 7;
@@ -73,7 +257,7 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
   const playPadSound = (id) => {
     try {
       if (id === 0) playSound.tick();
-      else if (id === 1) playSound.tick(); // pitch variants or standard ticks
+      else if (id === 1) playSound.tick();
       else if (id === 2) playSound.tick();
       else playSound.tick();
     } catch (e) {
@@ -251,7 +435,7 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
       {phase === "intro" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <PageHeader th={th} title={L("Ketma-ketlikni takrorlash", "Повтори последовательность", "Simon Sequence")} onBack={onBack} />
+            <PageHeader th={th} title={T.title[l] || T.title.uz} onBack={onBack} />
 
             <div style={{ textAlign: "center", margin: "24px 0" }}>
               <div style={{
@@ -270,14 +454,10 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
                 </svg>
               </div>
               <h2 style={{ ...TYPE.heading, color: th.t1, fontSize: 24, fontWeight: 900, marginBottom: SPACE.s2 }}>
-                {L("Chiroqlar ketma-ketligini eslab qoling", "Запоминайте вспышки света", "Remember the Flash Sequence")}
+                {T.rememberFlash[l] || T.rememberFlash.uz}
               </h2>
               <p style={{ ...TYPE.caption, color: th.t2, fontSize: 15, lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-                {L(
-                  "Rang-barang tugmalarning yonish ketma-ketligini diqqat bilan tomosha qiling, ularni xuddi shu tartibda takrorlang va xotirangizni sinang!",
-                  "Следите за вспышками разноцветных кнопок и повторяйте их в точности шаг за шагом!",
-                  "Watch the sequence of colorful button flashes carefully, repeat them in the exact order, and test your memory boundaries!"
-                )}
+                {T.introDesc[l] || T.introDesc.uz}
               </p>
             </div>
 
@@ -286,10 +466,10 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
                 <Zap size={28} color={th.ac2} />
                 <div style={{ flex: 1 }}>
                   <h4 style={{ ...TYPE.subtitle, color: th.ac2, fontWeight: 800, margin: 0, fontSize: 14 }}>
-                    {L("Dinamik ravishda o'sadi", "Увеличивающаяся длина", "Grows dynamically")}
+                    {T.growsTitle[l] || T.growsTitle.uz}
                   </h4>
                   <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {L(`Har bir muvaffaqiyatli bosqichdan so'ng, ketma-ketlik yana 1 taga uzayadi. Maqsad: kamida ${targetLength} ta chiroqni topish.`, `После каждого верного шага длина увеличивается на 1. Цель: повторить минимум ${targetLength} вспышек.`, `After each successful round, the pattern length grows by 1. Target: match at least ${targetLength} steps.`)}
+                    {(T.growsDesc(targetLength)[l] || T.growsDesc(targetLength).uz)}
                   </p>
                 </div>
               </div>
@@ -297,7 +477,7 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
           </div>
 
           <PrimaryButton th={th} onClick={handleStartGame} style={{ marginTop: SPACE.s3 }}>
-            {L("O'yinni boshlash", "Начать игру", "Start Game")}
+            {T.startGame[l] || T.startGame.uz}
           </PrimaryButton>
         </div>
       )}
@@ -306,11 +486,11 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
       {phase === "play" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <PageHeader th={th} title={`${L("Bosqich", "Раунд", "Round")}: ${currentRound - startLength + 1}`} onBack={() => setPhase("intro")} />
+            <PageHeader th={th} title={`${T.roundLabel[l] || T.roundLabel.uz}: ${currentRound - startLength + 1}`} onBack={() => setPhase("intro")} />
 
             {/* Play HUD */}
             <div style={{ display: "flex", justifyContent: "space-between", ...TYPE.tiny, color: th.t2, marginBottom: 8 }}>
-              <span>{isPlaybackActive ? L("Kuzating...", "Наблюдайте...", "Watch carefully...") : L("Sizning navbatingiz!", "Ваш ход!", "Your turn!")}</span>
+              <span>{isPlaybackActive ? (T.watch[l] || T.watch.uz) : (T.yourTurn[l] || T.yourTurn.uz)}</span>
               <span style={{ fontWeight: 700, color: th.ac2 }}>{score} / {targetLength}</span>
             </div>
             
@@ -364,8 +544,8 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
           <div style={{ marginTop: 32, textAlign: "center" }}>
             <p style={{ ...TYPE.tiny, color: th.t3, textTransform: "none", letterSpacing: 0 }}>
               {isPlaybackActive
-                ? L("Ranglar ketma-ket yona boshlaydi, ularning ketma-ketligini eslab qoling.", "Кнопки будут загораться по очереди. Запомните порядок.", "Observe the light pattern carefully. Memorize the exact order.")
-                : L("Rangli tugmalarni xuddi o'sha tartibda bosing!", "Нажимайте на кнопки в том же порядке!", "Press the colorful pads in the exact same sequence!")
+                ? (T.observeTip[l] || T.observeTip.uz)
+                : (T.pressTip[l] || T.pressTip.uz)
               }
             </p>
           </div>
@@ -386,18 +566,18 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
               </div>
               <h2 style={{ ...TYPE.display, fontSize: 24, color: th.t1, margin: 0 }}>
                 {finalStars >= 2 
-                  ? L("Fantastik xotira! 🚀", "Фантастическая память! 🚀", "Fantastic Memory! 🚀") 
-                  : L("Yaxshi harakat! 👍", "Хорошая попытка! 👍", "Good Effort! 👍")}
+                  ? (T.fantastic[l] || T.fantastic.uz) 
+                  : (T.goodEffort[l] || T.goodEffort.uz)}
               </h2>
               <p style={{ ...TYPE.subtitle, color: th.t2, margin: "6px 0 0 0" }}>
-                {L(`Siz ${score} ta tugmani to'g'ri takrorladingiz!`, `Вы правильно повторили ${score} кнопок!`, `You successfully matched ${score} flashes!`)}
+                {(T.matchedCount(score)[l] || T.matchedCount(score).uz)}
               </p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-              <StatCard th={th} value={score} label={L("Topilgan", "Повторено", "Matched")} tone={th.ac2} />
-              <StatCard th={th} value={`${elapsed}s`} label={L("Sarflandi", "Время", "Time")} tone={th.gr} />
-              <StatCard th={th} value={`${Math.round((score / targetLength) * 100)}%`} label={L("To'g'rilik", "Точность", "Accuracy")} tone={th.ac} />
+              <StatCard th={th} value={score} label={T.matchedLabel[l] || T.matchedLabel.uz} tone={th.ac2} />
+              <StatCard th={th} value={`${elapsed}s`} label={T.elapsedLabel[l] || T.elapsedLabel.uz} tone={th.gr} />
+              <StatCard th={th} value={`${Math.round((score / targetLength) * 100)}%`} label={T.accuracyLabel[l] || T.accuracyLabel.uz} tone={th.ac} />
               <StatCard th={th} value={finalStars === 3 ? "Excellent" : finalStars === 2 ? "Great" : "Good"} label="Rating" tone={th.am} />
             </div>
 
@@ -410,7 +590,7 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
                 </svg>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{L("Topilgan coin", "Полученные монеты", "Earned Coins")}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{T.earnedCoinsLabel[l] || T.earnedCoinsLabel.uz}</div>
                 <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedCoins}</div>
               </div>
               {record && <Badge th={th} tone={PREMIUM.gold}>REKORD</Badge>}
@@ -429,12 +609,12 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
             {/* Action buttons */}
             {level && onNextLevel && finalStars >= 1 && (
               <PrimaryButton th={th} onClick={onNextLevel} style={{ background: th.gr, marginBottom: SPACE.s2 }}>
-                {L("Keyingi bosqich", "Следующий уровень", "Next Level")}
+                {T.nextLevel[l] || T.nextLevel.uz}
               </PrimaryButton>
             )}
 
             <PrimaryButton th={th} onClick={handleStartGame}>
-              {L("Qayta o'ynash", "Играть еще раз", "Play Again")}
+              {T.playAgain[l] || T.playAgain.uz}
             </PrimaryButton>
             
             <button className="ui-press" onClick={onBack}
@@ -450,7 +630,7 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
                 fontWeight: 600,
                 fontSize: 15
               }}>
-              {L("Ortga qaytish", "Назад", "Back")}
+              {T.back[l] || T.back.uz}
             </button>
           </div>
         );

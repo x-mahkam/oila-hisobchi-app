@@ -2,6 +2,72 @@ import React, { useState } from "react";
 import { SPACE, RADIUS, TYPE, SHADOW, ALPHA } from "../utils/tokens.js";
 import { PrimaryButton } from "./ui/index.js";
 
+const T = {
+  title: {
+    uz: "Bugungi ekran vaqtingiz tugadi!",
+    ru: "Время использования экрана истекло!",
+    en: "Your screen time limit has been reached today!",
+    kk: "Бүгінгі экран уақытыңыз аяқталды!",
+    ky: "Бүгүнкү экран убактыңыз бүттү!",
+    tg: "Вақти экрани имрӯзаи шумо ба охир расид!",
+    qr: "Bug'ingi ekran waqtin'iz bitti!"
+  },
+  desc: (limit, minutes) => ({
+    uz: `Kunlik limit: ${limit} daqiqa. Siz bugun ${minutes} daqiqa davomida ilovadan foydalandingiz.`,
+    ru: `Дневной лимит: ${limit} мин. Сегодня вы использовали приложение ${minutes} мин.`,
+    en: `Daily limit: ${limit} minutes. You have used the app for ${minutes} minutes today.`,
+    kk: `Күнделікті лимит: ${limit} минут. Бүгін сіз қолданбаны ${minutes} минут пайдаландыңыз.`,
+    ky: `Күнүмдүк чектөө: ${limit} мүнөт. Сиз бүгүн тиркемени ${minutes} мүнөт колдондуңуз.`,
+    tg: `Лимити рӯзона: ${limit} дақиқа. Шумо имрӯз барномаро ${minutes} дақиқа истифода бурдед.`,
+    qr: `Ku'ndelikli limit: ${limit} minut. Siz bug'in ilovadan ${minutes} minut paydalandin'iz.`
+  }),
+  statusLabel: {
+    uz: "Ekran vaqti holati",
+    ru: "Статус экранного времени",
+    en: "Screen Time Status",
+    kk: "Экран уақытының күйі",
+    ky: "Экран убактысынын абалы",
+    tg: "Ҳолати вақти экран",
+    qr: "Ekran waqti jag'dayi"
+  },
+  locked: {
+    uz: "Bloklandi",
+    ru: "Заблокировано",
+    en: "Blocked",
+    kk: "Бұғатталды",
+    ky: "Бөгөттөлдү",
+    tg: "Қулф шуд",
+    qr: "Bloklandi"
+  },
+  sent: {
+    uz: "So'rov yuborildi. Ota-onangiz tasdiqlashini kuting.",
+    ru: "Запрос отправлен. Ожидайте одобрения родителей.",
+    en: "Request sent. Waiting for parent's approval.",
+    kk: "Сұраныс жіберілді. Ата-анаңыздың мақұлдауын күтіңіз.",
+    ky: "Сурам жөнөтүлдү. Ата-энеңиздин ырастоосун күтүңүз.",
+    tg: "Дархост фиристода шуд. Интизори тасдиқи волидон бошед.",
+    qr: "Soraw jiberildi. Ata-anan'iz tastiyqlawin kutin'."
+  },
+  sending: {
+    uz: "Yuborilmoqda...",
+    ru: "Отправка...",
+    en: "Sending...",
+    kk: "Жіберілуде...",
+    ky: "Жөнөтүлүүдө...",
+    tg: "Фиристода мешавад...",
+    qr: "Jiberilmekte..."
+  },
+  requestBtn: {
+    uz: "Ota-onadan qo'shimcha vaqt so'rash (+15 m)",
+    ru: "Попросить еще время у родителей (+15 мин)",
+    en: "Request more time from parents (+15 min)",
+    kk: "Ата-анадан қосымша уақыт сұрау (+15 мин)",
+    ky: "Ата-энеден кошумча убакыт суроо (+15 мүн)",
+    tg: "Дархости вақти иловагӣ аз волидон (+15 дақиқа)",
+    qr: "Ata-anadan qosimsha waqit soraw (+15 min)"
+  }
+};
+
 export default function ScreenTimeLockScreen({
   th,
   lg,
@@ -13,8 +79,8 @@ export default function ScreenTimeLockScreen({
   const [requested, setRequested] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const uz = lg === "uz";
   const totalLimit = dailyLimit + extraMinutesToday;
+  const l = lg || "uz";
 
   const handleRequest = async () => {
     if (requested || sending) return;
@@ -98,7 +164,7 @@ export default function ScreenTimeLockScreen({
             lineHeight: 1.3
           }}
         >
-          {uz ? "Bugungi ekran vaqtingiz tugadi!" : "Время использования экрана истекло!"}
+          {T.title[l] || T.title.uz}
         </h1>
 
         {/* Subtitle with details */}
@@ -110,9 +176,7 @@ export default function ScreenTimeLockScreen({
             lineHeight: 1.6
           }}
         >
-          {uz
-            ? `Kunlik limit: ${totalLimit} daqiqa. Siz bugun ${todayMinutes} daqiqa davomida ilovadan foydalandingiz.`
-            : `Дневной лимит: ${totalLimit} мин. Сегодня вы использовали приложение ${todayMinutes} мин.`}
+          {(T.desc(totalLimit, todayMinutes)[l] || T.desc(totalLimit, todayMinutes).uz)}
         </p>
 
         {/* Box representing lock status */}
@@ -137,7 +201,7 @@ export default function ScreenTimeLockScreen({
               marginBottom: SPACE.s2
             }}
           >
-            {uz ? "Ekran vaqti holati" : "Статус экранного времени"}
+            {T.statusLabel[l] || T.statusLabel.uz}
           </div>
 
           <div
@@ -148,7 +212,7 @@ export default function ScreenTimeLockScreen({
               margin: 0
             }}
           >
-            {uz ? "Bloklandi" : "Заблокировано"}
+            {T.locked[l] || T.locked.uz}
           </div>
         </div>
 
@@ -166,9 +230,7 @@ export default function ScreenTimeLockScreen({
                 border: `1.5px solid ${th.gr}30`
               }}
             >
-              {uz
-                ? "So'rov yuborildi. Ota-onangiz tasdiqlashini kuting."
-                : "Запрос отправлен. Ожидайте одобрения родителей."}
+              {T.sent[l] || T.sent.uz}
             </div>
           ) : (
             <PrimaryButton
@@ -181,8 +243,8 @@ export default function ScreenTimeLockScreen({
               }}
             >
               {sending
-                ? (uz ? "Yuborilmoqda..." : "Отправка...")
-                : (uz ? "Ota-onadan qo'shimcha vaqt so'rash (+15 m)" : "Попросить еще время у родителей (+15 мин)")}
+                ? (T.sending[l] || T.sending.uz)
+                : (T.requestBtn[l] || T.requestBtn.uz)}
             </PrimaryButton>
           )}
         </div>

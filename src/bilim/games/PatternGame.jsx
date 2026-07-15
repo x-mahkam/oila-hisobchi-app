@@ -79,8 +79,200 @@ export const PatternShapeIcon = ({ shapeId, color, size = 32, style = {} }) => {
   }
 };
 
+const T = {
+  gameTitle: {
+    uz: "Naqsh davomi",
+    ru: "Продолжи узор",
+    en: "Pattern Continuation",
+    kk: "Өрнекті жалғастыр",
+    ky: "Оймону улант",
+    tg: "Идомаи нақш",
+    qr: "Naqis dawami"
+  },
+  instruction: {
+    uz: "Vizual naqshlar qonuniyatini top",
+    ru: "Найди закономерность фигур",
+    en: "Find the Pattern of Shapes",
+    kk: "Фигуралар заңдылығын тап",
+    ky: "Фигуралардын мыйзам ченемдүүлүгүн тап",
+    tg: "Қонунияти шаклҳои визуалиро ёб",
+    qr: "Vizual naqislar qonuniyatin tap"
+  },
+  description: {
+    uz: "Ekranda ko'rsatilgan shakllar qatorini diqqat bilan o'rgan. Bo'sh qatorda qaysi shakl turishini mantiqan aniqla va to'g'ri javobni tanla!",
+    ru: "Внимательно изучи ряд фигур на экране. Логически определи, какая фигура должна быть на пустом месте, и выбери правильный ответ!",
+    en: "Carefully study the sequence of shapes on the screen. Logically determine which shape belongs in the missing spot and select the correct answer!",
+    kk: "Экранда көрсетілген фигуралар қатарын мұқият зерттеңіз. Бос орында қай фигура тұратынын логикалық түрде анықтап, дұрыс жауапты таңдаңыз!",
+    ky: "Экранда көрсөтүлгөн фигуралардын катарын кунт коюп изилдеңиз. Бош орунда кайсы фигура турарын логикалык жактан аныктап, туура жоопту тандаңыз!",
+    tg: "Қатори шаклҳои дар экран нишондодашударо бодиққат омӯзед. Ба таври мантиқӣ муайян кунед, ки кадом шакл дар ҷои холӣ меистад ва ҷавоби дурустро интихоб кунед!",
+    qr: "Ekranda ko'rsetilgen su'wretler qatarin diqqat penen u'yren. Bos qatarda qaysi su'wret turiwin mantiqiy aniqla ha'm duris jawapti tan'la!"
+  },
+  start: {
+    uz: "Boshlash",
+    ru: "Начать",
+    en: "Start",
+    kk: "Бастау",
+    ky: "Баштоо",
+    tg: "Оғоз",
+    qr: "Baslaw"
+  },
+  selectDiff: {
+    uz: "Qiyinchilik darajasini tanlang:",
+    ru: "Выберите сложность:",
+    en: "Select difficulty level:",
+    kk: "Қиындық деңгейін таңдаңыз:",
+    ky: "Кыйындык деңгээлин тандаңыз:",
+    tg: "Дараҷаи душвориро интихоб кунед:",
+    qr: "Qiyinliq da'rejesin tan'lan'iz:"
+  },
+  easy: {
+    uz: "Oson",
+    ru: "Легко",
+    en: "Easy",
+    kk: "Оңай",
+    ky: "Оңой",
+    tg: "Осон",
+    qr: "An'sat"
+  },
+  medium: {
+    uz: "O'rtacha",
+    ru: "Средне",
+    en: "Medium",
+    kk: "Орташа",
+    ky: "Орточо",
+    tg: "Миёна",
+    qr: "Ortasha"
+  },
+  hard: {
+    uz: "Qiyin",
+    ru: "Сложно",
+    en: "Hard",
+    kk: "Қиын",
+    ky: "Кыйын",
+    tg: "Душвор",
+    qr: "Qiyin"
+  },
+  ready: {
+    uz: "TAYYOR",
+    ru: "ГОТОВ",
+    en: "READY",
+    kk: "ДАЙЫН",
+    ky: "ДАЯР",
+    tg: "ТАЙЁР",
+    qr: "TAYYOR"
+  },
+  result: {
+    uz: "Natija",
+    ru: "Результат",
+    en: "Result",
+    kk: "Нәтиже",
+    ky: "Жыйынтык",
+    tg: "Натиҷа",
+    qr: "Natiyje"
+  },
+  awesome: {
+    uz: "Ajoyib!",
+    ru: "Отлично!",
+    en: "Awesome!",
+    kk: "Керемет!",
+    ky: "Абдан жакшы!",
+    tg: "Олии ҷаноб!",
+    qr: "A'jajip!"
+  },
+  tryAgain: {
+    uz: "Yana urinib ko'ring!",
+    ru: "Попробуйте ещё раз!",
+    en: "Try again!",
+    kk: "Тағы да көріңіз!",
+    ky: "Дагы бир жолу аракет кылып көрүңүз!",
+    tg: "Боз кӯшиш кунед!",
+    qr: "Yana urunip ko'rin'!"
+  },
+  correctCount: {
+    uz: "to'g'ri",
+    ru: "верно",
+    en: "correct",
+    kk: "дұрыс",
+    ky: "туура",
+    tg: "дуруст",
+    qr: "durist"
+  },
+  correctLabel: {
+    uz: "To'g'ri",
+    ru: "Верно",
+    en: "Correct",
+    kk: "Дұрыс",
+    ky: "Туура",
+    tg: "Дуруст",
+    qr: "Durist"
+  },
+  wrongLabel: {
+    uz: "Xato",
+    ru: "Ошибки",
+    en: "Wrong",
+    kk: "Қате",
+    ky: "Ката",
+    tg: "Хато",
+    qr: "Qate"
+  },
+  timeLabel: {
+    uz: "Vaqt",
+    ru: "Время",
+    en: "Time",
+    kk: "Уақыт",
+    ky: "Убакыт",
+    tg: "Вақт",
+    qr: "Waqit"
+  },
+  coinsFound: {
+    uz: "Topilgan coinlar",
+    ru: "Получено монет",
+    en: "Coins earned",
+    kk: "Табылған монеталар",
+    ky: "Табылган монеталар",
+    tg: "Тангаҳои ёфтшуда",
+    qr: "Tabilg'an coinlar"
+  },
+  nextLevel: {
+    uz: "Keyingi bosqich",
+    ru: "Следующий уровень",
+    en: "Next Level",
+    kk: "Келесі деңгей",
+    ky: "Кийинки деңгээл",
+    tg: "Марҳилаи навбатӣ",
+    qr: "Keyingi basqish"
+  },
+  playAgain: {
+    uz: "Qayta o'ynash",
+    ru: "Играть снова",
+    en: "Play Again",
+    kk: "Қайта ойнау",
+    ky: "Кайра ойноо",
+    tg: "Бозии дубора",
+    qr: "Qayta oynaw"
+  },
+  back: {
+    uz: "Orqaga",
+    ru: "Назад",
+    en: "Back",
+    kk: "Артқа",
+    ky: "Артка",
+    tg: "Қафо",
+    qr: "Izg'a"
+  },
+  questionLabel: (index, total) => ({
+    uz: `Savol ${index}/${total}`,
+    ru: `Вопрос ${index}/${total}`,
+    en: `Question ${index}/${total}`,
+    kk: `Сұрақ ${index}/${total}`,
+    ky: `Суроо ${index}/${total}`,
+    tg: `Савол ${index}/${total}`,
+    qr: `Soraw ${index}/${total}`
+  })
+};
+
 export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pattern-shapes", level, onBack, onNextLevel }) {
-  const uz = lg === "uz";
+  const l = lg || "uz";
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [difficulty, setDifficulty] = useState("easy");
@@ -94,7 +286,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
     generator: patternShapesGenerator,
     startDifficulty: level ? level.difficulty : difficulty,
     name: "Naqsh davomi",
-    lg,
+    lg: l,
     rewards: { coin: 1.8, xp: 3 }
   });
 
@@ -184,7 +376,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
   if (eng.phase === "intro") {
     return (
       <div>
-        <PageHeader th={th} title={uz ? "Naqsh davomi" : lg === "ru" ? "Продолжи узор" : "Pattern Continuation"} onBack={onBack} />
+        <PageHeader th={th} title={T.gameTitle[l] || T.gameTitle.uz} onBack={onBack} />
         
         <div style={{ padding: SPACE.s4, textAlign: "center", display: "flex", flexDirection: "column", gap: SPACE.s4 }}>
           <div style={{
@@ -205,25 +397,21 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
 
           <div>
             <h2 style={{ ...TYPE.heading, color: th.t1 }}>
-              {uz ? "Vizual naqshlar qonuniyatini top" : lg === "ru" ? "Найди закономерность фигур" : "Find the Pattern of Shapes"}
+              {T.instruction[l] || T.instruction.uz}
             </h2>
             <p style={{ ...TYPE.caption, color: th.t2, marginTop: SPACE.s2, lineHeight: 1.4 }}>
-              {uz 
-                ? "Ekranda ko'rsatilgan shakllar qatorini diqqat bilan o'rgan. Bo'sh qatorda qaysi shakl turishini mantiqan aniqla va to'g'ri javobni tanla!" 
-                : lg === "ru"
-                ? "Внимательно изучи ряд фигур на экране. Логически определи, какая фигура должна быть на пустом месте, и выбери правильный ответ!"
-                : "Carefully study the sequence of shapes on the screen. Logically determine which shape belongs in the missing spot and select the correct answer!"}
+              {T.description[l] || T.description.uz}
             </p>
           </div>
 
           {level ? (
             <PrimaryButton th={th} onClick={() => handleStart(level.difficulty)} style={{ marginTop: SPACE.s4 }}>
-              {uz ? "Boshlash" : "Начать"}
+              {T.start[l] || T.start.uz}
             </PrimaryButton>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginTop: SPACE.s1 }}>
               <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t3, alignSelf: "flex-start" }}>
-                {uz ? "Qiyinchilik darajasini tanlang:" : "Выберите сложность:"}
+                {T.selectDiff[l] || T.selectDiff.uz}
               </span>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: SPACE.s2 }}>
                 {["easy", "medium", "hard"].map((d) => (
@@ -242,7 +430,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
                       cursor: "pointer"
                     }}
                   >
-                    {d === "easy" ? (uz ? "Oson" : "Легко") : d === "medium" ? (uz ? "O'rtacha" : "Средне") : (uz ? "Qiyin" : "Сложно")}
+                    {d === "easy" ? (T.easy[l] || T.easy.uz) : d === "medium" ? (T.medium[l] || T.medium.uz) : (T.hard[l] || T.hard.uz)}
                   </button>
                 ))}
               </div>
@@ -266,7 +454,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
           justifyContent: "center",
           boxShadow: SHADOW.e2
         }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>{uz ? "TAYYOR" : "ГОТОВ"}</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>{T.ready[l] || T.ready.uz}</span>
         </div>
       </div>
     );
@@ -280,7 +468,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
 
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : "Результат"} onBack={level ? onBack : () => eng.setPhase("intro")} />
+        <PageHeader th={th} title={T.result[l] || T.result.uz} onBack={level ? onBack : () => eng.setPhase("intro")} />
         
         <div style={{
           background: "linear-gradient(135deg, #a855f7, #6366f1)",
@@ -296,17 +484,17 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
             ))}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-            {finalStars > 0 ? (uz ? "Ajoyib!" : "Отлично!") : (uz ? "Yana urinib ko'ring!" : "Попробуйте ещё раз!")}
+            {finalStars > 0 ? (T.awesome[l] || T.awesome.uz) : (T.tryAgain[l] || T.tryAgain.uz)}
           </div>
           <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>
-            {r.correct}/{r.total} {uz ? "to'g'ri" : "верно"}
+            {r.correct}/{r.total} {T.correctCount[l] || T.correctCount.uz}
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={r.correct} label={uz ? "To'g'ri" : "Верно"} tone={th.gr} />
-          <StatCard th={th} value={r.wrong} label={uz ? "Xato" : "Ошибки"} tone={th.rd} />
-          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={uz ? "Vaqt" : "Время"} tone={th.ac} />
+          <StatCard th={th} value={r.correct} label={T.correctLabel[l] || T.correctLabel.uz} tone={th.gr} />
+          <StatCard th={th} value={r.wrong} label={T.wrongLabel[l] || T.wrongLabel.uz} tone={th.rd} />
+          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={T.timeLabel[l] || T.timeLabel.uz} tone={th.ac} />
           <StatCard th={th} value={"x" + r.maxCombo} label="Combo" tone={th.am} />
         </div>
 
@@ -318,18 +506,18 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
             </svg>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Topilgan coinlar" : "Получено монет"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{T.coinsFound[l] || T.coinsFound.uz}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{r.coins}</div>
           </div>
         </AppCard>
 
         {level && onNextLevel && finalStars >= 1 && (
           <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
-            {uz ? "Keyingi bosqich" : "Следующий уровень"}
+            {T.nextLevel[l] || T.nextLevel.uz}
           </PrimaryButton>
         )}
         <PrimaryButton th={th} onClick={() => handleStart(difficulty)} style={{ marginTop: SPACE.s2 }}>
-          {uz ? "Qayta o'ynash" : "Играть снова"}
+          {T.playAgain[l] || T.playAgain.uz}
         </PrimaryButton>
         <button className="ui-press" onClick={onBack} style={{
           width: "100%",
@@ -342,7 +530,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
           fontFamily: "inherit",
           fontWeight: 600
         }}>
-          {uz ? "Orqaga" : "Назад"}
+          {T.back[l] || T.back.uz}
         </button>
       </div>
     );
@@ -360,7 +548,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
         <div style={{ flex: 1, marginRight: SPACE.s3 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
             <span style={{ ...TYPE.caption, color: th.t2, fontWeight: 700 }}>
-              {uz ? `Savol ${eng.qIndex + 1}/${level ? level.questionCount : 8}` : `Вопрос ${eng.qIndex + 1}/${level ? level.questionCount : 8}`}
+              {(T.questionLabel(eng.qIndex + 1, level ? level.questionCount : 8)[l] || T.questionLabel(eng.qIndex + 1, level ? level.questionCount : 8).uz)}
             </span>
             <span style={{ ...TYPE.caption, color: "#a855f7", fontWeight: 700 }}>
               {difficulty.toUpperCase()}
@@ -466,7 +654,7 @@ export default function PatternGame({ user, lg = "uz", dark, gameId = "logic/pat
             >
               <PatternShapeIcon shapeId={opt} color={color} size={34} />
               <span style={{ fontSize: 13, fontWeight: 700, color: color }}>
-                {PATTERN_SHAPES_META[opt]?.[lg] || PATTERN_SHAPES_META[opt]?.uz || opt}
+                {PATTERN_SHAPES_META[opt]?.[l] || PATTERN_SHAPES_META[opt]?.uz || opt}
               </span>
             </button>
           );

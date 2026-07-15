@@ -290,8 +290,236 @@ export const OddOneOutIcon = ({ iconId, color, size = 36 }) => {
   }
 };
 
+const T = {
+  gameTitle: {
+    uz: "Toq narsani top",
+    ru: "Найди лишнее",
+    en: "Odd One Out",
+    kk: "Артығын тап",
+    ky: "Ашыкчасын тап",
+    tg: "Чизики бегонаро ёб",
+    qr: "Artig'in tap"
+  },
+  instruction: {
+    uz: "Guruhdagi boshqacha narsani top",
+    ru: "Найди то, что отличается",
+    en: "Find the One that is Different",
+    kk: "Топтағы өзгеше затты тап",
+    ky: "Топтогу башкача нерсени тап",
+    tg: "Чизики аз гурӯҳ фарқкунандаро ёб",
+    qr: "Topatag'i bas'qasha zatti tap"
+  },
+  description: {
+    uz: "4 ta kartadan 3 tasi bir-biriga mantiqan yoki moliyaviy jihatdan bog'liq. Ammo bittasi butunlay boshqacha turkumga kiradi. O'sha toq narsani top va nima uchun toq ekanini o'rgan!",
+    ru: "3 из 4 карточек логически или финансово связаны друг с другом. Но одна из них относится к совершенно другой категории. Найди лишнее и узнай, почему оно отличается!",
+    en: "3 out of 4 cards are logically or financially related, but one belongs to a completely different category. Find the odd one out and learn why it differs!",
+    kk: "4 картаның 3-еуі логикалық немесе қаржылық жағынан байланысты. Бірақ біреуі мүлдем басқа санатқа жатады. Сол артық затты тауып, себебін біліңіз!",
+    ky: "4 картанын 3ү логикалык же каржылык жактан байланыштуу. Бирок бирөөсү таптакыр башка категорияга кирет. Ошол ашыкча нерсени таап, себебин билиңиз!",
+    tg: "3-то аз 4-то кортҳо бо ҳам алоқаи мантиқӣ ё молиявӣ доранд. Аммо яке аз онҳо комилан ба категорияи дигар тааллуқ дорад. Он чизи бегонаро ёбед ва сабабашро омӯзед!",
+    qr: "4 kartadan 3-ewi mantiqiy yamasa qarjiliq jaqtan baylanisli. Biraq birewi muldem basqa kategoriya giredi. Sol artiq zatti tawip, sebebin bilip alin'!"
+  },
+  start: {
+    uz: "Boshlash",
+    ru: "Начать",
+    en: "Start",
+    kk: "Бастау",
+    ky: "Баштоо",
+    tg: "Оғоз",
+    qr: "Baslaw"
+  },
+  selectDiff: {
+    uz: "Qiyinchilik darajasini tanlang:",
+    ru: "Выберите сложность:",
+    en: "Select difficulty level:",
+    kk: "Қиындық деңгейін таңдаңыз:",
+    ky: "Кыйындык деңгээлин тандаңыз:",
+    tg: "Дараҷаи душвориро интихоб кунед:",
+    qr: "Qiyinliq da'rejesin tan'lan'iz:"
+  },
+  easy: {
+    uz: "Oson",
+    ru: "Легко",
+    en: "Easy",
+    kk: "Оңай",
+    ky: "Оңой",
+    tg: "Осон",
+    qr: "An'sat"
+  },
+  medium: {
+    uz: "O'rtacha",
+    ru: "Средне",
+    en: "Medium",
+    kk: "Орташа",
+    ky: "Орточо",
+    tg: "Миёна",
+    qr: "Ortasha"
+  },
+  hard: {
+    uz: "Qiyin",
+    ru: "Сложно",
+    en: "Hard",
+    kk: "Қиын",
+    ky: "Кыйын",
+    tg: "Душвор",
+    qr: "Qiyin"
+  },
+  ready: {
+    uz: "TAYYOR",
+    ru: "ГОТОВ",
+    en: "READY",
+    kk: "ДАЙЫН",
+    ky: "ДАЯР",
+    tg: "ТАЙЁР",
+    qr: "TAYYOR"
+  },
+  result: {
+    uz: "Natija",
+    ru: "Результат",
+    en: "Result",
+    kk: "Нәтиже",
+    ky: "Жыйынтык",
+    tg: "Натиҷа",
+    qr: "Natiyje"
+  },
+  awesome: {
+    uz: "Ajoyib!",
+    ru: "Отлично!",
+    en: "Awesome!",
+    kk: "Керемет!",
+    ky: "Абдан жакшы!",
+    tg: "Олии ҷаноб!",
+    qr: "A'jajip!"
+  },
+  tryAgain: {
+    uz: "Yana urinib ko'ring!",
+    ru: "Попробуйте ещё раз!",
+    en: "Try again!",
+    kk: "Тағы да көріңіз!",
+    ky: "Дагы бир жолу аракет кылып көрүңүз!",
+    tg: "Боз кӯшиш кунед!",
+    qr: "Yana urunip ko'rin'!"
+  },
+  correctCount: {
+    uz: "to'g'ri",
+    ru: "верно",
+    en: "correct",
+    kk: "дұрыс",
+    ky: "туура",
+    tg: "дуруст",
+    qr: "durist"
+  },
+  correctLabel: {
+    uz: "To'g'ri",
+    ru: "Верно",
+    en: "Correct",
+    kk: "Дұрыс",
+    ky: "Туура",
+    tg: "Дуруст",
+    qr: "Durist"
+  },
+  wrongLabel: {
+    uz: "Xato",
+    ru: "Ошибки",
+    en: "Wrong",
+    kk: "Қате",
+    ky: "Ката",
+    tg: "Хато",
+    qr: "Qate"
+  },
+  timeLabel: {
+    uz: "Vaqt",
+    ru: "Время",
+    en: "Time",
+    kk: "Уақыт",
+    ky: "Убакыт",
+    tg: "Вақт",
+    qr: "Waqit"
+  },
+  coinsFound: {
+    uz: "Topilgan coinlar",
+    ru: "Получено монет",
+    en: "Coins earned",
+    kk: "Табылған монеталар",
+    ky: "Табылган монеталар",
+    tg: "Тангаҳои ёфтшуда",
+    qr: "Tabilg'an coinlar"
+  },
+  nextLevel: {
+    uz: "Keyingi bosqich",
+    ru: "Следующий уровень",
+    en: "Next Level",
+    kk: "Келесі деңгей",
+    ky: "Кийинки деңгээл",
+    tg: "Марҳилаи навбатӣ",
+    qr: "Keyingi basqish"
+  },
+  playAgain: {
+    uz: "Qayta o'ynash",
+    ru: "Играть снова",
+    en: "Play Again",
+    kk: "Қайта ойнау",
+    ky: "Кайра ойноо",
+    tg: "Бозии дубора",
+    qr: "Qayta oynaw"
+  },
+  back: {
+    uz: "Orqaga",
+    ru: "Назад",
+    en: "Back",
+    kk: "Артқа",
+    ky: "Артка",
+    tg: "Қафо",
+    qr: "Izg'a"
+  },
+  questionLabel: (index, total) => ({
+    uz: `Savol ${index}/${total}`,
+    ru: `Вопрос ${index}/${total}`,
+    en: `Question ${index}/${total}`,
+    kk: `Сұрақ ${index}/${total}`,
+    ky: `Суроо ${index}/${total}`,
+    tg: `Савол ${index}/${total}`,
+    qr: `Soraw ${index}/${total}`
+  }),
+  questionHeader: {
+    uz: "Qaysi biri guruhga mos kelmaydi?",
+    ru: "Что лишнее в этой группе?",
+    en: "Which one doesn't belong?",
+    kk: "Қайсысы топқа сәйкес келмейді?",
+    ky: "Кайсысы топко туура келбейт?",
+    tg: "Кадоме аз онҳо ба гурӯҳ мувофиқ нест?",
+    qr: "Qaysi biri topatag'i tu'ri kelmeydi?"
+  },
+  correctUpper: {
+    uz: "TO'G'RI!",
+    ru: "ПРАВИЛЬНО!",
+    en: "CORRECT!",
+    kk: "ДҰРЫС!",
+    ky: "ТУУРА!",
+    tg: "ДУРУСТ!",
+    qr: "DURIST!"
+  },
+  wrongUpper: {
+    uz: "XATO JAVOB",
+    ru: "НЕПРАВИЛЬНО",
+    en: "WRONG ANSWER",
+    kk: "ҚАТЕ ЖАУАП",
+    ky: "КАТА ЖООП",
+    tg: "ҶАВОБИ ХАТО",
+    qr: "QATE JAWAP"
+  },
+  nextQuestion: {
+    uz: "Keyingi savol",
+    ru: "Следующий вопрос",
+    en: "Next Question",
+    kk: "Келесі сұрақ",
+    ky: "Кийинки суроо",
+    tg: "Саволи навбатӣ",
+    qr: "Keyingi soraw"
+  }
+};
+
 export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/odd-one-out", level, onBack, onNextLevel }) {
-  const uz = lg === "uz";
+  const l = lg || "uz";
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [difficulty, setDifficulty] = useState("easy");
@@ -306,7 +534,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
     generator: oddOneOutGenerator,
     startDifficulty: level ? level.difficulty : difficulty,
     name: "Toq narsani top",
-    lg,
+    lg: l,
     rewards: { coin: 1.8, xp: 3 }
   });
 
@@ -403,7 +631,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
   if (eng.phase === "intro") {
     return (
       <div>
-        <PageHeader th={th} title={uz ? "Toq narsani top" : lg === "ru" ? "Найди лишнее" : "Odd One Out"} onBack={onBack} />
+        <PageHeader th={th} title={T.gameTitle[l] || T.gameTitle.uz} onBack={onBack} />
         
         <div style={{ padding: SPACE.s4, textAlign: "center", display: "flex", flexDirection: "column", gap: SPACE.s4 }}>
           <div style={{
@@ -425,25 +653,21 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
 
           <div>
             <h2 style={{ ...TYPE.heading, color: th.t1 }}>
-              {uz ? "Guruhdagi boshqacha narsani top" : lg === "ru" ? "Найди то, что отличается" : "Find the One that is Different"}
+              {T.instruction[l] || T.instruction.uz}
             </h2>
             <p style={{ ...TYPE.caption, color: th.t2, marginTop: SPACE.s2, lineHeight: 1.4 }}>
-              {uz 
-                ? "4 ta kartadan 3 tasi bir-biriga mantiqan yoki moliyaviy jihatdan bog'liq. Ammo bittasi butunlay boshqacha turkumga kiradi. O'sha toq narsani top va nima uchun toq ekanini o'rgan!" 
-                : lg === "ru"
-                ? "3 из 4 карточек логически или финансово связаны друг с другом. Но одна из них относится к совершенно другой категории. Найди лишнее и узнай, почему оно отличается!"
-                : "3 out of 4 cards are logically or financially related, but one belongs to a completely different category. Find the odd one out and learn why it differs!"}
+              {T.description[l] || T.description.uz}
             </p>
           </div>
 
           {level ? (
             <PrimaryButton th={th} onClick={() => handleStart(level.difficulty)} style={{ marginTop: SPACE.s4 }}>
-              {uz ? "Boshlash" : "Начать"}
+              {T.start[l] || T.start.uz}
             </PrimaryButton>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginTop: SPACE.s1 }}>
               <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t3, alignSelf: "flex-start" }}>
-                {uz ? "Qiyinchilik darajasini tanlang:" : "Выберите сложность:"}
+                {T.selectDiff[l] || T.selectDiff.uz}
               </span>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: SPACE.s2 }}>
                 {["easy", "medium", "hard"].map((d) => (
@@ -462,7 +686,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
                       cursor: "pointer"
                     }}
                   >
-                    {d === "easy" ? (uz ? "Oson" : "Легко") : d === "medium" ? (uz ? "O'rtacha" : "Средне") : (uz ? "Qiyin" : "Сложно")}
+                    {d === "easy" ? (T.easy[l] || T.easy.uz) : d === "medium" ? (T.medium[l] || T.medium.uz) : (T.hard[l] || T.hard.uz)}
                   </button>
                 ))}
               </div>
@@ -486,7 +710,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
           justifyContent: "center",
           boxShadow: SHADOW.e2
         }}>
-          <span style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>{uz ? "TAYYOR" : "ГОТОВ"}</span>
+          <span style={{ fontSize: 32, fontWeight: 900, color: "#fff" }}>{T.ready[l] || T.ready.uz}</span>
         </div>
       </div>
     );
@@ -500,7 +724,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
 
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : "Результат"} onBack={level ? onBack : () => eng.setPhase("intro")} />
+        <PageHeader th={th} title={T.result[l] || T.result.uz} onBack={level ? onBack : () => eng.setPhase("intro")} />
         
         <div style={{
           background: "linear-gradient(135deg, #fb923c, #f97316)",
@@ -516,17 +740,17 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
             ))}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-            {finalStars > 0 ? (uz ? "Ajoyib!" : "Отлично!") : (uz ? "Yana urinib ko'ring!" : "Попробуйте ещё раз!")}
+            {finalStars > 0 ? (T.awesome[l] || T.awesome.uz) : (T.tryAgain[l] || T.tryAgain.uz)}
           </div>
           <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>
-            {r.correct}/{r.total} {uz ? "to'g'ri" : "верно"}
+            {r.correct}/{r.total} {T.correctCount[l] || T.correctCount.uz}
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={r.correct} label={uz ? "To'g'ri" : "Верно"} tone={th.gr} />
-          <StatCard th={th} value={r.wrong} label={uz ? "Xato" : "Ошибки"} tone={th.rd} />
-          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={uz ? "Vaqt" : "Время"} tone={th.ac} />
+          <StatCard th={th} value={r.correct} label={T.correctLabel[l] || T.correctLabel.uz} tone={th.gr} />
+          <StatCard th={th} value={r.wrong} label={T.wrongLabel[l] || T.wrongLabel.uz} tone={th.rd} />
+          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={T.timeLabel[l] || T.timeLabel.uz} tone={th.ac} />
           <StatCard th={th} value={"x" + r.maxCombo} label="Combo" tone={th.am} />
         </div>
 
@@ -538,18 +762,18 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
             </svg>
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Topilgan coinlar" : "Получено монет"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{T.coinsFound[l] || T.coinsFound.uz}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{r.coins}</div>
           </div>
         </AppCard>
 
         {level && onNextLevel && finalStars >= 1 && (
           <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
-            {uz ? "Keyingi bosqich" : "Следующий уровень"}
+            {T.nextLevel[l] || T.nextLevel.uz}
           </PrimaryButton>
         )}
         <PrimaryButton th={th} onClick={() => handleStart(difficulty)} style={{ marginTop: SPACE.s2 }}>
-          {uz ? "Qayta o'ynash" : "Играть снова"}
+          {T.playAgain[l] || T.playAgain.uz}
         </PrimaryButton>
         <button className="ui-press" onClick={onBack} style={{
           width: "100%",
@@ -562,7 +786,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
           fontFamily: "inherit",
           fontWeight: 600
         }}>
-          {uz ? "Orqaga" : "Назад"}
+          {T.back[l] || T.back.uz}
         </button>
       </div>
     );
@@ -580,7 +804,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
         <div style={{ flex: 1, marginRight: SPACE.s3 }}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
             <span style={{ ...TYPE.caption, color: th.t2, fontWeight: 700 }}>
-              {uz ? `Savol ${eng.qIndex + 1}/${level ? level.questionCount : 6}` : `Вопрос ${eng.qIndex + 1}/${level ? level.questionCount : 6}`}
+              {(T.questionLabel(eng.qIndex + 1, level ? level.questionCount : 6)[l] || T.questionLabel(eng.qIndex + 1, level ? level.questionCount : 6).uz)}
             </span>
             <span style={{ ...TYPE.caption, color: "#fb923c", fontWeight: 700 }}>
               {difficulty.toUpperCase()}
@@ -601,7 +825,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
       {/* Instructions */}
       <div style={{ textAlign: "center", padding: "0 8px" }}>
         <h3 style={{ ...TYPE.subtitle, color: th.t1, fontWeight: 800 }}>
-          {uz ? "Qaysi biri guruhga mos kelmaydi?" : lg === "ru" ? "Что лишнее в этой группе?" : "Which one doesn't belong?"}
+          {T.questionHeader[l] || T.questionHeader.uz}
         </h3>
       </div>
 
@@ -660,7 +884,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
                 <OddOneOutIcon iconId={item.icon} color={iconColor} size={38} />
               </div>
               <span style={{ fontSize: 14, fontWeight: 800, color: color, textAlign: "center", lineHeight: 1.2 }}>
-                {item.label?.[lg] || item.label?.uz || item.id}
+                {item.label?.[l] || item.label?.uz || item.id}
               </span>
             </button>
           );
@@ -689,10 +913,10 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
           </div>
           <div style={{ flex: 1 }}>
             <h4 style={{ ...TYPE.tiny, fontWeight: 800, color: isCorrectFeedback ? th.gr : th.rd, textTransform: "uppercase", marginBottom: 2 }}>
-              {isCorrectFeedback ? (uz ? "TO'G'RI!" : "ПРАВИЛЬНО!") : (uz ? "XATO JAVOB" : "НЕПРАВИЛЬНО")}
+              {isCorrectFeedback ? (T.correctUpper[l] || T.correctUpper.uz) : (T.wrongUpper[l] || T.wrongUpper.uz)}
             </h4>
             <p style={{ ...TYPE.caption, color: th.t2, lineHeight: 1.4 }}>
-              {explanation?.[lg] || explanation?.uz}
+              {explanation?.[l] || explanation?.uz}
             </p>
           </div>
         </div>
@@ -702,7 +926,7 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
       {selectedOpt !== null && (
         <PrimaryButton th={th} onClick={handleNextQuestion} style={{ marginTop: SPACE.s2, background: isCorrectFeedback ? th.gr : th.ac }}>
           <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            {uz ? "Keyingi savol" : lg === "ru" ? "Следующий вопрос" : "Next Question"}
+            {T.nextQuestion[l] || T.nextQuestion.uz}
             <ArrowRight size={18} />
           </span>
         </PrimaryButton>
