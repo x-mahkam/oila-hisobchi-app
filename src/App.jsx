@@ -70,6 +70,7 @@ import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatt
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
 import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
+import { translationService } from "./i18n/translationService.js";
 
 export default function App() {
   const {
@@ -256,7 +257,7 @@ export default function App() {
           try { await db.s("user_" + g.id, null); } catch (e) {}
         }
       }
-      if (!removeIds.length) return ok$(lg === "uz" ? "Dublikat topilmadi — hammasi toza ✅" : "No duplicates found ✅");
+      if (!removeIds.length) return ok$(t("duplicate_not_found", "No duplicates found ✅"));
       const ids = (oila.azolarIds || oila.azolar || []).filter(id => !removeIds.includes(id));
       const o2 = { ...oila, azolarIds: ids };
       if (oila.id) await db.s("oila_" + oila.id, o2);
@@ -264,8 +265,8 @@ export default function App() {
       await db.s("kidbal_" + user.oilaId, kb);
       setOila(o2); setKidBalances(kb);
       setAzolar(azolar.filter(a => !removeIds.includes(a.id)));
-      ok$(lg === "uz" ? "✅ " + removeIds.length + " ta eski bola yozuvi o'chirildi, pullar jamlandi!" : "✅ Cleaned " + removeIds.length + " duplicates");
-    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
+      ok$(t("duplicate_cleaned_count", "✅ Cleaned {{count}} duplicates", { count: removeIds.length }));
+    } catch (e) { ok$(t("error_prefix", "Error: ") + (e.message || ""), "err"); }
   };
 
   // Maqsadlar sinxronizatsiyasi: bola pul yig'ib bo'lganda ota bannerni DARHOL ko'rsin
@@ -287,7 +288,7 @@ export default function App() {
       if (Array.isArray(v)) setVazifalar(v);
       const k = await db.g("kidbal_" + user.oilaId);
       if (k && typeof k === "object") setKidBalances(k);
-      ok$(lg === "uz" ? "Yangilandi" : "Refreshed");
+      ok$(t("refreshed", "Refreshed"));
     } catch (e) {}
   };
   const { markNotifRead, markAllRead, clearNotifs, unreadCount } = useNotifications();
@@ -454,6 +455,13 @@ export default function App() {
 
     (async () => {
       try {
+        // Dynamic translation system initialization
+        try {
+          await translationService.initialize();
+        } catch (tiErr) {
+          console.error("[App] Dynamic Translation System initialization failed:", tiErr);
+        }
+
         // Google redirect tekshirish
         try {
           const { getRedirectResult } = await import("firebase/auth");
@@ -579,264 +587,8 @@ export default function App() {
     ok$(t("rejected"), "warn");
   };
 
-  // ── AI maslahat ───────────────────────────────────────────
-  // Lokal tahlil dvigateli — internetga bog'liq emas, HAR DOIM tahlil natijasini taqdim etadi.
-  const buildLocalAdvice = () => {
-    const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
-    const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
-    const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
-    const totD = mD.reduce((s, d) => s + Number(d.summa || 0), 0);
-    const budget = oila && oila.budjet ? oila.budjet : 2000000;
-    const bal2 = totD - totX;
-    const dayN = new Date().getDate();
-    const tips = [];
-    const L = (uz, en) => {
-      if (lg === "uz") return uz;
-      if (lg === "ru") {
-        if (uz.startsWith("◆ Ijobiy balans:")) return "◆ Положительный баланс: ";
-        if (uz.startsWith("◆ Diqqat:")) return "◆ Внимание: ";
-        if (uz.startsWith("◆ Budjet ogohlantirishi:")) return "◆ Предупреждение о бюджете: ";
-        if (uz.startsWith("◆ Budjet nazorati:")) return "◆ Контроль бюджета: ";
-        if (uz.startsWith("◆ Zo'r natija:")) return "◆ Отличный результат: ";
-        if (uz.startsWith("◆ Eng yuqori xarajat:")) return "◆ Наибольший расход: ";
-        if (uz.startsWith("◆ Jamg'arma muvaffaqiyati:")) return "◆ Успех накоплений: ";
-        if (uz.startsWith("◆ Jamg'arma tahlili:")) return "◆ Анализ накоплений: ";
-        if (uz.startsWith("◆ Maqsad progressi:")) return "◆ Прогресс цели: ";
-        if (uz.startsWith("◆ Maqsad maslahati:")) return "◆ Совет по цели: ";
-        if (uz.startsWith("◆ Maqsad qo'ying:")) return "◆ Установите цель: ";
-        if (uz.startsWith("◆ Majburiyatlar:")) return "◆ Обязательства: ";
-        if (uz.startsWith("◆ Maslahat:")) return "◆ Совет: ";
-        if (uz.startsWith("◆ Motivatsiya:")) return "◆ Мотивация: ";
-        if (uz.includes("Bu oy balansingiz ijobiy")) return "В этом месяце ваш баланс положительный: +" + f(bal2, true) + ". Так держать!";
-        if (uz.includes("Bu oy xarajat daromaddan")) return "В этом месяце расходы превышают доходы на " + f(-bal2, true) + ".";
-        if (uz.includes("Budjet") && uz.includes("ishlatildi")) return "Бюджет использован на " + bpct + "%!";
-        if (uz.includes("Budjetning") && uz.includes("sarflandi")) return "Потрачено " + bpct + "% бюджета.";
-        if (uz.includes("Ajoyib! Oy yarmida faqat")) return "Отлично! В середине месяца вы потратили всего " + bpct + "%.";
-        if (uz.includes("Eng ko'p xarajat:")) return "Наибольший расход: " + top.nom + " (" + topPct + "%).";
-        if (uz.includes("jamg'ardingiz")) return "Вы сэкономили " + savePct + "% доходов. Отличный результат!";
-        if (uz.includes("Daromadning faqat")) return "Осталось только " + savePct + "% от дохода.";
-        if (uz.includes("Bu oy jamg'arma bo'lmadi")) return "В этом месяце сбережений не было.";
-        if (uz.includes("bajarildi")) return "Цель '" + ng?.ism + "' выполнена на " + ng?.pct + "%!";
-        if (uz.includes("har oy summa ajrating")) return "Откладывайте деньги каждый месяц на цель '" + ng?.ism + "'.";
-        if (uz.includes("Maqsad qo'ying — jamg'arish")) return "Установите цель — это дает мотивацию к накоплению.";
-        if (uz.includes("Sizda") && uz.includes("qarz bor")) return "У вас есть долг в размере " + f(meOwe, true) + ".";
-        if (uz.includes("Hali bu oy uchun ma'lumot yo'q")) return "В этом месяце пока нет данных. Добавьте расходы и доходы!";
-        if (uz.includes("tahlili")) return "◆ Анализ " + tm() + "\n\n";
-        return en;
-      }
-      if (lg === "kk") {
-        if (uz.startsWith("◆ Ijobiy balans:")) return "◆ Оң баланс: ";
-        if (uz.startsWith("◆ Diqqat:")) return "◆ Назар аударыңыз: ";
-        if (uz.startsWith("◆ Budjet ogohlantirishi:")) return "◆ Бюджет туралы ескерту: ";
-        if (uz.startsWith("◆ Budjet nazorati:")) return "◆ Бюджетті бақылау: ";
-        if (uz.startsWith("◆ Zo'r natija:")) return "◆ Тамаша нәтиже: ";
-        if (uz.startsWith("◆ Eng yuqori xarajat:")) return "◆ Ең жоғары шығыс: ";
-        if (uz.startsWith("◆ Jamg'arma muvaffaqiyati:")) return "◆ Жинақ жетістігі: ";
-        if (uz.startsWith("◆ Jamg'arma tahlili:")) return "◆ Жинақтарды талдау: ";
-        if (uz.startsWith("◆ Maqsad progressi:")) return "◆ Мақсат барысы: ";
-        if (uz.startsWith("◆ Maqsad maslahati:")) return "◆ Мақсат бойынша кеңес: ";
-        if (uz.startsWith("◆ Maqsad qo'ying:")) return "◆ Мақсат қойыңыз: ";
-        if (uz.startsWith("◆ Majburiyatlar:")) return "◆ Міндеттемелер: ";
-        if (uz.startsWith("◆ Maslahat:")) return "◆ Кеңес: ";
-        if (uz.startsWith("◆ Motivatsiya:")) return "◆ Мотивация: ";
-        if (uz.includes("Bu oy balansingiz ijobiy")) return "Осы айда балансыңыз оң: +" + f(bal2, true) + ". Осылай жалғастырыңыз!";
-        if (uz.includes("Bu oy xarajat daromaddan")) return "Осы айда шығындар кірістерден " + f(-bal2, true) + " артық.";
-        if (uz.includes("Budjet") && uz.includes("ishlatildi")) return "Бюджет " + bpct + "% пайдаланылды!";
-        if (uz.includes("Budjetning") && uz.includes("sarflandi")) return "Бюджеттің " + bpct + "% жұмсалды.";
-        if (uz.includes("Ajoyib! Oy yarmida faqat")) return "Керемет! Айдың ортасында сіз тек " + bpct + "% жұмсадыңыз.";
-        if (uz.includes("Eng ko'p xarajat:")) return "Ең көп шығыс: " + top.nom + " (" + topPct + "%).";
-        if (uz.includes("jamg'ardingiz")) return "Кірістің " + savePct + "% жинадыңыз. Өте жақсы нәтиже!";
-        if (uz.includes("Daromadning faqat")) return "Кірістің тек " + savePct + "% қалды.";
-        if (uz.includes("Bu oy jamg'arma bo'lmadi")) return "Осы айда жинақ болмады.";
-        if (uz.includes("bajarildi")) return "'" + ng?.ism + "' мақсаты " + ng?.pct + "% орындалды!";
-        if (uz.includes("har oy summa ajrating")) return "'" + ng?.ism + "' үшін ай сайын сома бөліңіз.";
-        if (uz.includes("Maqsad qo'ying — jamg'arish")) return "Мақсат қойыңыз — бұл жинақтауға ынталандырады.";
-        if (uz.includes("Sizda") && uz.includes("qarz bor")) return "Сізде " + f(meOwe, true) + " қарыз бар.";
-        if (uz.includes("Hali bu oy uchun ma'lumot yo'q")) return "Бұл айда әлі деректер жоқ. Шығыстар мен кірістерді қосыңыз!";
-        if (uz.includes("tahlili")) return "◆ " + tm() + " талдауы\n\n";
-        return en;
-      }
-      if (lg === "ky") {
-        if (uz.startsWith("◆ Ijobiy balans:")) return "◆ Оң баланс: ";
-        if (uz.startsWith("◆ Diqqat:")) return "◆ Көңүл буруңуз: ";
-        if (uz.startsWith("◆ Budjet ogohlantirishi:")) return "◆ Бюджет эскертүүсү: ";
-        if (uz.startsWith("◆ Budjet nazorati:")) return "◆ Бюджетти көзөмөлдөө: ";
-        if (uz.startsWith("◆ Zo'r natija:")) return "◆ Эң сонун жыйынтык: ";
-        if (uz.startsWith("◆ Eng yuqori xarajat:")) return "◆ Эң жогорку чыгым: ";
-        if (uz.startsWith("◆ Jamg'arma muvaffaqiyati:")) return "◆ Топтоо ийгилиги: ";
-        if (uz.startsWith("◆ Jamg'arma tahlili:")) return "◆ Топтоону талдоо: ";
-        if (uz.startsWith("◆ Maqsad progressi:")) return "◆ Максаттын жүрүшү: ";
-        if (uz.startsWith("◆ Maqsad maslahati:")) return "◆ Максат боюнча кеңеш: ";
-        if (uz.startsWith("◆ Maqsad qo'ying:")) return "◆ Максат коюңуз: ";
-        if (uz.startsWith("◆ Majburiyatlar:")) return "◆ Милдеттенмелер: ";
-        if (uz.startsWith("◆ Maslahat:")) return "◆ Кеңеш: ";
-        if (uz.startsWith("◆ Motivatsiya:")) return "◆ Мотивация: ";
-        if (uz.includes("Bu oy balansingiz ijobiy")) return "Бул айда балансыңыз оң: +" + f(bal2, true) + ". Ушундай эле улантыңыз!";
-        if (uz.includes("Bu oy xarajat daromaddan")) return "Бул айда чыгымдар кирешеден " + f(-bal2, true) + " көп.";
-        if (uz.includes("Budjet") && uz.includes("ishlatildi")) return "Бюджет " + bpct + "% колдонулду!";
-        if (uz.includes("Budjetning") && uz.includes("sarflandi")) return "Бюджеттинин " + bpct + "% сарпталды.";
-        if (uz.includes("Ajoyib! Oy yarmida faqat")) return "Сонун! Айдын ортосунда сиз болгону " + bpct + "% короттуңуз.";
-        if (uz.includes("Eng ko'p xarajat:")) return "Эң көп чыгым: " + top.nom + " (" + topPct + "%).";
-        if (uz.includes("jamg'ardingiz")) return "Кирешенин " + savePct + "% топтодуңуз. Абдан жакшы жыйынтык!";
-        if (uz.includes("Daromadning faqat")) return "Кирешенин болгону " + savePct + "% калды.";
-        if (uz.includes("Bu oy jamg'arma bo'lmadi")) return "Бул айда топтоо болгон жок.";
-        if (uz.includes("bajarildi")) return "'" + ng?.ism + "' максаты " + ng?.pct + "% аткарылды!";
-        if (uz.includes("har oy summa ajrating")) return "'" + ng?.ism + "' үчүн ай сайын сумма бөлүңүз.";
-        if (uz.includes("Maqsad qo'ying — jamg'arish")) return "Максат коюңуз — бул топтоого мотивация берет.";
-        if (uz.includes("Sizda") && uz.includes("qarz bor")) return "Сизде " + f(meOwe, true) + " карыз бар.";
-        if (uz.includes("Hali bu oy uchun ma'lumot yo'q")) return "Бул ай үчүн маалымат жок. Чыгымдарды жана кирешелерди кошуңуз!";
-        if (uz.includes("tahlili")) return "◆ " + tm() + " талдоосу\n\n";
-        return en;
-      }
-      if (lg === "tg") {
-        if (uz.startsWith("◆ Ijobiy balans:")) return "◆ Танзими мусбат: ";
-        if (uz.startsWith("◆ Diqqat:")) return "◆ Диққат: ";
-        if (uz.startsWith("◆ Budjet ogohlantirishi:")) return "◆ Огоҳӣ аз буҷет: ";
-        if (uz.startsWith("◆ Budjet nazorati:")) return "◆ Назорати буҷет: ";
-        if (uz.startsWith("◆ Zo'r natija:")) return "◆ Натиҷаи олӣ: ";
-        if (uz.startsWith("◆ Eng yuqori xarajat:")) return "◆ Хароҷоти аз ҳама зиёд: ";
-        if (uz.startsWith("◆ Jamg'arma muvaffaqiyati:")) return "◆ Муваффақияти пасандоз: ";
-        if (uz.startsWith("◆ Jamg'arma tahlili:")) return "◆ Таҳлили пасандозҳо: ";
-        if (uz.startsWith("◆ Maqsad progressi:")) return "◆ Пешрафти ҳадаф: ";
-        if (uz.startsWith("◆ Maqsad maslahati:")) return "◆ Маслиҳат оид ба ҳадаф: ";
-        if (uz.startsWith("◆ Maqsad qo'ying:")) return "◆ Ҳадаф гузоред: ";
-        if (uz.startsWith("◆ Majburiyatlar:")) return "◆ Уҳдадориҳо: ";
-        if (uz.startsWith("◆ Maslahat:")) return "◆ Маслиҳат: ";
-        if (uz.startsWith("◆ Motivatsiya:")) return "◆ Мотиватсия: ";
-        if (uz.includes("Bu oy balansingiz ijobiy")) return "Ин моҳ баробарии шумо мусбат аст: +" + f(bal2, true) + ". Офарин!";
-        if (uz.includes("Bu oy xarajat daromaddan")) return "Ин моҳ хароҷот аз даромад " + f(-bal2, true) + " зиёд аст.";
-        if (uz.includes("Budjet") && uz.includes("ishlatildi")) return "Буҷет " + bpct + "% истифода шуд!";
-        if (uz.includes("Budjetning") && uz.includes("sarflandi")) return "Хароҷоти буҷет " + bpct + "%-ро ташкил дод.";
-        if (uz.includes("Ajoyib! Oy yarmida faqat")) return "Олӣ! Дар нимаи моҳ шумо танҳо " + bpct + "% сарф кардед.";
-        if (uz.includes("Eng ko'p xarajat:")) return "Хароҷоти аз ҳама зиёд: " + top.nom + " (" + topPct + "%).";
-        if (uz.includes("jamg'ardingiz")) return "Шумо " + savePct + "%-и даромадро пасандоз кардед. Натиҷаи аъло!";
-        if (uz.includes("Daromadning faqat")) return "Танҳо " + savePct + "% даромад боқӣ монд.";
-        if (uz.includes("Bu oy jamg'arma bo'lmadi")) return "Ин моҳ пасандоз набуд.";
-        if (uz.includes("bajarildi")) return "Ҳадафи '" + ng?.ism + "' " + ng?.pct + "% иҷро шуд!";
-        if (uz.includes("har oy summa ajrating")) return "Барои ҳадафи '" + ng?.ism + "' ҳар моҳ маблағ ҷудо кунед.";
-        if (uz.includes("Maqsad qo'ying — jamg'arish")) return "Ҳадаф гузоред — ин барои пасандоз кардан ҳавасманд мекунад.";
-        if (uz.includes("Sizda") && uz.includes("qarz bor")) return "Шумо " + f(meOwe, true) + " қарз доред.";
-        if (uz.includes("Hali bu oy uchun ma'lumot yo'q")) return "Барои ин моҳ маълумот нест. Хароҷот ва даромадро илова кунед!";
-        if (uz.includes("tahlili")) return "◆ Таҳлили " + tm() + "\n\n";
-        return en;
-      }
-      if (lg === "qr") {
-        if (uz.startsWith("◆ Ijobiy balans:")) return "◆ Unamli balans: ";
-        if (uz.startsWith("◆ Diqqat:")) return "◆ Diqqat: ";
-        if (uz.startsWith("◆ Budjet ogohlantirishi:")) return "◆ Budjet eskertpesi: ";
-        if (uz.startsWith("◆ Budjet nazorati:")) return "◆ Budjetti qadag'alaw: ";
-        if (uz.startsWith("◆ Zo'r natija:")) return "◆ Zor na'tiyje: ";
-        if (uz.startsWith("◆ Eng yuqori xarajat:")) return "◆ En' joqari qa'rejet: ";
-        if (uz.startsWith("◆ Jamg'arma muvaffaqiyati:")) return "◆ Jynaq tabisi: ";
-        if (uz.startsWith("◆ Jamg'arma tahlili:")) return "◆ Jynaq tahlili: ";
-        if (uz.startsWith("◆ Maqsad progressi:")) return "◆ Maqset progressi: ";
-        if (uz.startsWith("◆ Maqsad maslahati:")) return "◆ Maqset maslahati: ";
-        if (uz.startsWith("◆ Maqsad qo'ying:")) return "◆ Maqset qoyın'iz: ";
-        if (uz.startsWith("◆ Majburiyatlar:")) return "◆ Majburlikler: ";
-        if (uz.startsWith("◆ Maslahat:")) return "◆ Ma'slahat: ";
-        if (uz.startsWith("◆ Motivatsiya:")) return "◆ Motivatsiya: ";
-        if (uz.includes("Bu oy balansingiz ijobiy")) return "Bul ayda balansın'iz unamli: +" + f(bal2, true) + ". Jaqsı dawam etin'!";
-        if (uz.includes("Bu oy xarajat daromaddan")) return "Bul ayda qa'rejet kirishten " + f(-bal2, true) + " ko'p.";
-        if (uz.includes("Budjet") && uz.includes("ishlatildi")) return "Budjet " + bpct + "% isletildi!";
-        if (uz.includes("Budjetning") && uz.includes("sarflandi")) return "Budjetten' " + bpct + "% sarflandii.";
-        if (uz.includes("Ajoyib! Oy yarmida faqat")) return "A'jayip! Ay yariminda tek " + bpct + "% sarfladin'iz.";
-        if (uz.includes("Eng ko'p xarajat:")) return "En' ko'p qa'rejet: " + top.nom + " (" + topPct + "%).";
-        if (uz.includes("jamg'ardingiz")) return "Kirishtin' " + savePct + "% jynadin'iz. A'lo na'tiyje!";
-        if (uz.includes("Daromadning faqat")) return "Kirishten' tek " + savePct + "% qaldi.";
-        if (uz.includes("Bu oy jamg'arma bo'lmadi")) return "Bul ayda jynaq bolmadi.";
-        if (uz.includes("bajarildi")) return "'" + ng?.ism + "' maqseti " + ng?.pct + "% orınlandi!";
-        if (uz.includes("har oy summa ajrating")) return "'" + ng?.ism + "' ushın ha'r ay summa ajratın'.";
-        if (uz.includes("Maqsad qo'ying — jamg'arish")) return "Maqset qoyın' — bul jynaw ushın motivatsiya beredi.";
-        if (uz.includes("Sizda") && uz.includes("qarz bor")) return "Sizde " + f(meOwe, true) + " qarz bar.";
-        if (uz.includes("Hali bu oy uchun ma'lumot yo'q")) return "Bul ay ushın mag'luwmat joq. Qa'rejet ha'm kiris kirgizin'!";
-        if (uz.includes("tahlili")) return "◆ " + tm() + " tahlili\n\n";
-        return en;
-      }
-      return en;
-    };
-    if (totD > 0 || totX > 0) {
-      if (bal2 >= 0) tips.push(L("◆ Ijobiy balans: ", "◆ Positive balance: ") + L("Bu oy balansingiz ijobiy: +" + f(bal2, true) + ". Barakali boring!", "Positive balance: +" + f(bal2, true)));
-      else tips.push(L("◆ Diqqat: ", "◆ Attention: ") + L("Bu oy xarajat daromaddan " + f(-bal2, true) + " ko'p.", "Expenses exceed income by " + f(-bal2, true)));
-    }
-    const bpct = budget > 0 ? Math.round(totX / budget * 100) : 0;
-    if (bpct >= 100) tips.push(L("◆ Budjet ogohlantirishi: ", "◆ Budget warning: ") + L("Budjet " + bpct + "% ishlatildi!", "Budget used " + bpct + "%!"));
-    else if (bpct >= 80) tips.push(L("◆ Budjet nazorati: ", "◆ Budget check: ") + L("Budjetning " + bpct + "% sarflandi.", "Used " + bpct + "%."));
-    else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push(L("◆ Zo'r natija: ", "◆ Great progress: ") + L("Ajoyib! Oy yarmida faqat " + bpct + "% sarfladingiz.", "Great! Only " + bpct + "%."));
-    const katTotals = KATS.map((k, i) => ({ nom: (KN[lg] || KN.uz)[i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
-    if (katTotals.length > 0 && totX > 0) { const top = katTotals[0]; const topPct = Math.round(top.sum / totX * 100); tips.push(L("◆ Eng yuqori xarajat: ", "◆ Top spending: ") + L("Eng ko'p xarajat: " + top.nom + " (" + topPct + "%).", top.nom + " is " + topPct + "%")); }
-    if (totD > 0) {
-      const savePct = bal2 > 0 ? Math.round(bal2 / totD * 100) : 0;
-      if (savePct >= 20) tips.push(L("◆ Jamg'arma muvaffaqiyati: ", "◆ Savings success: ") + L("Daromadning " + savePct + "% jamg'ardingiz. A'lo natija!", "Saved " + savePct + "%!"));
-      else if (savePct > 0) tips.push(L("◆ Jamg'arma tahlili: ", "◆ Savings analysis: ") + L("Daromadning faqat " + savePct + "% qoldi.", "Only " + savePct + "% saved."));
-      else if (bal2 < 0) tips.push(L("◆ Jamg'arma tahlili: ", "◆ Savings analysis: ") + L("Bu oy jamg'arma bo'lmadi.", "No savings."));
-    }
-    if (maq.length > 0) {
-      const ng = maq.filter(m => !m.paid).map(m => ({ ...m, pct: Math.round(m.jamg / m.maqsad * 100) })).sort((a, b) => b.pct - a.pct)[0];
-      if (ng) { if (ng.pct >= 80 && ng.pct < 100) tips.push(L("◆ Maqsad progressi: ", "◆ Goal progress: ") + L("'" + ng.ism + "' maqsadi " + ng.pct + "% bajarildi!", "Goal '" + ng.ism + "' at " + ng.pct + "%!")); else if (ng.pct < 30) tips.push(L("◆ Maqsad maslahati: ", "◆ Goal tip: ") + L("'" + ng.ism + "' uchun har oy summa ajrating.", "Save for '" + ng.ism + "'.")); }
-    } else tips.push(L("◆ Maqsad qo'ying: ", "◆ Set a goal: ") + L("Maqsad qo'ying — jamg'arish uchun motivatsiya beradi.", "Set a goal."));
-    const aQ = qarzlar.filter(q => !q.paid);
-    const meOwe = aQ.filter(q => q.tur === "olgan").reduce((s, q) => s + q.summa, 0);
-    if (meOwe > 0) tips.push(L("◆ Majburiyatlar: ", "◆ Liabilities: ") + L("Sizda " + f(meOwe, true) + " qarz bor.", "You owe " + f(meOwe, true)));
-    const genTips = [
-      L("50/30/20 qoidasini qo'llang: daromadning 50% zarur xarajatlarga, 30% xohish-istaklarga, 20% jamg'armaga.", "Use 50/30/20 rule: 50% needs, 30% wants, 20% savings."),
-      L("Kichik tejamkorlik — katta baraka. Har kuni ozgina tejasangiz, yiliga katta summa bo'ladi.", "Small savings add up over a year."),
-      L("Xarid ro'yxati — eng yaxshi qalqon. Ro'yxat tuzib, faqat shu mahsulotlarni oling.", "A shopping list is your best shield."),
-      L("Oylik daromad kelishi bilan birinchi navbatda majburiy to'lovlarni chetga oling.", "Pay mandatory bills first when income arrives."),
-      L("Moliyaviy xavfsizlik yostig'i: kamida 3 oylik xarajatga teng zaxira fondi yarating.", "Build a 3-month emergency fund."),
-    ];
-    tips.push(L("◆ Maslahat: ", "◆ Practical tip: ") + genTips[new Date().getDate() % genTips.length]);
-    // Motivatsion iqtibos — har kuni yangi
-    const MOTIV = [
-      L("Boylik bir kunda yig'ilmaydi — lekin har kungi to'g'ri qaror sizni unga yaqinlashtiradi. Siz to'g'ri yo'ldasiz!", "Wealth is built one good decision at a time."),
-      L("Pulni boshqarayotgan odam — kelajagini boshqarayotgan odam. Davom eting!", "Manage your money, manage your future."),
-      L("Bugungi kichik tejamkorlik — ertangi katta imkoniyat. Har bir so'm ishlasin!", "Small savings today, big opportunities tomorrow."),
-      L("Eng yaxshi sarmoya — o'z moliyaviy intizomingizga qilingan sarmoya. Barakalla!", "Discipline is the best investment."),
-      L("Maqsadi bor odam yo'ldan adashmaydi. Maqsadlaringizga sodiq qoling!", "A person with a goal never gets lost."),
-      L("Daromad qancha bo'lishidan qat'i nazar, uni hisoblab yurgan oila hech qachon kam bo'lmaydi.", "A family that counts never lacks."),
-      L("Sabr va izchillik — moliyaviy erkinlikning ikki qanoti. Siz uchyapsiz!", "Patience and consistency are the wings of financial freedom."),
-      L("Har hisobot — bir qadam oldinga. O'zingizni tahlil qilayotganingiz allaqachon g'alaba!", "Every report is a step forward."),
-    ];
-    tips.push(L("◆ Motivatsiya: ", "◆ Motivation: ") + MOTIV[new Date().getDate() % MOTIV.length]);
-    // Shaxsiy motivatsion salomlashuv
-    const salom = totX === 0 && totD === 0 ? ""
-      : bal2 >= 0
-        ? L("◆ Barakalla, " + (user?.ism || "do'stim") + "! Siz moliyangizni nazoratda tutyapsiz — bu ko'pchilikning qo'lidan kelmaydi. Keling, tahlilni ko'ramiz:", "◆ Great job, " + (user?.ism || "") + "!")
-        : L("◆ Diqqatli bo'ling, " + (user?.ism || "Do'stim") + ", tashvishlanmang — har bir katta yutuq kichik qadamdan boshlanadi. Bu oy tahlili sizga yo'l ko'rsatadi:", "◆ Don't worry, every big win starts small.");
-    if (totX === 0 && totD === 0) return L("Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!", "No data yet. Add expenses and income.");
-    return salom + "\n\n" + L("◆ " + tm() + " tahlili\n\n", "Analysis " + tm() + "\n\n") + tips.join("\n\n");
-  };
-
-  // Masofaviy maslahat o'chirildi (faqat offline va tezkor lokal tizim ishlaydi)
-  const fetchRemoteAdvice = async () => {
-    return null;
-  };
-
   const aiAdv = async () => {
     return aiAdvice.aiAdv();
-  };
-  const _old_aiAdv = async () => {
-    if (!isPremium) { setShowPremModal(true); return; }        // Premium logikasi saqlanadi
-    setAdvL(true); setAdv(""); setAdvErr(""); setScr("maslahat");
-    try {
-      let text = null;
-      try { text = await fetchRemoteAdvice(); }                // 1) masofaviy AI (sozlangan bo'lsa)
-      catch (e) { text = null; }                               //    xato/oflayn → lokalga tushamiz
-      if (!text) text = buildLocalAdvice();                    // 2) lokal tahlil — oflaynda ham ishlaydi
-      setAdv(text);
-    } catch (e) {
-      // Kutilmagan runtime xato — tushunarli xabar + Retry tugmasi (Reports sahifasida)
-      setAdvErr(
-        lg === "uz" ? "Maslahat tayyorlashda xatolik yuz berdi. Internetni tekshirib, qayta urinib ko'ring." :
-        lg === "ru" ? "Произошла ошибка при подготовке совета. Проверьте интернет и попробуйте снова." :
-        lg === "kk" ? "Кеңес дайындау кезінде қате орын алды. Интернетті тексеріп, әрекетті қайталаңыз." :
-        lg === "ky" ? "Кеңеш даярдоодо ката кетти. Интернетти текшерип, кайра аракет кылыңыз." :
-        lg === "tg" ? "Ҳангоми омодасозии маслиҳат хатогӣ рӯй дод. Интернетро тафтиш кунед ва қайта кӯшиш кунед." :
-        lg === "qr" ? "Ma'slahat tayyarlawda qa'telik ju'z berdi. Internetni tekserip, qayta urinip ko'rin'." :
-        "Failed to generate advice. Check your connection and retry."
-      );
-    } finally {
-      setTimeout(() => setAdvL(false), 400);
-    }
   };
 
 
@@ -1018,7 +770,8 @@ export default function App() {
                 {isPremium && <span style={{ fontSize: 8, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", color: "#fff", borderRadius: 20, padding: "1px 6px", fontWeight: 700 }}>PRO</span>}
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: -0.2 }}>
-                {(lg === "uz" || lg === "qr") ? <><span style={{ color: th.ac }}>Oila</span><span style={{ color: th.gr }}>Hisobchi</span></> : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? <><span style={{ color: th.ac }}>Семейный</span><span style={{ color: th.gr }}>Бюджет</span></> : <><span style={{ color: th.ac }}>Family</span><span style={{ color: th.gr }}>Budget</span></>}
+                <span style={{ color: th.ac }}>{t("brand_first", "Oila")}</span>
+                <span style={{ color: th.gr }}>{t("brand_second", "Hisobchi")}</span>
               </span>
             </div>
           </div>

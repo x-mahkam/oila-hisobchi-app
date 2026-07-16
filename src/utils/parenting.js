@@ -11,6 +11,7 @@
 //  `e` — DATA emoji (bazaga preset'lardagidek yoziladi, UI'da SVG).
 // ═══════════════════════════════════════════════════════════
 import { taskMatchesKid } from "./permissions.js";
+import i18n from "../i18n/index.js";
 
 // ── Yosh guruhlari va offline tavsiyalar bazasi ──────────────
 export const AGE_GROUPS = [
@@ -92,7 +93,6 @@ const median = arr => {
  * @returns { age, group, items: [{ id, presetId, e, title, reason, reward }] }
  */
 export const recommendTasks = ({ kid, vazifalar = [], lg = "uz", count = 4, now = new Date() }) => {
-  const uz = lg === "uz";
   const age = getKidAge(kid);
   const group = ageGroupOf(age);
 
@@ -108,7 +108,11 @@ export const recommendTasks = ({ kid, vazifalar = [], lg = "uz", count = 4, now 
 
   // ── Saralash: faol → chiqadi; o'zlashtirilgan (2+ marta) → oxirga ──
   const pool = group.items
-    .map(it => ({ ...it, title: uz ? it.uz : it.en, reason: uz ? it.ruz : it.ren, mastered: (doneCount[nm(uz ? it.uz : it.en)] || 0) >= 2 }))
+    .map(it => {
+      const title = i18n.t("preset_task_title_" + it.id, { defaultValue: lg === "en" ? it.en : it.uz });
+      const reason = i18n.t("preset_task_reason_" + it.id, { defaultValue: lg === "en" ? it.ren : it.ruz });
+      return { ...it, title, reason, mastered: (doneCount[nm(title)] || 0) >= 2 };
+    })
     .filter(it => !activeTitles.has(nm(it.title)));
 
   const fresh = pool.filter(it => !it.mastered);
@@ -120,7 +124,7 @@ export const recommendTasks = ({ kid, vazifalar = [], lg = "uz", count = 4, now 
 
   const items = [...rot(fresh), ...mastered].slice(0, count).map(it => ({
     id: it.id, presetId: it.presetId, e: it.e, title: it.title,
-    reason: it.mastered ? (uz ? "Takrorlash" : "Repeat") : it.reason,
+    reason: it.mastered ? i18n.t("repeat", { defaultValue: lg === "en" ? "Repeat" : "Takrorlash" }) : it.reason,
     reward,
   }));
 

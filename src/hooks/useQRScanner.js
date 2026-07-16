@@ -2,9 +2,10 @@ import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { td } from "../utils/formatters.js";
 import jsQR from "jsqr";
+import i18n from "../i18n/index.js";
 
 export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setAddKat }) {
-  const { isPremium, setShowPremModal, lg, ok$, f } = useApp();
+  const { isPremium, setShowPremModal, ok$, f } = useApp();
 
   const [showScanner, setShowScanner] = useState(false);
   const [scanMsg, setScanMsg] = useState("");
@@ -40,7 +41,7 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
       return;
     }
     setShowScanner(true);
-    setScanMsg(lg === "uz" ? "Kamera ochilmoqda..." : "Opening camera...");
+    setScanMsg(i18n.t("scanner_opening_camera", { defaultValue: "Kamera ochilmoqda..." }));
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
       scanStreamRef.current = stream;
@@ -48,7 +49,7 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
         scanVideoRef.current.srcObject = stream;
         await scanVideoRef.current.play();
       }
-      setScanMsg(lg === "uz" ? "QR kodni ramkaga joylang" : "Point QR into frame");
+      setScanMsg(i18n.t("scanner_point_qr", { defaultValue: "QR kodni ramkaga joylang" }));
 
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
@@ -76,20 +77,20 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
                 sana = d.slice(0, 4) + "-" + d.slice(4, 6) + "-" + d.slice(6, 8);
               }
               const rm = raw.match(/[?&]r=(\d+)/i);
-              const izoh = rm ? (lg === "uz" ? "Chek #" : "Receipt #") + rm[1] : "";
+              const izoh = rm ? i18n.t("scanner_receipt_prefix", { defaultValue: "Chek #" }) + rm[1] : "";
 
               const im = raw.match(/[?&]i=([0-9]+)/i);
               if (im) {
                 const v = Math.round(parseInt(im[1], 10) / 100);
                 if (v > 0) {
                   openWithPrefill(v, sana, izoh);
-                  ok$("\u2713 " + f(v, true) + (lg === "uz" ? " — tekshiring va saqlang" : " — verify & save"));
+                  ok$("\u2713 " + f(v, true) + i18n.t("scanner_verify_save", { defaultValue: " — tekshiring va saqlang" }));
                   return;
                 }
               }
 
               if (isUrl) {
-                ok$(lg === "uz" ? "Chek yuklanmoqda..." : "Loading receipt...");
+                ok$(i18n.t("scanner_loading_receipt", { defaultValue: "Chek yuklanmoqda..." }));
                 try {
                   const proxyUrl = "https://api.allorigins.win/get?url=" + encodeURIComponent(raw);
                   const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
@@ -111,14 +112,14 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
                   }
                   if (summa > 0) {
                     openWithPrefill(summa, sana, izoh);
-                    ok$("\u2713 " + f(summa, true) + (lg === "uz" ? " — tekshiring va saqlang" : " — verify & save"));
+                    ok$("\u2713 " + f(summa, true) + i18n.t("scanner_verify_save", { defaultValue: " — tekshiring va saqlang" }));
                   } else {
                     openWithPrefill("", sana, izoh);
-                    ok$(lg === "uz" ? "Summa topilmadi, qo'lda kiriting" : "Amount not found", "warn");
+                    ok$(i18n.t("scanner_amount_not_found", { defaultValue: "Summa topilmadi, qo'lda kiriting" }), "warn");
                   }
                 } catch (err) {
                   openWithPrefill("", sana, izoh);
-                  ok$(lg === "uz" ? "Chek yuklanmadi, qo'lda kiriting" : "Load failed", "warn");
+                  ok$(i18n.t("scanner_load_failed", { defaultValue: "Chek yuklanmadi, qo'lda kiriting" }), "warn");
                 }
               } else {
                 const jm = raw.match(/[Jj]ami[^\n]{0,60}?([\d][\d\s.,]*[\d])/);
@@ -136,7 +137,7 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
                   }
                 }
                 openWithPrefill("", sana, izoh);
-                ok$(lg === "uz" ? "Summa topilmadi, qo'lda kiriting" : "Amount not found", "warn");
+                ok$(i18n.t("scanner_amount_not_found", { defaultValue: "Summa topilmadi, qo'lda kiriting" }), "warn");
               }
               return;
             }
@@ -153,9 +154,9 @@ export function useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setA
         (e.message || "").indexOf("denied") >= 0 ||
         (e.message || "").indexOf("Permission") >= 0;
       if (isDenied) {
-        setScanMsg(lg === "uz" ? "Kamera ruxsati berilmadi. Sozlamalardan ruxsat bering." : "Camera denied.");
+        setScanMsg(i18n.t("scanner_camera_denied", { defaultValue: "Kamera ruxsati berilmadi. Sozlamalardan ruxsat bering." }));
       } else {
-        setScanMsg((lg === "uz" ? "Kamera ochilmadi. Qo'lda kiriting." : "Camera unavailable.") + " (" + (e.name || "") + ")");
+        setScanMsg(i18n.t("scanner_camera_unavailable", { defaultValue: "Kamera ochilmadi. Qo'lda kiriting." }) + " (" + (e.name || "") + ")");
       }
     }
   };

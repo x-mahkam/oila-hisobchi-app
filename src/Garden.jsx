@@ -144,7 +144,15 @@ const GModal = memo(function GModal({ gt, onClose, children }) {
 export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }) {
   const { maq, setGardenData } = useApp() || { maq: [], setGardenData: null };
   const oilaId = user?.oilaId;
-  const L = (uz, ru = uz) => (lg === "ru" ? ru : uz);
+  const L = (uz, ru = uz) => {
+    const key = "garden_" + uz.toLowerCase()
+      .replace(/[^a-z0-9]/gi, "_")
+      .replace(/_+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    const val = i18n.t(key, { defaultValue: "" });
+    if (val) return val;
+    return lg === "ru" ? ru : uz;
+  };
   const gt = gardenTheme(dark);
   injectUiCss();
   injectGardenCss();

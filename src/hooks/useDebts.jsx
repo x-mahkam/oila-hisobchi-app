@@ -46,7 +46,7 @@ export function useDebts() {
       const qaytStr = q.qaytSana || i18n.t("debt_as_agreed");
 
       const summaRaqam = fmtN(summaSom, val, false);
-      const summaSoz = lg === "uz" ? sonSoz(summaSom) : "";
+      const summaSoz = i18n.language === "uz" ? sonSoz(summaSom) : "";
       const summaText = summaRaqam + (summaSoz ? " (" + summaSoz + " so'm)" : "");
       const hujjatRaqami = "OH-" + String(q.id).slice(-8);
       // QR → ilovaning tekshiruv havolasi (skanerlaganda tasdiq sahifasi ochiladi)
@@ -77,7 +77,7 @@ export function useDebts() {
         .btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#4f46e5;color:#fff;border:none;padding:13px 32px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,.4)}
         @media print{.btn{display:none}}
       </style></head><body>
-        <div class="doc-num">${lg === "uz" ? "Hujjat \u2116" : lg === "ru" ? "\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u2116" : "Document \u2116"} ${hujjatRaqami}</div>
+        <div class="doc-num">${i18n.t("tilxat_document_no", { defaultValue: "Hujjat №" })} ${hujjatRaqami}</div>
         <div class="head">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:54px;height:54px;display:block;margin:0 auto 8px;">
             <rect width="120" height="120" rx="28" fill="#5D5CFF" />
@@ -86,41 +86,41 @@ export function useDebts() {
             <path d="M18 58 L102 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
             <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
           </svg>
-          <div class="title">${lg === "uz" ? "TILXAT" : lg === "ru" ? "\u0420\u0410\u0421\u041f\u0418\u0421\u041a\u0410" : "RECEIPT"}</div>
-          <div class="sub">${lg === "uz" ? "pul qarzi olinganligi to'g'risida" : lg === "ru" ? "\u043e \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u0438 \u0434\u0435\u043d\u0435\u0436\u043d\u043e\u0433\u043e \u0437\u0430\u0439\u043c\u0430" : "of a monetary loan"}</div>
+          <div class="title">${i18n.t("tilxat_title", { defaultValue: "TILXAT" })}</div>
+          <div class="sub">${i18n.t("tilxat_subtitle", { defaultValue: "pul qarzi olinganligi to'g'risida" })}</div>
         </div>
         <div class="body">
           <p>${sanaStr}</p>
-          <div class="clause"><span class="num">1.</span>${lg === "uz" ? "Men" : lg === "ru" ? "\u042f" : "I"}, <span class="field">${qarzdor}</span>${qarzdorTel ? ", tel: " + qarzdorTel : ""} (${lg === "uz" ? "bundan keyin \u2014 Qarzdor" : lg === "ru" ? "\u0434\u0430\u043b\u0435\u0435 \u2014 \u0414\u043e\u043b\u0436\u043d\u0438\u043a" : "hereinafter \u2014 Debtor"}), ${lg === "uz" ? "o'z ixtiyorim bilan, quyidagi shaxsdan" : lg === "ru" ? "\u0434\u043e\u0431\u0440\u043e\u0432\u043e\u043b\u044c\u043d\u043e \u043f\u043e\u043b\u0443\u0447\u0438\u043b(\u0430) \u043e\u0442" : "voluntarily received from"} <span class="field">${kreditor}</span>${kreditorTel ? ", tel: " + kreditorTel : ""} (${lg === "uz" ? "bundan keyin \u2014 Kreditor" : lg === "ru" ? "\u0434\u0430\u043b\u0435\u0435 \u2014 \u041a\u0440\u0435\u0434\u0438\u0442\u043e\u0440" : "hereinafter \u2014 Creditor"}) ${lg === "uz" ? "naqd pul mablag'ini qarz sifatida oldim" : lg === "ru" ? "\u0434\u0435\u043d\u0435\u0436\u043d\u044b\u0435 \u0441\u0440\u0435\u0434\u0441\u0442\u0432\u0430 \u0432 \u0434\u043e\u043b\u0433" : "a monetary loan"}:</div>
+          <div class="clause"><span class="num">1.</span>${i18n.t("tilxat_i", { defaultValue: "Men" })}, <span class="field">${qarzdor}</span>${qarzdorTel ? ", tel: " + qarzdorTel : ""} (${i18n.t("tilxat_debtor_desc", { defaultValue: "bundan keyin — Qarzdor" })}), ${i18n.t("tilxat_received_from", { defaultValue: "o'z ixtiyorim bilan, quyidagi shaxsdan" })} <span class="field">${kreditor}</span>${kreditorTel ? ", tel: " + kreditorTel : ""} (${i18n.t("tilxat_creditor_desc", { defaultValue: "bundan keyin — Kreditor" })}) ${i18n.t("tilxat_received_loan", { defaultValue: "naqd pul mablag'ini qarz sifatida oldim" })}:</div>
           <p style="text-align:center"><span class="sum">${summaText}</span></p>
-          <div class="clause"><span class="num">2.</span>${lg === "uz" ? "Yuqoridagi summani" : lg === "ru" ? "\u0423\u043a\u0430\u0437\u0430\u043d\u043d\u0443\u044e \u0441\u0443\u043c\u043c\u0443 \u043e\u0431\u044f\u0437\u0443\u044e\u0441\u044c \u0432\u0435\u0440\u043d\u0443\u0442\u044c \u0434\u043e" : "I undertake to repay the above amount by"} <span class="field">${qaytStr}</span> ${lg === "uz" ? "sanasigacha to'liq qaytarishni zimmamga olaman." : ""}</div>
-          <div class="clause"><span class="num">3.</span>${lg === "uz" ? "Mazkur tilxat ikki tomonning erkin xohish-irodasi asosida tuzildi. Tomonlar hujjat mazmuni va oqibatlarini to'liq anglaydilar." : lg === "ru" ? "\u0420\u0430\u0441\u043f\u0438\u0441\u043a\u0430 \u0441\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0430 \u043f\u043e \u0434\u043e\u0431\u0440\u043e\u0439 \u0432\u043e\u043b\u0435 \u043e\u0431\u0435\u0438\u0445 \u0441\u0442\u043e\u0440\u043e\u043d." : "Made by free will of both parties."}</div>
-          <div class="clause"><span class="num">4.</span>${lg === "uz" ? "Nizo kelib chiqqan taqdirda, tomonlar uni muzokara yo'li bilan, kelisha olmagan holda esa O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etadilar." : lg === "ru" ? "\u0421\u043f\u043e\u0440\u044b \u0440\u0435\u0448\u0430\u044e\u0442\u0441\u044f \u043f\u0435\u0440\u0435\u0433\u043e\u0432\u043e\u0440\u0430\u043c\u0438 \u0438\u043b\u0438 \u0432 \u0441\u0443\u0434\u0435." : "Disputes resolved by negotiation or court."}</div>
-          ${q.paidPart > 0 ? '<div class="clause"><span class="num">5.</span>' + (lg === "uz" ? "Qisman qaytarilgan: <b>" + Number(q.paidPart).toLocaleString("uz-UZ") + " so'm</b>. Qoldiq: <b>" + Number(q.summa).toLocaleString("uz-UZ") + " so'm</b>." : "Partially repaid: " + Number(q.paidPart).toLocaleString() + ". Remaining: " + Number(q.summa).toLocaleString() + ".") + "</div>" : ""}
+          <div class="clause"><span class="num">2.</span>${i18n.t("tilxat_clause_2", { date: qaytStr, defaultValue: `Yuqoridagi summani ${qaytStr} sanasigacha to'liq qaytarishni zimmamga olaman.` })}</div>
+          <div class="clause"><span class="num">3.</span>${i18n.t("tilxat_clause_3", { defaultValue: "Mazkur tilxat ikki tomonning erkin xohish-irodasi asosida tuzildi. Tomonlar hujjat mazmuni va oqibatlarini to'liq anglaydilar." })}</div>
+          <div class="clause"><span class="num">4.</span>${i18n.t("tilxat_clause_4", { defaultValue: "Nizo kelib chiqqan taqdirda, tomonlar uni muzokara yo'li bilan, kelisha olmagan holda esa O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etadilar." })}</div>
+          ${q.paidPart > 0 ? '<div class="clause"><span class="num">5.</span>' + i18n.t("tilxat_clause_5", { paidPart: Number(q.paidPart).toLocaleString(), summa: Number(q.summa).toLocaleString(), defaultValue: `Qisman qaytarilgan: <b>${Number(q.paidPart).toLocaleString()} so'm</b>. Qoldiq: <b>${Number(q.summa).toLocaleString()} so'm</b>.` }) + '</div>' : ""}
         </div>
         <div class="sign">
-          <div class="sign-box"><div class="sign-line">${lg === "uz" ? "Qarzdor" : lg === "ru" ? "\u0414\u043e\u043b\u0436\u043d\u0438\u043a" : "Debtor"}<br>${qarzdor}<br>${lg === "uz" ? "(imzo)" : lg === "ru" ? "(\u043f\u043e\u0434\u043f\u0438\u0441\u044c)" : "(signature)"}</div></div>
-          <div class="sign-box"><div class="sign-line">${lg === "uz" ? "Kreditor" : lg === "ru" ? "\u041a\u0440\u0435\u0434\u0438\u0442\u043e\u0440" : "Creditor"}<br>${kreditor}<br>${lg === "uz" ? "(imzo)" : lg === "ru" ? "(\u043f\u043e\u0434\u043f\u0438\u0441\u044c)" : "(signature)"}</div></div>
+          <div class="sign-box"><div class="sign-line">${i18n.t("tilxat_debtor", { defaultValue: "Qarzdor" })}<br>${qarzdor}<br>${i18n.t("tilxat_signature", { defaultValue: "(imzo)" })}</div></div>
+          <div class="sign-box"><div class="sign-line">${i18n.t("tilxat_creditor", { defaultValue: "Kreditor" })}<br>${kreditor}<br>${i18n.t("tilxat_signature", { defaultValue: "(imzo)" })}</div></div>
         </div>
         <div class="verify-box">
           <img src="${verifyQR}" alt="QR"/>
           <div>
-            <div style="font-size:13px;font-weight:bold;color:#4f46e5">🔑 ${lg === "uz" ? "Elektron tasdiq" : lg === "ru" ? "\u042d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u043e\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435" : "Electronic confirmation"}</div>
-            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${lg === "uz" ? "Ushbu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. QR kod hujjat haqiqiyligini bildiradi." : lg === "ru" ? "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u043e\u0431\u0435\u0438\u043c\u0438 \u0441\u0442\u043e\u0440\u043e\u043d\u0430\u043c\u0438. QR \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u0435\u0442 \u043f\u043e\u0434\u043b\u0438\u043d\u043d\u043e\u0441\u0442\u044c." : "Confirmed by both parties. QR verifies authenticity."}</div>
-            <div style="font-size:10px;color:#888;margin-top:4px">${lg === "uz" ? "Hujjat raqami" : "Doc"}: ${hujjatRaqami} · ID: ${q.id}</div>
+            <div style="font-size:13px;font-weight:bold;color:#4f46e5">🔑 ${i18n.t("tilxat_electronic_confirm_title", { defaultValue: "Elektron tasdiq" })}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${i18n.t("tilxat_electronic_confirm_desc", { defaultValue: "Ushbu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. QR kod hujjat haqiqiyligini bildiradi." })}</div>
+            <div style="font-size:10px;color:#888;margin-top:4px">${i18n.t("tilxat_doc_num_label", { defaultValue: "Hujjat raqami" })}: ${hujjatRaqami} · ID: ${q.id}</div>
           </div>
         </div>
         <div class="legal">
-          <b>${lg === "uz" ? "Huquqiy eslatma:" : lg === "ru" ? "\u041f\u0440\u0430\u0432\u043e\u0432\u0430\u044f \u0441\u043f\u0440\u0430\u0432\u043a\u0430:" : "Legal note:"}</b> ${lg === "uz" ? "Mazkur tilxat O'zbekiston Republic Fuqarolik kodeksining qarz shartnomasiga oid normalariga muvofiq tuzilgan va tomonlar o'rtasidagi kelishuvni qayd etuvchi yozma dalil hisoblanadi. To'liq yuridik kuchga ega bo'lishi uchun notarial tasdiqlash yoki E-IMZO tavsiya etiladi. Aniq holatlar bo'yicha malakali yuristga murojaat qiling." : lg === "ru" ? "\u0420\u0430\u0441\u043f\u0438\u0441\u043a\u0430 \u0441\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0430 \u0441\u043e\u0433\u043b\u0430\u0441\u043d\u043e \u043d\u043e\u0440\u043c\u0430\u043c \u0413\u041a \u043e \u0437\u0430\u0439\u043c\u0435. \u0414\u043b\u044f \u043f\u043e\u043b\u043d\u043e\u0439 \u0441\u0438\u043b\u044b \u0440\u0435\u043a\u043e\u043c\u0435\u043d\u0434\u0443\u0435\u0442\u0441\u044f \u043d\u043e\u0442\u0430\u0440\u0438\u0443\u0441 \u0438\u043b\u0438 \u042d\u0426\u041f." : "Drawn up per civil-law loan provisions. For full force, notarization or e-signature is recommended."}
+          <b>${i18n.t("tilxat_legal_note_label", { defaultValue: "Huquqiy eslatma:" })}</b> ${i18n.t("tilxat_legal_note_desc", { defaultValue: "Mazkur tilxat O'zbekiston Republic Fuqarolik kodeksining qarz shartnomasiga oid normalariga muvofiq tuzilgan va tomonlar o'rtasidagi kelishuvni qayd etuvchi yozma dalil hisoblanadi. To'liq yuridik kuchga ega bo'lishi uchun notarial tasdiqlash yoki E-IMZO tavsiya etiladi. Aniq holatlar bo'yicha malakali yuristga murojaat qiling." })}
         </div>
         <div class="foot">
-          ${lg === "uz" ? "Oila Hisobchi ilovasi tomonidan yaratilgan" : lg === "ru" ? "\u0421\u043e\u0437\u0434\u0430\u043d\u043e \u0432 Oila Hisobchi" : "Generated by Oila Hisobchi"} · ${new Date().toLocaleDateString("uz-UZ")}
+          ${i18n.t("tilxat_footer", { date: new Date().toLocaleDateString(), defaultValue: "Oila Hisobchi ilovasi tomonidan yaratilgan" })}
         </div>
-        <button class="btn" onclick="window.print()">${lg === "uz" ? "PDF saqlash / Chop etish" : "Save PDF / Print"}</button>
+        <button class="btn" onclick="window.print()">${i18n.t("tilxat_print", { defaultValue: "PDF saqlash / Chop etish" })}</button>
       </body></html>`;
 
       setTilxatView({ html, num: hujjatRaqami });
-    } catch (e) { console.error("tilxat:", e); ok$(lg === "uz" ? "Tilxat yaratishda xato" : "Error", "err"); }
+    } catch (e) { console.error("tilxat:", e); ok$(i18n.t("receipt_error", { defaultValue: "Tilxat yaratishda xato" }), "err"); }
   };
 
   // Bazadan yangi qarz ro'yxati (eskirgan lokal holat bilan ustidan yozib yubormaslik uchun)

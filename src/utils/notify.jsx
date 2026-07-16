@@ -7,19 +7,20 @@
 //  • Emoji YO'Q — har toifa uchun outline SVG.
 // ═══════════════════════════════════════════════════════════
 import { db } from "../firebase.js";
+import i18n from "../i18n/index.js";
 
 // ── Toifalar (id barqaror, matn tilга qarab) ──────────────────
 export const NCATS = ["goal", "budget", "debt", "family", "garden", "premium", "ai", "reminder"];
 
 export const NCAT_LABEL = {
-  goal:     { uz: "Maqsad",   ru: "Цель",       en: "Goal" },
-  budget:   { uz: "Byudjet",  ru: "Бюджет",     en: "Budget" },
-  debt:     { uz: "Qarz",     ru: "Долг",       en: "Debt" },
-  family:   { uz: "Oila",     ru: "Семья",      en: "Family" },
-  garden:   { uz: "Bog'",     ru: "Сад",        en: "Garden" },
-  premium:  { uz: "Premium",  ru: "Premium",    en: "Premium" },
-  ai:       { uz: "AI",       ru: "AI",         en: "AI" },
-  reminder: { uz: "Eslatma",  ru: "Напоминание",en: "Reminder" },
+  goal:     { get uz() { return i18n.t("ncat_label_goal", { defaultValue: "Maqsad" }); }, get ru() { return i18n.t("ncat_label_goal", { defaultValue: "Цель" }); }, get en() { return i18n.t("ncat_label_goal", { defaultValue: "Goal" }); } },
+  budget:   { get uz() { return i18n.t("ncat_label_budget", { defaultValue: "Byudjet" }); }, get ru() { return i18n.t("ncat_label_budget", { defaultValue: "Бюджет" }); }, get en() { return i18n.t("ncat_label_budget", { defaultValue: "Budget" }); } },
+  debt:     { get uz() { return i18n.t("ncat_label_debt", { defaultValue: "Qarz" }); }, get ru() { return i18n.t("ncat_label_debt", { defaultValue: "Долг" }); }, get en() { return i18n.t("ncat_label_debt", { defaultValue: "Debt" }); } },
+  family:   { get uz() { return i18n.t("ncat_label_family", { defaultValue: "Oila" }); }, get ru() { return i18n.t("ncat_label_family", { defaultValue: "Семья" }); }, get en() { return i18n.t("ncat_label_family", { defaultValue: "Family" }); } },
+  garden:   { get uz() { return i18n.t("ncat_label_garden", { defaultValue: "Bog'" }); }, get ru() { return i18n.t("ncat_label_garden", { defaultValue: "Сад" }); }, get en() { return i18n.t("ncat_label_garden", { defaultValue: "Garden" }); } },
+  premium:  { get uz() { return i18n.t("ncat_label_premium", { defaultValue: "Premium" }); }, get ru() { return i18n.t("ncat_label_premium", { defaultValue: "Premium" }); }, get en() { return i18n.t("ncat_label_premium", { defaultValue: "Premium" }); } },
+  ai:       { get uz() { return i18n.t("ncat_label_ai", { defaultValue: "AI" }); }, get ru() { return i18n.t("ncat_label_ai", { defaultValue: "AI" }); }, get en() { return i18n.t("ncat_label_ai", { defaultValue: "AI" }); } },
+  reminder: { get uz() { return i18n.t("ncat_label_reminder", { defaultValue: "Eslatma" }); }, get ru() { return i18n.t("ncat_label_reminder", { defaultValue: "Напоминание" }); }, get en() { return i18n.t("ncat_label_reminder", { defaultValue: "Reminder" }); } },
 };
 
 // ── Toifa rangi — FAQAT tokenlardan (th orqali) ──────────────
@@ -82,15 +83,14 @@ export const catAction = (cat) => ({
 }[cat] || null);
 
 export const catActionLabel = (cat, lg) => {
-  const uz = lg === "uz", ru = lg === "ru";
   return {
-    goal:    uz ? "Maqsadga o'tish" : ru ? "К цели" : "Go to goal",
-    budget:  uz ? "Hisobotni ochish" : ru ? "Открыть отчёт" : "Open report",
-    debt:    uz ? "Qarzlar" : ru ? "Долги" : "Debts",
-    family:  uz ? "Vazifalar" : ru ? "Задачи" : "Tasks",
-    garden:  uz ? "Bog'ni ochish" : ru ? "Открыть сад" : "Open garden",
-    premium: uz ? "Premium" : "Premium",
-    ai:      uz ? "Foydali tahlil" : ru ? "Полезный анализ" : "Useful analysis",
+    goal:    i18n.t("cat_action_label_goal", { defaultValue: "Maqsadga o'tish" }),
+    budget:  i18n.t("cat_action_label_budget", { defaultValue: "Hisobotni ochish" }),
+    debt:    i18n.t("cat_action_label_debt", { defaultValue: "Qarzlar" }),
+    family:  i18n.t("cat_action_label_family", { defaultValue: "Vazifalar" }),
+    garden:  i18n.t("cat_action_label_garden", { defaultValue: "Bog'ni ochish" }),
+    premium: i18n.t("cat_action_label_premium", { defaultValue: "Premium" }),
+    ai:      i18n.t("cat_action_label_ai", { defaultValue: "Foydali tahlil" }),
   }[cat] || null;
 };
 
@@ -116,7 +116,6 @@ export const catIcon = (cat, c) => ({
 
 // ── Smart grouping: bir xil (cat,type) ketma-ketligini yig'ish ─
 export const groupNotifs = (list, lg = "uz") => {
-  const uz = lg === "uz";
   const out = [];
   let i = 0;
   while (i < list.length) {
@@ -129,8 +128,8 @@ export const groupNotifs = (list, lg = "uz") => {
       if (cnt >= 3) {
         out.push({
           ...n, _group: true, _count: cnt, read: !anyUnread,
-          title: uz ? "Bola " + cnt + " ta vazifani bajardi" : cnt + " tasks completed",
-          text: uz ? "Ko'rish uchun bosing" : "Tap to view",
+          title: i18n.t("group_notif_title", { count: cnt, defaultValue: `${cnt} ta vazifa bajarildi` }),
+          text: i18n.t("group_notif_text", { defaultValue: "Ko'rish uchun bosing" }),
         });
         i = j; continue;
       }

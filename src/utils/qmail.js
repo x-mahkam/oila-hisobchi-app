@@ -16,6 +16,7 @@
 // ═══════════════════════════════════════════════════════════
 import { db } from "../firebase.js";
 import { td, nt } from "./formatters.js";
+import i18n from "../i18n/index.js";
 
 const chan = (tel) => "qreq_" + tel;
 const key  = (tel, id) => "qi_" + tel + "_" + id;
@@ -58,9 +59,11 @@ export const qmail = {
         list = list.map(q => mine(q) ? { ...q, linkStatus: r.status } : q);
         if (r.status === "accepted" && q0) {
           if (q0.tur === "bergan") {
-            xAdds.push({ id: Date.now() + Math.random(), kategoriya: "qarz", summa: Number(q0.summa), izoh: (lg === "uz" ? "Qarz berildi (tasdiqlangan): " : "Loan given: ") + (r.byIsm || q0.kim), sana: q0.sana || td(), vaqt: nt(), uid: u.id, repeat: false, fromQarz: q0.id });
+            const izoh = i18n.t("loan_given_confirmed_izoh", { name: r.byIsm || q0.kim, defaultValue: `Qarz berildi (tasdiqlangan): ${r.byIsm || q0.kim}` });
+            xAdds.push({ id: Date.now() + Math.random(), kategoriya: "qarz", summa: Number(q0.summa), izoh, sana: q0.sana || td(), vaqt: nt(), uid: u.id, repeat: false, fromQarz: q0.id });
           } else {
-            dAdds.push({ id: Date.now() + Math.random(), tur: "qarz", summa: Number(q0.summa), izoh: (lg === "uz" ? "Qarz olindi (tasdiqlangan): " : "Loan received: ") + (r.byIsm || q0.kim), sana: q0.sana || td(), vaqt: nt(), uid: u.id, fromQarz: q0.id });
+            const izoh = i18n.t("loan_received_confirmed_izoh", { name: r.byIsm || q0.kim, defaultValue: `Qarz olindi (tasdiqlangan): ${r.byIsm || q0.kim}` });
+            dAdds.push({ id: Date.now() + Math.random(), tur: "qarz", summa: Number(q0.summa), izoh, sana: q0.sana || td(), vaqt: nt(), uid: u.id, fromQarz: q0.id });
           }
         }
       }
@@ -78,9 +81,15 @@ export const qmail = {
             : q);
           if (paySum > 0) {
             if (q0.tur === "bergan") {
-              dAdds.push({ id: Date.now() + Math.random(), tur: "qarz", summa: paySum, izoh: (lg === "uz" ? (r.closeIt ? "Qarz qaytdi: " : "Qarz qisman qaytdi: ") : "Debt returned: ") + q0.kim, sana: td(), vaqt: nt(), uid: u.id, fromQarz: q0.id });
+              const keyName = r.closeIt ? "debt_returned_full_izoh" : "debt_returned_partial_izoh";
+              const defaultVal = r.closeIt ? `Qarz qaytdi: ${q0.kim}` : `Qarz qisman qaytdi: ${q0.kim}`;
+              const izoh = i18n.t(keyName, { name: q0.kim, defaultValue: defaultVal });
+              dAdds.push({ id: Date.now() + Math.random(), tur: "qarz", summa: paySum, izoh, sana: td(), vaqt: nt(), uid: u.id, fromQarz: q0.id });
             } else {
-              xAdds.push({ id: Date.now() + Math.random(), kategoriya: "qarz", summa: paySum, izoh: (lg === "uz" ? (r.closeIt ? "Qarz qaytarildi: " : "Qarz qisman qaytarildi: ") : "Debt repaid: ") + q0.kim, sana: td(), vaqt: nt(), uid: u.id, repeat: false, fromQarz: q0.id });
+              const keyName = r.closeIt ? "debt_repaid_full_izoh" : "debt_repaid_partial_izoh";
+              const defaultVal = r.closeIt ? `Qarz qaytarildi: ${q0.kim}` : `Qarz qisman qaytarildi: ${q0.kim}`;
+              const izoh = i18n.t(keyName, { name: q0.kim, defaultValue: defaultVal });
+              xAdds.push({ id: Date.now() + Math.random(), kategoriya: "qarz", summa: paySum, izoh, sana: td(), vaqt: nt(), uid: u.id, repeat: false, fromQarz: q0.id });
             }
           }
         }

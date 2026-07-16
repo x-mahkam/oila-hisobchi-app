@@ -1,20 +1,24 @@
 import { useCallback } from "react";
 import { db } from "../firebase.js";
 import { useApp } from "../context/AppContext.jsx";
+import i18n from "../i18n/index.js";
 
 export function useGarden() {
-  const { user, stars, setStars, gardenData, setGardenData, ok$, buzz, lg } = useApp();
+  const { user, stars, setStars, gardenData, setGardenData, ok$, buzz } = useApp();
 
   const waterGarden = useCallback(async () => {
     if (!user?.oilaId) return;
     const cost = 5;
     if (stars < cost) {
-      ok$(lg === "uz" ? "Kamida 5⭐ kerak" : "Need 5⭐ to water", "warn");
+      ok$(i18n.t("garden_need_stars", { defaultValue: "Kamida 5⭐ kerak" }), "warn");
       return;
     }
     try {
       const cur = Math.max(0, (await db.g("stars_" + user.oilaId)) || 0);
-      if (cur < cost) { ok$(lg === "uz" ? "Yetarli yulduzcha yo'q" : "Not enough stars", "warn"); return; }
+      if (cur < cost) {
+        ok$(i18n.t("garden_not_enough_stars", { defaultValue: "Yetarli yulduzcha yo'q" }), "warn");
+        return;
+      }
       const newStars = Math.max(0, cur - cost);
       const today = new Date().toISOString().slice(0, 10);
       const g = (await db.g("garden_" + user.oilaId)) || { level: 0, watered: null, totalStars: 0, wateredBy: [] };
@@ -29,11 +33,11 @@ export function useGarden() {
       setStars(newStars);
       setGardenData(newG);
       buzz(20);
-      ok$(lg === "uz" ? "Bog' sug'orildi! 🌿 -5⭐" : "Garden watered! 🌿 -5⭐");
+      ok$(i18n.t("garden_watered_success", { defaultValue: "Bog' sug'orildi! 🌿 -5⭐" }));
     } catch (e) {
-      ok$(lg === "uz" ? "Xato yuz berdi" : "Error", "err");
+      ok$(i18n.t("error_generic", { defaultValue: "Xato yuz berdi" }), "err");
     }
-  }, [user, stars, ok$, buzz, lg]);
+  }, [user, stars, ok$, buzz]);
 
   return { waterGarden };
 }
