@@ -77,3 +77,33 @@ export async function fetchLanguageList() {
     return [];
   }
 }
+
+/**
+ * Foydalanuvchi til tanlaganda chaqiriladi (masalan Profile/Onboarding
+ * ekranidan). i18next tilini darhol almashtiradi, so'ng shu til uchun
+ * Firestore'dagi eng so'nggi tarjimani fonda tekshirib, kerak bo'lsa
+ * jonli yangilaydi.
+ *
+ * "./index.js" dinamik (lazy) import qilinadi — i18n/index.js ham shu
+ * fayldagi fetchMeta/getTranslationBundle'ni ishlatgani uchun statik
+ * import aylanma (circular) bo'lib qolardi.
+ */
+async function changeLanguage(lang) {
+  const { default: i18n, loadDynamicLanguage } = await import("./index.js");
+  i18n.changeLanguage(lang);
+  try {
+    const meta = await fetchMeta();
+    const knownVersion = meta?.versions?.[lang] ?? null;
+    const bundle = await getTranslationBundle(lang, knownVersion);
+    if (bundle?.data) loadDynamicLanguage(lang, bundle.data);
+  } catch (e) {
+    console.warn(`[i18n] "${lang}" tiliga o'tishda sinxronlash xatosi:`, e);
+  }
+}
+
+export const translationService = {
+  changeLanguage,
+  fetchMeta,
+  getTranslationBundle,
+  fetchLanguageList,
+};
