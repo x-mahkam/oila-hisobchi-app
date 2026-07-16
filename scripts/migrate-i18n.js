@@ -59,8 +59,13 @@ async function main() {
   for (const { code } of READY_LANGUAGES) {
     const localePath = join(__dirname, "..", "src", "locales", `${code}.json`);
     const data = JSON.parse(readFileSync(localePath, "utf8"));
-    await db.collection("translations").doc(code).set({ version: 1, updatedAt: now, data });
-    versions[code] = 1;
+    // MUHIM: versiya sifatida "now" (Date.now()) ishlatiladi, "1" emas —
+    // aks holda skriptni qayta ishga tushirib mazmun yangilansa ham,
+    // avval keshlagan qurilmalar buni "o'zgarish yo'q" deb hisoblab,
+    // yangi kalitlarni hech qachon qayta yuklamaydi (translationService.js
+    // versiyalarni solishtirib, teng bo'lsa keshdan qaytaradi).
+    await db.collection("translations").doc(code).set({ version: now, updatedAt: now, data });
+    versions[code] = now;
     console.log(`  ✓ translations/${code} (${Object.keys(data).length} kalit)`);
   }
 
