@@ -46,7 +46,7 @@ export function useDebts() {
       const qaytStr = q.qaytSana || i18n.t("debt_as_agreed");
 
       const summaRaqam = fmtN(summaSom, val, false);
-      const summaSoz = i18n.language === "uz" ? sonSoz(summaSom) : "";
+      const summaSoz = lg === "uz" ? sonSoz(summaSom) : "";
       const summaText = summaRaqam + (summaSoz ? " (" + summaSoz + " so'm)" : "");
       const hujjatRaqami = "OH-" + String(q.id).slice(-8);
       // QR → ilovaning tekshiruv havolasi (skanerlaganda tasdiq sahifasi ochiladi)
@@ -77,7 +77,7 @@ export function useDebts() {
         .btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#4f46e5;color:#fff;border:none;padding:13px 32px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,.4)}
         @media print{.btn{display:none}}
       </style></head><body>
-        <div class="doc-num">${i18n.t("tilxat_document_no", { defaultValue: "Hujjat №" })} ${hujjatRaqami}</div>
+        <div class="doc-num">${i18n.t("dt_docNum")} ${hujjatRaqami}</div>
         <div class="head">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:54px;height:54px;display:block;margin:0 auto 8px;">
             <rect width="120" height="120" rx="28" fill="#5D5CFF" />
@@ -86,41 +86,41 @@ export function useDebts() {
             <path d="M18 58 L102 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
             <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
           </svg>
-          <div class="title">${i18n.t("tilxat_title", { defaultValue: "TILXAT" })}</div>
-          <div class="sub">${i18n.t("tilxat_subtitle", { defaultValue: "pul qarzi olinganligi to'g'risida" })}</div>
+          <div class="title">${i18n.t("dt_title")}</div>
+          <div class="sub">${i18n.t("dt_subtitle")}</div>
         </div>
         <div class="body">
           <p>${sanaStr}</p>
-          <div class="clause"><span class="num">1.</span>${i18n.t("tilxat_i", { defaultValue: "Men" })}, <span class="field">${qarzdor}</span>${qarzdorTel ? ", tel: " + qarzdorTel : ""} (${i18n.t("tilxat_debtor_desc", { defaultValue: "bundan keyin — Qarzdor" })}), ${i18n.t("tilxat_received_from", { defaultValue: "o'z ixtiyorim bilan, quyidagi shaxsdan" })} <span class="field">${kreditor}</span>${kreditorTel ? ", tel: " + kreditorTel : ""} (${i18n.t("tilxat_creditor_desc", { defaultValue: "bundan keyin — Kreditor" })}) ${i18n.t("tilxat_received_loan", { defaultValue: "naqd pul mablag'ini qarz sifatida oldim" })}:</div>
+          <div class="clause"><span class="num">1.</span>${i18n.t("dt_iPronoun")}, <span class="field">${qarzdor}</span>${qarzdorTel ? ", tel: " + qarzdorTel : ""} (${i18n.t("dt_hereinafterDebtor")}), ${i18n.t("dt_voluntarilyReceivedFrom")} <span class="field">${kreditor}</span>${kreditorTel ? ", tel: " + kreditorTel : ""} (${i18n.t("dt_hereinafterCreditor")}) ${i18n.t("dt_tookAsLoan")}:</div>
           <p style="text-align:center"><span class="sum">${summaText}</span></p>
-          <div class="clause"><span class="num">2.</span>${i18n.t("tilxat_clause_2", { date: qaytStr, defaultValue: `Yuqoridagi summani ${qaytStr} sanasigacha to'liq qaytarishni zimmamga olaman.` })}</div>
-          <div class="clause"><span class="num">3.</span>${i18n.t("tilxat_clause_3", { defaultValue: "Mazkur tilxat ikki tomonning erkin xohish-irodasi asosida tuzildi. Tomonlar hujjat mazmuni va oqibatlarini to'liq anglaydilar." })}</div>
-          <div class="clause"><span class="num">4.</span>${i18n.t("tilxat_clause_4", { defaultValue: "Nizo kelib chiqqan taqdirda, tomonlar uni muzokara yo'li bilan, kelisha olmagan holda esa O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etadilar." })}</div>
-          ${q.paidPart > 0 ? '<div class="clause"><span class="num">5.</span>' + i18n.t("tilxat_clause_5", { paidPart: Number(q.paidPart).toLocaleString(), summa: Number(q.summa).toLocaleString(), defaultValue: `Qisman qaytarilgan: <b>${Number(q.paidPart).toLocaleString()} so'm</b>. Qoldiq: <b>${Number(q.summa).toLocaleString()} so'm</b>.` }) + '</div>' : ""}
+          <div class="clause"><span class="num">2.</span>${i18n.t("dt_undertakeRepay")} <span class="field">${qaytStr}</span> ${i18n.t("dt_repayByDateSuffix")}</div>
+          <div class="clause"><span class="num">3.</span>${i18n.t("dt_clause3")}</div>
+          <div class="clause"><span class="num">4.</span>${i18n.t("dt_clause4")}</div>
+          ${q.paidPart > 0 ? '<div class="clause"><span class="num">5.</span>' + i18n.t("dt_partialClause", { paid: Number(q.paidPart).toLocaleString(), remain: Number(q.summa).toLocaleString() }) + "</div>" : ""}
         </div>
         <div class="sign">
-          <div class="sign-box"><div class="sign-line">${i18n.t("tilxat_debtor", { defaultValue: "Qarzdor" })}<br>${qarzdor}<br>${i18n.t("tilxat_signature", { defaultValue: "(imzo)" })}</div></div>
-          <div class="sign-box"><div class="sign-line">${i18n.t("tilxat_creditor", { defaultValue: "Kreditor" })}<br>${kreditor}<br>${i18n.t("tilxat_signature", { defaultValue: "(imzo)" })}</div></div>
+          <div class="sign-box"><div class="sign-line">${i18n.t("dt_debtorLabel")}<br>${qarzdor}<br>${i18n.t("dt_signatureLabel")}</div></div>
+          <div class="sign-box"><div class="sign-line">${i18n.t("dt_creditorLabel")}<br>${kreditor}<br>${i18n.t("dt_signatureLabel")}</div></div>
         </div>
         <div class="verify-box">
           <img src="${verifyQR}" alt="QR"/>
           <div>
-            <div style="font-size:13px;font-weight:bold;color:#4f46e5">🔑 ${i18n.t("tilxat_electronic_confirm_title", { defaultValue: "Elektron tasdiq" })}</div>
-            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${i18n.t("tilxat_electronic_confirm_desc", { defaultValue: "Ushbu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. QR kod hujjat haqiqiyligini bildiradi." })}</div>
-            <div style="font-size:10px;color:#888;margin-top:4px">${i18n.t("tilxat_doc_num_label", { defaultValue: "Hujjat raqami" })}: ${hujjatRaqami} · ID: ${q.id}</div>
+            <div style="font-size:13px;font-weight:bold;color:#4f46e5">🔑 ${i18n.t("dt_electronicConfirm")}</div>
+            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${i18n.t("dt_verifyBoxText")}</div>
+            <div style="font-size:10px;color:#888;margin-top:4px">${i18n.t("dt_docNumberLabel")}: ${hujjatRaqami} · ID: ${q.id}</div>
           </div>
         </div>
         <div class="legal">
-          <b>${i18n.t("tilxat_legal_note_label", { defaultValue: "Huquqiy eslatma:" })}</b> ${i18n.t("tilxat_legal_note_desc", { defaultValue: "Mazkur tilxat O'zbekiston Republic Fuqarolik kodeksining qarz shartnomasiga oid normalariga muvofiq tuzilgan va tomonlar o'rtasidagi kelishuvni qayd etuvchi yozma dalil hisoblanadi. To'liq yuridik kuchga ega bo'lishi uchun notarial tasdiqlash yoki E-IMZO tavsiya etiladi. Aniq holatlar bo'yicha malakali yuristga murojaat qiling." })}
+          <b>${i18n.t("dt_legalNoteLabel")}</b> ${i18n.t("dt_legalParagraph")}
         </div>
         <div class="foot">
-          ${i18n.t("tilxat_footer", { date: new Date().toLocaleDateString(), defaultValue: "Oila Hisobchi ilovasi tomonidan yaratilgan" })}
+          ${i18n.t("dt_footerGenerated")} · ${new Date().toLocaleDateString("uz-UZ")}
         </div>
-        <button class="btn" onclick="window.print()">${i18n.t("tilxat_print", { defaultValue: "PDF saqlash / Chop etish" })}</button>
+        <button class="btn" onclick="window.print()">${i18n.t("dt_savePrintBtn")}</button>
       </body></html>`;
 
       setTilxatView({ html, num: hujjatRaqami });
-    } catch (e) { console.error("tilxat:", e); ok$(i18n.t("receipt_error", { defaultValue: "Tilxat yaratishda xato" }), "err"); }
+    } catch (e) { console.error("tilxat:", e); ok$(i18n.t("dt_tilxatGenError"), "err"); }
   };
 
   // Bazadan yangi qarz ro'yxati (eskirgan lokal holat bilan ustidan yozib yubormaslik uchun)
@@ -217,7 +217,7 @@ export function useDebts() {
     // XAVFSIZLIK: begona pochtani o'qimaymiz — alohida hujjat yaratamiz
     await qmail.send(cleanTel, req);
 
-    const rN = { id: Date.now() + Math.random(), type: "qarz", title: i18n.t("new_debt_request_title", { defaultValue: "Yangi qarz so'rovi" }), body: (user.ism || "") + " - " + fmtN(Number(qarzSum), val, true), sana: new Date().toISOString(), read: false };
+    const rN = { id: Date.now() + Math.random(), type: "qarz", title: i18n.t("new_debt_request_title"), body: (user.ism || "") + " - " + fmtN(Number(qarzSum), val, true), sana: new Date().toISOString(), read: false };
     const rC = (await db.g("notif_" + targetUid)) || [];
     await db.s("notif_" + targetUid, [rN, ...rC].slice(0, 100));
 
@@ -340,7 +340,7 @@ export function useDebts() {
         ok$(i18n.t("repaid_deducted_bal", { sum: fmtN(Number(q.summa), val, true) }));
       }
     }
-  }, [qarzlar, user, xar, dar, ok$, lg, val]);
+  }, [qarzlar, user, xar, dar, ok$, val]);
 
   // Qisman qaytarish
   const applyPartial = useCallback(async () => {
@@ -375,17 +375,17 @@ export function useDebts() {
     }
     // Bog'lanmagan qarz: darhol qo'llanadi + balansga AVTOMATIK yoziladi
     const paidSoFar = (q.paidPart || 0) + pay;
-    const newTimeline = [...(q.timeline || []), { sana: td(), summa: pay, ism: user.ism || i18n.t("me", { defaultValue: "Men" }) }];
+    const newTimeline = [...(q.timeline || []), { sana: td(), summa: pay, ism: user.ism || i18n.t("me") }];
     const upd = (await freshQarz()).map(x => (x.id === q.id && (!x.uid || x.uid === user.id)) ? { ...x, summa: x.summa - pay, paidPart: paidSoFar, asl: x.asl || q.summa + (q.paidPart || 0), timeline: newTimeline } : x);
     await db.s("qarz_" + user.oilaId, upd);
     setQarzlar(upd);
     if (q.tur === "bergan") {
-      const dItem = { id: Date.now() + 1, tur: "qarz", summa: pay, izoh: i18n.t("partial_return", { defaultValue: "Qarz qisman qaytdi: " }) + q.kim, sana: td(), vaqt: nt(), uid: user.id, fromQarz: q.id };
+      const dItem = { id: Date.now() + 1, tur: "qarz", summa: pay, izoh: i18n.t("partial_return", { name: q.kim }), sana: td(), vaqt: nt(), uid: user.id, fromQarz: q.id };
       const dk = "d_" + user.oilaId + "_" + user.id;
       await db.s(dk, [dItem, ...((await db.g(dk)) || [])]);
       setDar(d => [dItem, ...d]);
     } else {
-      const xItem = { id: Date.now() + 1, kategoriya: "qarz", summa: pay, izoh: i18n.t("partial_repayment", { defaultValue: "Qarz qisman qaytarildi: " }) + q.kim, sana: td(), vaqt: nt(), uid: user.id, repeat: false, fromQarz: q.id };
+      const xItem = { id: Date.now() + 1, kategoriya: "qarz", summa: pay, izoh: i18n.t("partial_repayment", { name: q.kim }), sana: td(), vaqt: nt(), uid: user.id, repeat: false, fromQarz: q.id };
       const xk = "x_" + user.oilaId + "_" + user.id;
       await db.s(xk, [xItem, ...((await db.g(xk)) || [])]);
       setXar(x => [xItem, ...x]);
@@ -464,7 +464,7 @@ export function useDebts() {
     }
     const upd = list.map(q => {
       if (q.id === req.debtId && (!q.uid || q.uid === user.id)) {
-        const newTimeline = [...(q.timeline || []), { sana: td(), summa: paySum, ism: req.fromIsm || i18n.t("partner", { defaultValue: "Hamkor" }) }];
+        const newTimeline = [...(q.timeline || []), { sana: td(), summa: paySum, ism: req.fromIsm || i18n.t("partner") }];
         return closeIt
           ? { ...q, paid: true, paidSana: td(), payStatus: "confirmed", timeline: newTimeline }
           : { ...q, summa: Number(q.summa) - paySum, paidPart: (q.paidPart || 0) + paySum, asl: q.asl || Number(q.summa) + (q.paidPart || 0), payStatus: null, payBy: null, timeline: newTimeline };
