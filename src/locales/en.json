@@ -273,5 +273,43 @@
   "return_rejected_alert": "Return rejected",
   "refreshed": "Refreshed",
   "loan_received_izoh": "Loan received: {{name}}",
-  "loan_given_izoh": "Loan given: {{name}}"
+  "loan_given_izoh": "Loan given: {{name}}",
+
+  "ai_positiveBalance": "◆ Positive balance: This month your balance is positive: +{{amount}}. Keep it up!",
+  "ai_negativeBalance": "◆ Attention: This month expenses exceed income by {{amount}}.",
+  "ai_budgetOver": "◆ Budget warning: Budget used {{pct}}%!",
+  "ai_budgetWarn": "◆ Budget check: {{pct}}% of budget spent.",
+  "ai_budgetGreat": "◆ Great progress: You've only spent {{pct}}% halfway through the month.",
+  "ai_topSpending": "◆ Top spending: {{category}} ({{pct}}%).",
+  "ai_savingsGood": "◆ Savings success: You saved {{pct}}% of your income. Excellent result!",
+  "ai_savingsSome": "◆ Savings analysis: Only {{pct}}% of income was saved.",
+  "ai_savingsNone": "◆ Savings analysis: No savings this month.",
+  "ai_goalNear": "◆ Goal progress: Goal '{{goal}}' is {{pct}}% complete!",
+  "ai_goalLow": "◆ Goal tip: Set aside money every month for '{{goal}}'.",
+  "ai_noGoal": "◆ Set a goal: Setting a goal gives you motivation to save.",
+  "ai_debtOwed": "◆ Liabilities: You owe {{amount}}.",
+  "ai_noData": "No data yet for this month. Add expenses and income!",
+  "ai_analysisHeader": "◆ Analysis for {{month}}",
+  "ai_greetingPositive": "◆ Great job, {{name}}! You're keeping your finances under control — not everyone manages that. Let's look at the analysis:",
+  "ai_greetingCareful": "◆ Stay mindful, {{name}} — don't worry, every big win starts with a small step. This month's analysis will guide you:",
+  "ai_errorGeneric": "Failed to generate advice. Check your connection and try again.",
+  "ai_tipPrefix": "◆ Practical tip: ",
+  "ai_motivPrefix": "◆ Motivation: ",
+  "ai_tips": [
+    "Use the 50/30/20 rule: 50% needs, 30% wants, 20% savings.",
+    "Small savings add up — a little every day becomes a big amount over a year.",
+    "A shopping list is your best shield — write one and stick to it.",
+    "Set aside money for mandatory payments as soon as income arrives.",
+    "Build a financial safety net: at least 3 months of expenses in reserve."
+  ],
+  "ai_motiv": [
+    "Wealth isn't built in a day — but every right decision brings you closer. You're on the right path!",
+    "The one who manages money manages their future. Keep going!",
+    "Small savings today, big opportunities tomorrow. Make every coin work!",
+    "The best investment is in your own financial discipline. Well done!",
+    "A person with a goal never loses their way. Stay true to your goals!",
+    "No matter the income, a family that tracks it never goes without.",
+    "Patience and consistency are the two wings of financial freedom. You're flying!",
+    "Every report is a step forward. Analyzing yourself is already a win!"
+  ]
 }

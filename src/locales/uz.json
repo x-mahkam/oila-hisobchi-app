@@ -273,5 +273,43 @@
   "return_rejected_alert": "Qaytarish rad etildi",
   "refreshed": "Yangilandi",
   "loan_received_izoh": "Qarz olindi: {{name}}",
-  "loan_given_izoh": "Qarz berildi: {{name}}"
+  "loan_given_izoh": "Qarz berildi: {{name}}",
+
+  "ai_positiveBalance": "◆ Ijobiy balans: Bu oy balansingiz ijobiy: +{{amount}}. Barakali boring!",
+  "ai_negativeBalance": "◆ Diqqat: Bu oy xarajat daromaddan {{amount}} ko'p.",
+  "ai_budgetOver": "◆ Budjet ogohlantirishi: Budjet {{pct}}% ishlatildi!",
+  "ai_budgetWarn": "◆ Budjet nazorati: Budjetning {{pct}}% sarflandi.",
+  "ai_budgetGreat": "◆ Zo'r natija: Ajoyib! Oy yarmida faqat {{pct}}% sarfladingiz.",
+  "ai_topSpending": "◆ Eng yuqori xarajat: {{category}} ({{pct}}%).",
+  "ai_savingsGood": "◆ Jamg'arma muvaffaqiyati: Daromadning {{pct}}% jamg'ardingiz. A'lo natija!",
+  "ai_savingsSome": "◆ Jamg'arma tahlili: Daromadning faqat {{pct}}% qoldi.",
+  "ai_savingsNone": "◆ Jamg'arma tahlili: Bu oy jamg'arma bo'lmadi.",
+  "ai_goalNear": "◆ Maqsad progressi: '{{goal}}' maqsadi {{pct}}% bajarildi!",
+  "ai_goalLow": "◆ Maqsad maslahati: '{{goal}}' uchun har oy summa ajrating.",
+  "ai_noGoal": "◆ Maqsad qo'ying: Maqsad qo'ying — jamg'arish uchun motivatsiya beradi.",
+  "ai_debtOwed": "◆ Majburiyatlar: Sizda {{amount}} qarz bor.",
+  "ai_noData": "Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!",
+  "ai_analysisHeader": "◆ {{month}} tahlili",
+  "ai_greetingPositive": "◆ Barakalla, {{name}}! Siz moliyangizni nazoratda tutyapsiz — bu ko'pchilikning qo'lidan kelmaydi. Keling, tahlilni ko'ramiz:",
+  "ai_greetingCareful": "◆ Diqqatli bo'ling, {{name}}, tashvishlanmang — har bir katta yutuq kichik qadamdan boshlanadi. Bu oy tahlili sizga yo'l ko'rsatadi:",
+  "ai_errorGeneric": "Maslahat tayyorlashda xatolik yuz berdi. Internetni tekshirib, qayta urinib ko'ring.",
+  "ai_tipPrefix": "◆ Maslahat: ",
+  "ai_motivPrefix": "◆ Motivatsiya: ",
+  "ai_tips": [
+    "50/30/20 qoidasini qo'llang: daromadning 50% zarur xarajatlarga, 30% xohish-istaklarga, 20% jamg'armaga.",
+    "Kichik tejamkorlik — katta baraka. Har kuni ozgina tejasangiz, yiliga katta summa bo'ladi.",
+    "Xarid ro'yxati — eng yaxshi qalqon. Ro'yxat tuzib, faqat shu mahsulotlarni oling.",
+    "Oylik daromad kelishi bilan birinchi navbatda majburiy to'lovlarni chetga oling.",
+    "Moliyaviy xavfsizlik yostig'i: kamida 3 oylik xarajatga teng zaxira fondi yarating."
+  ],
+  "ai_motiv": [
+    "Boylik bir kunda yig'ilmaydi — lekin har kungi to'g'ri qaror sizni unga yaqinlashtiradi. Siz to'g'ri yo'ldasiz!",
+    "Pulni boshqarayotgan odam — kelajagini boshqarayotgan odam. Davom eting!",
+    "Bugungi kichik tejamkorlik — ertangi katta imkoniyat. Har bir so'm ishlasin!",
+    "Eng yaxshi sarmoya — o'z moliyaviy intizomingizga qilingan sarmoya. Barakalla!",
+    "Maqsadi bor odam yo'ldan adashmaydi. Maqsadlaringizga sodiq qoling!",
+    "Daromad qancha bo'lishidan qat'i nazar, uni hisoblab yurgan oila hech qachon kam bo'lmaydi.",
+    "Sabr va izchillik — moliyaviy erkinlikning ikki qanoti. Siz uchyapsiz!",
+    "Har hisobot — bir qadam oldinga. O'zingizni tahlil qilayotganingiz allaqachon g'alaba!"
+  ]
 }

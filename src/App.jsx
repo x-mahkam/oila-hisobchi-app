@@ -70,7 +70,6 @@ import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatt
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
 import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
-import { translationService } from "./i18n/translationService.js";
 
 export default function App() {
   const {
@@ -257,7 +256,7 @@ export default function App() {
           try { await db.s("user_" + g.id, null); } catch (e) {}
         }
       }
-      if (!removeIds.length) return ok$(t("duplicate_not_found", "No duplicates found ✅"));
+      if (!removeIds.length) return ok$(lg === "uz" ? "Dublikat topilmadi — hammasi toza ✅" : "No duplicates found ✅");
       const ids = (oila.azolarIds || oila.azolar || []).filter(id => !removeIds.includes(id));
       const o2 = { ...oila, azolarIds: ids };
       if (oila.id) await db.s("oila_" + oila.id, o2);
@@ -265,8 +264,8 @@ export default function App() {
       await db.s("kidbal_" + user.oilaId, kb);
       setOila(o2); setKidBalances(kb);
       setAzolar(azolar.filter(a => !removeIds.includes(a.id)));
-      ok$(t("duplicate_cleaned_count", "✅ Cleaned {{count}} duplicates", { count: removeIds.length }));
-    } catch (e) { ok$(t("error_prefix", "Error: ") + (e.message || ""), "err"); }
+      ok$(lg === "uz" ? "✅ " + removeIds.length + " ta eski bola yozuvi o'chirildi, pullar jamlandi!" : "✅ Cleaned " + removeIds.length + " duplicates");
+    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
   };
 
   // Maqsadlar sinxronizatsiyasi: bola pul yig'ib bo'lganda ota bannerni DARHOL ko'rsin
@@ -288,7 +287,7 @@ export default function App() {
       if (Array.isArray(v)) setVazifalar(v);
       const k = await db.g("kidbal_" + user.oilaId);
       if (k && typeof k === "object") setKidBalances(k);
-      ok$(t("refreshed", "Refreshed"));
+      ok$(lg === "uz" ? "Yangilandi" : "Refreshed");
     } catch (e) {}
   };
   const { markNotifRead, markAllRead, clearNotifs, unreadCount } = useNotifications();
@@ -455,13 +454,6 @@ export default function App() {
 
     (async () => {
       try {
-        // Dynamic translation system initialization
-        try {
-          await translationService.initialize();
-        } catch (tiErr) {
-          console.error("[App] Dynamic Translation System initialization failed:", tiErr);
-        }
-
         // Google redirect tekshirish
         try {
           const { getRedirectResult } = await import("firebase/auth");
@@ -587,8 +579,96 @@ export default function App() {
     ok$(t("rejected"), "warn");
   };
 
+  // ── AI maslahat ───────────────────────────────────────────
+  // Lokal tahlil dvigateli — internetga bog'liq emas, HAR DOIM tahlil natijasini taqdim etadi.
+  // Barcha matn t() (Firestore-backed tarjima tizimi) orqali — til qo'shish/tuzatish
+  // uchun kodga tegish shart emas (locales/*.json → Firestore translations/{lang}).
+  const buildLocalAdvice = () => {
+    const mX = xar.filter(x => x.sana && x.sana.indexOf(tm()) === 0);
+    const mD = dar.filter(d => d.sana && d.sana.indexOf(tm()) === 0);
+    const totX = mX.reduce((s, x) => s + Number(x.summa || 0), 0);
+    const totD = mD.reduce((s, d) => s + Number(d.summa || 0), 0);
+    const budget = oila && oila.budjet ? oila.budjet : 2000000;
+    const bal2 = totD - totX;
+    const dayN = new Date().getDate();
+    const tips = [];
+
+    if (totD > 0 || totX > 0) {
+      tips.push(bal2 >= 0
+        ? t("ai_positiveBalance", { amount: f(bal2, true) })
+        : t("ai_negativeBalance", { amount: f(-bal2, true) }));
+    }
+    const bpct = budget > 0 ? Math.round(totX / budget * 100) : 0;
+    if (bpct >= 100) tips.push(t("ai_budgetOver", { pct: bpct }));
+    else if (bpct >= 80) tips.push(t("ai_budgetWarn", { pct: bpct }));
+    else if (bpct > 0 && dayN <= 15 && bpct < 40) tips.push(t("ai_budgetGreat", { pct: bpct }));
+
+    const katTotals = KATS.map((k, i) => ({ nom: (KN[lg] || KN.uz)[i], sum: mX.filter(x => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) })).filter(k => k.sum > 0).sort((a, b) => b.sum - a.sum);
+    if (katTotals.length > 0 && totX > 0) {
+      const top = katTotals[0];
+      const topPct = Math.round(top.sum / totX * 100);
+      tips.push(t("ai_topSpending", { category: top.nom, pct: topPct }));
+    }
+
+    if (totD > 0) {
+      const savePct = bal2 > 0 ? Math.round(bal2 / totD * 100) : 0;
+      if (savePct >= 20) tips.push(t("ai_savingsGood", { pct: savePct }));
+      else if (savePct > 0) tips.push(t("ai_savingsSome", { pct: savePct }));
+      else if (bal2 < 0) tips.push(t("ai_savingsNone"));
+    }
+
+    if (maq.length > 0) {
+      const ng = maq.filter(m => !m.paid).map(m => ({ ...m, pct: Math.round(m.jamg / m.maqsad * 100) })).sort((a, b) => b.pct - a.pct)[0];
+      if (ng) {
+        if (ng.pct >= 80 && ng.pct < 100) tips.push(t("ai_goalNear", { goal: ng.ism, pct: ng.pct }));
+        else if (ng.pct < 30) tips.push(t("ai_goalLow", { goal: ng.ism }));
+      }
+    } else {
+      tips.push(t("ai_noGoal"));
+    }
+
+    const aQ = qarzlar.filter(q => !q.paid);
+    const meOwe = aQ.filter(q => q.tur === "olgan").reduce((s, q) => s + q.summa, 0);
+    if (meOwe > 0) tips.push(t("ai_debtOwed", { amount: f(meOwe, true) }));
+
+    const genTips = t("ai_tips", { returnObjects: true });
+    if (Array.isArray(genTips) && genTips.length) tips.push(t("ai_tipPrefix") + genTips[dayN % genTips.length]);
+
+    const MOTIV = t("ai_motiv", { returnObjects: true });
+    if (Array.isArray(MOTIV) && MOTIV.length) tips.push(t("ai_motivPrefix") + MOTIV[dayN % MOTIV.length]);
+
+    if (totX === 0 && totD === 0) return t("ai_noData");
+
+    const salom = bal2 >= 0
+      ? t("ai_greetingPositive", { name: user?.ism || "" })
+      : t("ai_greetingCareful", { name: user?.ism || "" });
+
+    return salom + "\n\n" + t("ai_analysisHeader", { month: tm() }) + "\n\n" + tips.join("\n\n");
+  };
+
+  // Masofaviy maslahat o'chirildi (faqat offline va tezkor lokal tizim ishlaydi)
+  const fetchRemoteAdvice = async () => {
+    return null;
+  };
+
   const aiAdv = async () => {
     return aiAdvice.aiAdv();
+  };
+  const _old_aiAdv = async () => {
+    if (!isPremium) { setShowPremModal(true); return; }        // Premium logikasi saqlanadi
+    setAdvL(true); setAdv(""); setAdvErr(""); setScr("maslahat");
+    try {
+      let text = null;
+      try { text = await fetchRemoteAdvice(); }                // 1) masofaviy AI (sozlangan bo'lsa)
+      catch (e) { text = null; }                               //    xato/oflayn → lokalga tushamiz
+      if (!text) text = buildLocalAdvice();                    // 2) lokal tahlil — oflaynda ham ishlaydi
+      setAdv(text);
+    } catch (e) {
+      // Kutilmagan runtime xato — tushunarli xabar + Retry tugmasi (Reports sahifasida)
+      setAdvErr(t("ai_errorGeneric"));
+    } finally {
+      setTimeout(() => setAdvL(false), 400);
+    }
   };
 
 
@@ -770,8 +850,7 @@ export default function App() {
                 {isPremium && <span style={{ fontSize: 8, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", color: "#fff", borderRadius: 20, padding: "1px 6px", fontWeight: 700 }}>PRO</span>}
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: -0.2 }}>
-                <span style={{ color: th.ac }}>{t("brand_first", "Oila")}</span>
-                <span style={{ color: th.gr }}>{t("brand_second", "Hisobchi")}</span>
+                {(lg === "uz" || lg === "qr") ? <><span style={{ color: th.ac }}>Oila</span><span style={{ color: th.gr }}>Hisobchi</span></> : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? <><span style={{ color: th.ac }}>Семейный</span><span style={{ color: th.gr }}>Бюджет</span></> : <><span style={{ color: th.ac }}>Family</span><span style={{ color: th.gr }}>Budget</span></>}
               </span>
             </div>
           </div>
