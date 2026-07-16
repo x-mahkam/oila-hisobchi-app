@@ -3,7 +3,27 @@ import { initReactI18next } from "react-i18next";
 import uz from "../locales/uz.json";
 import en from "../locales/en.json";
 import ru from "../locales/ru.json";
+import goalsUz from "../locales/goals.uz.json";
+import goalsEn from "../locales/goals.en.json";
+import goalsRu from "../locales/goals.ru.json";
+import budgetaiUz from "../locales/budgetai.uz.json";
+import budgetaiEn from "../locales/budgetai.en.json";
+import budgetaiRu from "../locales/budgetai.ru.json";
 import { fetchMeta, getTranslationBundle } from "./translationService.js";
+
+// ═══════════════════════════════════════════════════════════════════
+//  NAMESPACE SIYOSATI
+//  "translation" — asosiy ilova matnlari (default namespace).
+//  "goals"       — Smart Goals moduli (src/goals/*).
+//  "budgetai"    — Smart Budget AI moduli (src/ai/*).
+//
+//  Qoida: yangi mustaqil modul o'z lug'atini asosiy "translation"
+//  fazosiga aralashtirmaydi — bu kalit nomlari to'qnashuvining oldini
+//  oladi (masalan "overdue" goals'da ham, boshqa modulda ham bo'lishi
+//  mumkin — namespace ular orasida chegara qo'yadi). Batafsil:
+//  docs/i18n-architecture.md
+// ═══════════════════════════════════════════════════════════════════
+export const NAMESPACES = ["translation", "goals", "budgetai"];
 
 // Clean detection logic for Device / Browser Language
 const getInitialLanguage = () => {
@@ -16,9 +36,9 @@ const getInitialLanguage = () => {
 
     // 2. Fall back to Phone/Capacitor device browser system language
     const deviceLang = (
-      navigator.language || 
-      navigator.languages?.[0] || 
-      navigator.userLanguage || 
+      navigator.language ||
+      navigator.languages?.[0] ||
+      navigator.userLanguage ||
       "en"
     ).toLowerCase();
 
@@ -37,10 +57,12 @@ const initialLanguage = getInitialLanguage();
 i18n
   .use(initReactI18next)
   .init({
+    ns: NAMESPACES,
+    defaultNS: "translation",
     resources: {
-      uz: { translation: uz },
-      en: { translation: en },
-      ru: { translation: ru }
+      uz: { translation: uz, goals: goalsUz, budgetai: budgetaiUz },
+      en: { translation: en, goals: goalsEn, budgetai: budgetaiEn },
+      ru: { translation: ru, goals: goalsRu, budgetai: budgetaiRu },
     },
     lng: initialLanguage,
     fallbackLng: "en",
@@ -67,36 +89,42 @@ try {
  *
  * @param {string} lng - Til kodi (masalan "uz", "kk", "ar")
  * @param {object} translations - Kalit-qiymat tarjima lug'ati
+ * @param {string} ns - Namespace ("translation" | "goals" | "budgetai")
  */
-export const loadDynamicLanguage = (lng, translations) => {
+export const loadDynamicLanguage = (lng, translations, ns = "translation") => {
   try {
-    i18n.addResourceBundle(lng, "translation", translations, true, true);
+    i18n.addResourceBundle(lng, ns, translations, true, true);
   } catch (e) {
-    console.error(`[i18n] "${lng}" tilini yuklashda xato:`, e);
+    console.error(`[i18n] "${lng}" (${ns}) tilini yuklashda xato:`, e);
   }
 };
 
 /**
- * Joriy til uchun Firestore'dagi eng so'nggi tarjimani fonda tekshiradi.
- * Build ichidagi zaxira (uz/en/ru) darhol ko'rsatiladi — bu funksiya faqat
+ * Berilgan til+namespace uchun Firestore'dagi eng so'nggi tarjimani fonda
+ * tekshiradi. Build ichidagi zaxira darhol ko'rsatiladi — bu funksiya faqat
  * undan keyin, orqadan, agar Firestore'da yangiroq versiya bo'lsa, uni
  * jonli (hot) almashtiradi. Oflayn/xato holatda jim o'tadi — ilova zaxira
  * tarjima bilan ishlashda davom etadi.
  */
-export const syncTranslations = async (lng = i18n.language) => {
+export const syncTranslations = async (lng = i18n.language, ns = "translation") => {
   try {
     const meta = await fetchMeta();
-    const knownVersion = meta?.versions?.[lng] ?? null;
-    const bundle = await getTranslationBundle(lng, knownVersion);
-    if (bundle?.data) loadDynamicLanguage(lng, bundle.data);
+    const versionKey = ns === "translation" ? lng : `${lng}__${ns}`;
+    const knownVersion = meta?.versions?.[versionKey] ?? null;
+    const bundle = await getTranslationBundle(lng, knownVersion, ns);
+    if (bundle?.data) loadDynamicLanguage(lng, bundle.data, ns);
   } catch (e) {
-    console.warn(`[i18n] "${lng}" Firestore bilan sinxronlanmadi:`, e);
+    console.warn(`[i18n] "${lng}" (${ns}) Firestore bilan sinxronlanmadi:`, e);
   }
 };
 
+/** Joriy til uchun BARCHA namespace'larni fonda sinxronlaydi (ilova ochilishida). */
+export const syncAllNamespaces = async (lng = i18n.language) => {
+  await Promise.all(NAMESPACES.map((ns) => syncTranslations(lng, ns)));
+};
+
 if (typeof window !== "undefined") {
-  // Ilova ochilishida joriy til fonda Firestore bilan sinxronlanadi.
-  syncTranslations(initialLanguage);
+  syncAllNamespaces(initialLanguage);
 }
 
 export default i18n;

@@ -14,18 +14,28 @@ import { fbDB } from "../firebase.js";
 
 const BUNDLE_CACHE_PREFIX = "oilaV7_i18n_bundle_";
 
-function readCachedBundle(lang) {
+// Firestore hujjat ID va localStorage kalitini hisoblaydi. Asosiy
+// "translation" namespace eski (Phase 1) nom bilan qoladi — orqaga
+// moslik uchun (allaqachon migratsiya qilingan translations/{lang}
+// hujjatlari qayta yaratilmasin). Boshqa namespace'lar "{lang}__{ns}"
+// shaklida — bir xil "translations" kolleksiyasi ichida, alohida qoida
+// yozish shart emas (mavjud "allow read: if true" barchasiga taalluqli).
+function bundleId(lang, ns) {
+  return ns === "translation" ? lang : `${lang}__${ns}`;
+}
+
+function readCachedBundle(lang, ns) {
   try {
-    const raw = localStorage.getItem(BUNDLE_CACHE_PREFIX + lang);
+    const raw = localStorage.getItem(BUNDLE_CACHE_PREFIX + bundleId(lang, ns));
     return raw ? JSON.parse(raw) : null;
   } catch (_e) {
     return null;
   }
 }
 
-function writeCachedBundle(lang, bundle) {
+function writeCachedBundle(lang, ns, bundle) {
   try {
-    localStorage.setItem(BUNDLE_CACHE_PREFIX + lang, JSON.stringify(bundle));
+    localStorage.setItem(BUNDLE_CACHE_PREFIX + bundleId(lang, ns), JSON.stringify(bundle));
   } catch (_e) {
     // Kesh yozib bo'lmasa ham ilova ishlashda davom etadi — keyingi safar
     // qayta Firestore'dan o'qiladi, xolos.
@@ -44,25 +54,29 @@ export async function fetchMeta() {
 }
 
 /**
- * Berilgan til uchun eng so'nggi tarjima to'plamini qaytaradi:
+ * Berilgan til+namespace uchun eng so'nggi tarjima to'plamini qaytaradi:
  * kesh versiyasi joriy versiyaga teng bo'lsa — Firestore'ga so'rov
  * yubormasdan keshni qaytaradi; aks holda to'liq hujjatni oladi va
  * keshni yangilaydi.
+ *
+ * @param {string} lang - Til kodi
+ * @param {number|null} knownVersion - i18n_meta'dan olingan joriy versiya
+ * @param {string} ns - Namespace ("translation" | "goals" | "budgetai")
  */
-export async function getTranslationBundle(lang, knownVersion) {
-  const cached = readCachedBundle(lang);
+export async function getTranslationBundle(lang, knownVersion, ns = "translation") {
+  const cached = readCachedBundle(lang, ns);
   if (cached && knownVersion != null && cached.version === knownVersion) {
     return cached;
   }
   try {
-    const snap = await getDoc(doc(fbDB, "translations", lang));
+    const snap = await getDoc(doc(fbDB, "translations", bundleId(lang, ns)));
     if (snap.exists()) {
       const bundle = snap.data(); // { version, updatedAt, data }
-      writeCachedBundle(lang, bundle);
+      writeCachedBundle(lang, ns, bundle);
       return bundle;
     }
   } catch (e) {
-    console.warn(`[i18n] "${lang}" tarjimasi Firestore'dan olinmadi (oflaynmi?):`, e.message);
+    console.warn(`[i18n] "${lang}" (${ns}) tarjimasi Firestore'dan olinmadi (oflaynmi?):`, e.message);
   }
   return cached || null;
 }
@@ -81,24 +95,17 @@ export async function fetchLanguageList() {
 /**
  * Foydalanuvchi til tanlaganda chaqiriladi (masalan Profile/Onboarding
  * ekranidan). i18next tilini darhol almashtiradi, so'ng shu til uchun
- * Firestore'dagi eng so'nggi tarjimani fonda tekshirib, kerak bo'lsa
- * jonli yangilaydi.
+ * BARCHA namespace'lardagi (translation, goals, budgetai, ...) eng
+ * so'nggi tarjimani fonda tekshirib, kerak bo'lsa jonli yangilaydi.
  *
  * "./index.js" dinamik (lazy) import qilinadi — i18n/index.js ham shu
  * fayldagi fetchMeta/getTranslationBundle'ni ishlatgani uchun statik
  * import aylanma (circular) bo'lib qolardi.
  */
 async function changeLanguage(lang) {
-  const { default: i18n, loadDynamicLanguage } = await import("./index.js");
+  const { default: i18n, syncAllNamespaces } = await import("./index.js");
   i18n.changeLanguage(lang);
-  try {
-    const meta = await fetchMeta();
-    const knownVersion = meta?.versions?.[lang] ?? null;
-    const bundle = await getTranslationBundle(lang, knownVersion);
-    if (bundle?.data) loadDynamicLanguage(lang, bundle.data);
-  } catch (e) {
-    console.warn(`[i18n] "${lang}" tiliga o'tishda sinxronlash xatosi:`, e);
-  }
+  await syncAllNamespaces(lang);
 }
 
 export const translationService = {
