@@ -2,49 +2,82 @@ import { describe, test, expect } from "vitest";
 import uz from "./uz.json";
 import en from "./en.json";
 import ru from "./ru.json";
+import kk from "./kk.json";
+import ky from "./ky.json";
+import tg from "./tg.json";
+import qr from "./qr.json";
+import goalsUz from "./goals.uz.json";
+import goalsEn from "./goals.en.json";
+import goalsRu from "./goals.ru.json";
+import goalsKk from "./goals.kk.json";
+import goalsKy from "./goals.ky.json";
+import goalsTg from "./goals.tg.json";
+import goalsQr from "./goals.qr.json";
+import budgetaiUz from "./budgetai.uz.json";
+import budgetaiEn from "./budgetai.en.json";
+import budgetaiRu from "./budgetai.ru.json";
+import budgetaiKk from "./budgetai.kk.json";
+import budgetaiKy from "./budgetai.ky.json";
+import budgetaiTg from "./budgetai.tg.json";
+import budgetaiQr from "./budgetai.qr.json";
 
-// "ai_*" kalitlari — src/App.jsx'dagi buildLocalAdvice funksiyasi ishlatadigan
-// tarjimalar. Bu testlar aynan shu tur muammoni ushlab qolish uchun: bitta
-// tilda o'zgaruvchi nomi ({{amount}}) o'zgartirilib, boshqasida eskicha
-// qolib ketishi — bu aynan avval App.jsx'da haqiqiy runtime xatoga
-// (ReferenceError) olib kelgan naqsh edi.
+// Bu fayl BARCHA tillar (uz/en/ru/kk/ky/tg/qr) va namespace'lar
+// (translation/goals/budgetai) uchun ikkita narsani avtomatik tekshiradi:
+//  1) uz.json'dagi har bir kalit boshqa barcha tillarda ham mavjudmi.
+//  2) placeholder'lar ({{amount}} yoki %d/%s) barcha tillarda bir xilmi.
+// Aynan shu ikkinchisi App.jsx'dagi haqiqiy ReferenceError bug'iga sabab
+// bo'lgan edi (bir tilda o'zgaruvchi bor, ikkinchisida yo'q) — shuning
+// uchun bu tekshiruv har safar CI'da avtomatik ishlaydi.
 
-const LOCALES = { uz, en, ru };
-const AI_KEYS = Object.keys(uz).filter((k) => k.startsWith("ai_"));
-
-function placeholders(str) {
+function curlyPlaceholders(str) {
   if (typeof str !== "string") return null;
   return [...str.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort();
 }
 
-describe("ai_* tarjima kalitlari — uz/en/ru orasida izchillik", () => {
-  test("uz.json'da kamida ai_* kalitlari mavjud", () => {
-    expect(AI_KEYS.length).toBeGreaterThan(10);
-  });
+function positionalCount(str) {
+  if (typeof str !== "string") return null;
+  const m = str.match(/%[ds]/g);
+  return m ? m.length : 0;
+}
 
-  for (const key of AI_KEYS) {
-    test(`"${key}" — barcha 3 tilda mavjud`, () => {
-      expect(en).toHaveProperty(key);
-      expect(ru).toHaveProperty(key);
-    });
+/** Bitta namespace uchun barcha tillarni bir-biriga solishtiradi. */
+function describeNamespace(nsName, base, locales) {
+  describe(`${nsName} — kalit va placeholder izchilligi`, () => {
+    const keys = Object.keys(base).filter((k) => !Array.isArray(base[k]));
+    const arrayKeys = Object.keys(base).filter((k) => Array.isArray(base[k]));
 
-    test(`"${key}" — placeholder'lar ({{...}}) uz/en/ru orasida bir xil`, () => {
-      const uzPh = placeholders(uz[key]);
-      if (uzPh === null) return; // massiv qiymat (ai_tips/ai_motiv) — alohida tekshiriladi
-      expect(placeholders(en[key])).toEqual(uzPh);
-      expect(placeholders(ru[key])).toEqual(uzPh);
-    });
-  }
-});
+    for (const [lg, dict] of Object.entries(locales)) {
+      test(`${lg} — barcha kalitlar mavjud (kamida bittasi yo'qolmagan)`, () => {
+        const missing = Object.keys(base).filter((k) => !(k in dict));
+        expect(missing, `${nsName}.${lg}.json'da yo'q: ${missing.join(", ")}`).toEqual([]);
+      });
 
-describe("ai_tips / ai_motiv — massiv uzunliklari mos", () => {
-  for (const key of ["ai_tips", "ai_motiv"]) {
-    test(`"${key}" — uz/en/ru'da bir xil sondagi element`, () => {
-      for (const [name, locale] of Object.entries(LOCALES)) {
-        expect(Array.isArray(locale[key]), `${name}.json'da "${key}" massiv emas`).toBe(true);
+      for (const key of keys) {
+        test(`${lg}.${key} — {{...}} placeholder'lar uz bilan bir xil`, () => {
+          const baseCurly = curlyPlaceholders(base[key]);
+          if (baseCurly && baseCurly.length) {
+            expect(curlyPlaceholders(dict[key])).toEqual(baseCurly);
+          }
+        });
+
+        test(`${lg}.${key} — %d/%s soni uz bilan bir xil`, () => {
+          const baseCount = positionalCount(base[key]);
+          if (baseCount) {
+            expect(positionalCount(dict[key])).toBe(baseCount);
+          }
+        });
       }
-      expect(en[key].length).toBe(uz[key].length);
-      expect(ru[key].length).toBe(uz[key].length);
-    });
-  }
-});
+
+      for (const key of arrayKeys) {
+        test(`${lg}.${key} — massiv uzunligi uz bilan bir xil`, () => {
+          expect(Array.isArray(dict[key]), `${lg}.json'da "${key}" massiv emas`).toBe(true);
+          expect(dict[key].length).toBe(base[key].length);
+        });
+      }
+    }
+  });
+}
+
+describeNamespace("translation", uz, { en, ru, kk, ky, tg, qr });
+describeNamespace("goals", goalsUz, { en: goalsEn, ru: goalsRu, kk: goalsKk, ky: goalsKy, tg: goalsTg, qr: goalsQr });
+describeNamespace("budgetai", budgetaiUz, { en: budgetaiEn, ru: budgetaiRu, kk: budgetaiKk, ky: budgetaiKy, tg: budgetaiTg, qr: budgetaiQr });
