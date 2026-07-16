@@ -141,6 +141,11 @@ service cloud.firestore {
       allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || docHasMyOila(docId) || docIsMyUid(docId) || docIsMySessKid(docId) || myChannel(resource));
     }
 
+    match /translations/{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }
