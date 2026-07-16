@@ -60,7 +60,7 @@ const PLANNED_LANGUAGES = [];
 // Har biri src/locales/{ns}.{lang}.json fayllaridan o'qiladi va
 // Firestore'da "translations/{lang}__{ns}" hujjatiga yoziladi — bir xil
 // kolleksiya, alohida qoida yozish shart emas (docs/i18n-architecture.md).
-const NAMESPACES = ["goals", "budgetai"];
+const NAMESPACES = ["goals", "budgetai", "garden"];
 
 async function main() {
   const now = Date.now();
