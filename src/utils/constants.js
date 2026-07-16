@@ -69,16 +69,16 @@ export const VALS = [
 ];
 
 export const COUNTRIES = [
-  {code:"uz",dial:"+998",flag:"🇺🇿",uz:"O'zbekiston",ru:"Узбекистан",en:"Uzbekistan",val:"uzs"},
-  {code:"ru",dial:"+7",flag:"🇷🇺",uz:"Rossiya",ru:"Россия",en:"Russia",val:"rub"},
-  {code:"kz",dial:"+7",flag:"🇰🇿",uz:"Qozog'iston",ru:"Казахстан",en:"Kazakhstan",val:"kzt"},
-  {code:"kg",dial:"+996",flag:"🇰🇬",uz:"Qirg'iziston",ru:"Кыргызстан",en:"Kyrgyzstan",val:"kgs"},
-  {code:"tj",dial:"+992",flag:"🇹🇯",uz:"Tojikiston",ru:"Таджикистан",en:"Tajikistan",val:"tjs"},
-  {code:"tr",dial:"+90",flag:"🇹🇷",uz:"Turkiya",ru:"Турция",en:"Turkey",val:"try"},
-  {code:"us",dial:"+1",flag:"🇺🇸",uz:"AQSH",ru:"США",en:"USA",val:"usd"},
-  {code:"ae",dial:"+971",flag:"🇦🇪",uz:"BAA (Dubay)",ru:"ОАЭ",en:"UAE",val:"aed"},
-  {code:"gb",dial:"+44",flag:"🇬🇧",uz:"Buyuk Britaniya",ru:"Великобритания",en:"UK",val:"gbp"},
-  {code:"eu",dial:"+",flag:"🇪🇺",uz:"Yevropa",ru:"Европа",en:"Europe",val:"eur"},
+  {code:"uz",dial:"+998",flag:"🇺🇿",uz:"O'zbekiston",ru:"Узбекистан",en:"Uzbekistan",kk:"Өзбекстан",ky:"Өзбекстан",tg:"Ӯзбекистон",qr:"Ózbekstan",val:"uzs"},
+  {code:"ru",dial:"+7",flag:"🇷🇺",uz:"Rossiya",ru:"Россия",en:"Russia",kk:"Ресей",ky:"Орусия",tg:"Русия",qr:"Rossiya",val:"rub"},
+  {code:"kz",dial:"+7",flag:"🇰🇿",uz:"Qozog'iston",ru:"Казахстан",en:"Kazakhstan",kk:"Қазақстан",ky:"Казакстан",tg:"Қазоқистон",qr:"Qazaqstan",val:"kzt"},
+  {code:"kg",dial:"+996",flag:"🇰🇬",uz:"Qirg'iziston",ru:"Кыргызстан",en:"Kyrgyzstan",kk:"Қырғызстан",ky:"Кыргызстан",tg:"Қирғизистон",qr:"Qırgizstan",val:"kgs"},
+  {code:"tj",dial:"+992",flag:"🇹🇯",uz:"Tojikiston",ru:"Таджикистан",en:"Tajikistan",kk:"Тәжікстан",ky:"Тажикстан",tg:"Тоҷикистон",qr:"Tájikistan",val:"tjs"},
+  {code:"tr",dial:"+90",flag:"🇹🇷",uz:"Turkiya",ru:"Турция",en:"Turkey",kk:"Түркия",ky:"Түркия",tg:"Туркия",qr:"Turkiya",val:"try"},
+  {code:"us",dial:"+1",flag:"🇺🇸",uz:"AQSH",ru:"США",en:"USA",kk:"АҚШ",ky:"АКШ",tg:"ИМА",qr:"AQSH",val:"usd"},
+  {code:"ae",dial:"+971",flag:"🇦🇪",uz:"BAA (Dubay)",ru:"ОАЭ",en:"UAE",kk:"БАӘ",ky:"БАӘ",tg:"ААМ",qr:"BAÁ",val:"aed"},
+  {code:"gb",dial:"+44",flag:"🇬🇧",uz:"Buyuk Britaniya",ru:"Великобритания",en:"UK",kk:"Ұлыбритания",ky:"Улуу Британия",tg:"Британияи Кабир",qr:"Ullı Britaniya",val:"gbp"},
+  {code:"eu",dial:"+",flag:"🇪🇺",uz:"Yevropa",ru:"Европа",en:"Europe",kk:"Еуропа",ky:"Европа",tg:"Аврупо",qr:"Evropa",val:"eur"},
 ];
 
 export const QUICK_ADD = [
