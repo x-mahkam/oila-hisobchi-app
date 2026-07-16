@@ -149,7 +149,6 @@ export default function ProfilePage({
   const [showValDD, setShowValDD] = useState(false);
   const [showLgDD, setShowLgDD] = useState(false);
   const STY = useMemo(() => makeS(th), [th]);
-  const uz = lg === "uz";
 
   // Til ro'yxati Firestore'dagi "languages" kolleksiyasidan (enabled: true).
   // Yangi til qo'shilganda bu ro'yxat kod o'zgarishisiz avtomatik yangilanadi.
@@ -271,10 +270,10 @@ export default function ProfilePage({
       limitsData[selectedKid.id] = valNum;
       await db.s(limitsKey, limitsData);
       setKidLimit(valNum);
-      ok$(uz ? "Limit muvaffaqiyatli saqlandi!" : "Лимит успешно сохранен!");
+      ok$(t("p001"));
     } catch (e) {
       console.error(e);
-      ok$(uz ? "Xato yuz berdi" : "Произошла ошибка", "err");
+      ok$(t("p002"), "err");
     } finally {
       setSavingLimit(false);
     }
@@ -319,13 +318,13 @@ export default function ProfilePage({
 
   const saveTel = useCallback(async (rawTel) => {
     const raw = (rawTel || "").trim();
-    if (!raw) return ok$(lg === "uz" ? "Telefon raqamni kiriting" : "Enter phone number", "err");
+    if (!raw) return ok$(t("p245"), "err");
     const tel = raw.replace(/[^0-9+]/g, "");
     const n9 = normTel(raw);
-    if (!n9 || n9.length < 7) return ok$(lg === "uz" ? "Telefon raqam noto'g'ri" : "Invalid phone number", "err");
+    if (!n9 || n9.length < 7) return ok$(t("p246"), "err");
     try {
       const owner = await db.gFresh("tel9_" + n9);
-      if (owner && owner !== user.id) return ok$(lg === "uz" ? "Bu raqam boshqa akkauntga bog'langan" : "Number linked to another account", "err");
+      if (owner && owner !== user.id) return ok$(t("p247"), "err");
     } catch (e) {}
     const u2 = { ...user, tel };
     await db.s("user_" + user.id, u2);
@@ -333,8 +332,8 @@ export default function ProfilePage({
     if (user.email) await db.s("tphone_" + n9, user.email);
     setUser(u2); setAzolar(azolar.map(a => a.id === user.id ? { ...a, tel } : a));
     setAskTel(false); setEdT(false); setNewT("");
-    ok$(lg === "uz" ? "Telefon raqam saqlandi ✓" : "Phone saved ✓");
-  }, [user, setUser, azolar, setAzolar, ok$, lg]);
+    ok$(t("p248"));
+  }, [user, setUser, azolar, setAzolar, ok$, t]);
 
   const updName = useCallback(async () => {
     if (!newN.trim()) return;
@@ -357,20 +356,20 @@ export default function ProfilePage({
     const upd = cur.includes(memberId) ? cur.filter(x => x !== memberId) : [...cur, memberId];
     const o2 = { ...oila, reportAccess: upd };
     await db.s("oila_" + oila.id, o2); await db.s("fam_" + oila.id, o2); setOila(o2);
-    ok$(lg === "uz" ? "Ruxsat yangilandi" : "Access updated");
-  }, [user, oila, setOila, ok$, lg]);
+    ok$(t("p249"));
+  }, [user, oila, setOila, ok$, t]);
 
   const sendFeedback = useCallback(async () => {
-    if (!fbText.trim() && fbRating === 0) return ok$(lg === "uz" ? "Baho yoki izoh kiriting" : "Add rating or text", "err");
+    if (!fbText.trim() && fbRating === 0) return ok$(t("p250"), "err");
     setFbSending(true);
     try {
       const fb = { id: Date.now(), uid: user?.id || "anon", ism: user?.ism || "", type: fbType, rating: fbRating, text: fbText.trim(), sana: new Date().toISOString() };
       await db.s("fb_" + fb.id + "_" + (user?.id || "anon"), fb, { c: "fb" });
       setFbRating(0); setFbText(""); setFbType("taklif");
-      ok$(lg === "uz" ? "Rahmat! Fikringiz yuborildi." : "Thank you!");
-    } catch { ok$(lg === "uz" ? "Xatolik" : "Error", "err"); }
+      ok$(t("p251"));
+    } catch { ok$(t("p252"), "err"); }
     setFbSending(false);
-  }, [fbText, fbRating, fbType, user, ok$, lg]);
+  }, [fbText, fbRating, fbType, user, ok$, t]);
 
   const tm = () => {
     const d = new Date();
@@ -445,9 +444,9 @@ export default function ProfilePage({
   // ═══ Yutuqlar — mavjud real ko'rsatkichlardan hosilaviy (persist YO'Q) ═══
   const achievements = useMemo(() => {
     const list = [
-      { id: "first",  icon: PIco.list,   title: uz ? "Ilk qadam" : "First step",       desc: uz ? "Birinchi yozuv" : "First record",       cur: pStats.txCount,     goal: 1,  onTap: null },
-      { id: "loyal",  icon: PIco.cal,    title: uz ? "Sodiq foydalanuvchi" : "Loyal",  desc: uz ? "30 kun ilovada" : "30 days in app",     cur: pStats.days,        goal: 30, onTap: null },
-      { id: "writer", icon: PIco.trophy, title: uz ? "Faol hisobchi" : "Active",       desc: uz ? "50 ta yozuv" : "50 records",            cur: pStats.txCount,     goal: 50, onTap: null },
+      { id: "first",  icon: PIco.list,   title: t("p003"),       desc: t("p004"),       cur: pStats.txCount,     goal: 1,  onTap: null },
+      { id: "loyal",  icon: PIco.cal,    title: t("p005"),  desc: t("p006"),     cur: pStats.days,        goal: 30, onTap: null },
+      { id: "writer", icon: PIco.trophy, title: t("p007"),       desc: t("p008"),            cur: pStats.txCount,     goal: 50, onTap: null },
     ];
 
     if (!isKid) {
@@ -455,8 +454,8 @@ export default function ProfilePage({
       list.push({
         id: "supportive",
         icon: PIco.baby,
-        title: uz ? "Mehribon ota-ona" : "Supportive Parent",
-        desc: uz ? "Farzandining orzusini ushaltirgan" : "Fulfilled child's dream",
+        title: t("p009"),
+        desc: t("p010"),
         cur: pStats.childGoalsCompleted,
         goal: 1,
         onTap: null
@@ -465,8 +464,8 @@ export default function ProfilePage({
       list.push({
         id: "saver",
         icon: PIco.gem,
-        title: uz ? "Super Tejamkor" : "Super Saver",
-        desc: uz ? "30%+ jamg'arma sur'ati" : "30%+ savings rate",
+        title: t("p011"),
+        desc: t("p012"),
         cur: pStats.savingsRate,
         goal: 30,
         onTap: null
@@ -475,24 +474,24 @@ export default function ProfilePage({
       list.push({
         id: "planner",
         icon: PIco.target,
-        title: uz ? "Moliyaviy strateg" : "Financial Planner",
-        desc: uz ? "3 ta faol/yakunlangan maqsad" : "3 goals set/done",
+        title: t("p013"),
+        desc: t("p014"),
         cur: pStats.goalCount,
         goal: 3,
         onTap: null
       });
     } else {
       // Yoshlar uchun
-      list.push({ id: "stars",  icon: PIco.star,   title: uz ? "Yulduz yig'uvchi" : "Stargazer", desc: uz ? "25 yulduzcha" : "25 stars",             cur: stars || 0,         goal: 25, onTap: null });
+      list.push({ id: "stars",  icon: PIco.star,   title: t("p015"), desc: t("p016"),             cur: stars || 0,         goal: 25, onTap: null });
     }
 
     list.push(
-      { id: "garden", icon: PIco.leaf,   title: uz ? "Bog'bon" : "Gardener",           desc: uz ? "Bog' 3-daraja" : "Garden level 3",      cur: pStats.gardenLevel, goal: 3,  onTap: "garden" },
-      { id: "invite", icon: PIco.gift,   title: uz ? "Taklifchi" : "Inviter",          desc: uz ? "3 ta do'st" : "3 friends",              cur: refCount || 0,      goal: 3,  onTap: isKid ? null : "referral" }
+      { id: "garden", icon: PIco.leaf,   title: t("p017"),           desc: t("p018"),      cur: pStats.gardenLevel, goal: 3,  onTap: "garden" },
+      { id: "invite", icon: PIco.gift,   title: t("p019"),          desc: t("p020"),              cur: refCount || 0,      goal: 3,  onTap: isKid ? null : "referral" }
     );
 
     return list;
-  }, [uz, pStats, stars, refCount, isKid]);
+  }, [pStats, stars, refCount, isKid, t]);
 
   // ═══ Barqaror callbacklar (keraksiz render oldini olish) ═══
   const openEdit     = useCallback(() => setPTab("shaxsiy"), [setPTab]);
@@ -533,7 +532,7 @@ export default function ProfilePage({
     try {
       const curU = fbAuth.currentUser;
       if (!curU) {
-        throw new Error(uz ? "Foydalanuvchi aniqlanmadi" : "User not found");
+        throw new Error(t("p021"));
       }
 
       // 1. Re-authenticate if user has a password provider
@@ -624,18 +623,18 @@ export default function ProfilePage({
       localStorage.clear();
 
       // 6. Logout and return to boot/login
-      ok$(uz ? "Hisobingiz butunlay o'chirildi" : "Account deleted successfully");
+      ok$(t("p022"));
       logout();
     } catch (err) {
       console.error("Account deletion error:", err);
       setDeleteAccountStep("password");
       setDeletePwErr(
         err.code === "auth/wrong-password" || err.code === "auth/invalid-credential"
-          ? (uz ? "Parol noto'g'ri kiritildi" : "Incorrect password")
-          : (lg === "uz" ? "Xato yuz berdi: " : "Error occurred: ") + (err.message || err.code)
+          ? (t("p023"))
+          : (t("p253")) + (err.message || err.code)
       );
     }
-  }, [user, oila, azolar, logout, ok$, deleteConfirmPw, uz, lg]);
+  }, [user, azolar, logout, ok$, deleteConfirmPw, t]);
 
   const handleDeleteAccountContinue = useCallback(() => {
     buzz(10);
@@ -651,25 +650,25 @@ export default function ProfilePage({
   const handleDeleteAccountFinal = useCallback(() => {
     buzz(10);
     if (!deleteConfirmPw.trim()) {
-      setDeletePwErr(uz ? "Iltimos parolingizni kiriting" : "Please enter your password");
+      setDeletePwErr(t("p024"));
       return;
     }
     doDeleteAccount(deleteConfirmPw);
-  }, [buzz, deleteConfirmPw, doDeleteAccount, uz]);
+  }, [buzz, deleteConfirmPw, doDeleteAccount, t]);
   const submitKid = useCallback(() => {
     const nowY = new Date().getFullYear();
     const by = Number(kidBirthYear);
     const e = {};
-    if (kidName.trim().length < 2)    e.name    = uz ? "Kamida 2 belgi" : "Min 2 chars";
-    if (kidSurname.trim().length < 2) e.surname = uz ? "Kamida 2 belgi" : "Min 2 chars";
-    if (!/^\d{4}$/.test(String(kidBirthYear))) e.birth = uz ? "4 raqamli yil kiriting" : "Enter a 4-digit year";
-    else if (by < nowY - 17 || by > nowY - 3)   e.birth = uz ? "Bola 3–17 yoshda bo'lishi kerak" : "Age must be 3–17";
-    if (kidGrade !== "" && (Number(kidGrade) < 1 || Number(kidGrade) > 11)) e.grade = uz ? "1 dan 11 gacha" : "1 to 11";
-    if (kidLogin.trim().length < 3)   e.login   = uz ? "Kamida 3 belgi" : "Min 3 chars";
-    if (kidPw.length < 4)             e.pw      = uz ? "Kamida 4 belgi" : "Min 4 chars";
+    if (kidName.trim().length < 2)    e.name    = t("p025");
+    if (kidSurname.trim().length < 2) e.surname = t("p025");
+    if (!/^\d{4}$/.test(String(kidBirthYear))) e.birth = t("p026");
+    else if (by < nowY - 17 || by > nowY - 3)   e.birth = t("p027");
+    if (kidGrade !== "" && (Number(kidGrade) < 1 || Number(kidGrade) > 11)) e.grade = t("p028");
+    if (kidLogin.trim().length < 3)   e.login   = t("p029");
+    if (kidPw.length < 4)             e.pw      = t("p030");
     setKidErr(e);
     if (!parentalConsent) {
-      setParentalConsentErr(uz ? "Ota-ona roziligi va qoidalarni tasdiqlash shart" : "Parental consent and policy agreement are required");
+      setParentalConsentErr(t("p031"));
       buzz(20);
       return;
     } else {
@@ -677,7 +676,7 @@ export default function ProfilePage({
     }
     if (Object.keys(e).length) { buzz(20); return; }
     addKidAccount();
-  }, [kidName, kidSurname, kidBirthYear, kidGrade, kidLogin, kidPw, uz, buzz, addKidAccount, parentalConsent]);
+  }, [kidName, kidSurname, kidBirthYear, kidGrade, kidLogin, kidPw, buzz, addKidAccount, parentalConsent, t]);
   const openBilim    = useCallback((view = "cats") => {
     buzz(10);
     if (setBilimInitialView) {
@@ -723,7 +722,7 @@ export default function ProfilePage({
       }
       return prev;
     });
-    ok$(uz ? "Vazifa qo'shildi! 🎉" : "Task added! 🎉");
+    ok$(t("p032"));
   };
 
   const pickPhoto    = useCallback(() => fRef.current?.click(), [fRef]);
@@ -736,7 +735,7 @@ export default function ProfilePage({
   // Oila kodini nusxalash — mavjud logika 1:1 saqlangan
   const copyFamCode = useCallback(async () => {
     const code = user?.oilaId || "";
-    if (!code) { ok$(uz ? "Oila kodi topilmadi" : "No family code", "err"); return; }
+    if (!code) { ok$(t("p033"), "err"); return; }
     buzz(10);
     let done = false;
     try {
@@ -752,44 +751,44 @@ export default function ProfilePage({
         document.body.removeChild(ta);
       } catch (e) { done = false; }
     }
-    if (done) ok$(uz ? "Oila kodi nusxalandi" : "Family code copied");
-    else ok$(uz ? "Nusxalab bo'lmadi" : "Copy failed", "err");
-  }, [user?.oilaId, uz, ok$, buzz]);
+    if (done) ok$(t("p034"));
+    else ok$(t("p035"), "err");
+  }, [user?.oilaId, ok$, buzz, t]);
 
   // Oila kodini ulashish — mavjud logika 1:1 saqlangan
   const shareFamCode = useCallback(async () => {
     const code = user?.oilaId || "";
-    if (!code) { ok$(uz ? "Oila kodi topilmadi" : "No family code", "err"); return; }
+    if (!code) { ok$(t("p033"), "err"); return; }
     buzz(10);
-    const txt = uz ? "Oila Hisobchi ilovasiga qo'shiling! Oila kodi: " + code : "Join Oila Hisobchi! Family code: " + code;
+    const txt = t("p254", { code });
     if (navigator.share) {
       try { await navigator.share({ title: "Oila Hisobchi", text: txt }); } catch (e) { /* foydalanuvchi bekor qildi */ }
     } else {
-      try { await navigator.clipboard.writeText(txt); ok$(uz ? "Oila kodi nusxalandi" : "Family code copied"); }
-      catch (e) { ok$(uz ? "Ulashib bo'lmadi" : "Share failed", "err"); }
+      try { await navigator.clipboard.writeText(txt); ok$(t("p034")); }
+      catch (e) { ok$(t("p036"), "err"); }
     }
-  }, [user?.oilaId, uz, ok$, buzz]);
+  }, [user?.oilaId, ok$, buzz, t]);
 
   const copyRefLink = useCallback(() => {
     const link = (window.location.origin + "/?ref=") + (user?.id || "");
-    try { navigator.clipboard.writeText(link); ok$(uz ? "Havola nusxalandi!" : "Link copied!"); }
-    catch (e) { ok$(uz ? "Nusxalab bo'lmadi" : "Copy failed", "err"); }
-  }, [user?.id, uz, ok$]);
+    try { navigator.clipboard.writeText(link); ok$(t("p037")); }
+    catch (e) { ok$(t("p035"), "err"); }
+  }, [user?.id, ok$, t]);
 
   const tgInviteFriend = useCallback(() => {
     const link = (window.location.origin + "/?ref=") + (user?.id || "");
-    const txt = (uz ? "Oila Hisobchi - oilaviy byudjet ilovasi! Men bilan qo'shiling: " : "Join me on Family Budget app: ") + link;
+    const txt = (t("p038")) + link;
     const url = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(txt);
     window.open(url, "_blank");
-  }, [user?.id, uz]);
+  }, [user?.id, t]);
 
   const tgInviteFamily = useCallback(() => {
     const code = user?.oilaId || "";
     const link = (window.location.origin + "/?ref=") + (user?.id || "") + "&fam=" + code;
-    const txt = (uz ? "Bizning oilamizga qo'shiling! Oila kodi: " + code + "\n" : "Join our family! Family code: " + code + "\n") + link;
+    const txt = t("p255", { code }) + link;
     const url = "https://t.me/share/url?url=" + encodeURIComponent(link) + "&text=" + encodeURIComponent(txt);
     window.open(url, "_blank");
-  }, [user?.id, user?.oilaId, uz]);
+  }, [user?.id, user?.oilaId, t]);
 
   // Hero uchun oq-alpha (kit Dashboard Hero precedenti)
   const heroSoft = "rgba(255,255,255,0.16)";
@@ -849,23 +848,23 @@ export default function ProfilePage({
 
           {/* ═══ 2. PREMIUM — Active / Inactive card ═══ */}
           <PremiumCard th={th} active={isPremium} onClick={openPremium}
-            title={isPremium ? (uz ? "Premium faol" : "Premium active") : (uz ? "Premium'ga o'ting" : "Upgrade to Premium")}
-            sub={isPremium ? (uz ? "Barcha imkoniyatlar faol ✓" : "All features unlocked ✓") : (uz ? "Barcha funksiyalarni oching" : "Unlock everything")}
+            title={isPremium ? (t("p039")) : (t("p040"))}
+            sub={isPremium ? (t("p041")) : (t("p042"))}
             features={isPremium ? [] : [
-              uz ? "Cheksiz maqsadlar va a'zolar" : "Unlimited goals & members",
-              uz ? "Moliyaviy PDF/Excel hisobotlar" : "PDF/Excel report exports",
-              uz ? "Aqlli ovozli kiritish" : "Smart voice input",
+              t("p043"),
+              t("p044"),
+              t("p045"),
             ]}
             cta={isPremium
-              ? <Badge th={th} type="premium" icon={null}>{uz ? "Faol" : "Active"}</Badge>
-              : <Badge th={th} type="info">{uz ? "Ochish" : "Unlock"}</Badge>} />
+              ? <Badge th={th} type="premium" icon={null}>{t("p046")}</Badge>
+              : <Badge th={th} type="info">{t("p047")}</Badge>} />
 
           {/* ═══ 3. OILA — Click opens Oila Details Page ═══ */}
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3, overflow: "hidden" }}>
             <ListItem th={th} divider={false} onClick={() => { buzz(10); setPTab("oila"); }}
               icon={PIco.family(th.ac)} iconTone={th.ac}
-              title={uz ? "Oila" : "Family"}
-              sub={uz ? "A'zolar va bolalar akkauntlarini boshqarish" : "Manage family members & kids accounts"}
+              title={t("fam")}
+              sub={t("p048")}
               right={Ico.right(th.t2)} />
           </AppCard>
 
@@ -873,8 +872,8 @@ export default function ProfilePage({
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3, overflow: "hidden" }}>
             <ListItem th={th} divider={false} onClick={() => { buzz(10); openGarden(); }}
               icon={PIco.leaf(th.gr)} iconTone={th.gr}
-              title={uz ? "Baraka Bog'i" : "Baraka Garden"}
-              sub={uz ? `Bog' ${pStats.gardenLevel}-daraja · Kunlik rivojlanish` : `Garden level ${pStats.gardenLevel} · Daily growth`}
+              title={t("p049")}
+              sub={t("p271", { level: pStats.gardenLevel })}
               right={Ico.right(th.t2)} />
           </AppCard>
 
@@ -882,8 +881,8 @@ export default function ProfilePage({
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3, overflow: "hidden" }}>
             <ListItem th={th} divider={false} onClick={() => { buzz(10); openBilim("market"); }}
               icon={PIco.book(th.ac)} iconTone={th.ac}
-              title={lg === "uz" ? "Bilim bozori" : lg === "ru" ? "Рынок знаний" : "Knowledge Market"}
-              sub={lg === "uz" ? "Bilim coinlar evaziga oilaviy savdolashish va mukofotlar" : lg === "ru" ? "Семейный торг и награды за монеты знаний" : "Family trading and rewards for knowledge coins"}
+              title={t("p256")}
+              sub={t("p257")}
               right={Ico.right(th.t2)} />
           </AppCard>
 
@@ -891,8 +890,8 @@ export default function ProfilePage({
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4, overflow: "hidden" }}>
             <ListItem th={th} divider={false} onClick={() => { buzz(10); setPTab("sozlamalar"); }}
               icon={Ico.settings(th.ac)} iconTone={th.ac}
-              title={uz ? "Sozlamalar" : "Settings"}
-              sub={uz ? "Ilova va hisob sozlamalari" : "App & account settings"}
+              title={t("p050")}
+              sub={t("p051")}
               right={Ico.right(th.t2)} />
           </AppCard>
         </div>
@@ -901,13 +900,13 @@ export default function ProfilePage({
       {/* ═══════════════ DETAILED OILA PAGE ═══════════════ */}
       {pTab === "oila" && (
         <div className="ui-fadeUp">
-          <PageHeader th={th} title={uz ? "Oila" : "Family"} onBack={backToMain} />
+          <PageHeader th={th} title={t("fam")} onBack={backToMain} />
 
           {/* Katta a'zolar (Adults) */}
           {adults.length > 0 && (
             <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3 }}>
               <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px " + SPACE.s1 + "px" }}>
-                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Katta a'zolar" : "Adults"}</span>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{t("p052")}</span>
               </div>
               {adults.map((a, i) => {
                 const rel = RELATIONS.find(r => r.id === a.rel);
@@ -915,7 +914,7 @@ export default function ProfilePage({
                 const me = a.id === user?.id;
                 const isKidMember = a.rol === "kid";
                 const relLabel = isKidMember
-                  ? (uz ? "Farzand" : lg === "ru" ? "Ребёнок" : "Child")
+                  ? (t("p060"))
                   : (rel ? (rel[lg] || rel.uz) : (isHead ? t.hd : t.mb2));
                 return (
                   <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (me ? " (" + t.me + ")" : "")}
@@ -923,9 +922,9 @@ export default function ProfilePage({
                     divider={i < adults.length - 1}
                     badge={
                       <span style={{ display: "inline-flex", gap: SPACE.s1, flexShrink: 0 }}>
-                        {me && <Badge th={th} type="success">{uz ? "Onlayn" : "Online"}</Badge>}
+                        {me && <Badge th={th} type="success">{t("p053")}</Badge>}
                         {isHead
-                          ? <Badge th={th} type="role" icon={Ico.crown(th.ac)}>{uz ? "Oila boshi" : "Owner"}</Badge>
+                          ? <Badge th={th} type="role" icon={Ico.crown(th.ac)}>{t("p054")}</Badge>
                           : <Badge th={th} tone={th.t2}>{t.mb2}</Badge>}
                       </span>
                     } />
@@ -937,23 +936,23 @@ export default function ProfilePage({
           {/* Report access toggles for adults */}
           {user?.rol === "bosh" && azolar.length > 1 && (
             <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
-              <SubHeader th={th}>{uz ? "Oila a'zolari va ruxsatlar" : "Members & access"}</SubHeader>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{uz ? "Kimga umumiy hisobotni ko'rishga ruxsat berasiz?" : "Who can view the full family report?"}</div>
+              <SubHeader th={th}>{t("p055")}</SubHeader>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{t("p056")}</div>
               {azolar.map((a, i) => {
                 const isAHead = a.rol === "bosh";
                 const hasAccess = isAHead || (oila?.reportAccess || []).includes(a.id);
                 const rel = RELATIONS.find(r => r.id === a.rel);
                 const isKidMember = a.rol === "kid";
                 const relLabel = isKidMember
-                  ? (uz ? "Farzand" : lg === "ru" ? "Ребёнок" : "Child")
+                  ? (t("p060"))
                   : (rel ? (rel[lg] || rel.uz) : (isAHead ? t.hd : t.mb2));
                 return (
                   <MemberRow key={a.id} th={th} photo={a.photo} name={fullName(a) + (a.id === user.id ? " (" + t.me + ")" : "")}
                     sub={relLabel}
                     divider={i < azolar.length - 1}
                     badge={isAHead
-                      ? <Badge th={th} type="role">{uz ? "Oila boshi" : "Head"}</Badge>
-                      : <Switch th={th} checked={hasAccess} onChange={() => toggleReportAccess(a.id)} label={uz ? "Hisobot ruxsati" : "Report access"} />} />
+                      ? <Badge th={th} type="role">{t("p057")}</Badge>
+                      : <Switch th={th} checked={hasAccess} onChange={() => toggleReportAccess(a.id)} label={t("p058")} />} />
                 );
               })}
             </AppCard>
@@ -964,7 +963,7 @@ export default function ProfilePage({
             isKid ? (
               <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3 }}>
                 <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px " + SPACE.s1 + "px" }}>
-                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Farzandlar" : "Children"}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{t("p059")}</span>
                 </div>
                 {kidsData.map((kid, i) => (
                   <MemberRow 
@@ -972,16 +971,16 @@ export default function ProfilePage({
                     th={th} 
                     photo={kid.photo} 
                     name={fullName(kid) + (kid.id === user?.id ? " (" + t.me + ")" : "")}
-                    sub={uz ? "Farzand" : "Child"}
+                    sub={t("p060")}
                     divider={i < kidsData.length - 1}
-                    badge={<Badge th={th} tone={th.t2}>{uz ? "Farzand" : "Child"}</Badge>} 
+                    badge={<Badge th={th} tone={th.t2}>{t("p060")}</Badge>} 
                   />
                 ))}
               </AppCard>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s3 }}>
                 <div style={{ paddingLeft: SPACE.s1 }}>
-                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{uz ? "Farzandlar" : "Children"}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>{t("p059")}</span>
                 </div>
                 {kidsData.map(kid => {
                   const canDelKid = kid.rol === "kid" && (user?.rol === "bosh" || kid.parentId === user?.id);
@@ -1027,11 +1026,11 @@ export default function ProfilePage({
                       <div style={{ display: "flex", flexDirection: "column", gap: 5, marginTop: 4 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
                           {PIco.checkCircle(th.gr)}
-                          <span>{uz ? `Bu hafta ${kid.doneThisWeek} ta vazifa bajardi` : `Completed ${kid.doneThisWeek} tasks this week`}</span>
+                          <span>{t("p272", { count: kid.doneThisWeek })}</span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, color: th.t2 }}>
                           {PIco.coin(th.am)}
-                          <span>{uz ? `${f(kid.earnedAmount, true)} ishlab topdi` : `Earned ${f(kid.earnedAmount, true)}`}</span>
+                          <span>{t("p273", { amount: f(kid.earnedAmount, true) })}</span>
                         </div>
                         {kid.activeGoal && (
                           <div style={{ marginTop: 4 }}>
@@ -1058,40 +1057,40 @@ export default function ProfilePage({
             <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s3 }}>
               <ListItem th={th} divider={false} onClick={openAddKid}
                 icon={PIco.baby(th.am)} iconTone={th.am}
-                title={uz ? "Bola qo'shish" : "Add child"}
-                sub={uz ? "Yangi farzand akkaunti yaratish" : "Create a new child account"} />
+                title={t("p061")}
+                sub={t("p062")} />
             </AppCard>
           )}
 
           {/* Do'stlarni taklif qilish va Oila kodi */}
-          <SectionHeader th={th}>{uz ? "Do'stlarni taklif qilish" : "Invite friends"}</SectionHeader>
+          <SectionHeader th={th}>{t("p063")}</SectionHeader>
           {user?.rol === "bosh" && (
             <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, marginBottom: SPACE.s3 }}>
-              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.key(th.ac)}{uz ? "Oila taklif kodi" : "Family invite code"}</div>
+              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.key(th.ac)}{t("p064")}</div>
               <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, padding: SPACE.s2 + "px 0", flexWrap: "wrap" }}>
                 <div style={{ fontFamily: "monospace", ...TYPE.subtitle, fontWeight: 800, color: th.ac, wordBreak: "break-all", letterSpacing: 1, flex: 1, minWidth: SPACE.s16 * 2 }}>{user?.oilaId || "—"}</div>
-                <SecondaryButton th={th} onClick={copyFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }} aria-label={uz ? "Oila kodini nusxalash" : "Copy family code"}>
-                  {PIco.copy(th.ac)}{uz ? "Nusxa" : "Copy"}
+                <SecondaryButton th={th} onClick={copyFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }} aria-label={t("p065")}>
+                  {PIco.copy(th.ac)}{t("p066")}
                 </SecondaryButton>
-                <SecondaryButton th={th} onClick={shareFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong }} aria-label={uz ? "Oila kodini ulashish" : "Share family code"}>
-                  {PIco.share(th.gr)}{uz ? "Ulashish" : "Share"}
+                <SecondaryButton th={th} onClick={shareFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong }} aria-label={t("p067")}>
+                  {PIco.share(th.gr)}{t("p068")}
                 </SecondaryButton>
               </div>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s1 }}>{uz ? "Ushbu kodni boshqa oila a'zolari ilovaga kirganda qo'shishlari uchun yuboring." : "Send this code to other family members to join."}</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s1 }}>{t("p069")}</div>
             </AppCard>
           )}
 
           {/* Referral Card */}
           <AppCard th={th} style={{ background: th.gr + ALPHA.faint, border: "1.5px solid " + th.gr + ALPHA.med, marginBottom: SPACE.s3 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s3 }}>
-              <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Havola orqali do'stlarni taklif qilish" : "Invite friends via link"}</span>
+              <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("p070")}</span>
             </div>
-            <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{uz ? "Sizning taklif havolangiz" : "Your invite link"}</div>
+            <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{t("p071")}</div>
             <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
               <div style={{ flex: 1, background: th.bg, border: "1.5px solid " + th.bor, borderRadius: RADIUS.s + 2, padding: SPACE.s3 + "px", ...TYPE.caption, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", minWidth: 0 }}>{(window.location.origin + "/?ref=") + (user?.id || "")}</div>
-              <SecondaryButton th={th} onClick={copyRefLink} style={{ width: "auto", padding: "0 " + SPACE.s4 + "px", flexShrink: 0, fontSize: TYPE.caption.fontSize }}>{uz ? "Nusxa" : "Copy"}</SecondaryButton>
+              <SecondaryButton th={th} onClick={copyRefLink} style={{ width: "auto", padding: "0 " + SPACE.s4 + "px", flexShrink: 0, fontSize: TYPE.caption.fontSize }}>{t("p066")}</SecondaryButton>
             </div>
-            <PrimaryButton th={th} onClick={tgInviteFriend} style={{ padding: (SPACE.s2 + 3) + "px", fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send("#fff")}{uz ? "Telegram orqali yuborish" : "Send via Telegram"}</PrimaryButton>
+            <PrimaryButton th={th} onClick={tgInviteFriend} style={{ padding: (SPACE.s2 + 3) + "px", fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send("#fff")}{t("p072")}</PrimaryButton>
           </AppCard>
         </div>
       )}
@@ -1099,7 +1098,7 @@ export default function ProfilePage({
       {/* ═══════════════ DETAILED SETTINGS PAGE ═══════════════ */}
       {pTab === "sozlamalar" && (
         <div className="ui-fadeUp">
-          <PageHeader th={th} title={uz ? "Sozlamalar" : "Settings"} onBack={backToMain} />
+          <PageHeader th={th} title={t("p050")} onBack={backToMain} />
 
           {/* App Logo & Info Header */}
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "12px 10px 24px", textAlign: "center" }}>
@@ -1107,86 +1106,86 @@ export default function ProfilePage({
               <span style={{ transform: "scale(1.3)", display: "flex", alignItems: "center", justifyContent: "center" }}>{Ico.wallet("#fff")}</span>
             </div>
             <div style={{ ...TYPE.heading, fontSize: 18, fontWeight: 800, color: th.t1 }}>Oila Hisobchi</div>
-            <div style={{ ...TYPE.caption, color: th.t2, marginTop: 4, maxWidth: 280, fontSize: 13 }}>{uz ? "Oilaviy moliyaviy nazorat va hamkorlik ilovasi" : "Family finance tracking & collaboration app"}</div>
+            <div style={{ ...TYPE.caption, color: th.t2, marginTop: 4, maxWidth: 280, fontSize: 13 }}>{t("p073")}</div>
           </div>
 
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
             {/* Budjet va limitlar */}
             {user?.rol === "bosh" && (
-              <SettingRow th={th} icon={Ico.wallet(th.ac)} title={uz ? "Budjet va limitlar" : "Budget & limits"} sub={uz ? "Oylik chegara, kategoriya limitlari" : "Monthly cap, category limits"} onClick={() => setPTab("budjet")} divider />
+              <SettingRow th={th} icon={Ico.wallet(th.ac)} title={t("p074")} sub={t("p075")} onClick={() => setPTab("budjet")} divider />
             )}
 
             {/* Xavfsizlik */}
-            <SettingRow th={th} icon={Ico.shield(th.ac)} title={t.xav} sub={uz ? "PIN kod, biometrika sozlamalari" : "PIN, biometrics settings"} onClick={() => setPTab("xav")} divider />
+            <SettingRow th={th} icon={Ico.shield(th.ac)} title={t.xav} sub={t("p076")} onClick={() => setPTab("xav")} divider />
 
             {/* Ilova sozlamalari */}
-            <SettingRow th={th} icon={Ico.settings(th.ac)} title={t.ilovaS} sub={uz ? "Til, valyuta, mavzu, bildirishnoma" : "Language, currency, theme"} onClick={() => setPTab("ilovaS")} divider />
+            <SettingRow th={th} icon={Ico.settings(th.ac)} title={t.ilovaS} sub={t("p077")} onClick={() => setPTab("ilovaS")} divider />
 
             {/* Yordam va FAQ */}
-            <SettingRow th={th} icon={Ico.help(th.ac)} title={t.qol} sub={uz ? "FAQ, Telegram bot, fikr bildirish" : "FAQ, Telegram, feedback"} onClick={() => setPTab("qol")} divider />
+            <SettingRow th={th} icon={Ico.help(th.ac)} title={t.qol} sub={t("p078")} onClick={() => setPTab("qol")} divider />
 
             {/* Versiya */}
             <SettingRow th={th} icon={Ico.version(th.ac)} title={t.ver} divider={user?.rol !== "kid"} right={<span style={{ ...TYPE.caption, fontWeight: 600, color: th.t2 }}>v{APP_VER}</span>} />
 
             {/* Xavfli hudud */}
             {user?.rol !== "kid" && (
-              <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"} sub={uz ? "Yozuvlarni butunlay yoki sana bo'yicha o'chirish" : "Delete records entirely or by date range"} onClick={openClean} divider />
+              <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={t("p079")} sub={t("p080")} onClick={openClean} divider />
             )}
 
             {/* Hisobni o'chirish */}
             {user?.rol !== "kid" && (
-              <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={uz ? "🔴 Hisobni o'chirish" : "🔴 Delete Account"} sub={uz ? "Akkauntingiz va barcha ma'lumotlarni butunlay o'chirish" : "Delete your account and all data permanently"} onClick={openDeleteAccount} divider={false} />
+              <SettingRow th={th} danger icon={Ico.trash(th.rd)} title={t("p081")} sub={t("p082")} onClick={openDeleteAccount} divider={false} />
             )}
           </AppCard>
 
           {/* ─────────── Huquqiy hujjatlar (Legal) ─────────── */}
-          <SubHeader th={th}>{uz ? "Huquqiy hujjatlar" : "Legal"}</SubHeader>
+          <SubHeader th={th}>{t("p083")}</SubHeader>
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
             <SettingRow
               th={th}
               icon={PIco.book(th.ac, 18)}
-              title={uz ? "Ilova haqida" : lg === "ru" ? "О приложении" : "About App"}
-              sub={uz ? "Ilovaning maqsadi va asosiy imkoniyatlari" : lg === "ru" ? "Цели и основные возможности приложения" : "App goals and main features"}
+              title={t("p258")}
+              sub={t("p259")}
               onClick={() => window.open("/about.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider
             />
             <SettingRow
               th={th}
               icon={PIco.lock(th.ac, 18)}
-              title={uz ? "Maxfiylik siyosati" : "Privacy Policy"}
-              sub={uz ? "Ma'lumotlaringiz qanday himoyalanadi" : "How your data is protected"}
+              title={t("p084")}
+              sub={t("p085")}
               onClick={() => window.open("/privacy.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider
             />
             <SettingRow
               th={th}
               icon={PIco.list(th.ac, 18)}
-              title={uz ? "Foydalanish shartlari" : "Terms of Use"}
-              sub={uz ? "Ilovadan foydalanish qoidalari" : "Rules for using the app"}
+              title={t("p086")}
+              sub={t("p087")}
               onClick={() => window.open("/terms.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider
             />
             <SettingRow
               th={th}
               icon={PIco.baby(th.ac, 18)}
-              title={uz ? "Bolalar xavfsizligi va ota-ona roziligi siyosati" : "Child Safety & Parental Consent Policy"}
-              sub={uz ? "Farzandlar ma'lumotlari va xavfsizligi" : "Children's data & safety"}
+              title={t("p088")}
+              sub={t("p089")}
               onClick={() => window.open("/child-safety.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider
             />
             <SettingRow
               th={th}
               icon={Ico.trash ? Ico.trash(th.ac, 18) : PIco.list(th.ac, 18)}
-              title={uz ? "Hisobni o'chirish siyosati" : lg === "ru" ? "Политика удаления аккаунта" : "Account Deletion Policy"}
-              sub={uz ? "Akkauntni butunlay o'chirish qoidalari" : lg === "ru" ? "Правила полного удаления аккаунта" : "Rules for deleting accounts permanently"}
+              title={t("p260")}
+              sub={t("p261")}
               onClick={() => window.open("/account-deletion.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider
             />
             <SettingRow
               th={th}
               icon={PIco.warn(th.ac, 18)}
-              title={uz ? "Mas'uliyatni cheklash bayonoti" : lg === "ru" ? "Отказ от ответственности" : "Disclaimer"}
-              sub={uz ? "Ilovadan foydalanish mas'uliyati va cheklovlar" : lg === "ru" ? "Ответственность и ограничения использования" : "Responsibilities and usage limitations"}
+              title={t("p262")}
+              sub={t("p263")}
               onClick={() => window.open("/disclaimer.html?lang=" + lg, "_blank", "noopener,noreferrer")}
               divider={false}
             />
@@ -1201,14 +1200,14 @@ export default function ProfilePage({
       {/* ═══════════════ FARZANDIM: BATAFSIL SAHIFASI ═══════════════ */}
       {pTab === "kid_detail" && selectedKid && (
         <div className="ui-fadeUp">
-          <PageHeader th={th} title={uz ? "Farzandim: " + selectedKid.ism : "Child: " + selectedKid.ism} onBack={backToMain} />
+          <PageHeader th={th} title={t("p264", { name: selectedKid.ism })} onBack={backToMain} />
           
           {/* Bola haqida qisqacha ma'lumot card */}
           <AppCard th={th} style={{ marginBottom: SPACE.s3, display: "flex", alignItems: "center", gap: SPACE.s4 }}>
             <UIAvatar th={th} src={selectedKid.photo} name={selectedKid.ism} size={SPACE.s14} />
             <div>
               <div style={{ ...TYPE.heading, fontWeight: 800, color: th.t1 }}>{fullName(selectedKid)}</div>
-              <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2 }}>{uz ? "Oila a'zosi · Farzand" : "Family member · Child"}</div>
+              <div style={{ ...TYPE.caption, color: th.t2, marginTop: 2 }}>{t("p090")}</div>
             </div>
           </AppCard>
 
@@ -1231,7 +1230,7 @@ export default function ProfilePage({
                 transition: "all 0.2s ease"
               }}
             >
-              {uz ? "📋 VAZIFALAR" : "📋 TASKS"}
+              {t("p091")}
             </button>
             <button 
               className="ui-press"
@@ -1250,7 +1249,7 @@ export default function ProfilePage({
                 transition: "all 0.2s ease"
               }}
             >
-              {uz ? "🧠 BILIM" : "🧠 KNOWLEDGE"}
+              {t("p092")}
             </button>
             <button 
               className="ui-press"
@@ -1269,7 +1268,7 @@ export default function ProfilePage({
                 transition: "all 0.2s ease"
               }}
             >
-              {uz ? "⏱ VAQT" : "⏱ TIME"}
+              {t("p093")}
             </button>
           </div>
 
@@ -1279,35 +1278,35 @@ export default function ProfilePage({
               {/* Yangi vazifa biriktirish formasi */}
               <AppCard th={th} style={{ marginBottom: SPACE.s3 }}>
                 <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 }}>
-                  <span>➕</span> {uz ? "Yangi vazifa biriktirish" : "Assign new task"}
+                  <span>➕</span> {t("p094")}
                 </div>
-                <TextInput th={th} label={uz ? "Vazifa nomi (masalan: Uy vazifasi)" : "Task description"} value={newVTitle} onChange={setNewVTitle} placeholder={uz ? "Idishlarni yuvish..." : "Wash dishes..."} />
+                <TextInput th={th} label={t("p095")} value={newVTitle} onChange={setNewVTitle} placeholder={t("p096")} />
                 <div style={{ display: "flex", gap: SPACE.s2, marginTop: 2 }}>
                   <div style={{ flex: 1 }}>
-                    <TextInput th={th} label={uz ? "Mukofot puli (so'mda)" : "Reward amount"} type="number" value={newVReward} onChange={setNewVReward} placeholder="10000" />
+                    <TextInput th={th} label={t("p097")} type="number" value={newVReward} onChange={setNewVReward} placeholder="10000" />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <TextInput th={th} label={uz ? "Muddati (ixtiyoriy)" : "Deadline (optional)"} type="date" value={newVDeadline} onChange={setNewVDeadline} />
+                    <TextInput th={th} label={t("p098")} type="date" value={newVDeadline} onChange={setNewVDeadline} />
                   </div>
                 </div>
                 <PrimaryButton th={th} onClick={async () => {
                   if (!newVTitle.trim() || !newVReward || Number(newVReward) <= 0) {
-                    return ok$(uz ? "Barcha maydonlarni to'ldiring" : "Fill all fields", "err");
+                    return ok$(t("fill_all_fields"), "err");
                   }
                   await handleAddVazifaLocal(newVTitle, newVReward, newVDeadline, selectedKid.id);
                   setNewVTitle("");
                   setNewVReward("");
                   setNewVDeadline("");
                 }} style={{ marginTop: SPACE.s2 }}>
-                  {uz ? "Vazifani biriktirish" : "Assign Task"}
+                  {t("p099")}
                 </PrimaryButton>
               </AppCard>
 
               {/* Vazifalar ro'yxati */}
-              <SectionHeader th={th}>{uz ? "Vazifalar ro'yxati" : "Tasks list"}</SectionHeader>
+              <SectionHeader th={th}>{t("p100")}</SectionHeader>
               {selectedKid.kidTasks?.length === 0 ? (
                 <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6, color: th.t3 }}>
-                  {uz ? "Hozircha biriktirilgan vazifalar yo'q" : "No tasks assigned yet"}
+                  {t("p101")}
                 </AppCard>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
@@ -1330,11 +1329,11 @@ export default function ProfilePage({
                           </div>
                         </div>
                         <div style={{ marginLeft: SPACE.s2, flexShrink: 0 }}>
-                          {v.status === "approved" && <Badge th={th} type="success">{uz ? "Tasdiqlangan" : "Approved"}</Badge>}
-                          {v.status === "pending" && <Badge th={th} type="info">{uz ? "Kutilmoqda" : "Pending"}</Badge>}
+                          {v.status === "approved" && <Badge th={th} type="success">{t("confirmed")}</Badge>}
+                          {v.status === "pending" && <Badge th={th} type="info">{t("pending_label")}</Badge>}
                           {v.status === "done" && (
                             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                              <Badge th={th} type="warning">{uz ? "Bajarildi" : "Completed"}</Badge>
+                              <Badge th={th} type="warning">{t("p102")}</Badge>
                               <SecondaryButton th={th} onClick={async () => {
                                 buzz(20);
                                 if (vazifaApprove) {
@@ -1344,7 +1343,7 @@ export default function ProfilePage({
                                   setSelectedKid(prev => ({ ...prev, kidTasks: filtered }));
                                 }
                               }} style={{ padding: "4px 8px", fontSize: TYPE.tiny.fontSize }}>
-                                {uz ? "Tasdiqlash" : "Approve"}
+                                {t("accept")}
                               </SecondaryButton>
                             </div>
                           )}
@@ -1362,27 +1361,27 @@ export default function ProfilePage({
             <div className="ui-fadeUp">
               {/* Bola Bilim Statistikasi */}
               <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-                <AnimatedStat th={th} icon="🪙" value={kidCoins} label={uz ? "Tangalar" : "Coins"} tone={PREMIUM.gold} />
-                <AnimatedStat th={th} icon="🔥" value={kidStreak} label={uz ? "Kunlik streak" : "Daily streak"} tone={th.ac} />
-                <AnimatedStat th={th} icon="🎮" value={kidLearnStats.games} label={uz ? "O'yinlar" : "Games"} tone={th.gr} />
+                <AnimatedStat th={th} icon="🪙" value={kidCoins} label={t("p103")} tone={PREMIUM.gold} />
+                <AnimatedStat th={th} icon="🔥" value={kidStreak} label={t("p104")} tone={th.ac} />
+                <AnimatedStat th={th} icon="🎮" value={kidLearnStats.games} label={t("p105")} tone={th.gr} />
               </div>
 
               {/* Bilim Bozoriga to'g'ridan-to'g'ri kirish tugmasi */}
               <AppCard th={th} style={{ background: "linear-gradient(135deg, " + th.ac + ALPHA.tint + ", " + th.sur + ")", border: "1.5px solid " + th.ac + ALPHA.med, marginBottom: SPACE.s3 }}>
-                <div style={{ ...TYPE.title, fontWeight: 800, color: th.t1 }}>🧠 {uz ? "Bilim Bozori" : "Knowledge Market"}</div>
+                <div style={{ ...TYPE.title, fontWeight: 800, color: th.t1 }}>🧠 {t("p106")}</div>
                 <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 4 }}>
-                  {uz ? "Bu yerda farzandingiz bilan uning to'plagan bilim tangalarini real cho'ntak puliga almashtirish bo'yicha savdolashishingiz va kelishishingiz mumkin!" : "Here you can bargain and agree with your child on exchanging their accumulated learning coins for real pocket money!"}
+                  {t("p107")}
                 </div>
                 <SecondaryButton th={th} onClick={() => openBilim("market")} style={{ marginTop: SPACE.s3, width: "100%", color: th.ac, background: th.ac + ALPHA.soft, border: "1px solid " + th.ac + ALPHA.strong }}>
-                  {uz ? "Bozorga kirish va savdolashish" : "Enter Market & Bargain"}
+                  {t("p108")}
                 </SecondaryButton>
               </AppCard>
 
               {/* Qo'yilgan takliflar ro'yxati */}
-              <SectionHeader th={th}>{uz ? "Bozordagi takliflar (Kelishuvlar)" : "Market deals (Offers)"}</SectionHeader>
+              <SectionHeader th={th}>{t("p109")}</SectionHeader>
               {kidBilimOffers.length === 0 ? (
                 <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6, color: th.t3 }}>
-                  {uz ? "Hozircha faol takliflar yoki savdolar yo'q" : "No active offers or deals yet"}
+                  {t("p110")}
                 </AppCard>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
@@ -1390,16 +1389,16 @@ export default function ProfilePage({
                     let statusLabel = o.status;
                     let badgeType = "info";
                     if (o.status === "pending") {
-                      statusLabel = uz ? "Kutilmoqda" : "Pending";
+                      statusLabel = t("pending_label");
                       badgeType = "warning";
                     } else if (o.status === "accepted") {
-                      statusLabel = uz ? "Qabul qilindi" : "Accepted";
+                      statusLabel = t("p111");
                       badgeType = "success";
                     } else if (o.status === "rejected") {
-                      statusLabel = uz ? "Rad etildi" : "Rejected";
+                      statusLabel = t("rejected_alert");
                       badgeType = "danger";
                     } else if (o.status === "countered") {
-                      statusLabel = uz ? "Qarshi taklif" : "Counter-offer";
+                      statusLabel = t("p112");
                       badgeType = "info";
                     }
 
@@ -1408,21 +1407,21 @@ export default function ProfilePage({
                         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                             <span style={{ ...TYPE.tiny, color: th.t2, fontWeight: 700 }}>
-                              {o.fromRole === "kid" ? (uz ? "Bola taklif qilgan" : "Proposed by kid") : (uz ? "Siz taklif qilganingiz" : "Proposed by you")}
+                              {o.fromRole === "kid" ? (t("p113")) : (t("p114"))}
                             </span>
                             <Badge th={th} type={badgeType}>{statusLabel}</Badge>
                           </div>
                           
                           <div style={{ display: "flex", alignItems: "center", gap: 12, background: th.bg, padding: "8px 12px", borderRadius: 8 }}>
                             <div>
-                              <div style={{ ...TYPE.tiny, color: th.t3 }}>{uz ? "Tanga" : "Coins"}</div>
+                              <div style={{ ...TYPE.tiny, color: th.t3 }}>{t("p115")}</div>
                               <div style={{ ...TYPE.title, fontWeight: 800, color: PREMIUM.gold, display: "flex", alignItems: "center", gap: 4 }}>
                                 🪙 {o.coins}
                               </div>
                             </div>
                             <span style={{ color: th.t3 }}>➔</span>
                             <div>
-                              <div style={{ ...TYPE.tiny, color: th.t3 }}>{uz ? "Summa" : "Amount"}</div>
+                              <div style={{ ...TYPE.tiny, color: th.t3 }}>{t("amount")}</div>
                               <div style={{ ...TYPE.title, fontWeight: 800, color: th.gr }}>
                                 {f(o.amount, true)}
                               </div>
@@ -1453,23 +1452,20 @@ export default function ProfilePage({
             <div className="ui-fadeUp" style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
               {/* Bugungi ko'rsatkichlar */}
               <div style={{ display: "flex", gap: SPACE.s2 }}>
-                <AnimatedStat th={th} icon="⏱" value={kidVaqtStats[td()] || 0} label={uz ? "Bugun (daqiqa)" : "Сегодня (мин)"} tone={th.ac} />
-                <AnimatedStat th={th} icon="➕" value={kidExtra} label={uz ? "Qo'shimcha vaqt" : "Доп. tempo"} tone={th.gr} />
-                <AnimatedStat th={th} icon="🔒" value={kidLimit} label={uz ? "Joriy limit" : "Лимит"} tone={kidLimit > 0 ? th.rd : th.t3} />
+                <AnimatedStat th={th} icon="⏱" value={kidVaqtStats[td()] || 0} label={t("p116")} tone={th.ac} />
+                <AnimatedStat th={th} icon="➕" value={kidExtra} label={t("p117")} tone={th.gr} />
+                <AnimatedStat th={th} icon="🔒" value={kidLimit} label={t("p118")} tone={kidLimit > 0 ? th.rd : th.t3} />
               </div>
 
               {/* So'nggi 7 kunlik statistika */}
               <AppCard th={th}>
                 <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s3 }}>
-                  {uz ? "Oxirgi 7 kunlik faollik" : "Активность за последние 7 дней"}
+                  {t("p119")}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
                   {(() => {
                     const daysList = [];
-                    const dayNamesUZ = ["Yak", "Dus", "Se", "Chor", "Pay", "Jum", "Shan"];
-                    const dayNamesRU = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-                    const dayNamesEN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-                    const dayNames = uz ? dayNamesUZ : lg === "ru" ? dayNamesRU : dayNamesEN;
+                    const dayNames = t("p270", { returnObjects: true });
 
                     const today = new Date();
                     for (let i = 6; i >= 0; i--) {
@@ -1507,7 +1503,7 @@ export default function ProfilePage({
                             />
                           </div>
                           <span style={{ ...TYPE.caption, width: "60px", textAlign: "right", color: d.minutes > 0 ? th.t1 : th.t3, fontWeight: d.minutes > 0 ? 700 : 400 }}>
-                            {d.minutes} {uz ? "daq" : "мин"}
+                            {d.minutes} {t("p120")}
                           </span>
                         </div>
                       );
@@ -1519,24 +1515,22 @@ export default function ProfilePage({
               {/* Limit tahrirlash formasi */}
               <AppCard th={th}>
                 <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: SPACE.s2 }}>
-                  {uz ? "Kunlik ekran vaqti limiti" : "Дневной лимит экранного времени"}
+                  {t("p121")}
                 </div>
                 <div style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s3, textTransform: "none", letterSpacing: 0 }}>
-                  {uz 
-                    ? "Farzandingiz uchun kunlik foydalanish vaqtini daqiqalarda belgilang. Limitga yetganda ilova avtomatik tarzda bloklanadi. O'chirish uchun 0 yoki bo'sh qoldiring."
-                    : "Укажите дневной лимит использования в минутах. При достижении лимита приложение заблокируется. Оставьте 0 или пустым для удаления ограничений."}
+                  {t("p122")}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
                   <TextInput
                     th={th}
-                    label={uz ? "Kunlik limit (daqiqada)" : "Дневной лимит (мин)"}
+                    label={t("p123")}
                     type="number"
                     value={inputLimit}
                     onChange={setInputLimit}
-                    placeholder={uz ? "Masalan: 60" : "Например: 60"}
+                    placeholder={t("p124")}
                   />
                   <PrimaryButton th={th} onClick={saveKidLimit} disabled={savingLimit} style={{ width: "100%", marginTop: SPACE.s2 }}>
-                    {savingLimit ? (uz ? "Saqlanmoqda..." : "Сохранение...") : (uz ? "Limitni saqlash" : "Сохранить лимит")}
+                    {savingLimit ? (t("p125")) : (t("p126"))}
                   </PrimaryButton>
                 </div>
               </AppCard>
@@ -1569,15 +1563,15 @@ export default function ProfilePage({
           <AppCard th={th}>
             <div style={{ ...STY.row, marginBottom: edN ? SPACE.s3 : 0 }}>
               <div style={{ minWidth: 0 }}>
-                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: 2 }}>{uz ? "Ism va familya" : "Full name"}</div>
-                <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user) || (uz ? "Kiritilmagan" : "Not set")}</div>
+                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: 2 }}>{t("p127")}</div>
+                <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fullName(user) || (t("p128"))}</div>
               </div>
               <SecondaryButton th={th} onClick={() => { setEdN(v => !v); setNewN(user?.ism || ""); setNewF(user?.familya || ""); }} style={{ width: "auto", padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>{Ico.edit(th.ac)}{edN ? t.cn : t.ep}</SecondaryButton>
             </div>
             {edN && (
               <div>
-                <TextInput th={th} label={uz ? "Ism" : "First name"} value={newN} onChange={setNewN} placeholder={uz ? "Ism" : "First name"} autoFocus />
-                <TextInput th={th} label={uz ? "Familya" : "Surname"} value={newF} onChange={setNewF} placeholder={uz ? "Familya" : "Surname"} />
+                <TextInput th={th} label={t("p129")} value={newN} onChange={setNewN} placeholder={t("p129")} autoFocus />
+                <TextInput th={th} label={t("p130")} value={newF} onChange={setNewF} placeholder={t("p130")} />
                 <PrimaryButton th={th} onClick={updName}>{t.un}</PrimaryButton>
               </div>
             )}
@@ -1593,26 +1587,26 @@ export default function ProfilePage({
           <AppCard th={th}>
             <div style={{ ...STY.row, marginBottom: edT ? SPACE.s3 : 0 }}>
               <div>
-                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: 2 }}>{uz ? "Telefon" : "Phone"}</div>
-                <div style={{ ...TYPE.subtitle, color: user?.tel ? th.t1 : th.t2 }}>{user?.tel || (uz ? "Kiritilmagan" : "Not set")}</div>
+                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: 2 }}>{t("p131")}</div>
+                <div style={{ ...TYPE.subtitle, color: user?.tel ? th.t1 : th.t2 }}>{user?.tel || (t("p128"))}</div>
               </div>
-              <SecondaryButton th={th} onClick={() => { setEdT(v => !v); setNewT(user?.tel || ""); }} style={{ width: "auto", padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize }}>{Ico.edit(th.ac)}{edT ? t.cn : (user?.tel ? t.ep : (uz ? "Qo'shish" : "Add"))}</SecondaryButton>
+              <SecondaryButton th={th} onClick={() => { setEdT(v => !v); setNewT(user?.tel || ""); }} style={{ width: "auto", padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize }}>{Ico.edit(th.ac)}{edT ? t.cn : (user?.tel ? t.ep : (t("add")))}</SecondaryButton>
             </div>
             {edT && (
               <div>
                 <TextInput th={th} value={newT} onChange={setNewT} placeholder="+998 90 123 45 67" inputMode="tel" autoFocus />
-                <PrimaryButton th={th} onClick={() => saveTel(newT)}>{uz ? "Saqlash" : "Save"}</PrimaryButton>
+                <PrimaryButton th={th} onClick={() => saveTel(newT)}>{t("save")}</PrimaryButton>
               </div>
             )}
           </AppCard>
 
           {/* Bu oy statistikasi */}
           <AppCard th={th}>
-            <SubHeader th={th}>{uz ? "Bu oy statistikasi" : "Stats"}</SubHeader>
+            <SubHeader th={th}>{t("p132")}</SubHeader>
             {[
-              { l: uz ? "Xarajat" : "Expense", v: f(bX.filter(x => x.uid === user.id).reduce((s, x) => s + Number(x.summa || 0), 0), true), c: th.rd },
-              { l: uz ? "Daromad" : "Income", v: f(bD.filter(d => d.uid === user.id).reduce((s, d) => s + Number(d.summa || 0), 0), true), c: th.gr },
-              { l: uz ? "Jami yozuvlar" : "Total records", v: xar.filter(x => x.uid === user.id).length + " ta", c: th.ac },
+              { l: t("exp"), v: f(bX.filter(x => x.uid === user.id).reduce((s, x) => s + Number(x.summa || 0), 0), true), c: th.rd },
+              { l: t("inc"), v: f(bD.filter(d => d.uid === user.id).reduce((s, d) => s + Number(d.summa || 0), 0), true), c: th.gr },
+              { l: t("p133"), v: xar.filter(x => x.uid === user.id).length + " ta", c: th.ac },
             ].map((item, i, arr) => (
               <div key={item.l} style={{ ...STY.row, padding: SPACE.s2 + "px 0", borderBottom: i < arr.length - 1 ? "1px solid " + th.bor : "none" }}>
                 <span style={{ ...TYPE.caption, color: th.t2 }}>{item.l}</span>
@@ -1627,11 +1621,11 @@ export default function ProfilePage({
               <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.key(th.ac)}{t.fc2}</div>
               <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, padding: SPACE.s2 + "px 0", flexWrap: "wrap" }}>
                 <div style={{ fontFamily: "monospace", ...TYPE.subtitle, fontWeight: 800, color: th.ac, wordBreak: "break-all", letterSpacing: 1, flex: 1, minWidth: SPACE.s16 * 2 }}>{user?.oilaId || "—"}</div>
-                <SecondaryButton th={th} onClick={copyFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }} aria-label={uz ? "Oila kodini nusxalash" : "Copy family code"}>
-                  {PIco.copy(th.ac)}{uz ? "Nusxa" : "Copy"}
+                <SecondaryButton th={th} onClick={copyFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }} aria-label={t("p065")}>
+                  {PIco.copy(th.ac)}{t("p066")}
                 </SecondaryButton>
-                <SecondaryButton th={th} onClick={shareFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong }} aria-label={uz ? "Oila kodini ulashish" : "Share family code"}>
-                  {PIco.share(th.gr)}{uz ? "Ulashish" : "Share"}
+                <SecondaryButton th={th} onClick={shareFamCode} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong }} aria-label={t("p067")}>
+                  {PIco.share(th.gr)}{t("p068")}
                 </SecondaryButton>
               </div>
               <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s1 }}>{t.fcd}</div>
@@ -1643,10 +1637,10 @@ export default function ProfilePage({
       {/* ═══════════════ BUDJET VA LIMITLAR ═══════════════ */}
       {pTab === "budjet" && (
         <div>
-          <PageHeader th={th} title={uz ? "Budjet va limitlar" : "Budget & limits"} onBack={backToMain} />
+          <PageHeader th={th} title={t("p074")} onBack={backToMain} />
           <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1.5px solid " + th.ac + ALPHA.med }}>
-            <div style={{ ...TYPE.caption, fontWeight: 700, color: th.ac, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{Ico.wallet(th.ac)}{uz ? "Oylik budjet" : "Monthly budget"}</div>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s3 }}>{uz ? "Bu oy uchun umumiy xarajat chegarasi" : "Total spending limit this month"}</div>
+            <div style={{ ...TYPE.caption, fontWeight: 700, color: th.ac, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{Ico.wallet(th.ac)}{t("p134")}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s3 }}>{t("p135")}</div>
             <AmountInput th={th} label={t.mb} value={fBj} onChange={setFBj} placeholder="2 000 000" style={{ marginBottom: SPACE.s1 }} />
             <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, textAlign: "center" }}>{f(Number(fBj) || 0, false)}</div>
           </AppCard>
@@ -1656,8 +1650,8 @@ export default function ProfilePage({
             const avgInc = bD.reduce((s, d) => s + Number(d.summa || 0), 0);
             if (bjNum > 0 && avgInc > 0 && bjNum > avgInc) {
               return (
-                <WarningCard th={th} tone="danger" icon={PIco.warn(th.rd, 18)} title={uz ? "Budjet daromaddan yuqori!" : "Budget exceeds income!"}>
-                  {uz ? "Bu oy daromadingiz " + f(avgInc, true) + ", lekin budjet " + f(bjNum, true) + "." : "Income " + f(avgInc, true) + ", budget " + f(bjNum, true)}
+                <WarningCard th={th} tone="danger" icon={PIco.warn(th.rd, 18)} title={t("p136")}>
+                  {t("p265", { income: f(avgInc, true), budget: f(bjNum, true) })}
                 </WarningCard>
               );
             }
@@ -1668,23 +1662,23 @@ export default function ProfilePage({
             const jD2 = bD.reduce((s, d) => s + Number(d.summa || 0), 0);
             return (
               <AppCard th={th} style={{ background: th.gr + ALPHA.faint, border: "1px solid " + th.gr + ALPHA.med }}>
-                <div style={{ ...TYPE.caption, fontWeight: 700, color: th.gr, marginBottom: SPACE.s2 + 2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{PIco.bulb(th.gr)}{uz ? "50/30/20 qoidasi bo'yicha taklif" : "50/30/20 rule"}</div>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s3, lineHeight: 1.5 }}>{uz ? "Daromadingiz (" + f(jD2, true) + ") asosida tavsiya:" : "Based on income (" + f(jD2, true) + "):"}</div>
-                {[{ p: 50, c: th.gr, uz: "Ehtiyojlar (oziq, uy, transport)", en: "Needs" }, { p: 30, c: th.am, uz: "Xohishlar (ko'ngilochar, kiyim)", en: "Wants" }, { p: 20, c: th.ac, uz: "Jamg'arma va maqsadlar", en: "Savings" }].map(r => (
+                <div style={{ ...TYPE.caption, fontWeight: 700, color: th.gr, marginBottom: SPACE.s2 + 2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{PIco.bulb(th.gr)}{t("p137")}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s3, lineHeight: 1.5 }}>{t("p266", { income: f(jD2, true) })}</div>
+                {[{ p: 50, c: th.gr, key: "p274a" }, { p: 30, c: th.am, key: "p274b" }, { p: 20, c: th.ac, key: "p274c" }].map(r => (
                   <div key={r.p} style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, marginBottom: SPACE.s2 }}>
                     <div style={{ width: SPACE.s8 + SPACE.s1 + 2, height: SPACE.s6, borderRadius: RADIUS.s - 4, background: r.c + ALPHA.med, display: "flex", alignItems: "center", justifyContent: "center", ...TYPE.tiny, letterSpacing: 0, fontWeight: 800, color: r.c, flexShrink: 0 }}>{r.p}%</div>
-                    <span style={{ flex: 1, ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t1 }}>{uz ? r.uz : r.en}</span>
+                    <span style={{ flex: 1, ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t1 }}>{t(r.key)}</span>
                     <span style={{ ...TYPE.caption, fontWeight: 700, color: r.c, fontVariantNumeric: "tabular-nums" }}>{f(Math.round(jD2 * r.p / 100), true)}</span>
                   </div>
                 ))}
-                <SecondaryButton th={th} onClick={() => setFBj(String(Math.round(jD2 * 0.8)))} style={{ marginTop: SPACE.s2, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong, fontSize: TYPE.caption.fontSize }}>{uz ? "Budjetni 80% qilib o'rnatish" : "Set budget to 80%"}</SecondaryButton>
+                <SecondaryButton th={th} onClick={() => setFBj(String(Math.round(jD2 * 0.8)))} style={{ marginTop: SPACE.s2, background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong, fontSize: TYPE.caption.fontSize }}>{t("p138")}</SecondaryButton>
               </AppCard>
             );
           })()}
 
           <AppCard th={th}>
-            <SubHeader th={th}>{uz ? "Kategoriya limitlari" : "Category limits"}</SubHeader>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{uz ? "Har bir kategoriya uchun alohida chegara (ixtiyoriy)" : "Separate limit per category (optional)"}</div>
+            <SubHeader th={th}>{t("p139")}</SubHeader>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{t("p140")}</div>
             {KATS.map((k, i) => (
               <div key={k.id} style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, marginBottom: SPACE.s2 + 2 }}>
                 <div style={{ width: SPACE.s8 + 2, height: SPACE.s8 + 2, borderRadius: RADIUS.s, background: k.c + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><KatIco id={k.id} c={k.c} s={18} /></div>
@@ -1700,15 +1694,15 @@ export default function ProfilePage({
             const bjNum = Number(fBj) || 0;
             if (limTotal > 0 && bjNum > 0 && limTotal > bjNum) {
               return (
-                <WarningCard th={th} icon={PIco.warn(th.am, 18)} title={uz ? "Limitlar budjetdan oshdi" : "Limits exceed budget"}>
-                  {uz ? "Kategoriya limitlari jami " + f(limTotal, true) + ", budjet esa " + f(bjNum, true) + "." : "Limits total " + f(limTotal, true) + " > budget " + f(bjNum, true)}
+                <WarningCard th={th} icon={PIco.warn(th.am, 18)} title={t("p141")}>
+                  {t("p267", { limits: f(limTotal, true), budget: f(bjNum, true) })}
                 </WarningCard>
               );
             }
             if (limTotal > 0 && bjNum > 0) {
               return (
                 <AppCard th={th} style={{ background: th.gr + ALPHA.faint, border: "none", display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s4 + "px" }}>
-                  <span style={{ ...TYPE.caption, color: th.t2 }}>{uz ? "Limitlar jami" : "Limits total"}</span>
+                  <span style={{ ...TYPE.caption, color: th.t2 }}>{t("p142")}</span>
                   <span style={{ ...TYPE.caption, fontWeight: 700, color: th.gr, fontVariantNumeric: "tabular-nums" }}>{f(limTotal, true)} / {f(bjNum, true)}</span>
                 </AppCard>
               );
@@ -1755,7 +1749,7 @@ export default function ProfilePage({
 
           {/* Valyuta — showValDD holati saqlangan */}
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={Ico.money(th.ac)} title={uz ? "Valyuta" : "Валюта"} sub={val.b + " " + val.id.toUpperCase()} onClick={() => setShowValDD(v => !v)}
+            <ListItem th={th} icon={Ico.money(th.ac)} title={t("p143")} sub={val.b + " " + val.id.toUpperCase()} onClick={() => setShowValDD(v => !v)}
               right={<span style={{ transform: showValDD ? "rotate(90deg)" : "none", transition: MOTION.trFast("transform"), display: "flex" }}>{Ico.right(th.t2)}</span>}
               divider={showValDD} />
             {showValDD && (
@@ -1775,13 +1769,13 @@ export default function ProfilePage({
           {/* Bildirishnomalar */}
           <AppCard th={th} pad={0}>
             <ListItem th={th} icon={PIco.bell(notifEnabled ? th.gr : th.t2)} iconTone={notifEnabled ? th.gr : th.t2}
-              title={uz ? "Bildirishnomalar" : "Notifications"}
-              sub={notifEnabled ? (uz ? "Yoqilgan — har kuni " + notifTime : "On — daily at " + notifTime) : (uz ? "O'chirilgan" : "Off")}
-              right={<Switch th={th} checked={!!notifEnabled} onChange={toggleNotif} label={uz ? "Bildirishnomalar" : "Notifications"} />}
+              title={t("p144")}
+              sub={notifEnabled ? t("p268", { time: notifTime }) : (t("p145"))}
+              right={<Switch th={th} checked={!!notifEnabled} onChange={toggleNotif} label={t("p144")} />}
               divider={!!notifEnabled} />
             {notifEnabled && (
               <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px" }}>
-                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{uz ? "Eslatma vaqti" : "Reminder time"}</div>
+                <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{t("p146")}</div>
                 <div style={{ display: "flex", gap: SPACE.s2, flexWrap: "wrap" }}>
                   {["08:00", "12:00", "18:00", "20:00", "21:00", "22:00"].map(time => (
                     <ChoiceChip key={time} th={th} on={notifTime === time} onClick={() => saveNotifTime(time)} style={{ padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", minHeight: 0 }}>{time}</ChoiceChip>
@@ -1795,13 +1789,13 @@ export default function ProfilePage({
           {!isKid && (
             <AppCard th={th} pad={0}>
               <ListItem th={th} icon={PIco.bell(dailyReminder.settings.enabled ? th.gr : th.t2)} iconTone={dailyReminder.settings.enabled ? th.gr : th.t2}
-                title={uz ? "Kunlik eslatma (Android)" : "Daily Reminder (Android)"}
-                sub={dailyReminder.settings.enabled ? (uz ? "Yoqilgan — har kuni " + String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0") : "On — daily at " + String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0")) : (uz ? "O'chirilgan" : "Off")}
-                right={<Switch th={th} checked={!!dailyReminder.settings.enabled} onChange={() => dailyReminder.updateReminderSettings({ ...dailyReminder.settings, enabled: !dailyReminder.settings.enabled })} label={uz ? "Kunlik eslatma" : "Daily Reminder"} />}
+                title={t("p147")}
+                sub={dailyReminder.settings.enabled ? t("p268", { time: String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0") }) : (t("p145"))}
+                right={<Switch th={th} checked={!!dailyReminder.settings.enabled} onChange={() => dailyReminder.updateReminderSettings({ ...dailyReminder.settings, enabled: !dailyReminder.settings.enabled })} label={t("p148")} />}
                 divider={!!dailyReminder.settings.enabled} />
               {dailyReminder.settings.enabled && (
                 <div style={{ padding: SPACE.s3 + "px " + SPACE.s4 + "px" }}>
-                  <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{uz ? "Eslatma vaqti" : "Reminder time"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{t("p146")}</div>
                   <div style={{ display: "flex", gap: SPACE.s2, alignItems: "center", flexWrap: "wrap" }}>
                     {["08:00", "12:00", "18:00", "20:00", "21:00", "22:00"].map(time => {
                       const curTimeStr = String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0");
@@ -1824,7 +1818,7 @@ export default function ProfilePage({
                     
                     {/* Custom time input */}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginLeft: "auto" }}>
-                      <span style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Boshqa vaqt:" : "Custom:"}</span>
+                      <span style={{ ...TYPE.tiny, color: th.t2 }}>{t("p149")}</span>
                       <input
                         type="time"
                         value={String(dailyReminder.settings.hour || 20).padStart(2, "0") + ":" + String(dailyReminder.settings.minute || 0).padStart(2, "0")}
@@ -1856,9 +1850,9 @@ export default function ProfilePage({
 
           {/* Premium banner */}
           <PremiumCard th={th} active={isPremium} onClick={openPremium}
-            title={isPremium ? (uz ? "Premium faol" : "Premium active") : (uz ? "Premium ga o'ting" : "Upgrade to Premium")}
-            sub={isPremium ? (uz ? "Barcha funksiyalar ochiq" : "All unlocked") : (uz ? "Cheksiz maqsad, PDF, Excel..." : "Unlimited goals, PDF...")}
-            cta={isPremium ? Ico.check(PREMIUM.gold) : <Badge th={th} type="info">{uz ? "Ochish" : "Unlock"}</Badge>} />
+            title={isPremium ? (t("p039")) : (t("p150"))}
+            sub={isPremium ? (t("p151")) : (t("p152"))}
+            cta={isPremium ? Ico.check(PREMIUM.gold) : <Badge th={th} type="info">{t("p047")}</Badge>} />
         </div>
       )}
 
@@ -1867,7 +1861,7 @@ export default function ProfilePage({
         <div>
           <PageHeader th={th} title={t.xav} onBack={backToMain} />
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t.pin} sub={pinHash ? (uz ? "PIN o'rnatilgan ✓" : "PIN set ✓") : (uz ? "4 raqamli maxfiy kod" : "4-digit code")}
+            <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t.pin} sub={pinHash ? (t("p153")) : (t("p154"))}
               right={
                 <div style={{ display: "flex", gap: SPACE.s2 }}>
                   {pinHash && pinStep === "idle" && (
@@ -1877,24 +1871,24 @@ export default function ProfilePage({
                         await db.s("security_" + user.id, { ...cur, pinHash: null, biometricEnabled: false });
                         setPinHash(null);
                         setFinger(false);
-                        ok$(uz ? "PIN o'chirildi" : "PIN deleted");
+                        ok$(t("p155"));
                       } catch (e) {
                         console.error(e);
-                        ok$(uz ? "Xatolik yuz berdi" : "An error occurred", "err");
+                        ok$(t("p156"), "err");
                       }
                     }} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0, borderColor: th.rd, color: th.rd }}>
-                      {uz ? "O'chirish" : "Delete"}
+                      {t("delete")}
                     </SecondaryButton>
                   )}
                   <SecondaryButton th={th} onClick={() => setPinStep(pinStep === "idle" ? "enter" : "idle")} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>
-                    {pinStep === "idle" ? (uz ? "O'zgartirish" : "Change") : (uz ? "Bekor" : "Cancel")}
+                    {pinStep === "idle" ? (t("p157")) : (t("cancel"))}
                   </SecondaryButton>
                 </div>
               }
               divider={pinStep !== "idle"} />
             {pinStep !== "idle" && (
               <div style={{ padding: SPACE.s4 }}>
-                <div style={{ ...TYPE.caption, fontWeight: 600, color: th.t2, marginBottom: SPACE.s3, textAlign: "center" }}>{pinStep === "enter" ? (uz ? "Yangi PIN kiriting" : "Enter new PIN") : (uz ? "PIN ni tasdiqlang" : "Confirm PIN")}</div>
+                <div style={{ ...TYPE.caption, fontWeight: 600, color: th.t2, marginBottom: SPACE.s3, textAlign: "center" }}>{pinStep === "enter" ? (t("p158")) : (t("p159"))}</div>
                 <div style={{ display: "flex", justifyContent: "center", gap: SPACE.s3 + 2, marginBottom: SPACE.s4 }}>
                   {[0, 1, 2, 3].map(i => <div key={i} style={{ width: SPACE.s3 + 2, height: SPACE.s3 + 2, borderRadius: RADIUS.full, background: (pinStep === "enter" ? pinVal : pinCfm).length > i ? th.ac : th.bor, transition: MOTION.trFast("background") }} />)}
                 </div>
@@ -1920,19 +1914,19 @@ export default function ProfilePage({
                                 setPinStep("idle");
                                 setPinVal("");
                                 setPinCfm("");
-                                ok$(uz ? "PIN saqlandi" : "PIN saved");
+                                ok$(t("p160"));
                               } catch (e) {
                                 console.error(e);
-                                ok$(uz ? "PIN saqlashda xatolik" : "Error saving PIN", "err");
+                                ok$(t("p161"), "err");
                               }
                             })();
                           } else {
                             setPinCfm("");
-                            ok$(uz ? "PIN mos kelmadi" : "PIN mismatch", "err");
+                            ok$(t("p162"), "err");
                           }
                         }
                       }
-                    }} aria-label={num === "del" ? (uz ? "O'chirish" : "Delete") : String(num)}
+                    }} aria-label={num === "del" ? (t("delete")) : String(num)}
                       style={{ background: typeof num === "number" ? th.surH : "transparent", border: typeof num === "number" ? "1px solid " + th.bor : "none", borderRadius: RADIUS.s + 2, padding: SPACE.s3 + 2 + "px", fontSize: TYPE.heading.fontSize + 1, fontWeight: 700, color: th.t1, cursor: num === "" ? "default" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", minHeight: COMP.touchMin }}>
                       {num === "del"
                         ? <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M7 4h9a2 2 0 012 2v8a2 2 0 01-2 2H7l-5-6 5-6z" stroke={th.rd} strokeWidth="1.4" strokeLinejoin="round"/><path d="M10.5 8l4 4M14.5 8l-4 4" stroke={th.rd} strokeWidth="1.4" strokeLinecap="round"/></svg>
@@ -1944,33 +1938,33 @@ export default function ProfilePage({
             )}
           </AppCard>
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={Ico.finger(th.gr)} iconTone={th.gr} title={t.barmoq} sub={uz ? "Tez va xavfsiz" : "Fast & secure"} divider={false}
+            <ListItem th={th} icon={Ico.finger(th.gr)} iconTone={th.gr} title={t.barmoq} sub={t("p163")} divider={false}
               right={<Switch th={th} checked={!!finger} onChange={async () => {
                 if (!finger) {
                   // Turning ON
                   if (!pinHash) {
-                    ok$(uz ? "Avval PIN kod o'rnating" : "Set a PIN first", "err");
+                    ok$(t("p164"), "err");
                     return;
                   }
                   try {
                     const result = await NativeBiometric.isAvailable();
                     if (!result.isAvailable) {
-                      ok$(uz ? "Qurilmangizda biometrika mavjud emas" : "Biometrics not available on device", "err");
+                      ok$(t("p165"), "err");
                       return;
                     }
                     await NativeBiometric.verifyIdentity({
-                      reason: uz ? "Barmoq izini faollashtirish" : "Activate biometrics",
-                      title: uz ? "Biometrika" : "Biometrics",
-                      subtitle: uz ? "Tasdiqlang" : "Confirm",
-                      description: uz ? "Barmoq izi datchigiga teging" : "Touch the biometric sensor"
+                      reason: t("p166"),
+                      title: t("p167"),
+                      subtitle: t("p168"),
+                      description: t("p169")
                     });
                     const curData = (await db.g("security_" + user.id)) || {};
                     await db.s("security_" + user.id, { ...curData, biometricEnabled: true });
                     setFinger(true);
-                    ok$(uz ? "Barmoq izi muvaffaqiyatli yoqildi" : "Biometrics activated successfully");
+                    ok$(t("p170"));
                   } catch (e) {
                     console.error("Biometrics activation failed", e);
-                    ok$(uz ? "Biometrik tasdiqlash muvaffaqiyatsiz bo'ldi" : "Biometric verification failed", "err");
+                    ok$(t("p171"), "err");
                   }
                 } else {
                   // Turning OFF
@@ -1978,10 +1972,10 @@ export default function ProfilePage({
                     const curData = (await db.g("security_" + user.id)) || {};
                     await db.s("security_" + user.id, { ...curData, biometricEnabled: false });
                     setFinger(false);
-                    ok$(uz ? "Barmoq izi o'chirildi" : "Biometrics deactivated");
+                    ok$(t("p172"));
                   } catch (e) {
                     console.error("Biometrics deactivation failed", e);
-                    ok$(uz ? "Xatolik yuz berdi" : "Error occurred", "err");
+                    ok$(t("p173"), "err");
                   }
                 }
               }} label={t.barmoq} />} />
@@ -2009,26 +2003,26 @@ export default function ProfilePage({
             </AppCard>
           ))}
 
-          <SectionHeader th={th}>{uz ? "Taklif va kamchiliklar" : "Feedback"}</SectionHeader>
+          <SectionHeader th={th}>{t("p174")}</SectionHeader>
           <AppCard th={th}>
-            <SubHeader th={th}>{uz ? "Ilovani baholang" : "Rate the app"}</SubHeader>
-            <div style={{ ...TYPE.caption, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{uz ? "Fikringiz biz uchun muhim!" : "Your opinion matters!"}</div>
+            <SubHeader th={th}>{t("p175")}</SubHeader>
+            <div style={{ ...TYPE.caption, color: th.t2, marginTop: -SPACE.s2, marginBottom: SPACE.s3 }}>{t("p176")}</div>
             <div style={{ display: "flex", gap: SPACE.s2, justifyContent: "center", marginBottom: SPACE.s4 }}>
               {[1, 2, 3, 4, 5].map(star => (
-                <button key={star} className="ui-press" onClick={() => setFbRating(star)} aria-label={(uz ? "Baho: " : "Rating: ") + star}
+                <button key={star} className="ui-press" onClick={() => setFbRating(star)} aria-label={(t("p177")) + star}
                   style={{ background: "none", border: "none", cursor: "pointer", padding: 2 }}>
                   {PIco.starFill(star <= fbRating ? PREMIUM.gold : th.t2, 34, star <= fbRating)}
                 </button>
               ))}
             </div>
             <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-              {[{ id: "taklif", l: uz ? "Taklif" : "Suggestion" }, { id: "xato", l: uz ? "Kamchilik" : "Bug" }, { id: "boshqa", l: uz ? "Boshqa" : "Other" }].map(ty => (
+              {[{ id: "taklif", l: t("p178") }, { id: "xato", l: t("p179") }, { id: "boshqa", l: t("p180") }].map(ty => (
                 <ChoiceChip key={ty.id} th={th} on={fbType === ty.id} onClick={() => setFbType(ty.id)} style={{ flex: 1 }}>{ty.l}</ChoiceChip>
               ))}
             </div>
-            <TextArea th={th} value={fbText} onChange={setFbText} placeholder={uz ? "Fikr, taklif yoki kamchilikni yozing..." : "Write your feedback..."} />
-            <LoadingButton th={th} loading={fbSending} loadingText={uz ? "Yuborilmoqda..." : "Sending..."} onClick={sendFeedback}>
-              {PIco.send("#fff", 18)}{uz ? "Yuborish" : "Send"}
+            <TextArea th={th} value={fbText} onChange={setFbText} placeholder={t("p181")} />
+            <LoadingButton th={th} loading={fbSending} loadingText={t("p182")} onClick={sendFeedback}>
+              {PIco.send("#fff", 18)}{t("p183")}
             </LoadingButton>
           </AppCard>
         </div>
@@ -2037,26 +2031,26 @@ export default function ProfilePage({
       {pTab === "garden" && <Garden user={user} lg={lg} dark={dark} onBack={backToMain} addCoin={addStar} stars={stars} />}
 
       {/* ═══════════════ BOLA AKKAUNTI — BottomSheet ═══════════════ */}
-      <BottomSheet th={th} open={!!showAddKid} onClose={closeAddKid} title={uz ? "Bola akkaunti yaratish" : "Create kid account"}>
+      <BottomSheet th={th} open={!!showAddKid} onClose={closeAddKid} title={t("p184")}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>
           <div style={{ width: SPACE.s16, height: SPACE.s16, borderRadius: RADIUS.full, background: th.am + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center" }}>{PIco.baby(th.am, 32)}</div>
         </div>
-        <div style={{ ...TYPE.caption, color: th.t2, textAlign: "center", marginBottom: SPACE.s4, lineHeight: 1.5 }}>{uz ? "Farzandingiz uchun login va parol yarating." : "Create a login for your child."}</div>
-        <TextInput th={th} label={(uz ? "Bola ismi" : "First name") + " *"} value={kidName} onChange={v => { setKidName(v); setKidErr(e => ({ ...e, name: "" })); }} placeholder={uz ? "Jahongir" : "Name"} error={kidErr.name} />
-        <TextInput th={th} label={(uz ? "Familya" : "Surname") + " *"} value={kidSurname} onChange={v => { setKidSurname(v); setKidErr(e => ({ ...e, surname: "" })); }} placeholder={uz ? "Aliyev" : "Surname"} error={kidErr.surname} />
-        <TextInput th={th} label={(uz ? "Tug'ilgan yili" : "Birth year") + " *"} value={kidBirthYear} onChange={v => { setKidBirthYear(v.replace(/\D/g, "").slice(0, 4)); setKidErr(e => ({ ...e, birth: "" })); }} placeholder={String(new Date().getFullYear() - 10)} inputMode="numeric" error={kidErr.birth} />
+        <div style={{ ...TYPE.caption, color: th.t2, textAlign: "center", marginBottom: SPACE.s4, lineHeight: 1.5 }}>{t("p185")}</div>
+        <TextInput th={th} label={(t("p186")) + " *"} value={kidName} onChange={v => { setKidName(v); setKidErr(e => ({ ...e, name: "" })); }} placeholder={t("p187")} error={kidErr.name} />
+        <TextInput th={th} label={(t("p130")) + " *"} value={kidSurname} onChange={v => { setKidSurname(v); setKidErr(e => ({ ...e, surname: "" })); }} placeholder={t("p188")} error={kidErr.surname} />
+        <TextInput th={th} label={(t("p189")) + " *"} value={kidBirthYear} onChange={v => { setKidBirthYear(v.replace(/\D/g, "").slice(0, 4)); setKidErr(e => ({ ...e, birth: "" })); }} placeholder={String(new Date().getFullYear() - 10)} inputMode="numeric" error={kidErr.birth} />
         {/* Jinsi — ixtiyoriy (qayta bosilsa bekor bo'ladi) */}
         <div style={{ marginBottom: SPACE.s3 }}>
-          <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Jinsi (ixtiyoriy)" : "Gender (optional)"}</div>
+          <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{t("p190")}</div>
           <div style={{ display: "flex", gap: SPACE.s2 }}>
-            {[{ id: "ogil", l: uz ? "O'g'il bola" : "Boy" }, { id: "qiz", l: uz ? "Qiz bola" : "Girl" }].map(g => (
+            {[{ id: "ogil", l: t("p191") }, { id: "qiz", l: t("p192") }].map(g => (
               <ChoiceChip key={g.id} th={th} on={kidGender === g.id} onClick={() => setKidGender(kidGender === g.id ? "" : g.id)} style={{ flex: 1 }}>{g.l}</ChoiceChip>
             ))}
           </div>
         </div>
-        <TextInput th={th} label={uz ? "Sinfi (ixtiyoriy)" : "Grade (optional)"} value={kidGrade} onChange={v => { setKidGrade(v.replace(/\D/g, "").slice(0, 2)); setKidErr(e => ({ ...e, grade: "" })); }} placeholder={uz ? "1–11" : "1–11"} inputMode="numeric" error={kidErr.grade} />
+        <TextInput th={th} label={t("p193")} value={kidGrade} onChange={v => { setKidGrade(v.replace(/\D/g, "").slice(0, 2)); setKidErr(e => ({ ...e, grade: "" })); }} placeholder={t("p194")} inputMode="numeric" error={kidErr.grade} />
         <TextInput th={th} label="Login *" value={kidLogin} onChange={v => { setKidLogin(v.replace(/[^a-zA-Z0-9_]/g, "").toLowerCase()); setKidErr(e => ({ ...e, login: "" })); }} placeholder="jahongir2015" error={kidErr.login} />
-        <TextInput th={th} label={(uz ? "Parol" : "Password") + " *"} value={kidPw} onChange={v => { setKidPw(v); setKidErr(e => ({ ...e, pw: "" })); }} placeholder={uz ? "Kamida 4 belgi" : "Min 4 chars"} error={kidErr.pw} />
+        <TextInput th={th} label={(t("p195")) + " *"} value={kidPw} onChange={v => { setKidPw(v); setKidErr(e => ({ ...e, pw: "" })); }} placeholder={t("p030")} error={kidErr.pw} />
         
         {/* Ota-ona roziligi oqimi (Parental Consent Flow) */}
         <div style={{ margin: `${SPACE.s3}px 0`, padding: SPACE.s3, background: th.bg + ALPHA.soft, borderRadius: RADIUS.s, border: "1.5px solid " + (parentalConsentErr ? th.er : th.bor), transition: "all 0.2s" }}>
@@ -2068,15 +2062,11 @@ export default function ProfilePage({
               style={{ marginTop: 3, width: 18, height: 18, accentColor: th.ac, cursor: "pointer" }}
             />
             <span style={{ ...TYPE.tiny, color: th.t1, textTransform: "none", letterSpacing: 0, lineHeight: 1.4 }}>
-              {uz ? (
-                <>
-                  Men ota-ona/vasiyman va farzandimga tegishli yuqoridagi ma'lumotlarni yig'ish, qayta ishlashga hamda <a href="/privacy.html?lang=uz" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Maxfiylik Siyosati</a>, <a href="/terms.html?lang=uz" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Foydalanish shartlari</a> va <a href="/child-safety.html?lang=uz" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Bolalar xavfsizligi va ota-ona roziligi siyosati</a>ga rozilik beraman.
-                </>
-              ) : (
-                <>
-                  I confirm that I am the parent/guardian and agree to the collection/processing of my child's data in accordance with the <a href="/privacy.html?lang=en" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Privacy Policy</a>, <a href="/terms.html?lang=en" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Terms of Use</a> and <a href="/child-safety.html?lang=en" target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>Child Safety & Parental Consent Policy</a>.
-                </>
-              )}
+              {t("p275")}
+              <a href={"/privacy.html?lang=" + lg} target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>{t("p084")}</a>,{" "}
+              <a href={"/terms.html?lang=" + lg} target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>{t("p086")}</a>
+              {t("p277")}
+              <a href={"/child-safety.html?lang=" + lg} target="_blank" rel="noopener noreferrer" style={{ color: th.ac, fontWeight: 700, textDecoration: "underline" }}>{t("p088")}</a>.
             </span>
           </label>
           {parentalConsentErr && (
@@ -2086,57 +2076,57 @@ export default function ProfilePage({
           )}
         </div>
 
-        <PrimaryButton th={th} onClick={submitKid} style={{ marginTop: SPACE.s1 }}>{uz ? "Akkaunt yaratish" : "Create account"}</PrimaryButton>
+        <PrimaryButton th={th} onClick={submitKid} style={{ marginTop: SPACE.s1 }}>{t("p196")}</PrimaryButton>
       </BottomSheet>
 
       {/* ═══════════════ REFERRAL — BottomSheet ═══════════════ */}
-      <BottomSheet th={th} open={!!showReferral} onClose={closeReferral} title={uz ? "Do'stlarni taklif qiling" : "Invite friends"}>
+      <BottomSheet th={th} open={!!showReferral} onClose={closeReferral} title={t("p197")}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>
           <div style={{ width: SPACE.s16, height: SPACE.s16, borderRadius: RADIUS.full, background: PREMIUM.grad, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: SHADOW.e1(PREMIUM.deep) }}>{PIco.gift("#fff", 30)}</div>
         </div>
-        <div style={{ ...TYPE.caption, color: th.t2, textAlign: "center", marginBottom: SPACE.s4 }}>{uz ? "Har bir do'st uchun imtiyozlar oling!" : "Get rewards for each friend!"}</div>
+        <div style={{ ...TYPE.caption, color: th.t2, textAlign: "center", marginBottom: SPACE.s4 }}>{t("p198")}</div>
 
         {/* Natija */}
         <AppCard th={th} style={{ background: th.gr + ALPHA.faint, border: "1.5px solid " + th.gr + ALPHA.med }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s3 }}>
-            <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Sizning natijangiz" : "Your progress"}</span>
+            <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("p199")}</span>
             <span style={{ ...TYPE.caption, fontWeight: 800, color: th.gr, fontVariantNumeric: "tabular-nums" }}>{refCount}/3</span>
           </div>
           <LinearProgress th={th} value={Math.min(100, (refCount / 3) * 100)} tone={th.gr} height={SPACE.s2} style={{ marginBottom: SPACE.s2 + 2 }} />
-          <div style={{ ...TYPE.caption, color: th.t2 }}>{refCount >= 3 ? (uz ? "Tabriklaymiz! Premium ochildi!" : "Premium unlocked!") : (uz ? "Yana " + (3 - refCount) + " ta do'st = 1 oy Premium bepul" : (3 - refCount) + " more friends = 1 month free Premium")}</div>
+          <div style={{ ...TYPE.caption, color: th.t2 }}>{refCount >= 3 ? (t("p200")) : t("p269", { count: 3 - refCount })}</div>
         </AppCard>
 
         {/* Havola */}
-        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{uz ? "Sizning taklif havolangiz" : "Your invite link"}</div>
+        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2 }}>{t("p071")}</div>
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
           <div style={{ flex: 1, background: th.bg, border: "1.5px solid " + th.bor, borderRadius: RADIUS.s + 2, padding: SPACE.s3 + "px " + SPACE.s3 + "px", ...TYPE.caption, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontFamily: "monospace", minWidth: 0 }}>{(window.location.origin + "/?ref=") + (user?.id || "")}</div>
-          <SecondaryButton th={th} onClick={copyRefLink} style={{ width: "auto", padding: "0 " + SPACE.s4 + "px", flexShrink: 0, fontSize: TYPE.caption.fontSize + 1 }}>{uz ? "Nusxa" : "Copy"}</SecondaryButton>
+          <SecondaryButton th={th} onClick={copyRefLink} style={{ width: "auto", padding: "0 " + SPACE.s4 + "px", flexShrink: 0, fontSize: TYPE.caption.fontSize + 1 }}>{t("p066")}</SecondaryButton>
         </div>
 
         {/* Do'stni taklif qilish */}
         <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med }}>
-          <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, marginBottom: 2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{PIco.family(th.ac)}{uz ? "Do'stni taklif qilish" : "Invite a friend"}</div>
-          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s2 + 2 }}>{uz ? "Faqat ilovaga taklif" : "App invite only"}</div>
-          <PrimaryButton th={th} onClick={tgInviteFriend} style={{ padding: (SPACE.s2 + 3) + "px", fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send("#fff")}{uz ? "Telegram orqali yuborish" : "Send via Telegram"}</PrimaryButton>
+          <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, marginBottom: 2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{PIco.family(th.ac)}{t("p201")}</div>
+          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s2 + 2 }}>{t("p202")}</div>
+          <PrimaryButton th={th} onClick={tgInviteFriend} style={{ padding: (SPACE.s2 + 3) + "px", fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send("#fff")}{t("p072")}</PrimaryButton>
         </AppCard>
 
         {/* Oila a'zosini taklif qilish */}
         {user?.rol === "bosh" && (
           <AppCard th={th} style={{ background: th.gr + ALPHA.faint, border: "1px solid " + th.gr + ALPHA.med }}>
-            <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, marginBottom: 2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{PIco.family(th.gr)}{uz ? "Oila a'zosini taklif qilish" : "Invite to family"}</div>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s2 + 2 }}>{uz ? "Oila kodi bilan" : "With family code"}</div>
+            <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, marginBottom: 2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{PIco.family(th.gr)}{t("p203")}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s2 + 2 }}>{t("p204")}</div>
             <div style={{ background: th.bg, borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", marginBottom: SPACE.s2 + 1, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Oila kodi" : "Family code"}</span>
+              <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("fc2")}</span>
               <span style={{ ...TYPE.caption, fontWeight: 800, color: th.gr, fontFamily: "monospace", letterSpacing: 1 }}>{user?.oilaId}</span>
             </div>
-            <SecondaryButton th={th} onClick={tgInviteFamily} style={{ background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong, fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send(th.gr)}{uz ? "Oila kodi bilan yuborish" : "Send with family code"}</SecondaryButton>
+            <SecondaryButton th={th} onClick={tgInviteFamily} style={{ background: th.gr + ALPHA.soft, color: th.gr, border: "1px solid " + th.gr + ALPHA.strong, fontSize: TYPE.caption.fontSize + 1 }}>{PIco.send(th.gr)}{t("p205")}</SecondaryButton>
           </AppCard>
         )}
 
         {/* Imtiyozlar */}
         <AppCard th={th} style={{ background: th.surH, border: "none" }}>
-          <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, marginBottom: SPACE.s2 + 2 }}>{uz ? "Imtiyozlar" : "Rewards"}</div>
-          {[{ n: 1, t: uz ? "1 do'st — 100 ball" : "1 friend — 100 points" }, { n: 3, t: uz ? "3 do'st — 1 oy Premium" : "3 friends — 1 month Premium" }, { n: 10, t: uz ? "10 do'st — 1 yil Premium" : "10 friends — 1 year Premium" }].map(r => (
+          <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t1, marginBottom: SPACE.s2 + 2 }}>{t("p206")}</div>
+          {[{ n: 1, t: t("p207") }, { n: 3, t: t("p208") }, { n: 10, t: t("p209") }].map(r => (
             <div key={r.n} style={{ display: "flex", alignItems: "center", gap: SPACE.s2 + 2, marginBottom: SPACE.s2 }}>
               <div style={{ width: SPACE.s6 + 2, height: SPACE.s6 + 2, borderRadius: RADIUS.s - 2, background: refCount >= r.n ? th.gr + ALPHA.med : th.bor, display: "flex", alignItems: "center", justifyContent: "center", ...TYPE.caption, fontWeight: 800, color: refCount >= r.n ? th.gr : th.t2, flexShrink: 0 }}>{refCount >= r.n ? Ico.check(th.gr) : r.n}</div>
               <span style={{ ...TYPE.caption, color: refCount >= r.n ? th.t1 : th.t2, fontWeight: refCount >= r.n ? 600 : 400 }}>{r.t}</span>
@@ -2144,87 +2134,85 @@ export default function ProfilePage({
           ))}
         </AppCard>
 
-        <GhostButton th={th} onClick={closeReferral}>{uz ? "Yopish" : "Close"}</GhostButton>
+        <GhostButton th={th} onClick={closeReferral}>{t("p210")}</GhostButton>
       </BottomSheet>
 
       {/* ═══════════════ MA'LUMOTLARNI TOZALASH — BottomSheet ═══════════════ */}
-      <BottomSheet th={th} open={!!showClean} onClose={closeClean} title={uz ? "Ma'lumotlarni tozalash" : "Clear data"}>
-        <WarningCard th={th} tone="danger" icon={PIco.warn(th.rd, 18)} title={uz ? "Qaytarib bo'lmaydi" : "Irreversible"}>
-          {uz ? "Tanlangan xarajat va daromad yozuvlari butunlay o'chiriladi." : "Selected expense and income records will be permanently deleted."}
+      <BottomSheet th={th} open={!!showClean} onClose={closeClean} title={t("p079")}>
+        <WarningCard th={th} tone="danger" icon={PIco.warn(th.rd, 18)} title={t("p211")}>
+          {t("p212")}
         </WarningCard>
 
         {/* Qamrov: faqat men / butun oila (oila boshi) */}
-        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Kimning yozuvlari" : "Whose records"}</div>
+        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{t("p213")}</div>
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <ChoiceChip th={th} on={!clnFam} onClick={() => setClnFam(false)} style={{ flex: 1 }}>{uz ? "Faqat mening yozuvlarim" : "Only my records"}</ChoiceChip>
-          {user?.rol === "bosh" && <ChoiceChip th={th} on={clnFam} onClick={() => setClnFam(true)} style={{ flex: 1 }}>{uz ? "Butun oila" : "Whole family"}</ChoiceChip>}
+          <ChoiceChip th={th} on={!clnFam} onClick={() => setClnFam(false)} style={{ flex: 1 }}>{t("p214")}</ChoiceChip>
+          {user?.rol === "bosh" && <ChoiceChip th={th} on={clnFam} onClick={() => setClnFam(true)} style={{ flex: 1 }}>{t("p215")}</ChoiceChip>}
         </div>
 
         {/* Davr: hammasi / sana oralig'i */}
-        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Davr" : "Period"}</div>
+        <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{t("p216")}</div>
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <ChoiceChip th={th} on={clnAll} onClick={() => setClnAll(true)} style={{ flex: 1 }}>{uz ? "Hammasi" : "Everything"}</ChoiceChip>
-          <ChoiceChip th={th} on={!clnAll} onClick={() => setClnAll(false)} style={{ flex: 1 }}>{uz ? "Sana oralig'i" : "Date range"}</ChoiceChip>
+          <ChoiceChip th={th} on={clnAll} onClick={() => setClnAll(true)} style={{ flex: 1 }}>{t("all_label")}</ChoiceChip>
+          <ChoiceChip th={th} on={!clnAll} onClick={() => setClnAll(false)} style={{ flex: 1 }}>{t("p217")}</ChoiceChip>
         </div>
         {!clnAll && (
           <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
             <div style={{ flex: 1 }}>
-              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Boshlanish" : "From"}</div>
+              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{t("p218")}</div>
               <input type="date" value={clnFrom} onChange={e => setClnFrom(e.target.value)}
                 style={{ width: "100%", background: th.surH, border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: COMP.inputPad, color: th.t1, fontSize: TYPE.caption.fontSize + 1, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Tugash" : "To"}</div>
+              <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s1 }}>{t("p219")}</div>
               <input type="date" value={clnTo} onChange={e => setClnTo(e.target.value)}
                 style={{ width: "100%", background: th.surH, border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: COMP.inputPad, color: th.t1, fontSize: TYPE.caption.fontSize + 1, outline: "none", boxSizing: "border-box", fontFamily: "inherit" }} />
             </div>
           </div>
         )}
         <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginBottom: SPACE.s3, lineHeight: 1.5 }}>
-          {uz ? "Maqsad, qarz va bog' ma'lumotlariga tegilmaydi — faqat xarajat/daromad yozuvlari o'chadi." : "Goals, debts and garden are untouched — only expense/income records are deleted."}
+          {t("p220")}
         </div>
         <DangerButton th={th} solid onClick={() => {
           if (!clnAll && !clnFrom && !clnTo) { setClnAll(true); }
           setClnAsk(true);
-        }} style={{ marginBottom: SPACE.s2 }}>{Ico.trash("#fff")}{uz ? "O'chirish" : "Delete"}</DangerButton>
-        <GhostButton th={th} onClick={closeClean}>{uz ? "Bekor qilish" : "Cancel"}</GhostButton>
+        }} style={{ marginBottom: SPACE.s2 }}>{Ico.trash("#fff")}{t("delete")}</DangerButton>
+        <GhostButton th={th} onClick={closeClean}>{t("p221")}</GhostButton>
       </BottomSheet>
 
       {/* Tozalash — yakuniy tasdiq */}
       <ConfirmDialog th={th} open={!!clnAsk} onClose={() => setClnAsk(false)} onConfirm={doPurge}
-        title={uz ? "Aniq o'chirilsinmi?" : "Delete for sure?"}
-        message={(clnFam ? (uz ? "Butun oilaning " : "The whole family's ") : (uz ? "Sizning " : "Your "))
-          + (clnAll ? (uz ? "BARCHA yozuvlari" : "ALL records") : (uz ? (clnFrom || "…") + " — " + (clnTo || "…") + " oralig'idagi yozuvlari" : "records in " + (clnFrom || "…") + " — " + (clnTo || "…")))
-          + (uz ? " butunlay o'chiriladi. Bu amalni qaytarib bo'lmaydi." : " will be permanently deleted. This cannot be undone.")}
-        confirmText={uz ? "Ha, o'chirilsin" : "Yes, delete"} cancelText={uz ? "Bekor qilish" : "Cancel"} />
+        title={t("p222")}
+        message={(clnFam ? (t("p223")) : (t("p224")))
+          + (clnAll ? (t("p225")) : t("p279", { from: clnFrom || "…", to: clnTo || "…" }))
+          + (t("p226"))}
+        confirmText={t("p227")} cancelText={t("p221")} />
 
       {/* Bola akkauntini o'chirish — tasdiq */}
       <ConfirmDialog th={th} open={!!kidDel} onClose={() => setKidDel(null)}
         onConfirm={() => { const k = kidDel; setKidDel(null); delKidAccount(k); }}
-        title={uz ? "Bola akkaunti o'chirilsinmi?" : "Delete kid account?"}
-        message={kidDel ? (uz
-          ? kidDel.ism + " akkaunti va logini (" + (kidDel.login || "—") + ") butunlay o'chiriladi. Bola boshqa kira olmaydi. Yozuvlari tarixda saqlanib qoladi."
-          : kidDel.ism + "'s account and login (" + (kidDel.login || "—") + ") will be deleted permanently. Their records remain in history.") : ""}
-        confirmText={uz ? "Ha, o'chirilsin" : "Yes, delete"} cancelText={uz ? "Bekor qilish" : "Cancel"} />
+        title={t("p228")}
+        message={kidDel ? t("p280", { name: kidDel.ism, login: kidDel.login || "—" }) : ""}
+        confirmText={t("p227")} cancelText={t("p221")} />
 
       {/* Hisobni o'chirish oqimi */}
-      <BottomSheet th={th} open={showDeleteAccount} onClose={() => deleteAccountStep !== "loading" && setShowDeleteAccount(false)} title={uz ? "Hisobni o'chirish" : "Delete Account"}>
+      <BottomSheet th={th} open={showDeleteAccount} onClose={() => deleteAccountStep !== "loading" && setShowDeleteAccount(false)} title={t("p229")}>
         <div style={{ padding: SPACE.s2 }}>
           {deleteAccountStep === "info" && (
             <>
               <div style={{ ...TYPE.subtitle, color: th.rd, fontWeight: 700, marginBottom: SPACE.s3 }}>
-                {uz ? "Hisobni o'chirsangiz:" : "If you delete your account:"}
+                {t("p230")}
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
                 {[
-                  uz ? "✓ Oilaviy ma'lumotlar" : "✓ Family information",
-                  uz ? "✓ Xarajatlar" : "✓ Expenses",
-                  uz ? "✓ Daromadlar" : "✓ Incomes",
-                  uz ? "✓ Bolalar akkauntlari" : "✓ Kids' accounts",
-                  uz ? "✓ Maqsadlar" : "✓ Goals",
-                  uz ? "✓ Coin" : "✓ Coins",
-                  uz ? "✓ Orzular" : "✓ Dreams (goals)",
-                  uz ? "✓ Statistikalar" : "✓ Statistics"
+                  t("p231"),
+                  t("p232"),
+                  t("p233"),
+                  t("p234"),
+                  t("p235"),
+                  t("p236"),
+                  t("p237"),
+                  t("p238")
                 ].map((item, index) => (
                   <div key={index} style={{ ...TYPE.caption, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s1, fontWeight: 600 }}>
                     {item}
@@ -2232,15 +2220,15 @@ export default function ProfilePage({
                 ))}
               </div>
               <div style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s4, lineHeight: 1.5 }}>
-                {uz ? "butunlay o'chiriladi.\n\nDavom etasizmi?" : "will be permanently deleted.\n\nDo you want to continue?"}
+                {t("p239")}
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
                 <DangerButton th={th} solid onClick={handleDeleteAccountContinue}>
-                  {uz ? "Davom etish" : "Continue"}
+                  {t("p240")}
                 </DangerButton>
                 <GhostButton th={th} onClick={() => setShowDeleteAccount(false)}>
-                  {uz ? "Bekor qilish" : "Cancel"}
+                  {t("p221")}
                 </GhostButton>
               </div>
             </>
@@ -2249,24 +2237,24 @@ export default function ProfilePage({
           {deleteAccountStep === "password" && (
             <>
               <div style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s3, lineHeight: 1.5 }}>
-                {uz ? "Hisobni butunlay o'chirish uchun parolingizni qayta kiriting:" : "Please re-enter your password to delete your account permanently:"}
+                {t("p241")}
               </div>
               <TextInput
                 th={th}
                 type="password"
-                label={uz ? "Parol" : "Password"}
+                label={t("p195")}
                 value={deleteConfirmPw}
                 onChange={setDeleteConfirmPw}
-                placeholder={uz ? "Parolingizni kiriting" : "Enter your password"}
+                placeholder={t("p242")}
                 error={deletePwErr}
               />
               
               <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginTop: SPACE.s4 }}>
                 <DangerButton th={th} solid onClick={handleDeleteAccountFinal}>
-                  {uz ? "O'chirish" : "Delete"}
+                  {t("delete")}
                 </DangerButton>
                 <GhostButton th={th} onClick={() => setDeleteAccountStep("info")}>
-                  {uz ? "Orqaga" : "Back"}
+                  {t("p243")}
                 </GhostButton>
               </div>
             </>
@@ -2276,7 +2264,7 @@ export default function ProfilePage({
             <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, padding: SPACE.s4 + "px 0", alignItems: "center", justifyContent: "center" }}>
               <LinearProgress th={th} />
               <div style={{ ...TYPE.caption, color: th.t2, fontWeight: 600, textAlign: "center" }}>
-                {uz ? "Hisob o'chirilmoqda, iltimos kuting..." : "Deleting account, please wait..."}
+                {t("p244")}
               </div>
             </div>
           )}
