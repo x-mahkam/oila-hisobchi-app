@@ -141,9 +141,29 @@ service cloud.firestore {
       allow delete: if signedIn() && (mineByUser(resource) || mineByOila(resource) || docHasMyOila(docId) || docIsMyUid(docId) || docIsMySessKid(docId) || myChannel(resource));
     }
 
-    match /translations/{document=**} {
+    // ═══════════════════════════════════════════════════════════════════
+    //  I18N — Dinamik tarjima platformasi (Firestore orqali boshqariladi,
+    //  APK/deploy shart emas). Maxfiy emas — hammaga ochiq o'qish,
+    //  yozish faqat admin UID'ga.
+    // ═══════════════════════════════════════════════════════════════════
+    function isAdmin() {
+      // MUHIM: bu yerga o'zingizning admin Firebase UID'ingizni yozing.
+      // Qayerdan olish: Firebase Console → Authentication → jadvaldagi
+      // o'zingizning qatoringiz → "User UID" ustuni.
+      return signedIn() && uid() in ["ADMIN_UID_BU_YERGA_YOZING"];
+    }
+
+    match /translations/{lang} {
       allow read: if true;
-      allow write: if false;
+      allow write: if isAdmin();
+    }
+    match /languages/{code} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    match /i18n_meta/{doc} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     match /{document=**} { allow read, write: if false; }
