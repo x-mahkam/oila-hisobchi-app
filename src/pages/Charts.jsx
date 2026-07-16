@@ -22,9 +22,33 @@ const darIco = (id, c, sz=20) => {
   return <DarIco id={id} c={c} s={sz} />;
 };
 
-const M_UZ = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
-const M_SH  = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
-const DAYS  = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba=0 ... Yakshanba=6
+const MONTHS_FULL = {
+  uz: ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"],
+  en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  ru: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+  kk: ["Қаңтар","Ақпан","Наурыз","Сәуір","Мамыр","Маусым","Шілде","Тамыз","Қыркүйек","Қазан","Қараша","Желтоқсан"],
+  ky: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+  tg: ["Январ","Феврал","Март","Апрел","Май","Июн","Июл","Август","Сентябр","Октябр","Ноябр","Декабр"],
+  qr: ["Qańtar","Aqpan","Nawrız","Sáwir","Mayıs","Iyun","Iyul","Avgust","Sentyabr","Oktyabr","Noyabr","Dekabr"],
+};
+const MONTHS_SHORT = {
+  uz: ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"],
+  en: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  ru: ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
+  kk: ["Қаң","Ақп","Нау","Сәу","Мам","Мау","Шіл","Там","Қыр","Қаз","Қар","Жел"],
+  ky: ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
+  tg: ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
+  qr: ["Qań","Aqp","Naw","Sáw","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"],
+};
+const WEEKDAYS_SHORT = {
+  uz: ["Du","Se","Ch","Pa","Ju","Sh","Ya"],
+  en: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+  ru: ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"],
+  kk: ["Дс","Сс","Ср","Бс","Жм","Сб","Жс"],
+  ky: ["Дүй","Шейш","Шар","Бейш","Жума","Ишм","Жек"],
+  tg: ["Дш","Сш","Чш","Пш","Ҷм","Шн","Як"],
+  qr: ["Dú","Se","Sá","Pú","Jm","Sn","Ya"],
+}; // Dushanba=0 ... Yakshanba=6
 const COLORS = ["#7C6FF7","#F5B731","#22C55E","#EF4444","#06B6D4","#F97316","#EC4899"];
 const SLIDE_H = 250; // barcha slide'lar bir xil balandlik
 
@@ -190,7 +214,7 @@ function Toggle({ options, value, onChange, th, color }) {
 }
 
 // ── Asosiy komponent ───────────────────────────────────────────
-export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, canSeeReport }) {
+export default function ChartsPage({ bX, bD, xar, dar, th, lg, t, f, azolar, user, canSeeReport }) {
   const now=new Date(), Y=now.getFullYear(), M=now.getMonth(), W=getISOWeek(now);
 
   const [scope,  setScope]  = useState("mine");
@@ -204,30 +228,32 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
 
   // ── Davr variantlari ───────────────────────────────────────
   const opts = useMemo(()=>{
+    const monShort = MONTHS_SHORT[lg] || MONTHS_SHORT.uz;
+    const monFull = MONTHS_FULL[lg] || MONTHS_FULL.uz;
     if (period==="hafta") {
       const cnt=Math.min(W,10);
       return Array.from({length:cnt},(_,i)=>{
         const w=W-(cnt-1-i);
         const monday=getMondayOfISOWeek(Y,w);
         const sunday=new Date(monday.getTime()+6*86400000);
-        const label=w===W?(lg==="uz"?"Bu hafta":"This week")
-          :w===W-1?(lg==="uz"?"O\'tgan hafta":"Last week"):`${w}-hafta`;
-        const sub=`${monday.getDate()} ${M_SH[monday.getMonth()]} - ${sunday.getDate()} ${M_SH[sunday.getMonth()]}`;
+        const label=w===W?t("ch_thisWeek")
+          :w===W-1?t("ch_lastWeek"):t("ch_weekNum",{w});
+        const sub=`${monday.getDate()} ${monShort[monday.getMonth()]} - ${sunday.getDate()} ${monShort[sunday.getMonth()]}`;
         return {key:`${Y}-W${w}`,label,sub,monday};
       });
     }
     if (period==="oy") {
       return Array.from({length:M+1},(_,i)=>({
         key:`${Y}-${String(i+1).padStart(2,"0")}`,
-        label:M_UZ[i], sub:String(Y)
+        label:monFull[i], sub:String(Y)
       }));
     }
     const arr=[];
     for(let y=Y-3;y<Y-1;y++) arr.push({key:String(y),label:String(y),sub:""});
-    arr.push({key:`${Y-1}-last`,label:lg==="uz"?"O\'tgan yil":"Last year",sub:String(Y-1)});
-    arr.push({key:`${Y}-this`, label:lg==="uz"?"Bu yil":"This year",  sub:String(Y)});
+    arr.push({key:`${Y-1}-last`,label:t("ch_lastYear"),sub:String(Y-1)});
+    arr.push({key:`${Y}-this`, label:t("ch_thisYear"),  sub:String(Y)});
     return arr;
-  },[period,lg,W,M,Y]);
+  },[period,lg,t,W,M,Y]);
 
   useEffect(()=>{
     setSelIdx(opts.length-1); setSlide(0); setHov(null);
@@ -279,12 +305,12 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
         sum:filtX.filter(x=>x.kategoriya===k.id).reduce((s,x)=>s+Number(x.summa||0),0)
       }));
       const qzX=filtX.filter(x=>x.kategoriya==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
-      if(qzX>0) base.push({id:"qarz",name:lg==="uz"?"Qarz berildi":"Loan given",color:"#F97316",icon:catIco("qarz", "#F97316", 20),sum:qzX});
+      if(qzX>0) base.push({id:"qarz",name:t("ch_loanGiven"),color:"#F97316",icon:catIco("qarz", "#F97316", 20),sum:qzX});
       const mqX=filtX.filter(x=>x.kategoriya==="maqsad").reduce((s,x)=>s+Number(x.summa||0),0);
-      if(mqX>0) base.push({id:"maqsad",name:lg==="uz"?"Jamg'arma (maqsad)":"Goal savings",color:"#EAB308",icon:catIco("maqsad", "#EAB308", 20),sum:mqX});
+      if(mqX>0) base.push({id:"maqsad",name:t("ch_goalSavings"),color:"#EAB308",icon:catIco("maqsad", "#EAB308", 20),sum:mqX});
       const knownX=new Set([...KATS.map(k=>k.id),"qarz","maqsad"]);
       const otherX=filtX.filter(x=>!knownX.has(x.kategoriya)).reduce((s,x)=>s+Number(x.summa||0),0);
-      if(otherX>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:catIco("__other", "#94A3B8", 20),sum:otherX});
+      if(otherX>0) base.push({id:"__other",name:t("ch_otherRecords"),color:"#94A3B8",icon:catIco("__other", "#94A3B8", 20),sum:otherX});
       return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
     }
     const base=DARS.map((d,i)=>({
@@ -292,10 +318,10 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       sum:filtD.filter(x=>x.tur===d.id).reduce((s,x)=>s+Number(x.summa||0),0)
     }));
     const qzD=filtD.filter(x=>x.tur==="qarz").reduce((s,x)=>s+Number(x.summa||0),0);
-    if(qzD>0) base.push({id:"qarz",name:lg==="uz"?"Qarz olindi":"Loan received",color:"#14B8A6",icon:darIco("qarz", "#14B8A6", 20),sum:qzD});
+    if(qzD>0) base.push({id:"qarz",name:t("ch_loanReceived"),color:"#14B8A6",icon:darIco("qarz", "#14B8A6", 20),sum:qzD});
     const knownD=new Set([...DARS.map(d=>d.id),"qarz"]);
     const otherD=filtD.filter(x=>!knownD.has(x.tur)).reduce((s,x)=>s+Number(x.summa||0),0);
-    if(otherD>0) base.push({id:"__other",name:lg==="uz"?"Boshqa yozuvlar":"Other records",color:"#94A3B8",icon:darIco("__other", "#94A3B8", 20),sum:otherD});
+    if(otherD>0) base.push({id:"__other",name:t("ch_otherRecords"),color:"#94A3B8",icon:darIco("__other", "#94A3B8", 20),sum:otherD});
     return base.filter(c=>c.sum>0).sort((a,b)=>b.sum-a.sum);
   },[filtX,filtD,type,lg]);
 
@@ -314,20 +340,23 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
 
   // ── Slide 0: sanalar ──────────────────────────────────────
   const datePts=useMemo(()=>{
+    const monShort = MONTHS_SHORT[lg] || MONTHS_SHORT.uz;
     const map={};
     curr.forEach(x=>{if(x.sana) map[x.sana]=(map[x.sana]||0)+Number(x.summa||0);});
     return Object.entries(map).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,5)
       .map(([sana,sum])=>{
         const d=new Date(sana);
-        const label=period==="yil"?`${M_SH[d.getMonth()]} ${d.getFullYear()}`
-          :`${M_SH[d.getMonth()]} ${d.getDate()}`;
+        const label=period==="yil"?`${monShort[d.getMonth()]} ${d.getFullYear()}`
+          :`${monShort[d.getMonth()]} ${d.getDate()}`;
         return {sana,sum,label,color:cats[0]?.color||th.ac};
       });
-  },[curr,cats,period,th]);
+  },[curr,cats,period,th,lg]);
 
   // ── Slide 2: line chart ────────────────────────────────────
   const lineData=useMemo(()=>{
     const key=selOpt?.key||"";
+    const monShort = MONTHS_SHORT[lg] || MONTHS_SHORT.uz;
+    const weekShort = WEEKDAYS_SHORT[lg] || WEEKDAYS_SHORT.uz;
     const getCol=(sana)=>{
       const items=curr.filter(x=>x.sana===sana);
       if(!items.length) return "#334155";
@@ -352,12 +381,12 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
         const d=new Date(monday.getTime()+i*86400000);
         const sana=fmtLocalDate(d);
         // label: "Du 23 Iyn"
-        const label=`${DAYS[i]} ${d.getDate()} ${M_SH[d.getMonth()]}`;
+        const label=`${weekShort[i]} ${d.getDate()} ${monShort[d.getMonth()]}`;
         return{label,sum:curr.filter(x=>x.sana===sana).reduce((s,x)=>s+Number(x.summa||0),0),color:getCol(sana)};
       });
     }
     const y=parseInt(key.replace(/-this|-last/,""));
-    return M_SH.map((mn,i)=>{
+    return monShort.map((mn,i)=>{
       const prefix=`${y}-${String(i+1).padStart(2,"0")}`;
       const items=curr.filter(x=>x.sana?.startsWith(prefix));
       const sum=items.reduce((s,x)=>s+Number(x.summa||0),0);
@@ -365,7 +394,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       const col=sum>0?(type==="xarajat"?KATS.find(k=>k.id===top.kategoriya)?.c||th.ac:DARS.find(d=>d.id===top.tur)?.c||th.gr):"#334155";
       return{label:`${mn} ${y}`,sum,color:col};
     });
-  },[curr,selOpt,period,type,th]);
+  },[curr,selOpt,period,type,th,lg]);
 
   const lineMax=Math.max(...lineData.map(d=>d.sum),1);
   const activePts=lineData.filter(d=>d.sum>0);
@@ -390,7 +419,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
     <div>
       {/* ── O'zimning / Oilamning ── */}
       <Toggle
-        options={[["mine",lg==="uz"?"O'zimning":"Mine"],["family",lg==="uz"?"Oilamning":"Family"]]}
+        options={[["mine",t("ch_mineLabel")],["family",t("ch_familyLabel")]]}
         value={scope} onChange={k=>{setScope(k);setSlide(0);setHov(null);}} th={th}
       />
       <div style={{height:10}}/>
@@ -399,8 +428,8 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       <div style={{display:"flex",background:th.surH,borderRadius:12,padding:3,gap:3,
         marginBottom:10,border:`1.5px solid ${th.bor}`}}>
         {[
-          { key: "xarajat", label: lg === "uz" ? "Xarajat" : "Expenses", icon: (c) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:6}}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg> },
-          { key: "daromad", label: lg === "uz" ? "Daromad" : "Income", icon: (c) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:6}}><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg> }
+          { key: "xarajat", label: t("ch_expensesLabel"), icon: (c) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:6}}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg> },
+          { key: "daromad", label: t("ch_incomeLabel"), icon: (c) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{display:"inline-block",verticalAlign:"middle",marginRight:6}}><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg> }
         ].map(({ key: k, label, icon }) => {
           const active=type===k;
           const ac=k==="xarajat"?th.rd:th.gr;
@@ -424,9 +453,9 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
       {/* ── Hafta / Oy / Yil ── */}
       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",background:th.surH,
         borderRadius:12,padding:3,gap:3,border:`1.5px solid ${th.bor}`,marginBottom:0}}>
-        {[["hafta",lg==="uz"?"Hafta":"Week"],
-          ["oy",   lg==="uz"?"Oy":"Month"],
-          ["yil",  lg==="uz"?"Yil":"Year"]].map(([k,l])=>{
+        {[["hafta",t("ch_week")],
+          ["oy",   t("ch_month")],
+          ["yil",  t("ch_year")]].map(([k,l])=>{
           const active=period===k;
           return(
             <button key={k} onClick={()=>setPeriod(k)} style={{
@@ -483,7 +512,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
             </div>
             <div style={{flex:1,display:"flex",flexDirection:"column",gap:10}}>
               {datePts.length===0
-                ?<div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ma'lumot yo'q":"No data"}</div>
+                ?<div style={{fontSize:13,color:th.t2}}>{t("ch_noData")}</div>
                 :datePts.map((d,i)=>{
                   const col=cats[i%Math.max(cats.length,1)]?.color||th.ac;
                   return(
@@ -523,7 +552,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
             </div>
             <div style={{flex:1,display:"flex",flexDirection:"column",gap:9}}>
               {cats.length===0
-                ?<div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ma'lumot yo'q":"No data"}</div>
+                ?<div style={{fontSize:13,color:th.t2}}>{t("ch_noData")}</div>
                 :<>
                   {cats.slice(0,5).map((cat,i)=>(
                     <div key={cat.id} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}
@@ -543,7 +572,7 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
                       <div style={{width:16,height:16,borderRadius:"50%",
                         border:`2px solid ${th.t2}`,background:th.t2+"22",flexShrink:0}}/>
                       <span style={{flex:1,fontSize:12,color:"#f1f5f9",fontWeight:600}}>
-                        {lg==="uz"?"Boshqa":"Other"}
+                        {t("ch_other")}
                       </span>
                       <span style={{fontSize:12,fontWeight:800,color:th.t2,flexShrink:0}}>
                         {total>0?(cats.slice(5).reduce((s,c)=>s+c.sum,0)/total*100).toFixed(2):0}%
@@ -561,11 +590,11 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
           <div style={{height:SLIDE_H,padding:"14px 10px 6px",display:"flex",flexDirection:"column"}}>
             <div style={{display:"flex",gap:20,marginBottom:8,paddingLeft:4}}>
               <div style={{fontSize:12,color:th.t2}}>
-                {lg==="uz"?"Jami:":"Total:"}{" "}
+                {t("ch_total")}{" "}
                 <b style={{color:"#f1f5f9",fontSize:13}}>{total.toLocaleString("uz-UZ")}</b>
               </div>
               <div style={{fontSize:12,color:th.t2}}>
-                {lg==="uz"?"O'rtacha:":"Avg:"}{" "}
+                {t("ch_average")}{" "}
                 <b style={{color:"#f1f5f9",fontSize:13}}>{lineAvg.toLocaleString("uz-UZ")}</b>
               </div>
             </div>
@@ -595,14 +624,14 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
                     </div></>
                 ):(
                   <div style={{fontSize:11,fontWeight:800,color:"#f1f5f9",textAlign:"center",lineHeight:1.4}}>
-                    {lg==="uz"?"Oila\nulushi":"Family\nshare"}
+                    {t("ch_familyShareSplit")}
                   </div>
                 )}
               </div>
             </div>
             <div style={{flex:1,display:"flex",flexDirection:"column",gap:10}}>
               {members.length===0
-                ?<div style={{fontSize:13,color:th.t2}}>{lg==="uz"?"Ma'lumot yo'q":"No data"}</div>
+                ?<div style={{fontSize:13,color:th.t2}}>{t("ch_noData")}</div>
                 :members.map((m,i)=>(
                   <div key={m.id} style={{display:"flex",alignItems:"center",gap:8,cursor:"pointer"}}
                     onMouseEnter={()=>setHov(i)} onMouseLeave={()=>setHov(null)}
@@ -680,12 +709,10 @@ export default function ChartsPage({ bX, bD, xar, dar, th, lg, f, azolar, user, 
             )}
           </div>
           <div style={{fontSize:15,fontWeight:700,color:"#f1f5f9",marginBottom:6}}>
-            {lg==="uz"?"Ma'lumot yo'q":"No data"}
+            {t("ch_noData")}
           </div>
           <div style={{fontSize:13,color:th.t2}}>
-            {lg==="uz"
-              ?`Bu davr uchun ${type==="xarajat"?"xarajat":"daromad"} kiritilmagan`
-              :`No ${type==="xarajat"?"expenses":"income"} for this period`}
+            {type==="xarajat" ? t("ch_noExpenseForPeriod") : t("ch_noIncomeForPeriod")}
           </div>
         </div>
       )}
