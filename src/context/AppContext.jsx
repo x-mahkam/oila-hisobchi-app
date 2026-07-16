@@ -4,6 +4,8 @@ import { doc, onSnapshot } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { td, nt, hp, fmtN } from "../utils/formatters.js";
 import { MK, VALS, TL } from "../utils/constants.js";
+import { useTranslation } from "react-i18next";
+import i18n from "../i18n/index.js";
 
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -31,8 +33,35 @@ export function AppProvider({ children }) {
   const [gardenData,  setGardenData]  = useState({ level: 0, watered: null, totalStars: 0 });
 
   // ── UI ───────────────────────────────────────────────────
+  const { t: tFunc } = useTranslation();
   const [dark,    setDark]    = useState(true);
-  const [lg,      setLg]      = useState("uz");
+  const [lg,      setLgState] = useState(() => i18n.language || "uz");
+
+  const setLg = useCallback((newLang) => {
+    if (newLang) {
+      i18n.changeLanguage(newLang);
+      setLgState(newLang);
+      try {
+        localStorage.setItem("oilaV7L", newLang);
+        localStorage.setItem("oilaV7_lg", newLang);
+        localStorage.setItem("i18nextLng", newLang);
+      } catch (e) {
+        console.error("Error setting language:", e);
+      }
+    }
+  }, []);
+
+  // Listen to language changes from i18n instance to keep state synced
+  useEffect(() => {
+    const handleLanguageChanged = (lng) => {
+      setLgState(lng);
+    };
+    i18n.on("languageChanged", handleLanguageChanged);
+    return () => {
+      i18n.off("languageChanged", handleLanguageChanged);
+    };
+  }, []);
+
   const [val,     setVal]     = useState(VALS[0]);
   const [scr,     setScr]     = useState("login");
   const [bilimInitialView, setBilimInitialView] = useState("cats");
@@ -78,7 +107,17 @@ export function AppProvider({ children }) {
 
   // ── Computed ─────────────────────────────────────────────
   const th = useMemo(() => MK(dark), [dark]);
-  const t  = useMemo(() => TL[lg] || TL.uz, [lg]);
+  const t = useMemo(() => {
+    const p = (key, options) => tFunc(key, options);
+    return new Proxy(p, {
+      get(target, prop) {
+        if (typeof prop === "string" && prop !== "then" && prop !== "length" && prop !== "name") {
+          return tFunc(prop);
+        }
+        return target[prop];
+      }
+    });
+  }, [tFunc]);
 
   // ── Toast ────────────────────────────────────────────────
   const tstRef = useRef(null);
@@ -142,15 +181,34 @@ export function AppProvider({ children }) {
         productId
       });
       
+      const L = (uz, ru, en, kk, ky, tg, qr) => {
+        return lg === "uz" ? uz :
+               lg === "ru" ? ru :
+               lg === "kk" ? kk :
+               lg === "ky" ? ky :
+               lg === "tg" ? tg :
+               lg === "qr" ? qr :
+               en;
+      };
+
       if (res.data?.success) {
-        ok$(lg === "uz" ? "Xarid muvaffaqiyatli tasdiqlandi!" : "Purchase verified successfully!");
+        ok$(L("Xarid muvaffaqiyatli tasdiqlandi!", "Покупка успешно подтверждена!", "Purchase verified successfully!", "Сатып алу сәтті расталды!", "Сатып алуу ийгиликтүү тастыкталды!", "Харид бомуваффақият тасдиқ шуд!", "Satıp alıw tabıslı tastıyıqlandı!"));
         return { success: true, data: res.data };
       } else {
         throw new Error(res.data?.message || "Xaridni tasdiqlashda xatolik yuz berdi");
       }
     } catch (e) {
       console.error("activatePremium Error:", e);
-      ok$(lg === "uz" ? "To'lovni tasdiqlashda xato yuz berdi" : "Error verifying payment", "err");
+      const L = (uz, ru, en, kk, ky, tg, qr) => {
+        return lg === "uz" ? uz :
+               lg === "ru" ? ru :
+               lg === "kk" ? kk :
+               lg === "ky" ? ky :
+               lg === "tg" ? tg :
+               lg === "qr" ? qr :
+               en;
+      };
+      ok$(L("To'lovni tasdiqlashda xato yuz berdi", "Произошла ошибка при подтверждении платежа", "Error verifying payment", "Төлемді растау кезінде қате кетті", "Төлөмдү тастыктоодо ката кетти", "Ҳангоми тасдиқи пардохт хатогӣ рӯй дод", "To'lemdi tastıyıqlawda qa'telik ju'z berdi"), "err");
       return { success: false, error: e };
     }
   }, [user, lg, ok$]);
