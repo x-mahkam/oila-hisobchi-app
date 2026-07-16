@@ -21,26 +21,26 @@ import { canAssignTask, canDeleteTask } from "../utils/permissions.js";
 // Tayyor vazifalar to'plami — 4 ustunli grid uchun
 // (e — DATA emoji: bazaga avvalgidek yoziladi, UI'da ko'rsatilmaydi)
 const VAZIFA_PRESETS = [
-  { id: "kitob",    e: "📚", uz: "Kitob o'qish",           en: "Reading" },
-  { id: "xona",     e: "🧹", uz: "Xonani yig'ishtirish",   en: "Clean room" },
-  { id: "idish",    e: "🍽️", uz: "Idish yuvish",     en: "Wash dishes" },
-  { id: "dokon",    e: "🛒", uz: "Do'kondan xarid",        en: "Grocery run" },
-  { id: "gul",      e: "🌱", uz: "Gullarni sug'orish",     en: "Water plants" },
-  { id: "axlat",    e: "🚮", uz: "Axlatni chiqarish",      en: "Take out trash" },
-  { id: "orin",     e: "🛏️", uz: "O'rinni yig'ish",  en: "Make the bed" },
-  { id: "darslik",  e: "📝", uz: "Uy vazifasini bajarish", en: "Do homework" },
-  { id: "kir",      e: "🧺", uz: "Kir yuvishga yordam",    en: "Laundry help" },
-  { id: "ovqat",    e: "🍳", uz: "Ovqatga yordam",         en: "Help cooking" },
-  { id: "sport",    e: "🚴", uz: "Sport qilish",           en: "Exercise" },
-  { id: "musiqa",   e: "🎹", uz: "Musiqa mashqi",          en: "Music practice" },
-  { id: "oyinchoq", e: "🧸", uz: "O'yinchoqlarni yig'ish", en: "Tidy toys" },
-  { id: "hayvon",   e: "🐕", uz: "Hayvonga qarash",        en: "Pet care" },
-  { id: "deraza",   e: "🪟", uz: "Deraza artish",          en: "Clean windows" },
-  { id: "soz",      e: "🧠", uz: "Yangi so'z yodlash",     en: "Learn new words" },
-  { id: "buvi",     e: "🤲", uz: "Kattalarga yordam",      en: "Help elders" },
-  { id: "rasm",     e: "🎨", uz: "Rasm chizish",           en: "Drawing" },
-  { id: "sayr",     e: "🏃", uz: "Toza havoda sayr",       en: "Outdoor walk" },
-  { id: "boshqa",   e: "✨",     uz: "Boshqa",                 en: "Other" },
+  { id: "kitob",    e: "📚", uz: "Kitob o'qish",           en: "Reading",       ru: "Чтение",                     kk: "Оқу",                          ky: "Окуу",                        tg: "Мутолиа",                     qr: "Oqıw" },
+  { id: "xona",     e: "🧹", uz: "Xonani yig'ishtirish",   en: "Clean room",    ru: "Уборка комнаты",             kk: "Бөлмені жинау",                ky: "Бөлмөнү тазалоо",             tg: "Тоза кардани ҳуҷра",          qr: "Bólmeni tazalaw" },
+  { id: "idish",    e: "🍽️", uz: "Idish yuvish",     en: "Wash dishes",   ru: "Мытьё посуды",               kk: "Ыдыс жуу",                     ky: "Идиш жуу",                    tg: "Шустани зарфҳо",              qr: "Idıs-tabaq juwıw" },
+  { id: "dokon",    e: "🛒", uz: "Do'kondan xarid",        en: "Grocery run",   ru: "Поход в магазин",            kk: "Дүкеннен сауда",               ky: "Дүкөндөн азык алуу",          tg: "Хариди мағоза",               qr: "Dúkennen alıp shıǵıw" },
+  { id: "gul",      e: "🌱", uz: "Gullarni sug'orish",     en: "Water plants",  ru: "Полив цветов",               kk: "Гүлдерді суару",               ky: "Гүлдөрдү сугаруу",            tg: "Обёрии гулҳо",                qr: "Gúllerdi suwǵarıw" },
+  { id: "axlat",    e: "🚮", uz: "Axlatni chiqarish",      en: "Take out trash",ru: "Вынос мусора",               kk: "Қоқыс шығару",                 ky: "Таштанды чыгаруу",            tg: "Бароварди ахлот",             qr: "Qоqıstı shıǵarıw" },
+  { id: "orin",     e: "🛏️", uz: "O'rinni yig'ish",  en: "Make the bed", ru: "Заправить кровать",          kk: "Төсекті жинау",                ky: "Керебетти жыйноо",            tg: "Ҷамъ кардани кат",            qr: "Kárwattı jıynaw" },
+  { id: "darslik",  e: "📝", uz: "Uy vazifasini bajarish", en: "Do homework",   ru: "Выполнение домашнего задания",kk: "Үй тапсырмасын орындау",       ky: "Үй тапшырмасын аткаруу",      tg: "Иҷрои вазифаи хонагӣ",        qr: "Úy tapsırmasın orınlaw" },
+  { id: "kir",      e: "🧺", uz: "Kir yuvishga yordam",    en: "Laundry help",  ru: "Помощь со стиркой",          kk: "Кір жууға көмек",              ky: "Кир жууга жардам",            tg: "Кӯмак дар шустушӯй",          qr: "Kir juwıwǵa járdem" },
+  { id: "ovqat",    e: "🍳", uz: "Ovqatga yordam",         en: "Help cooking",  ru: "Помощь на кухне",            kk: "Тамақ дайындауға көмек",       ky: "Тамак жасоого жардам",        tg: "Кӯмак дар ошпазӣ",            qr: "Tamaq tayarlawǵa járdem" },
+  { id: "sport",    e: "🚴", uz: "Sport qilish",           en: "Exercise",      ru: "Спорт",                       kk: "Спорт",                        ky: "Спорт",                       tg: "Варзиш",                      qr: "Sport" },
+  { id: "musiqa",   e: "🎹", uz: "Musiqa mashqi",          en: "Music practice",ru: "Музыкальная практика",       kk: "Музыка жаттығуы",              ky: "Музыка көнүгүүсү",            tg: "Машқи мусиқӣ",                qr: "Muzıka jattıǵıwı" },
+  { id: "oyinchoq", e: "🧸", uz: "O'yinchoqlarni yig'ish", en: "Tidy toys",     ru: "Убрать игрушки",             kk: "Ойыншықтарды жинау",           ky: "Оюнчуктарды жыйноо",          tg: "Ҷамъ кардани бозичаҳо",       qr: "Oyınshıqlardı jıynaw" },
+  { id: "hayvon",   e: "🐕", uz: "Hayvonga qarash",        en: "Pet care",      ru: "Уход за питомцем",           kk: "Үй жануарына қарау",           ky: "Үй жаныбарын багуу",          tg: "Нигоҳубини ҳайвони хонагӣ",   qr: "Úy haywanına qaraw" },
+  { id: "deraza",   e: "🪟", uz: "Deraza artish",          en: "Clean windows", ru: "Мытьё окон",                 kk: "Терезе тазалау",               ky: "Терезе тазалоо",              tg: "Тоза кардани тиреза",         qr: "Áyneklerdi tazalaw" },
+  { id: "soz",      e: "🧠", uz: "Yangi so'z yodlash",     en: "Learn new words",ru: "Учить новые слова",         kk: "Жаңа сөз жаттау",              ky: "Жаңы сөз жаттоо",             tg: "Азёд кардани калимаҳои нав",  qr: "Jańa sózlerdi jattaw" },
+  { id: "buvi",     e: "🤲", uz: "Kattalarga yordam",      en: "Help elders",   ru: "Помощь старшим",             kk: "Үлкендерге көмек",             ky: "Улууларга жардам",            tg: "Кӯмак ба калонсолон",         qr: "Úlkenlerge járdem" },
+  { id: "rasm",     e: "🎨", uz: "Rasm chizish",           en: "Drawing",       ru: "Рисование",                  kk: "Сурет салу",                   ky: "Сүрөт тартуу",                tg: "Расмкашӣ",                    qr: "Súwret salıw" },
+  { id: "sayr",     e: "🏃", uz: "Toza havoda sayr",       en: "Outdoor walk",  ru: "Прогулка на свежем воздухе", kk: "Таза ауада серуендеу",         ky: "Таза абада сейилдөө",         tg: "Сайр дар ҳавои тоза",         qr: "Taza hawada aylanıw" },
+  { id: "boshqa",   e: "✨",     uz: "Boshqa",                 en: "Other",      ru: "Другое",                     kk: "Басқа",                        ky: "Башка",                       tg: "Дигар",                       qr: "Basqa" },
 ];
 
 // ── Tasks-lokal outline SVG ikonkalar (emoji o'rniga, DS 6) ──
@@ -111,14 +111,14 @@ const EMOJI2ID = {
 const taskIco = (emoji, c, s) => (TIco[EMOJI2ID[emoji]] || TIco.task)(c, s);
 
 // ── Status meta: rang + badge turi + matn (kit Badge orqali) ──
-const statusMeta = (st, th, lg) => {
+const statusMeta = (st, th, t) => {
   switch (st) {
-    case "approved": return { c: th.gr, type: "success", label: lg === "uz" ? "Tasdiqlandi" : "Approved",       prog: 100 };
-    case "done":     return { c: th.am, type: "warning", label: lg === "uz" ? "Tekshirilmoqda" : "Pending review", prog: 66 };
-    case "rejected": return { c: th.rd, type: "danger",  label: lg === "uz" ? "Rad etildi" : "Rejected",        prog: 0 };
-    case "expired":  return { c: th.t3, type: "status",  tone: th.t3, label: lg === "uz" ? "Muddati o'tgan" : "Expired", prog: 0 };
-    case "proposed": return { c: th.ac2 || th.ac, type: "info", label: lg === "uz" ? "Taklif qilindi" : "Proposed", prog: 15 };
-    default:         return { c: th.ac, type: "info",    label: lg === "uz" ? "Bajarilmagan" : "To do",         prog: 8 };
+    case "approved": return { c: th.gr, type: "success", label: t("tk_stApproved"), prog: 100 };
+    case "done":     return { c: th.am, type: "warning", label: t("tk_stPending"), prog: 66 };
+    case "rejected": return { c: th.rd, type: "danger",  label: t("tk_stRejected"), prog: 0 };
+    case "expired":  return { c: th.t3, type: "status",  tone: th.t3, label: t("tk_stExpired"), prog: 0 };
+    case "proposed": return { c: th.ac2 || th.ac, type: "info", label: t("tk_stProposed"), prog: 15 };
+    default:         return { c: th.ac, type: "info",    label: t("tk_stTodo"), prog: 8 };
   }
 };
 
@@ -138,14 +138,14 @@ const RewardChip = memo(function RewardChip({ th, amount }) {
 });
 
 // ═══ StatusBadge — holat (kit Badge, React.memo) ═══
-const StatusBadge = memo(function StatusBadge({ th, lg, status }) {
-  const m = statusMeta(status, th, lg);
+const StatusBadge = memo(function StatusBadge({ th, t, status }) {
+  const m = statusMeta(status, th, t);
   return <Badge th={th} type={m.type} tone={m.tone}>{m.label}</Badge>;
 });
 
 // ═══ TaskCard — bitta vazifa kartasi (AppCard ichida, React.memo) ═══
 // Tuzilishi: Icon → Title → (kid) → Reward → Sana → Progress → Status → Actions
-const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAcceptProposed, onAskDelete }) {
+const TaskCard = memo(function TaskCard({ th, t, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAcceptProposed, onAskDelete }) {
   const formatWithSpaces = (val) => {
     const s = String(val).replace(/\D/g, "");
     if (!s) return "";
@@ -158,7 +158,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
   };
 
   const st = effStatus(v);
-  const m = statusMeta(st, th, lg);
+  const m = statusMeta(st, th, t);
   const dlPast = v.deadline && TODAY_STR() > v.deadline && st !== "approved";
   const [customReward, setCustomReward] = useState(formatWithSpaces(v.reward || ""));
 
@@ -190,17 +190,17 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
                 {Ico.user(th.t2)}{kidName}
               </span>
             )}
-            <StatusBadge th={th} lg={lg} status={st} />
+            <StatusBadge th={th} t={t} status={st} />
           </div>
         </div>
       </div>
       {/* Sana / muddat qatori */}
       {(v.sana || v.doneSana || v.deadline) && (
         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3, marginTop: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, flexWrap: "wrap" }}>
-          {v.sana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.cal(th.t3)}{lg === "uz" ? "Berilgan" : "Assigned"}: {v.sana}</span>}
-          {v.deadline && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, color: dlPast ? th.rd : th.am, fontWeight: 700 }}>{TIco.clock(dlPast ? th.rd : th.am)}{lg === "uz" ? "Muddat" : "Due"}: {v.deadline}{dlPast ? (lg === "uz" ? " (o'tgan)" : " (passed)") : ""}</span>}
-          {v.createdByName && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.user(th.t3)}{lg === "uz" ? "Berdi" : "By"}: {v.createdByName}</span>}
-          {v.doneSana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.clock(th.t3)}{lg === "uz" ? "Bajarildi" : "Done"}: {v.doneSana}</span>}
+          {v.sana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.cal(th.t3)}{t("tk_assigned")}: {v.sana}</span>}
+          {v.deadline && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1, color: dlPast ? th.rd : th.am, fontWeight: 700 }}>{TIco.clock(dlPast ? th.rd : th.am)}{t("tk_due")}: {v.deadline}{dlPast ? t("tk_passed") : ""}</span>}
+          {v.createdByName && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{Ico.user(th.t3)}{t("tk_by")}: {v.createdByName}</span>}
+          {v.doneSana && <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{TIco.clock(th.t3)}{t("tk_doneStatus")}: {v.doneSana}</span>}
         </div>
       )}
       {/* Progress — kit LinearProgress (holatga bog'liq) */}
@@ -212,7 +212,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
       {!isKid && st === "proposed" && (
         <div style={{ marginTop: SPACE.s3, background: th.surH, borderRadius: RADIUS.s, padding: SPACE.s3, border: "1px dashed " + th.bor }}>
           <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700, marginBottom: SPACE.s2 }}>
-            {lg === "uz" ? "Farzand taklif qilgan mukofotni kelishish:" : "Negotiate child's proposed reward:"}
+            {t("tk_negotiateReward")}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
             <input
@@ -236,14 +236,14 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
                 outline: "none"
               }}
             />
-            <span style={{ ...TYPE.caption, color: th.t2 }}>{lg === "uz" ? "so'm" : "UZS"}</span>
+            <span style={{ ...TYPE.caption, color: th.t2 }}>{t("tk_currency")}</span>
           </div>
           <div style={{ display: "flex", gap: SPACE.s2 }}>
             <PrimaryButton th={th} onClick={() => onAcceptProposed && onAcceptProposed(v.id, customReward)} style={{ flex: 1, padding: "8px", background: th.gr }}>
-              {Ico.check("#fff")}{lg === "uz" ? "Tasdiqlash" : "Approve"}
+              {Ico.check("#fff")}{t("tk_approve")}
             </PrimaryButton>
             <DangerButton th={th} onClick={onAskDelete} style={{ flex: 1, padding: "8px" }}>
-              {Ico.trash(th.rd)}{lg === "uz" ? "Rad etish" : "Reject"}
+              {Ico.trash(th.rd)}{t("tk_reject")}
             </DangerButton>
           </div>
         </div>
@@ -254,34 +254,34 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
         {isKid && st === "proposed" && (
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, padding: (SPACE.s2 + 2) + "px", ...TYPE.caption, fontWeight: 600, color: th.ac }}>
-              {TIco.clock(th.ac)}{lg === "uz" ? "Taklif yuborildi. Ota-ona tasdiqlashi kutilmoqda" : "Proposal sent. Awaiting parent approval"}
+              {TIco.clock(th.ac)}{t("tk_proposalSent")}
             </div>
             {canDelete && (
               <DangerButton th={th} onClick={onAskDelete} style={{ padding: "8px 12px", fontSize: TYPE.caption.fontSize, width: "auto", alignSelf: "flex-start", marginTop: 4 }}>
-                {Ico.trash(th.rd)}{lg === "uz" ? "Taklifni o'chirish" : "Cancel proposal"}
+                {Ico.trash(th.rd)}{t("tk_cancelProposal")}
               </DangerButton>
             )}
           </div>
         )}
         {isKid && st === "pending" && (
           <PrimaryButton th={th} onClick={onDone} style={{ padding: (SPACE.s2 + 2) + "px" }}>
-            {Ico.check("#fff")}{lg === "uz" ? "Bajardim" : "Done"}
+            {Ico.check("#fff")}{t("tk_doneBtn")}
           </PrimaryButton>
         )}
         {isKid && st === "done" && (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2, padding: (SPACE.s2 + 2) + "px", ...TYPE.caption, fontWeight: 600, color: th.am }}>
-            {TIco.clock(th.am)}{lg === "uz" ? "Ota-ona tasdig'i kutilmoqda" : "Awaiting approval"}
+            {TIco.clock(th.am)}{t("tk_awaitingApproval")}
           </div>
         )}
         {isKid && st === "approved" && (
           <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2, padding: (SPACE.s2 + 2) + "px", ...TYPE.caption, fontWeight: 700, color: th.gr }}>
-            {TIco.party(th.gr)}{lg === "uz" ? "Mukofot olindi!" : "Reward received!"}
+            {TIco.party(th.gr)}{t("tk_rewardReceived")}
           </div>
         )}
         {!isKid && st === "done" && (
           <>
             <PrimaryButton th={th} onClick={onApprove} style={{ flex: 2, width: "auto", padding: (SPACE.s2 + 2) + "px", background: th.gr, boxShadow: SHADOW.e1(th.gr) }}>
-              {Ico.check("#fff")}{lg === "uz" ? "Tasdiqlash" : "Approve"}
+              {Ico.check("#fff")}{t("tk_approve")}
             </PrimaryButton>
             {onReject && (
               <GhostButton th={th} onClick={onReject} style={{ flex: 1, width: "auto", padding: (SPACE.s2 + 2) + "px", color: th.am, border: "1px solid " + th.am + ALPHA.strong, background: th.am + ALPHA.soft }}>
@@ -292,7 +292,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
         )}
         {!isKid && canDelete && st !== "done" && st !== "proposed" && (
           <DangerButton th={th} onClick={onAskDelete} style={{ padding: (SPACE.s2 + 1) + "px", fontSize: TYPE.caption.fontSize }}>
-            {Ico.trash(th.rd)}{lg === "uz" ? "O'chirish" : "Delete"}
+            {Ico.trash(th.rd)}{t("tk_delete")}
           </DangerButton>
         )}
       </div>
@@ -301,7 +301,7 @@ const TaskCard = memo(function TaskCard({ th, lg, v, kidName, isKid, canDelete, 
 });
 
 // ═══ TaskRow — reyting qatori (KidAvatar + tokens, React.memo) ═══
-const TaskRow = memo(function TaskRow({ th, lg, rank, name, done, taskEarn, bal, last }) {
+const TaskRow = memo(function TaskRow({ th, t, rank, name, done, taskEarn, bal, last }) {
   const rankC = rank === 1 ? PREMIUM.gold : rank === 2 ? th.t3 : rank === 3 ? th.am : th.t2;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 - 1, padding: (SPACE.s2 + 1) + "px 0", borderBottom: last ? "none" : "1px solid " + th.bor }}>
@@ -310,15 +310,15 @@ const TaskRow = memo(function TaskRow({ th, lg, rank, name, done, taskEarn, bal,
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ ...TYPE.subtitle, fontSize: TYPE.subtitle.fontSize - 1, color: th.t1 }}>{name}</div>
         <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "flex", alignItems: "center", gap: SPACE.s1, flexWrap: "wrap" }}>
-          {TIco.trophy(th.am, 11)}{done} {lg === "uz" ? "vazifa" : "tasks"} · {TIco.target(th.t3, 11)}{lg === "uz" ? "vazifadan" : "from tasks"}: <b style={{ color: th.gr }}>{f(taskEarn, true)}</b>
+          {TIco.trophy(th.am, 11)}{done} {t("tk_tasksWord")} · {TIco.target(th.t3, 11)}{t("tk_fromTasks")}: <b style={{ color: th.gr }}>{f(taskEarn, true)}</b>
         </div>
         <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 2, color: th.t2, marginTop: 1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>
-          {TIco.coin(th.t3, 10)}{lg === "uz" ? "Cho'ntakda" : "Pocket"}: {f(bal, true)}
+          {TIco.coin(th.t3, 10)}{t("tk_pocket")}: {f(bal, true)}
         </div>
       </div>
       <div style={{ textAlign: "right", flexShrink: 0 }}>
         <div style={{ ...TYPE.heading, fontSize: TYPE.heading.fontSize - 1, color: CHART[5], fontVariantNumeric: "tabular-nums" }}>{done * 10}</div>
-        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 1, color: th.t2 }}>{lg === "uz" ? "ball" : "pts"}</div>
+        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 1, color: th.t2 }}>{t("tk_points")}</div>
       </div>
     </div>
   );
@@ -335,7 +335,7 @@ const PresetCell = memo(function PresetCell({ th, lg, p, active, onPick }) {
       cursor: "pointer", minHeight: SPACE.s16 + SPACE.s2 + 2, fontFamily: "inherit",
     }}>
       <span style={{ display: "flex" }}>{(TIco[p.id] || TIco.task)(active ? th.ac : th.t2, 24)}</span>
-      <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: active ? th.ac : th.t2, textAlign: "center", lineHeight: 1.25 }}>{lg === "uz" ? p.uz : p.en}</span>
+      <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: active ? th.ac : th.t2, textAlign: "center", lineHeight: 1.25 }}>{p[lg] || p.uz}</span>
     </button>
   );
 });
@@ -431,7 +431,7 @@ export default function TasksPage({
   const pickPreset = useCallback(p => {
     setSelPreset(p.id); setVEmoji(p.e);
     if (p.id === "boshqa") setVTitle("");
-    else setVTitle(lg === "uz" ? p.uz : p.en);
+    else setVTitle(p[lg] || p.uz);
   }, [lg, setVEmoji, setVTitle]);
 
   const hasDup = !isKid && isBosh && azolar.filter(a => a.rol === "kid").length > kids.length;
@@ -455,17 +455,17 @@ export default function TasksPage({
     <div>
       {/* ── Sarlavha: kit PageHeader (orqaga + yangilash) ── */}
       <PageHeader th={th} onBack={goBack}
-        title={lg === "uz" ? "Farzand vazifalari" : "Kids' tasks"}
-        right={<IconButton th={th} label={lg === "uz" ? "Yangilash" : "Refresh"} icon={Ico.repeat(th.ac)} onClick={doReload} disabled={vSyncing} />} />
+        title={t("tk_pageTitle")}
+        right={<IconButton th={th} label={t("tk_refresh")} icon={Ico.repeat(th.ac)} onClick={doReload} disabled={vSyncing} />} />
 
       {/* ── Vazifa qo'shish — kit BottomSheet ── */}
       {/* Vazifa qo'shish yagona formada — App.jsx global modal (emoji→nom + muddat). Ikkilik oldini olish uchun bu BottomSheet o'chirilgan. */}
-      <BottomSheet th={th} open={false} onClose={closeAdd} title={lg === "uz" ? "Yangi vazifa berish" : "Add new task"}>
+      <BottomSheet th={th} open={false} onClose={closeAdd} title={t("tk_addNewTask")}>
         {/* Kim uchun */}
-        <SectionHeader th={th} style={{ marginTop: 0 }}>{lg === "uz" ? "Kim uchun?" : "For whom?"}</SectionHeader>
+        <SectionHeader th={th} style={{ marginTop: 0 }}>{t("tk_forWhom")}</SectionHeader>
         {kids.length === 0
-          ? <WarningCard th={th} icon={Ico.users(th.am)} title={lg === "uz" ? "Bola akkaunti yo'q" : "No kid account"}>
-              {lg === "uz" ? "Avval bola akkaunti yarating (Profil \u2192 Bola akkaunti qo'shish)" : "Create a kid account first"}
+          ? <WarningCard th={th} icon={Ico.users(th.am)} title={t("tk_noKidAccount")}>
+              {t("tk_createKidFirst")}
             </WarningCard>
           : <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 + 2, overflowX: "auto", paddingBottom: SPACE.s1 }}>
               {kids.map(k => {
@@ -488,13 +488,13 @@ export default function TasksPage({
           <>
             <SectionHeader th={th}
               right={<Badge th={th} type={recs.age != null ? "info" : "warning"}>
-                {recs.age != null ? (recs.age + (lg === "uz" ? " yosh" : " y.o.")) : (lg === "uz" ? "Yosh kiritilmagan" : "No birth year")}
+                {recs.age != null ? (recs.age + t("tk_yearsOld")) : t("tk_noBirthYear")}
               </Badge>}>
-              {lg === "uz" ? "Yoshga mos tavsiyalar" : "Age-based suggestions"}
+              {t("tk_ageSuggestions")}
             </SectionHeader>
             <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, margin: "-" + SPACE.s1 + "px 0 " + SPACE.s2 + "px", paddingLeft: SPACE.s1 }}>
-              {lg === "uz" ? recs.group.uz : recs.group.en}
-              {recs.age == null && (lg === "uz" ? " \u00b7 aniq tavsiya uchun Profil \u2192 Bola akkauntida tug'ilgan yilini kiriting" : " \u00b7 add birth year in the kid profile for precise tips")}
+              {recs.group}
+              {recs.age == null && t("tk_addBirthYearHint")}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 + 2 }}>
               {recs.items.map(r => (
@@ -512,7 +512,7 @@ export default function TasksPage({
         )}
 
         {/* Vazifa tanlash — 4 ustunli grid, SVG ikonkalar */}
-        <SectionHeader th={th}>{lg === "uz" ? "Vazifani tanlang" : "Choose a task"}</SectionHeader>
+        <SectionHeader th={th}>{t("tk_chooseTask")}</SectionHeader>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: SPACE.s2, marginBottom: SPACE.s3 + 2 }}>
           {VAZIFA_PRESETS.map(p => (
             <PresetCell key={p.id} th={th} lg={lg} p={p} active={selPreset === p.id} onPick={() => pickPreset(p)} />
@@ -521,8 +521,8 @@ export default function TasksPage({
 
         {/* "Boshqa" tanlansa — nom yoziladi; aks holda nom avtomatik */}
         {selPreset === "boshqa" && (
-          <TextInput th={th} label={lg === "uz" ? "Vazifa nomi" : "Task title"} value={vTitle} onChange={setVTitle}
-            placeholder={lg === "uz" ? "Masalan: Velosipedni tozalash" : "e.g. Clean the bike"} autoFocus />
+          <TextInput th={th} label={t("tk_taskNameLabel")} value={vTitle} onChange={setVTitle}
+            placeholder={t("tk_taskNamePlaceholder")} autoFocus />
         )}
         {selPreset && selPreset !== "boshqa" && (
           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, borderRadius: RADIUS.s + 2, padding: (SPACE.s2 + 2) + "px " + (SPACE.s3 + 2) + "px", marginBottom: SPACE.s3 + 2 }}>
@@ -535,8 +535,8 @@ export default function TasksPage({
         {/* Mukofot summasi */}
         {selPreset && (
           <>
-            <AmountInput th={th} label={lg === "uz" ? "Mukofot (so'm)" : "Reward (UZS)"} value={vReward} onChange={setVReward}
-              placeholder="0" suffix={lg === "uz" ? "so'm" : "UZS"} style={{ marginBottom: SPACE.s2 + 2 }} />
+            <AmountInput th={th} label={t("tk_rewardLabel")} value={vReward} onChange={setVReward}
+              placeholder="0" suffix={t("tk_currency")} style={{ marginBottom: SPACE.s2 + 2 }} />
             <div style={{ display: "flex", gap: SPACE.s2 - 1, marginBottom: SPACE.s4 + 2 }}>
               {[5000, 10000, 20000, 50000].map(sm => {
                 const on = String(vReward) === String(sm);
@@ -546,21 +546,21 @@ export default function TasksPage({
               })}
             </div>
             {/* Muddat (ixtiyoriy) — kechiksa mukofot berilmaydi */}
-            <label style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, display: "block", marginBottom: SPACE.s2 }}>{lg === "uz" ? "Muddat (ixtiyoriy)" : "Deadline (optional)"}</label>
+            <label style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, display: "block", marginBottom: SPACE.s2 }}>{t("tk_deadlineOptional")}</label>
             <div style={{ display: "flex", gap: SPACE.s2 - 1, marginBottom: SPACE.s2, flexWrap: "wrap" }}>
-              {[{ n: 0, uz: "Bugun", en: "Today" }, { n: 1, uz: "Ertaga", en: "Tomorrow" }, { n: 3, uz: "3 kun", en: "3 days" }, { n: 7, uz: "1 hafta", en: "1 week" }].map(opt => {
+              {[{ n: 0, key: "tk_today" }, { n: 1, key: "tk_tomorrow" }, { n: 3, key: "tk_days3" }, { n: 7, key: "tk_week1" }].map(opt => {
                 const ds = addDaysStr(opt.n); const on = vDeadline === ds;
                 return (
-                  <button key={opt.n} type="button" className="ui-press" onClick={() => setVDeadline(on ? "" : ds)} style={{ flex: "1 0 auto", background: on ? th.ac + ALPHA.tint : th.surH, border: "1.5px solid " + (on ? th.ac : th.bor), borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", cursor: "pointer", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: on ? th.ac : th.t2, fontFamily: "inherit" }}>{lg === "uz" ? opt.uz : opt.en}</button>
+                  <button key={opt.n} type="button" className="ui-press" onClick={() => setVDeadline(on ? "" : ds)} style={{ flex: "1 0 auto", background: on ? th.ac + ALPHA.tint : th.surH, border: "1.5px solid " + (on ? th.ac : th.bor), borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", cursor: "pointer", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: on ? th.ac : th.t2, fontFamily: "inherit" }}>{t(opt.key)}</button>
                 );
               })}
-              <button type="button" className="ui-press" onClick={() => setVDeadline("")} style={{ flex: "1 0 auto", background: !vDeadline ? th.ac + ALPHA.tint : th.surH, border: "1.5px solid " + (!vDeadline ? th.ac : th.bor), borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", cursor: "pointer", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: !vDeadline ? th.ac : th.t2, fontFamily: "inherit" }}>{lg === "uz" ? "Muddatsiz" : "None"}</button>
+              <button type="button" className="ui-press" onClick={() => setVDeadline("")} style={{ flex: "1 0 auto", background: !vDeadline ? th.ac + ALPHA.tint : th.surH, border: "1.5px solid " + (!vDeadline ? th.ac : th.bor), borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", cursor: "pointer", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: !vDeadline ? th.ac : th.t2, fontFamily: "inherit" }}>{t("tk_noDeadline")}</button>
             </div>
             <input type="date" min={TODAY_STR()} value={vDeadline || ""} onChange={e => setVDeadline(e.target.value)}
               style={{ width: "100%", boxSizing: "border-box", background: th.bg, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s3 + "px", color: th.t1, fontFamily: "inherit", fontSize: TYPE.body.fontSize, marginBottom: SPACE.s2, colorScheme: th.dark ? "dark" : "light" }} />
-            {vDeadline && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s4 }}>{lg === "uz" ? "Muddatida bajarilmasa, mukofot berilmaydi." : "No reward if not completed by the deadline."}</div>}
+            {vDeadline && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s4 }}>{t("tk_deadlineWarning")}</div>}
             <PrimaryButton th={th} onClick={addVazifa}>
-              {TIco.target("#fff", 16)}{lg === "uz" ? "Vazifa berish" : "Assign task"}
+              {TIco.target("#fff", 16)}{t("tk_assignTaskBtn")}
             </PrimaryButton>
           </>
         )}
@@ -571,10 +571,10 @@ export default function TasksPage({
         <div className="anim-fadeUp" style={{ background: "linear-gradient(135deg," + PREMIUM.gold + " 0%," + CHART[3] + " 60%," + CHART[5] + " 100%)", borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + (SPACE.s6 - 2) + "px", marginBottom: SPACE.s4 + 2, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(CHART[3]) }}>
           <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.12)" }} />
           <div style={{ position: "relative" }}>
-            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: "rgba(255,255,255,0.9)", marginBottom: SPACE.s1 }}>{lg === "uz" ? "Mening cho'ntak pulim" : "My pocket money"}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: "rgba(255,255,255,0.9)", marginBottom: SPACE.s1 }}>{t("tk_myPocketMoney")}</div>
             <div style={{ ...TYPE.hero, fontSize: TYPE.hero.fontSize + 4, color: "#fff", marginBottom: SPACE.s1 + 2, fontVariantNumeric: "tabular-nums" }}>{f(kidBalances[user.id] || 0, true)}</div>
             <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", gap: SPACE.s1 + 2, flexWrap: "wrap" }}>
-              {TIco.trophy("#fff", 12)}{myStats.count} {lg === "uz" ? "ta vazifa bajarildi" : "tasks done"} · {TIco.target("#fff", 12)}{lg === "uz" ? "vazifadan" : "from tasks"}: {f(myStats.earn, true)}
+              {TIco.trophy("#fff", 12)}{myStats.count} {t("tk_tasksDone")} · {TIco.target("#fff", 12)}{t("tk_fromTasks")}: {f(myStats.earn, true)}
             </div>
           </div>
         </div>
@@ -586,8 +586,8 @@ export default function TasksPage({
           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
             <div style={{ width: SPACE.s8 + SPACE.s1, height: SPACE.s8 + SPACE.s1, borderRadius: RADIUS.s, background: th.am + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{TIco.broom(th.am, 20)}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.am }}>{lg === "uz" ? "Eski bola akkauntlarini tozalash" : "Clean duplicate kid accounts"}</div>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{lg === "uz" ? "Dublikatlar o'chiriladi, pullar haqiqiy akkauntga jamlanadi" : "Removes duplicates, merges balances"}</div>
+              <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.am }}>{t("tk_cleanDupTitle")}</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{t("tk_cleanDupDesc")}</div>
             </div>
           </div>
         </AppCard>
@@ -596,7 +596,7 @@ export default function TasksPage({
       {/* ── Katta a'zolar: vazifa qo'shish yoki farzand uchun taklif qilish ── */}
       {(canAssignTask(user) || isKid) && (
         <PrimaryButton th={th} onClick={openAdd} style={{ marginBottom: SPACE.s4 }}>
-          {Ico.add("#fff")}{isKid ? (lg === "uz" ? "Vazifa taklif qilish" : "Propose a task") : (lg === "uz" ? "Yangi vazifa berish" : "New task")}
+          {Ico.add("#fff")}{isKid ? t("tk_proposeTask") : t("tk_newTaskBtn")}
         </PrimaryButton>
       )}
 
@@ -604,41 +604,41 @@ export default function TasksPage({
       {kids.length > 0 && (
         <AppCard th={th} style={{ marginBottom: SPACE.s4, background: CHART[5] + ALPHA.faint, border: "1px solid " + CHART[5] + ALPHA.med }}>
           <SubHeader th={th}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{TIco.trophy(th.am, 14)}{lg === "uz" ? "Bolalar reytingi" : "Kids leaderboard"}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 2 }}>{TIco.trophy(th.am, 14)}{t("tk_leaderboard")}</span>
           </SubHeader>
           {leaderboard.map((k, i) => (
-            <TaskRow key={k.id} th={th} lg={lg} rank={i + 1} name={k.name} done={k.done} taskEarn={k.taskEarn} bal={k.bal} last={i === leaderboard.length - 1} />
+            <TaskRow key={k.id} th={th} t={t} rank={i + 1} name={k.name} done={k.done} taskEarn={k.taskEarn} bal={k.bal} last={i === leaderboard.length - 1} />
           ))}
         </AppCard>
       )}
 
       {/* ── Vazifalar ro'yxati ── */}
-      <SectionHeader th={th}>{lg === "uz" ? "Vazifalar" : "Tasks"}</SectionHeader>
+      <SectionHeader th={th}>{t("tk_tasksTitle")}</SectionHeader>
       {isKid && myTasks.length === 0 && vazifalar.length > 0 ? (
         <EmptyState th={th} icon={TIco.searchBig(th.t3)}
-          title={lg === "uz" ? "Vazifalar bor, lekin sizga biriktirilmagan" : "Tasks exist but not assigned to you"}
+          title={t("tk_notAssignedTitle")}
           message={
             <span>
-              {lg === "uz" ? "Ro'yxatdagi vazifalar kimga berilgan:" : "Assigned to:"}
+              {t("tk_assignedToLabel")}
               {vazifalar.slice(0, 3).map(v => (
                 <span key={v.id} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2, marginTop: SPACE.s1 }}>
                   {taskIco(v.emoji, th.t3, 13)}{v.title} {"\u2192"} <b style={{ color: th.am }}>{v.assignedName || v.assignedTo}</b>
                 </span>
               ))}
               <span style={{ display: "block", marginTop: SPACE.s2 + 2, fontSize: TYPE.caption.fontSize - 1 }}>
-                {lg === "uz" ? "Sizning hisobingiz:" : "Your account:"} <b style={{ color: th.ac }}>{user.ism}</b> ({user.login || user.id})
+                {t("tk_yourAccountLabel")} <b style={{ color: th.ac }}>{user.ism}</b> ({user.login || user.id})
               </span>
             </span>
           } />
       ) : myTasks.length === 0 ? (
         <EmptyState th={th} icon={isKid ? TIco.taskBig(th.t3) : undefined} preset={isKid ? undefined : "goal"}
-          title={isKid ? (lg === "uz" ? "Hali vazifa yo'q" : "No tasks yet") : (lg === "uz" ? "Hali vazifa bermadingiz" : "No tasks created")}
-          message={isKid ? (lg === "uz" ? "Ota-onangiz tez orada vazifa beradi, yoki o'zingiz vazifa taklif qilishingiz mumkin." : "Your parent will add tasks soon, or you can propose a task yourself.") : (lg === "uz" ? "Bolalaringizga vazifa berib, ularni rag'batlantiring" : "Add tasks to motivate your kids")}
-          actionText={isKid ? (lg === "uz" ? "Vazifa taklif qilish" : "Propose a task") : (lg === "uz" ? "Vazifa berish" : "Add task")}
+          title={isKid ? t("tk_noTasksYetKid") : t("tk_noTasksYetParent")}
+          message={isKid ? t("tk_noTasksMsgKid") : t("tk_noTasksMsgParent")}
+          actionText={isKid ? t("tk_proposeTask") : t("tk_addTaskAction")}
           onAction={openAdd} />
       ) : (
         myTasks.map(v => (
-          <TaskCard key={v.id} th={th} lg={lg} v={v}
+          <TaskCard key={v.id} th={th} t={t} v={v}
             kidName={kidById[v.assignedTo]?.ism}
             isKid={isKid}
             canDelete={canDeleteTask(user, v)}
@@ -652,10 +652,10 @@ export default function TasksPage({
 
       {/* ── O'chirish tasdig'i — kit ConfirmDialog ── */}
       <ConfirmDialog th={th} open={delId != null} onClose={() => setDelId(null)} onConfirm={confirmDelete}
-        title={lg === "uz" ? "Vazifani o'chirish" : "Delete task"}
-        message={lg === "uz" ? "Bu vazifa butunlay o'chiriladi. Davom etasizmi?" : "This task will be permanently deleted. Continue?"}
-        confirmText={lg === "uz" ? "O'chirish" : "Delete"}
-        cancelText={lg === "uz" ? "Bekor qilish" : "Cancel"} />
+        title={t("tk_deleteTaskTitle")}
+        message={t("tk_deleteTaskMsg")}
+        confirmText={t("tk_delete")}
+        cancelText={t("tk_cancel")} />
     </div>
   );
 }
