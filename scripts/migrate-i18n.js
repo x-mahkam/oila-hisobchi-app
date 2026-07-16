@@ -35,21 +35,26 @@ const serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
 const app = initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore(app);
 
-// Hozircha to'liq tarjima qilingan tillar (build ichidagi zaxira bilan bir xil).
+// To'liq tarjima qilingan va yoqiladigan (enabled: true) tillar. Har biri
+// uchun src/locales/{code}.json, goals.{code}.json, budgetai.{code}.json
+// mavjud bo'lishi shart. kk/ky/tg/qr — AI yordamida tarjima qilingan
+// (uz/ru asosida, 4800+ avtomatik placeholder-izchillik testi bilan
+// tekshirilgan); asl (native) so'zlashuvchi tomonidan tekshiruvdan
+// o'tishi tavsiya etiladi, ayniqsa moliyaviy atamalar uchun.
 const READY_LANGUAGES = [
   { code: "uz", nativeName: "O'zbekcha", englishName: "Uzbek", flag: "🇺🇿", rtl: false, sort: 1 },
   { code: "en", nativeName: "English",   englishName: "English", flag: "🇬🇧", rtl: false, sort: 2 },
   { code: "ru", nativeName: "Русский",   englishName: "Russian", flag: "🇷🇺", rtl: false, sort: 3 },
-];
-
-// Kelajakda tarjima to'ldirilib, "enabled: true" qilinishini kutayotgan tillar.
-// Hozircha "data" yo'q — Settings ekranida ko'rinmaydi.
-const PLANNED_LANGUAGES = [
   { code: "kk", nativeName: "Қазақша",  englishName: "Kazakh",     flag: "🇰🇿", rtl: false, sort: 4 },
   { code: "ky", nativeName: "Кыргызча", englishName: "Kyrgyz",     flag: "🇰🇬", rtl: false, sort: 5 },
   { code: "tg", nativeName: "Тоҷикӣ",   englishName: "Tajik",      flag: "🇹🇯", rtl: false, sort: 6 },
   { code: "qr", nativeName: "Qaraqalpaqsha", englishName: "Karakalpak", flag: "🏳️", rtl: false, sort: 7 },
 ];
+
+// Kelajakda qo'shiladigan, hali tarjimasi yo'q tillar shu yerga
+// { code, nativeName, englishName, flag, rtl, sort } shaklida qo'shiladi —
+// "enabled: false" bilan yoziladi, Settings ekranida ko'rinmaydi.
+const PLANNED_LANGUAGES = [];
 
 // Asosiy "translation" fazosidan tashqari mustaqil modul lug'atlari.
 // Har biri src/locales/{ns}.{lang}.json fayllaridan o'qiladi va
