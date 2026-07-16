@@ -12,6 +12,9 @@ import budgetaiRu from "../locales/budgetai.ru.json";
 import gardenUz from "../locales/garden.uz.json";
 import gardenEn from "../locales/garden.en.json";
 import gardenRu from "../locales/garden.ru.json";
+import weddingUz from "../locales/wedding.uz.json";
+import weddingEn from "../locales/wedding.en.json";
+import weddingRu from "../locales/wedding.ru.json";
 import { fetchMeta, getTranslationBundle } from "./translationService.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -20,6 +23,7 @@ import { fetchMeta, getTranslationBundle } from "./translationService.js";
 //  "goals"       — Smart Goals moduli (src/goals/*).
 //  "budgetai"    — Smart Budget AI moduli (src/ai/*).
 //  "garden"      — Baraka Bog'i (Garden.jsx + garden/*).
+//  "wedding"     — To'y kalkulyatori (components/WeddingCalc.jsx).
 //
 //  Qoida: yangi mustaqil modul o'z lug'atini asosiy "translation"
 //  fazosiga aralashtirmaydi — bu kalit nomlari to'qnashuvining oldini
@@ -27,7 +31,7 @@ import { fetchMeta, getTranslationBundle } from "./translationService.js";
 //  mumkin — namespace ular orasida chegara qo'yadi). Batafsil:
 //  docs/i18n-architecture.md
 // ═══════════════════════════════════════════════════════════════════
-export const NAMESPACES = ["translation", "goals", "budgetai", "garden"];
+export const NAMESPACES = ["translation", "goals", "budgetai", "garden", "wedding"];
 
 // Clean detection logic for Device / Browser Language
 const getInitialLanguage = () => {
@@ -64,9 +68,9 @@ i18n
     ns: NAMESPACES,
     defaultNS: "translation",
     resources: {
-      uz: { translation: uz, goals: goalsUz, budgetai: budgetaiUz, garden: gardenUz },
-      en: { translation: en, goals: goalsEn, budgetai: budgetaiEn, garden: gardenEn },
-      ru: { translation: ru, goals: goalsRu, budgetai: budgetaiRu, garden: gardenRu },
+      uz: { translation: uz, goals: goalsUz, budgetai: budgetaiUz, garden: gardenUz, wedding: weddingUz },
+      en: { translation: en, goals: goalsEn, budgetai: budgetaiEn, garden: gardenEn, wedding: weddingEn },
+      ru: { translation: ru, goals: goalsRu, budgetai: budgetaiRu, garden: gardenRu, wedding: weddingRu },
     },
     lng: initialLanguage,
     fallbackLng: "en",
