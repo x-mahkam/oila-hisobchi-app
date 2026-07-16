@@ -137,7 +137,7 @@ export const KID_GOAL_PRESETS = [
   {emoji:"👟",uz:"Krossovka",             ru:"Кроссовки",             en:"Sneakers", kk:"Кроссовка", ky:"Кроссовка", tg:"Кроссовка", qr:"Krossovka", rang:"#f97316"},
   {emoji:"🎂",uz:"Tug'ilgan kun",         ru:"День рождения",         en:"Birthday", kk:"Туған күн", ky:"Туулган күн", tg:"Рӯзи таваллуд", qr:"Tuwilg'an ku'n", rang:"#ec4899"},
   {emoji:"💰",uz:"Jamg'arma",             ru:"Накопления",            en:"Savings", kk:"Жинақ", ky:"Топтом", tg:"Пасандоз", qr:"Jamg'arma", rang:"#10b981"},
-  {emoji:"⌚",uz:"Aqlli soat",            ru:"Смарт-часы",       en:"Smart watch", kk:"Ақылды сағат", ky:"Акырдуу саат", tg:"Соати ҳуشمند", qr:"Aqli soat", rang:"#0ea5e9"},
+  {emoji:"⌚",uz:"Aqlli soat",            ru:"Смарт-часы",       en:"Smart watch", kk:"Ақылды сағат", ky:"Акырдуу саат", tg:"Соати ҳушманд", qr:"Aqli soat", rang:"#0ea5e9"},
   {emoji:"🛹",uz:"Skeytbord",            ru:"Скейтборд",        en:"Skateboard", kk:"Скейтборд", ky:"Скейтборд", tg:"Скейтборд", qr:"Skeytbord", rang:"#84cc16"},
   {emoji:"🎸",uz:"Gitara",               ru:"Гитара",            en:"Guitar", kk:"Гитара", ky:"Гитара", tg:"Гитара", qr:"Gitara", rang:"#f43f5e"},
   {emoji:"🐹",uz:"Uy hayvoni",           ru:"Питомец",          en:"Pet", kk:"Үй жануары", ky:"Үй жаныбары", tg:"Ҳайвони хонагӣ", qr:"Haywan", rang:"#eab308"},
