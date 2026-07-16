@@ -1,4 +1,5 @@
 import { memo, useMemo, useState, useEffect, useRef } from "react";
+import i18n from "../i18n/index.js";
 import { KatIco, DarIco, MoneyInput } from "../components/common/index.jsx";
 import {
   SectionHeader, AppCard, StatCard, ListItem, EmptyState, Skeleton,
@@ -22,13 +23,6 @@ import { getMeta } from "../goals/smartStore.js";
 // Kartalar ketma-ket paydo bo'lish qadami (ms) — DS'da stagger tokeni yo'q,
 // mavjud UX saqlanadi; kelajakda MOTION'ga ko'chirilishi mumkin.
 const STAGGER = 40;
-
-// ── 7 tilni to'liq qo'llab-quvvatlaydigan tarjima yordamchisi ──
-// L(lg, uz, ru, en, kk, ky, tg, qr) — qaysi til tanlangan bo'lsa O'SHA qaytadi.
-const L = (lg, uzVal, ruVal, enVal, kkVal, kyVal, tgVal, qrVal) => {
-  const map = { uz: uzVal, ru: ruVal, en: enVal, kk: kkVal, ky: kyVal, tg: tgVal, qr: qrVal };
-  return map[lg] !== undefined ? map[lg] : uzVal;
-};
 
 // ── Dashboard-lokal outline SVG ikonkalar (emoji o'rniga, DS 6-qoida) ──
 const DIco = {
@@ -82,10 +76,7 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
   const shown = useCountUp(bal);
   const neg = bal < 0;
   const h = new Date().getHours();
-  const greet = h < 6 ? L(lg, "Xayrli tun", "Доброй ночи", "Good night", "Қайырлы түн", "Кайырлуу түн", "Шаби хуш", "Qayırlı túnіngiz bolsın")
-    : h < 12 ? L(lg, "Xayrli tong", "Доброе утро", "Good morning", "Қайырлы таң", "Кайырлуу таң", "Субҳ ба хайр", "Qayırlı tań")
-    : h < 18 ? L(lg, "Xayrli kun", "Добрый день", "Good afternoon", "Қайырлы күн", "Кайырлуу күн", "Рӯзи хуш", "Qayırlı kún")
-    : L(lg, "Xayrli kech", "Добрый вечер", "Good evening", "Қайырлы кеш", "Кайырлуу кеч", "Шоми хуш", "Qayırlı keshiŋiz bolsın");
+  const greet = h < 6 ? (lg === "uz" ? "Xayrli tun" : "Good night") : h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening");
   const dUp = delta > 0, dZero = delta === 0;
   const heroBg = neg
     ? "linear-gradient(135deg," + th.rd + "," + th.rd + ")"
@@ -102,21 +93,21 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
         <div style={{ ...TYPE.title, color: "#fff", marginBottom: SPACE.s4 }}>{ism || ""}</div>
         {/* 2. Umumiy (oila) balansi */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 }}>
-          <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.72)" }}>{famScope ? L(lg, "Oila balansi (bu oy)", "Баланс семьи (этот месяц)", "Family balance (this month)", "Отбасы балансы (бұл ай)", "Үй-бүлө балансы (бул ай)", "Тавозуни оила (ин моҳ)", "Oila balansı (bul ay)") : L(lg, "Mening balansim (bu oy)", "Мой баланс (этот месяц)", "My balance (this month)", "Менің балансым (бұл ай)", "Менин балансым (бул ай)", "Тавозуни ман (ин моҳ)", "Meniń balansım (bul ay)")}</div>
-          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px" }}>{L(lg, "Bugun", "Сегодня", "Today", "Бүгін", "Бүгүн", "Имрӯз", "Búgin")}: -{f(bugunX, true)}</div>}
+          <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
+          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: SPACE.s2, flexWrap: "wrap", marginBottom: neg ? SPACE.s2 : SPACE.s4 }}>
           <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{shown < 0 ? "-" : ""}{f(Math.abs(shown), true)}</div>
           {/* 5. Balans o'zgarishi (o'tgan oyga nisbatan) */}
           {!dZero && (
             <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 800, color: "#fff", background: dUp ? "rgba(34,197,94,0.35)" : "rgba(0,0,0,0.22)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px", display: "flex", alignItems: "center", gap: SPACE.s1 }}>
-              {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: OPACITY.pressed }}>{L(lg, "o'tgan oyga nisb.", "\u043f\u043e \u0441\u0440\u0430\u0432\u043d. \u0441 \u043f\u0440\u043e\u0448\u043b\u044b\u043c \u043c\u0435\u0441.", "vs last month", "\u04e9\u0442\u043a\u0435\u043d \u0430\u0439\u0493\u0430 \u049b\u0430\u0442\u044b\u0441\u0442\u044b", "\u04e9\u0442\u043a\u04e9\u043d \u0430\u0439\u0433\u0430 \u0441\u0430\u043b\u044b\u0448\u0442\u044b\u0440\u043c\u0430\u043b\u0443\u0443", "\u043d\u0438\u0441\u0431\u0430\u0442 \u0431\u0430 \u043c\u043e\u04b3\u0438 \u0433\u0443\u0437\u0430\u0448\u0442\u0430", "\u00f3tken ayg\u0430 sal\u0131st\u0131r\u01f5anda")}</span>
+              {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: OPACITY.pressed }}>{lg === "uz" ? "o'tgan oyga nisb." : "vs last month"}</span>
             </div>
           )}
         </div>
         {neg && (
           <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", marginBottom: SPACE.s3, ...TYPE.caption, fontWeight: 600, color: "#fff" }}>
-            {L(lg, "Balans manfiy! Avval daromad kiriting.", "Баланс отрицательный! Сначала добавьте доход.", "Negative balance! Add income first.", "Баланс теріс! Алдымен кіріс енгізіңіз.", "Баланс терс! Адегенде киреше киргизиңиз.", "Тавозун манфӣ аст! Аввал даромад ворид кунед.", "Balans mánis! Áwelі kirim kiritiń.")}
+            {lg === "uz" ? "Balans manfiy! Avval daromad kiriting." : "Negative balance! Add income first."}
           </div>
         )}
         {/* 3-4. Shu oy daromad / xarajat */}
@@ -130,7 +121,7 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
             <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums" }}>-{f(jX, true)}</div>
           </div>
         </div>
-        {famScope && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.62)", marginTop: SPACE.s2 }}>{L(lg, "Mening balansim", "Мой баланс", "My balance", "Менің балансым", "Менин балансым", "Тавозуни ман", "Meniń balansım")}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
+        {famScope && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.62)", marginTop: SPACE.s2 }}>{lg === "uz" ? "Mening balansim" : "My balance"}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
       </div>
     </div>
   );
@@ -160,10 +151,10 @@ const ActivityGraph = memo(function ActivityGraph({ th, lg, days30, streak, mx30
   const H = [SPACE.s1, SPACE.s2, SPACE.s4, SPACE.s6]; // bar balandliklari (exact token values)
   return (
     <div className="anim-fadeUp" style={{ animationDelay: (delay || 0) + "ms" }}>
-      <ChartCard th={th} title={L(lg, "Xarajat faolligi", "Активность расходов", "Spending activity", "Шығыс белсенділігі", "Чыгым активдүүлүгү", "Фаъолияти хароҷот", "Shıǵın belsendiligi")}
-        right={streak > 1 && <Badge th={th} type="warning" icon={DIco.bolt(th.am)}>{streak} {L(lg, "kun", "дн.", "days", "күн", "күн", "рӯз", "kún")}</Badge>}>
+      <ChartCard th={th} title={i18n.t("spending_activity")}
+        right={streak > 1 && <Badge th={th} type="warning" icon={DIco.bolt(th.am)}>{streak} {i18n.t("day")}</Badge>}>
         {/* Y o'qi: maksimal qiymat ko'rsatkichi */}
-        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s1, textAlign: "right" }}>{L(lg, "maks", "макс", "max", "макс", "макс", "макс", "maks")}: {f(mx30, true)}</div>
+        <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s1, textAlign: "right" }}>{i18n.t("max")}: {f(mx30, true)}</div>
         <div style={{ display: "flex", gap: SPACE.s1, alignItems: "flex-end", height: SPACE.s8, borderBottom: "1px solid " + th.bor, paddingBottom: SPACE.s1 }}>
           {days30.map((v, i) => {
             const lvl = v === 0 ? 0 : v < mx30 * 0.34 ? 1 : v < mx30 * 0.67 ? 2 : 3;
@@ -172,8 +163,8 @@ const ActivityGraph = memo(function ActivityGraph({ th, lg, days30, streak, mx30
         </div>
         {/* X o'qi: sana yorliqlari */}
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: SPACE.s2 }}>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{L(lg, "30 kun oldin", "30 дней назад", "30 days ago", "30 күн бұрын", "30 күн мурун", "30 рӯз пеш", "30 kún burın")}</span>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.ac2, fontWeight: 700 }}>{L(lg, "Bugun", "Сегодня", "Today", "Бүгін", "Бүгүн", "Имрӯз", "Búgin")}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{i18n.t("days_30_ago")}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.ac2, fontWeight: 700 }}>{i18n.t("today")}</span>
         </div>
       </ChartCard>
     </div>
@@ -225,7 +216,7 @@ export default function DashboardPage({
   th, t, f, ok$, buzz, addStar, fireConfetti,
   gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng, canSeeReport,
   srch, srchR, showS,
-  delX, acceptXReq, rejectXReq, delTx, editTx,
+  acceptXReq, rejectXReq, delTx, editTx,
   vazifaDone, vazifaApprove,
   fetchRates, rateL,
   setShowGift, setShowBilim, setShowAddVazifa, setPTab,
@@ -378,7 +369,7 @@ export default function DashboardPage({
     const bt = na.filter(x => x.sana && x.sana.indexOf(tm()) === 0).reduce((s, x) => s + Number(x.summa || 0), 0);
     if (bt > bdj) { ok$(t.be, "err"); }
     else if (bt > bdj * .9) { ok$(t.bw, "warn"); }
-    else { ok$(t.xa); addStar(1, L(lg, "Xarajat kiritildi", "Расход добавлен", "Expense added", "Шығыс енгізілді", "Чыгым киргизилди", "Хароҷот ворид шуд", "Shıǵın kiritildi")); }
+    else { ok$(t.xa); addStar(1, i18n.t("expense_added")); }
     setQuickItem(null); setQuickSum("");
   };
 
@@ -393,7 +384,7 @@ export default function DashboardPage({
         {srchR.length > 0 && (
           <AppCard th={th} pad={0}>
             {srchR.map((item, i) => (
-              <Tx key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} onEdit={handleStartEdit} divider={i < srchR.length - 1} />
+              <Tx key={(item.kategoriya ? "x" : "d") + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delTx} onEdit={handleStartEdit} divider={i < srchR.length - 1} />
             ))}
           </AppCard>
         )}
@@ -407,7 +398,7 @@ export default function DashboardPage({
       {xReqs.length > 0 && (
         <AppCard th={th} style={{ border: "1.5px solid " + th.am + ALPHA.strong, background: th.am + ALPHA.faint, marginBottom: SPACE.s3 + 2 }}>
           <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.am, marginBottom: SPACE.s3, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>
-            {DIco.inbox(th.am)}{L(lg, "So'rovlar", "Запросы", "Requests", "Сұраулар", "Суроолор", "Дархостҳо", "Sorawlar")} ({xReqs.length})
+            {DIco.inbox(th.am)}{i18n.t("requests")} ({xReqs.length})
           </div>
           {xReqs.map(req => {
             const isInc = req.kind === "income";
@@ -417,7 +408,7 @@ export default function DashboardPage({
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s2 }}>
                   <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>
                     {isInc ? <DarIco id={req.tur || "sovga"} c={cl} s={16} /> : <KatIco id={req.kategoriya} c={cl} s={16} />}
-                    <b>{req.fromIsm}</b> {isInc ? L(lg, "sizga pul berdi", "дал вам деньги", "gave you money", "сізге ақша берді", "сизге акча берди", "ба шумо пул дод", "sizge aqsha berdi") : L(lg, "sizning nomingizdan", "от вашего имени", "for you", "сіздің атыңыздан", "сиздин атыңыздан", "аз номи шумо", "sizdiń atıńızdan")}
+                    <b>{req.fromIsm}</b> {isInc ? i18n.t("gave_you_money") : i18n.t("for_you")}
                   </div>
                   <div style={{ ...TYPE.subtitle, fontWeight: 800, color: isInc ? th.gr : th.rd, fontVariantNumeric: "tabular-nums" }}>{isInc ? "+" : "-"}{f(req.summa, true)}</div>
                 </div>
@@ -425,8 +416,8 @@ export default function DashboardPage({
                   {isInc ? (DN[lg][DARS.findIndex(d => d.id === (req.tur || "sovga"))] || req.izoh) : KN[lg][KATS.findIndex(k => k.id === req.kategoriya)]} · {req.izoh} · {req.sana}
                 </div>
                 <div style={{ display: "flex", gap: SPACE.s2 }}>
-                  <PrimaryButton th={th} onClick={() => acceptXReq(req)} style={{ flex: 1, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 1) + "px 0", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0 }}>{isInc ? L(lg, "Daromadga qo'shish", "Добавить в доход", "Add to income", "Кіріске қосу", "Кирешеге кошуу", "Илова ба даромад", "Kirimge qosıw") : L(lg, "Tasdiqlash", "Подтвердить", "Accept", "Растау", "Тастыктоо", "Тасдиқ кардан", "Tastıyıqlaw")}</PrimaryButton>
-                  <DangerButton th={th} onClick={() => rejectXReq(req)} style={{ flex: 1, padding: (SPACE.s2 + 1) + "px 0", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0 }}>{L(lg, "Rad etish", "Отклонить", "Reject", "Бас тарту", "Четке кагуу", "Рад кардан", "Biykar etiw")}</DangerButton>
+                  <PrimaryButton th={th} onClick={() => acceptXReq(req)} style={{ flex: 1, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 1) + "px 0", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0 }}>{isInc ? i18n.t("add_to_income") : i18n.t("accept")}</PrimaryButton>
+                  <DangerButton th={th} onClick={() => rejectXReq(req)} style={{ flex: 1, padding: (SPACE.s2 + 1) + "px 0", fontSize: TYPE.caption.fontSize + 1, marginBottom: 0 }}>{i18n.t("reject")}</DangerButton>
                 </div>
               </div>
             );
@@ -460,18 +451,11 @@ export default function DashboardPage({
             <WarningCard 
               th={th} 
               tone="danger" 
-              title={L(lg, "⚠️ BYUDJET LIMITI OSHDI!", "⚠️ ПРЕВЫШЕН ЛИМИТ БЮДЖЕТА!", "⚠️ BUDGET LIMIT EXCEEDED!", "⚠️ БЮДЖЕТ ЛИМИТІ АСЫП КЕТТІ!", "⚠️ БЮДЖЕТ ЛИМИТИ АШТЫ!", "⚠️ ҲУДУДИ БУҶА ГУЗАШТ!", "⚠️ BJUDJET LIMITI ASIP KETTI!")}
+              title={i18n.t("budget_limit_exceeded_title")}
               icon={<span style={{ fontSize: 20 }}>🚨</span>}
               style={{ marginBottom: SPACE.s3, animation: "pulse 2s infinite" }}
             >
-              {L(lg,
-                `Diqqat, oylik byudjet limitining ${pct}% qismi sarflandi! Iltimos, xarajatlarni kamaytiring.`,
-                `Внимание, потрачено ${pct}% месячного бюджета! Пожалуйста, сократите расходы.`,
-                `Warning: ${pct}% of the monthly budget has been spent! Please reduce expenses.`,
-                `Назар аударыңыз, айлық бюджеттің ${pct}% бөлігі жұмсалды! Шығынды азайтыңыз.`,
-                `Көңүл буруңуз, айлык бюджеттин ${pct}% бөлүгү коротулду! Чыгымдарды азайтыңыз.`,
-                `Диққат, ${pct}% буҷаи моҳона сарф шуд! Хароҷотро кам кунед.`,
-                `Itibar beriń, ayliq bjudjettiń ${pct}% bólegi shig'ındaldı! Shig'ınlardi azaytiń.`)}
+              {i18n.t("budget_limit_exceeded_desc", { pct })}
             </WarningCard>
           )}
 
@@ -479,19 +463,12 @@ export default function DashboardPage({
             <WarningCard
               th={th}
               tone="warning"
-              title={L(lg, "🔔 TASDIQLANMAGAN VAZIFALAR", "🔔 НЕПОДТВЕРЖДЁННЫЕ ЗАДАНИЯ", "🔔 UNAPPROVED TASKS", "🔔 РАСТАЛМАҒАН ТАПСЫРМАЛАР", "🔔 ТАСТЫКТАЛБАГАН ТАПШЫРМАЛАР", "🔔 ВАЗИФАҲОИ ТАСДИҚНАШУДА", "🔔 TASTIYIQLANBAǴAN WAZIYPALAR")}
+              title={i18n.t("unapproved_tasks_title")}
               icon={<span style={{ fontSize: 20 }}>👶</span>}
               onClick={() => { buzz(8); setScr("vazifa"); }}
               style={{ cursor: "pointer", marginBottom: SPACE.s3 }}
             >
-              {L(lg,
-                `Farzandingiz tomonidan bajarilgan ${vaz.pending} ta vazifa tasdiqlash uchun kutilmoqda. Tasdiqlash uchun bosing!`,
-                `${vaz.pending} задан(ий), выполненных вашим ребёнком, ожидают подтверждения. Нажмите, чтобы подтвердить!`,
-                `There are ${vaz.pending} completed tasks waiting for your approval. Tap to approve!`,
-                `Балаңыз орындаған ${vaz.pending} тапсырма растауды күтуде. Растау үшін басыңыз!`,
-                `Балаңыз аткарган ${vaz.pending} тапшырма тастыктоону күтүүдө. Тастыктоо үчүн басыңыз!`,
-                `${vaz.pending} вазифаи иҷрокардаи фарзандатон интизори тасдиқ аст. Барои тасдиқ зер кунед!`,
-                `Balańız orınlaǵan ${vaz.pending} wazıypa tastıyıqlawdı kútip tur. Tastıyıqlaw ushın basıń!`)}
+              {i18n.t("unapproved_tasks_desc", { count: vaz.pending })}
             </WarningCard>
           )}
 
@@ -512,11 +489,11 @@ export default function DashboardPage({
             <div className="anim-fadeUp" style={{ animationDelay: (STAGGER + 15) + "ms", marginTop: SPACE.s3 }}>
               <SectionHeader th={th} right={
                 <button className="ui-press" onClick={() => { buzz(8); setScr("vazifa"); }} style={{ background: "none", border: "none", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, cursor: "pointer", padding: "4px 2px", fontWeight: 700, fontFamily: "inherit" }}>
-                  {L(lg, "Boshqarish", "Управление", "Manage", "Басқару", "Башкаруу", "Идоракунӣ", "Basqarıw")} ›
+                  {i18n.t("manage")} ›
                 </button>
               }>
                 <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>
-                  👶 {L(lg, "Farzandlar tarbiyasi & Vazifalar", "Воспитание детей & Задания", "Kids' development & Tasks", "Балаларды тәрбиелеу & Тапсырмалар", "Балдарды тарбиялоо & Тапшырмалар", "Тарбияи фарзандон & Вазифаҳо", "Balalardı tárbiyalaw & Wazıypalar")}
+                  👶 {i18n.t("kids_development_tasks")}
                 </span>
               </SectionHeader>
               
@@ -524,13 +501,13 @@ export default function DashboardPage({
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: SPACE.s2 }}>
                   <div>
                     <h4 style={{ ...TYPE.body, fontWeight: 800, color: th.t1, display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                      {L(lg, "Vazifalar & Rag'bat", "Задания & Мотивация", "Chores & Motivation", "Тапсырмалар & Ынталандыру", "Тапшырмалар & Түрткү", "Вазифаҳо & Ҳавасмандкунӣ", "Wazıypalar & Ruwxlandırıw")}
+                      {i18n.t("chores_motivation")}
                       {vaz.pending > 0 && (
                         <span style={{ width: 8, height: 8, borderRadius: "50%", background: th.rd, display: "inline-block", boxShadow: "0 0 8px " + th.rd, animation: "pulse 1.5s infinite" }} />
                       )}
                     </h4>
                     <p style={{ ...TYPE.caption, color: th.t2, marginTop: 4, marginBottom: 0, fontSize: 12 }}>
-                      {L(lg, "Bolajonlarga foydali vazifalar yuklang, bajarganda yulduzcha va pullar bering!", "Давайте детям полезные задания, награждайте звёздочками и деньгами!", "Assign useful chores, award stars & real pocket money!", "Балаларға пайдалы тапсырмалар беріңіз, орындағанда жұлдызша мен ақша беріңіз!", "Балдарга пайдалуу тапшырмаларды бериңиз, аткарганда жылдызча жана акча бериңиз!", "Ба фарзандон вазифаҳои муфид супоред, ҳангоми иҷро ситора ва пул диҳед!", "Balalarǵa paydalı wazıypalar beriń, orınlaǵanda júlдızsha hám aqsha beriń!")}
+                      {i18n.t("assign_chores_desc")}
                     </p>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, borderRadius: RADIUS.m, background: th.am + ALPHA.tint, color: th.am, flexShrink: 0 }}>
@@ -540,7 +517,7 @@ export default function DashboardPage({
 
                 <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3, flexWrap: "wrap" }}>
                   <div style={{ flex: 1, minWidth: 120, background: th.sur, border: `1.5px solid ${vaz.pending > 0 ? th.am : th.bor}`, borderRadius: RADIUS.s, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ ...TYPE.tiny, color: th.t2 }}>{L(lg, "Tasdiqlash kutilmoqda", "Ожидает подтверждения", "Awaiting approval", "Растауды күтуде", "Тастыктоону күтүүдө", "Интизори тасдиқ", "Tastıyıqlawdı kútip tur")}</span>
+                    <span style={{ ...TYPE.tiny, color: th.t2 }}>{i18n.t("awaiting_approval")}</span>
                     <span style={{ ...TYPE.title, fontSize: 20, color: vaz.pending > 0 ? th.am : th.t1, fontWeight: 800, display: "flex", alignItems: "center", gap: 6 }}>
                       {vaz.pending}
                       {vaz.pending > 0 && <span style={{ fontSize: 10, background: th.am + "20", color: th.am, padding: "2px 6px", borderRadius: 10, fontWeight: 700, textTransform: "uppercase" }}>NEW</span>}
@@ -548,7 +525,7 @@ export default function DashboardPage({
                   </div>
 
                   <div style={{ flex: 1, minWidth: 120, background: th.sur, border: `1px solid ${th.bor}`, borderRadius: RADIUS.s, padding: "8px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ ...TYPE.tiny, color: th.t2 }}>{L(lg, "Faol vazifalar", "Активные задания", "Active tasks", "Белсенді тапсырмалар", "Активдүү тапшырмалар", "Вазифаҳои фаъол", "Aktiv wazıypalar")}</span>
+                    <span style={{ ...TYPE.tiny, color: th.t2 }}>{i18n.t("active_tasks")}</span>
                     <span style={{ ...TYPE.title, fontSize: 20, color: th.t1, fontWeight: 800 }}>{vaz.active}</span>
                   </div>
                 </div>
@@ -568,7 +545,7 @@ export default function DashboardPage({
                 <div style={{ width: "100%", display: "flex", gap: SPACE.s2, marginTop: SPACE.s2 + 4 }}>
                   <button className="ui-press" onClick={(e) => { e.stopPropagation(); buzz(8); setShowAddVazifa(true); }} style={{ width: "100%", background: th.ac, border: "none", color: "#fff", padding: "12px 14px", borderRadius: RADIUS.s, cursor: "pointer", fontSize: 13, fontWeight: 800, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, fontFamily: "inherit" }}>
                     {Ico.add("#fff")}
-                    <span>{L(lg, "Yangi vazifa berish", "Дать новое задание", "Assign new task", "Жаңа тапсырма беру", "Жаңы тапшырма берүү", "Супоридани вазифаи нав", "Jańa wazıypa beriw")}</span>
+                    <span>{i18n.t("assign_new_task")}</span>
                   </button>
                 </div>
               </AppCard>
@@ -576,7 +553,7 @@ export default function DashboardPage({
           )}
 
           {/* 6. Tezkor amallar — bir qo'l uchun kattaroq target */}
-          <SectionHeader th={th} right={null}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.am)}{L(lg, "Tez qo'shish", "Быстрое добавление", "Quick add", "Жылдам қосу", "Тез кошуу", "Иловаи тез", "Tez qosıw")}</span></SectionHeader>
+          <SectionHeader th={th} right={null}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.am)}{i18n.t("quick_add")}</span></SectionHeader>
           <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s1, marginBottom: quickItem ? SPACE.s2 : SPACE.s3 }}>
             {QUICK_ADD.map((q, i) => {
               const cl = KATS.find(k => k.id === q.kat)?.c || th.ac;
@@ -602,20 +579,20 @@ export default function DashboardPage({
                 </div>
                 <MoneyInput style={{ ...STY.ip, ...TYPE.title, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
                 <div style={{ display: "flex", gap: SPACE.s2 }}>
-                  <GhostButton th={th} onClick={() => setQuickItem(null)} style={{ flex: 1 }}>{L(lg, "Bekor", "Отмена", "Cancel", "Бас тарту", "Жокко чыгаруу", "Бекор кардан", "Biykar etiw")}</GhostButton>
-                  <PrimaryButton th={th} onClick={quickAdd} style={{ flex: 2, marginBottom: 0 }}>{L(lg, "Saqlash", "Сохранить", "Save", "Сақтау", "Сактоо", "Захира кардан", "Saqlaw")}</PrimaryButton>
+                  <GhostButton th={th} onClick={() => setQuickItem(null)} style={{ flex: 1 }}>{i18n.t("cancel")}</GhostButton>
+                  <PrimaryButton th={th} onClick={quickAdd} style={{ flex: 2, marginBottom: 0 }}>{i18n.t("save")}</PrimaryButton>
                 </div>
               </AppCard>
             </div>
           )}
 
           {/* 7. Oxirgi tranzaksiyalar */}
-          <SectionHeader th={th} right={recentTx.length > 0 && <button className="ui-press" onClick={() => setScr("hisobot")} style={{ background: "none", border: "none", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, cursor: "pointer", padding: SPACE.s1 + "px 2px", fontWeight: 700, fontFamily: "inherit" }}>{L(lg, "Hammasi", "Все", "See all", "Барлығы", "Баары", "Ҳама", "Barlıǵı")} ›</button>}>{L(lg, "Oxirgi operatsiyalar", "Последние операции", "Recent transactions", "Соңғы операциялар", "Акыркы операциялар", "Амалиётҳои охирин", "Aqırǵı operatsiyalar")}</SectionHeader>
+          <SectionHeader th={th} right={recentTx.length > 0 && <button className="ui-press" onClick={() => setScr("hisobot")} style={{ background: "none", border: "none", ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, cursor: "pointer", padding: SPACE.s1 + "px 2px", fontWeight: 700, fontFamily: "inherit" }}>{i18n.t("see_all")} ›</button>}>{i18n.t("recent_transactions")}</SectionHeader>
           
           {/* Sana tanlash filtri (Date picker filter) */}
           <div style={{ display: "flex", gap: 8, marginBottom: 14, alignItems: "center", background: th.sur, padding: "10px 14px", borderRadius: RADIUS.m, border: "1px solid " + th.bor }}>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ ...TYPE.tiny, color: th.t2, display: "block", marginBottom: 3, fontSize: 10, fontWeight: 700 }}>{L(lg, "DAN", "ОТ", "FROM", "БАСТАП", "БАШТАП", "АЗ", "BASLAP")}</span>
+              <span style={{ ...TYPE.tiny, color: th.t2, display: "block", marginBottom: 3, fontSize: 10, fontWeight: 700 }}>{i18n.t("from_label")}</span>
               <input
                 type="date"
                 style={{
@@ -634,7 +611,7 @@ export default function DashboardPage({
               />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ ...TYPE.tiny, color: th.t2, display: "block", marginBottom: 3, fontSize: 10, fontWeight: 700 }}>{L(lg, "GACHA", "ДО", "TO", "ДЕЙІН", "ЧЕЙИН", "ТО", "SHEKEM")}</span>
+              <span style={{ ...TYPE.tiny, color: th.t2, display: "block", marginBottom: 3, fontSize: 10, fontWeight: 700 }}>{i18n.t("to_label")}</span>
               <input
                 type="date"
                 style={{
@@ -673,19 +650,19 @@ export default function DashboardPage({
                   fontFamily: "inherit"
                 }}
               >
-                {L(lg, "Tozalash", "Очистить", "Clear", "Тазалау", "Тазалоо", "Пок кардан", "Tazalaw")}
+                {i18n.t("clear")}
               </button>
             )}
           </div>
 
           {recentTx.length === 0 ? (
             <EmptyState th={th} preset="transaction"
-              title={L(lg, "Amallar topilmadi", "Операции не найдены", "No transactions found", "Амалдар табылмады", "Операциялар табылган жок", "Амалиёт ёфт нашуд", "Ámeller tabılmadı")}
-              message={L(lg, "Tanlangan sana bo'yicha yoki umumiy amallar yo'q", "Нет операций за выбранный период", "No transactions found for the selected period", "Таңдалған күн бойынша амал жоқ", "Тандалган күн боюнча операция жок", "Барои санаи интихобшуда амалиёт нест", "Tańlanǵan kún boyınsha ámel joq")}
-              actionText={L(lg, "Xarajat qo'shish", "Добавить расход", "Add expense", "Шығыс қосу", "Чыгым кошуу", "Иловаи хароҷот", "Shıǵın qosıw")} onAction={() => setScr("qoshish")} />
+              title={i18n.t("no_transactions_found")}
+              message={i18n.t("no_transactions_found_desc")}
+              actionText={i18n.t("add_expense")} onAction={() => setScr("qoshish")} />
           ) : (
             <AppCard th={th} pad={0}>
-              {recentTx.map((item, i) => <Tx key={item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} onEdit={handleStartEdit} divider={i < recentTx.length - 1} />)}
+              {recentTx.map((item, i) => <Tx key={item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delTx} onEdit={handleStartEdit} divider={i < recentTx.length - 1} />)}
             </AppCard>
           )}
 
@@ -695,20 +672,20 @@ export default function DashboardPage({
           {/* Sprint 3B: AI moliyaviy tahlil — Health / Forecast / Trend / Savings / Risk */}
           {budgetAI && (
             <>
-              <SectionHeader th={th}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.ac)}{L(lg, "Foydali moliyaviy tahlil", "Полезный анализ финансов", "Useful financial analysis", "Пайдалы қаржылық талдау", "Пайдалуу каржылык талдоо", "Таҳлили муфиди молиявӣ", "Paydalı qarjılıq talqılaw")}</span></SectionHeader>
+              <SectionHeader th={th}><span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{DIco.bolt(th.ac)}{i18n.t("useful_financial_analysis")}</span></SectionHeader>
               <SmartBudgetSection th={th} lg={lg} f={f} ai={budgetAI} />
             </>
           )}
 
           {/* 9. Maqsad progresslari */}
           {(gls.waitG.length > 0 || gls.top || maq.length === 0 || dbt.n > 0 || hasKids) && (
-            <SectionHeader th={th}>{L(lg, "Maqsad va majburiyatlar", "Цели и обязательства", "Goals & commitments", "Мақсаттар мен міндеттемелер", "Максаттар жана милдеттенмелер", "Ҳадафҳо ва ӯҳдадориҳо", "Maqsetler hám mindetlemeler")}</SectionHeader>
+            <SectionHeader th={th}>{i18n.t("goals_commitments")}</SectionHeader>
           )}
           {gls.waitG.length > 0 && (
             <MiniCard th={th} delay={STAGGER * 3} onClick={() => { buzz(8); setScr("maqsad"); }}
               icon={DIco.target(th.am)} iconTone={th.am} border={th.am + ALPHA.strong} bg={th.am + ALPHA.faint}
-              title={<span style={{ color: th.am }}>{gN(gls.waitG[0].uid)} {L(lg, "orzusi uchun pul yig'ib bo'ldi!", "\u043D\u0430\u043A\u043E\u043F\u0438\u043B(\u0430) \u043D\u0430 \u043C\u0435\u0447\u0442\u0443!", "saved up for a dream!", "\u0430\u0440\u043C\u0430\u043D\u044B \u04AF\u0448\u0456\u043D \u0430\u049B\u0448\u0430 \u0436\u0438\u043D\u0430\u043F \u0431\u043E\u043B\u0434\u044B!", "\u043A\u044B\u044F\u043B\u044B \u04AF\u0447\u04AF\u043D \u0430\u043A\u0447\u0430 \u0447\u043E\u0433\u0443\u043B\u0442\u0442\u0443!", "\u0431\u0430\u0440\u043E\u0438 \u043E\u0440\u0437\u0443 \u043F\u0443\u043B \u04B7\u0430\u043C\u044A \u043A\u0430\u0440\u0434!", "arman\u0131 ush\u0131n pul j\u0131ynap bold\u0131!")}{gls.waitG.length > 1 ? " (+" + (gls.waitG.length - 1) + ")" : ""}</span>}
-              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"\u201C"}{gls.waitG[0].ism}{"\u201D"} {"\u2014"} {L(lg, "olib berish kutilmoqda", "\u043E\u0436\u0438\u0434\u0430\u0435\u0442 \u0432\u0440\u0443\u0447\u0435\u043D\u0438\u044F", "waiting to fulfill", "\u0431\u0435\u0440\u0443\u0434\u0456 \u043A\u04AF\u0442\u0443\u0434\u0435", "\u0431\u0435\u0440\u04AF\u04AF\u043D\u04AF \u043A\u04AF\u0442\u04AF\u04AF\u0434\u04E9", "\u0438\u043D\u0442\u0438\u0437\u043E\u0440\u0438 \u0442\u0430\u04B3\u0432\u0438\u043B \u0430\u0441\u0442", "beriwdi k\u00FAtip tur")}</div>} />
+              title={<span style={{ color: th.am }}>{gN(gls.waitG[0].uid)} {i18n.t("saved_for_dream")}{gls.waitG.length > 1 ? " (+" + (gls.waitG.length - 1) + ")" : ""}</span>}
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{"\u201C"}{gls.waitG[0].ism}{"\u201D"} {"\u2014"} {i18n.t("waiting_to_fulfill")}</div>} />
           )}
           {gls.top && (
             <MiniCard th={th} delay={STAGGER * 3} onClick={() => { buzz(8); setScr("maqsad"); }}
@@ -719,16 +696,16 @@ export default function DashboardPage({
           {maq.length === 0 && (
             <MiniCard th={th} delay={STAGGER * 3} dashed border={th.ac + ALPHA.strong} bg={th.ac + ALPHA.faint} onClick={() => { buzz(8); setScr("maqsad"); }}
               icon={DIco.target(th.ac)}
-              title={L(lg, "Maqsad qo'ying", "Поставьте цель", "Set a goal", "Мақсат қойыңыз", "Максат коюңуз", "Ҳадаф гузоред", "Maqset qoyıń")}
-              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{L(lg, "Uy, mashina, sayohat uchun jamg'aring", "Копите на дом, машину, путешествие", "Save for your dreams", "Үй, көлік, саяхат үшін жинаңыз", "Үй, машина, саякат үчүн чогултуңуз", "Барои хона, мошин, сафар пасандоз кунед", "Úy, mashina, sayaxat ushın jıynań")}</div>} />
+              title={i18n.t("set_goal")}
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: 2 }}>{i18n.t("save_for_dreams")}</div>} />
           )}
 
           {/* 10. Qarz eslatmalari */}
           {dbt.n > 0 && (
             <MiniCard th={th} delay={STAGGER * 4} onClick={() => { buzz(8); setScr("qarz"); }}
               icon={DIco.cash(dbt.overdue ? th.rd : th.ac)} iconTone={dbt.overdue ? th.rd : th.ac} border={dbt.overdue ? th.rd + ALPHA.strong : undefined} bg={dbt.overdue ? th.rd + ALPHA.faint : undefined}
-              title={<span>{L(lg, "Qarzlar", "Долги", "Debts", "Қарыздар", "Карыздар", "Қарзҳо", "Qarızlar")} ({dbt.n}){dbt.overdue && <span style={{ marginLeft: SPACE.s1 + 2, ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.rd, fontWeight: 800 }}>{L(lg, "Muddati o'tgan!", "Просрочено!", "Overdue!", "Мерзімі өтіп кетті!", "Мөөнөтү өтүп кетти!", "Мӯҳлат гузашт!", "Múddeti ótip ketti!")}</span>}</span>}
-              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, marginTop: 3, display: "flex", gap: SPACE.s3, flexWrap: "wrap" }}>{dbt.menga > 0 && <span style={{ color: th.gr, fontWeight: 700 }}>{L(lg, "Menga qaytariladi", "Мне вернут", "They owe", "Маған қайтарылады", "Мага кайтарылат", "Ба ман бармегардонанд", "Maǵan qaytarıladı")}: +{f(dbt.menga, true)}</span>}{dbt.mendan > 0 && <span style={{ color: th.rd, fontWeight: 700 }}>{L(lg, "Men qaytaraman", "Я верну", "I owe", "Мен қайтарамын", "Мен кайтарамын", "Ман бармегардонам", "Men qaytaraman")}: -{f(dbt.mendan, true)}</span>}</div>} />
+              title={<span>{i18n.t("debts")} ({dbt.n}){dbt.overdue && <span style={{ marginLeft: SPACE.s1 + 2, ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.rd, fontWeight: 800 }}>{i18n.t("overdue_excl")}</span>}</span>}
+              sub={<div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, marginTop: 3, display: "flex", gap: SPACE.s3, flexWrap: "wrap" }}>{dbt.menga > 0 && <span style={{ color: th.gr, fontWeight: 700 }}>{i18n.t("they_owe")}: +{f(dbt.menga, true)}</span>}{dbt.mendan > 0 && <span style={{ color: th.rd, fontWeight: 700 }}>{i18n.t("i_owe")}: -{f(dbt.mendan, true)}</span>}</div>} />
           )}
 
 
@@ -736,9 +713,9 @@ export default function DashboardPage({
           {/* 11. Oiladagi oxirgi faoliyat */}
           {canSeeReport && famTx.length > 0 && (
             <div>
-              <SectionHeader th={th}>{L(lg, "Oiladagi oxirgi faoliyat", "Последняя активность семьи", "Family activity", "Отбасыдағы соңғы белсенділік", "Үй-бүлөдөгү акыркы активдүүлүк", "Фаъолияти охирини оила", "Oiladaǵı aqırǵı belsendilik")}</SectionHeader>
+              <SectionHeader th={th}>{i18n.t("family_activity")}</SectionHeader>
               <AppCard th={th} pad={0}>
-                {famTx.map((item, i) => <Tx key={"fam" + item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delX} onEdit={handleStartEdit} divider={i < famTx.length - 1} />)}
+                {famTx.map((item, i) => <Tx key={"fam" + item.tp + item.id} item={item} th={th} gN={gN} gP={gP} f={f} user={user} onDelete={delTx} onEdit={handleStartEdit} divider={i < famTx.length - 1} />)}
               </AppCard>
             </div>
           )}
@@ -754,7 +731,7 @@ export default function DashboardPage({
                   {(() => {
                     const usd = rates.find(r => r.code === "USD");
                     const rub = rates.find(r => r.code === "RUB");
-                    if (!usd && !rub) return L(lg, "ko'rish", "смотреть", "view", "көру", "көрүү", "дидан", "kóriw");
+                    if (!usd && !rub) return i18n.t("view");
                     return (usd ? "USD " + Number(usd.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 0 }) : "") + (usd && rub ? " \u00b7 " : "") + (rub ? "RUB " + Number(rub.rate).toLocaleString("uz-UZ", { maximumFractionDigits: 2 }) : "");
                   })()}
                 </span>
@@ -774,7 +751,7 @@ export default function DashboardPage({
                     </div>
                   )}
                   <GhostButton th={th} onClick={fetchRates} style={{ marginTop: SPACE.s2 + 2, padding: (SPACE.s2 - 1) + "px 0", fontSize: TYPE.caption.fontSize - 1 }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{Ico.repeat(th.t2)}{L(lg, "Yangilash", "Обновить", "Refresh", "Жаңарту", "Жаңыртуу", "Навсозӣ", "Jańalaw")}</span>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{Ico.repeat(th.t2)}{i18n.t("refresh")}</span>
                   </GhostButton>
                 </div>
               )}
@@ -788,24 +765,24 @@ export default function DashboardPage({
         th={th}
         open={!!editingItem}
         onClose={() => setEditingItem(null)}
-        title={L(lg, "Tahrirlash va o'chirish", "Редактировать и удалить", "Edit & Delete", "Өңдеу және жою", "Түзөтүү жана өчүрүү", "Таҳрир ва ҳазф", "Redaktorlaw hám óshiriw")}
+        title={i18n.t("edit_delete")}
       >
         {editingItem && (
           <div style={{ padding: "0 16px 24px" }}>
             {showDelConfirm ? (
               <div style={{ textAlign: "center", padding: "16px 0" }}>
                 <div style={{ ...TYPE.body, fontWeight: 700, color: th.rd, marginBottom: 16 }}>
-                  {L(lg, "Ushbu amalni o'chirishni tasdiqlaysizmi?", "Вы уверены, что хотите удалить эту операцию?", "Are you sure you want to delete this transaction?", "Бұл амалды жоюды растайсыз ба?", "Бул операцияны өчүрүүнү ырастайсызбы?", "Шумо мутмаин ҳастед, ки ин амалиётро ҳазф кунед?", "Bul ámeldi óshiriwdi tastıyıqlaysız ba?")}
+                  {i18n.t("delete_confirm_title")}
                 </div>
                 <div style={{ display: "flex", gap: 10 }}>
                   <GhostButton th={th} onClick={() => setShowDelConfirm(false)} style={{ flex: 1 }}>
-                    {L(lg, "Yo'q, bekor qilish", "Нет, отменить", "No, cancel", "Жоқ, бас тарту", "Жок, жокко чыгаруу", "Не, бекор кардан", "Yaq, biykar etiw")}
+                    {i18n.t("no_cancel")}
                   </GhostButton>
                   <DangerButton th={th} onClick={async () => {
                     await delTx(editingItem);
                     setEditingItem(null);
                   }} style={{ flex: 1 }}>
-                    {L(lg, "Ha, o'chirish", "Да, удалить", "Yes, delete", "Иә, жою", "Ооба, өчүрүү", "Ҳа, ҳазф кардан", "Áwa, óshiriw")}
+                    {i18n.t("yes_delete")}
                   </DangerButton>
                 </div>
               </div>
@@ -829,27 +806,23 @@ export default function DashboardPage({
                       }
                     </div>
                     <div style={{ fontSize: 11, color: th.t2 }}>
-                      {editingItem.kategoriya
-                        ? L(lg, "Xarajat kategoriyasi", "Категория расхода", "Expense category", "Шығыс санаты", "Чыгым категориясы", "Категорияи хароҷот", "Shıǵın kategoriyası")
-                        : L(lg, "Daromad turi", "Тип дохода", "Income type", "Кіріс түрі", "Киреше түрү", "Навъи даромад", "Kirim túri")}
+                      {editingItem.kategoriya ? i18n.t("expense_category") : i18n.t("income_type")}
                     </div>
                   </div>
                 </div>
 
-                <label style={STY.lb}>{L(lg, "Summa (so'm)", "Сумма (сум)", "Amount", "Сома", "Сумма", "Маблағ", "Sоmma")}</label>
+                <label style={STY.lb}>{i18n.t("amount_uzs")}</label>
                 <MoneyInput style={{ ...STY.ip, fontSize: 24, fontWeight: 800, textAlign: "center" }} value={editSum} onChange={setEditSum} placeholder="0" th={th} />
 
-                <label style={STY.lb}>{L(lg, "Izoh", "Примечание", "Note", "Ескерту", "Эскертүү", "Шарҳ", "Eskertiw")}</label>
-                <input style={STY.ip} value={editIzoh} onChange={e => setEditIzoh(e.target.value)} placeholder={L(lg, "Nima uchun?", "За что?", "What for?", "Не үшін?", "Эмне үчүн?", "Барои чӣ?", "Ne ushın?")} />
+                <label style={STY.lb}>{i18n.t("note")}</label>
+                <input style={STY.ip} value={editIzoh} onChange={e => setEditIzoh(e.target.value)} placeholder={i18n.t("what_for_placeholder")} />
 
-                <label style={STY.lb}>{L(lg, "Sana", "Дата", "Date", "Күні", "Күнү", "Сана", "Sáne")}</label>
+                <label style={STY.lb}>{i18n.t("date")}</label>
                 <input type="date" style={STY.ip} value={editSana} onChange={e => setEditSana(e.target.value)} />
 
                 <div style={{ marginTop: 12, marginBottom: 16 }}>
                   <label style={{ ...STY.lb, marginBottom: 6, display: "block" }}>
-                    {editingItem.kategoriya
-                      ? L(lg, "Kategoriyani o'zgartirish", "Изменить категорию", "Change category", "Санатты өзгерту", "Категорияны өзгөртүү", "Тағйири категория", "Kategoriyanı ózgertiw")
-                      : L(lg, "Daromad turini o'zgartirish", "Изменить тип дохода", "Change income type", "Кіріс түрін өзгерту", "Киреше түрүн өзгөртүү", "Тағйири навъи даромад", "Kirim túrin ózgertiw")}
+                    {editingItem.kategoriya ? i18n.t("change_category") : i18n.t("change_income_type")}
                   </label>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, maxHeight: 150, overflowY: "auto", padding: 2 }}>
                     {editingItem.kategoriya ? (
@@ -872,11 +845,11 @@ export default function DashboardPage({
 
                 <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
                   <DangerButton th={th} onClick={() => setShowDelConfirm(true)} style={{ flex: 1, margin: 0, padding: "10px" }}>
-                    {L(lg, "O'chirish", "Удалить", "Delete", "Жою", "Өчүрүү", "Ҳазф кардан", "Óshiriw")}
+                    {i18n.t("delete")}
                   </DangerButton>
                   <PrimaryButton th={th} onClick={async () => {
                     if (!editSum || Number(editSum) <= 0) {
-                      return ok$(L(lg, "Summa kiriting", "Введите сумму", "Enter amount", "Соманы енгізіңіз", "Сумманы киргизиңиз", "Маблағро ворид кунед", "Summanı kiritiń"), "err");
+                      return ok$(i18n.t("enter_amount_error"), "err");
                     }
                     const updateData = {
                       summa: Number(editSum),
@@ -891,7 +864,7 @@ export default function DashboardPage({
                     await editTx(editingItem, updateData);
                     setEditingItem(null);
                   }} style={{ flex: 2, margin: 0, padding: "10px" }}>
-                    {L(lg, "Saqlash", "Сохранить", "Save", "Сақтау", "Сактоо", "Захира кардан", "Saqlaw")}
+                    {i18n.t("save")}
                   </PrimaryButton>
                 </div>
               </div>

@@ -83,17 +83,6 @@ const TXT = {
   back: { uz: "Orqaga", ru: "Назад", en: "Back", kk: "Артқа", ky: "Артка", tg: "Қафо", qr: "Orqaga" },
 };
 
-// Premium slaydidagi 3 ta foyda — 7 tilning barchasi uchun
-const PREMIUM_BENEFITS = {
-  uz: ["Cheksiz maqsad va a'zolar", "PDF/Excel eksport", "Foydali tavsiyalar"],
-  ru: ["Безлимитные цели и участники", "Экспорт PDF/Excel", "AI-советы"],
-  en: ["Unlimited goals & members", "PDF/Excel export", "Useful insights"],
-  kk: ["Шексіз мақсат және мүшелер", "PDF/Excel экспорт", "Пайдалы кеңестер"],
-  ky: ["Чексиз максат жана мүчөлөр", "PDF/Excel экспорт", "Пайдалуу кеңештер"],
-  tg: ["Ҳадаф ва аъзоёни беохир", "Содироти PDF/Excel", "Маслиҳатҳои муфид"],
-  qr: ["Sheksiz maqset hám aǵzalar", "PDF/Excel eksport", "Paydalı máslahatlar"],
-};
-
 // Slayd rang kaliti → real token qiymati
 const slideColor = (key, th) =>
   key === "gold" ? PREMIUM.gold
@@ -160,7 +149,9 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
         {/* 5-slayd: 3 asosiy foyda */}
         {isPremiumSlide && (
           <div className="ui-fadeUp" style={{ marginTop: SPACE.s4 + SPACE.s1, display: "flex", flexDirection: "column", gap: SPACE.s2, alignItems: "flex-start" }}>
-            {(PREMIUM_BENEFITS[lg] || PREMIUM_BENEFITS.uz).map(b => (
+            {(lg === "uz" ? ["Cheksiz maqsad va a'zolar", "PDF/Excel eksport", "Foydali tavsiyalar"]
+              : lg === "ru" ? ["Безлимитные цели и участники", "Экспорт PDF/Excel", "AI-советы"]
+              : ["Unlimited goals & members", "PDF/Excel export", "Useful insights"]).map(b => (
               <div key={b} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, color: th.t1 }}>
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8l4 4 6-7" stroke={PREMIUM.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 {b}

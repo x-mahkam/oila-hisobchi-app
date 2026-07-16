@@ -510,7 +510,7 @@ export default function App() {
           }
         });
 
-        const dl = localStorage.getItem("oilaV7L"); if (dl && TL[dl]) setLg(dl);
+        const dl = localStorage.getItem("oilaV7L"); if (dl) setLg(dl);
         const dd = localStorage.getItem("oilaV7D"); if (dd != null) setDark(dd !== "false");
         const dv = localStorage.getItem("oilaV7V"); if (dv) { const v = VALS.find(x => x.id === dv); if (v) setVal(v); }
 
@@ -518,157 +518,23 @@ export default function App() {
           const params = new URLSearchParams(window.location.search);
           const tx = params.get("tilxat"); if (tx) { try { setVerifyTilxat(JSON.parse(tx)); } catch {} }
         } catch {}
-      } catch {}
-      if (active) {
-        clearTimeout(safetyTimeout);
-        setBoot(false);
+      } catch (e) {
+        console.error("Boot error:", e);
+      } finally {
+        if (active) {
+          setBoot(false);
+          clearTimeout(safetyTimeout);
+        }
       }
     })();
 
     return () => {
       active = false;
-      clearTimeout(safetyTimeout);
     };
   }, []);
 
-  useEffect(() => { if (scr === "bosh") fetchRates(); }, [scr]);
-
-  // ── delX ─────────────────────────────────────────────────
-  const delX = async item => {
-    await delTx(item);
-  };
-
-  // ── TILXAT (RASPISKA) PDF — faqat ikki tomon tasdiqlagan qarzlar uchun ──
   const generateTilxat = (q) => {
     debts.generateTilxat(q);
-  };
-  const _old_generateTilxat = (q) => {
-    if (!q.linked || q.linkStatus !== "accepted") {
-      ok$(lg === "uz" ? "Tilxat faqat ikki tomon tasdiqlagan qarzlar uchun" : "Receipt only for mutually confirmed debts", "err");
-      return;
-    }
-    try {
-      // Tomonlar: tur="olgan" — men qarzdor, kim=kreditor; tur="bergan" — men kreditor, kim=qarzdor
-      const menQarzdor = q.tur === "olgan";
-      const qarzdor = menQarzdor ? (user.ism || "") : q.kim;
-      const kreditor = menQarzdor ? q.kim : (user.ism || "");
-      const qarzdorTel = menQarzdor ? (user.tel || "") : q.linkedTel;
-      const kreditorTel = menQarzdor ? q.linkedTel : (user.tel || "");
-      const summaSom = Number(q.asl || (Number(q.summa) + Number(q.paidPart || 0)));
-      const sanaStr = q.sana || td();
-      const qaytStr = q.qaytSana || (lg === "uz" ? "kelishuv bo'yicha" : "as agreed");
-
-      const summaRaqam = fmtN(summaSom, val, false);
-      const summaSoz = lg === "uz" ? sonSoz(summaSom) : "";
-      const summaText = summaRaqam + (summaSoz ? " (" + summaSoz + " so'm)" : "");
-      const hujjatRaqami = "OH-" + String(q.id).slice(-8);
-      // QR → ilovaning tekshiruv havolasi (skanerlaganda tasdiq sahifasi ochiladi)
-      const tilxatJson = JSON.stringify({ id: q.id, q: qarzdor, k: kreditor, s: summaSom, d: sanaStr, r: qaytStr, n: hujjatRaqami });
-      const verifyUrl = window.location.origin + "/?tilxat=" + encodeURIComponent(tilxatJson);
-      const verifyQR = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&ecc=L&data=" + encodeURIComponent(verifyUrl);
-
-      const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tilxat ${hujjatRaqami}</title><style>
-        @page{size:A4;margin:2cm}
-        body{font-family:'Times New Roman',serif;color:#1a1a1a;line-height:1.8;font-size:14px}
-        .head{text-align:center;margin-bottom:30px;border-bottom:2px solid #333;padding-bottom:16px}
-        .title{font-size:22px;font-weight:bold;letter-spacing:1px;margin-bottom:6px}
-        .sub{font-size:12px;color:#666}
-        .body{text-align:justify;margin:24px 0}
-        .body p{margin:14px 0}
-        .field{font-weight:bold;text-decoration:underline}
-        .sum{font-size:16px;font-weight:bold;color:#000;background:#f5f5f5;padding:2px 8px}
-        .sign{margin-top:48px;display:flex;justify-content:space-between}
-        .sign-box{width:45%;text-align:center}
-        .sign-line{border-top:1px solid #333;margin-top:40px;padding-top:6px;font-size:12px}
-        .foot{margin-top:40px;font-size:10px;color:#888;text-align:center;border-top:1px solid #ddd;padding-top:12px}
-        .doc-num{text-align:right;font-size:11px;color:#666;margin-bottom:8px}
-        .clause{margin:12px 0;text-align:justify}
-        .num{display:inline-block;width:22px;font-weight:bold}
-        .verify-box{margin-top:24px;display:flex;align-items:center;gap:16px;padding:14px 16px;border:2px solid #4f46e5;border-radius:10px;background:#4f46e506}
-        .verify-box img{width:90px;height:90px}
-        .legal{margin-top:18px;font-size:11px;color:#444;line-height:1.6;background:#fafafa;border-left:3px solid #4f46e5;padding:10px 14px}
-        .btn{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#4f46e5;color:#fff;border:none;padding:13px 32px;border-radius:28px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(79,70,229,.4)}
-        @media print{.btn{display:none}}
-      </style></head><body>
-        <div class="doc-num">${lg === "uz" ? "Hujjat \u2116" : lg === "ru" ? "\u0414\u043e\u043a\u0443\u043c\u0435\u043d\u0442 \u2116" : lg === "kk" ? "Құжат \u2116" : lg === "ky" ? "Документ \u2116" : lg === "tg" ? "Ҳуҷҷат \u2116" : lg === "qr" ? "Hu'jjet \u2116" : "Document \u2116"} ${hujjatRaqami}</div>
-        <div class="head">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:54px;height:54px;display:block;margin:0 auto 8px;">
-            <rect width="120" height="120" rx="28" fill="#5D5CFF" />
-            <path d="M12 46 L60 12 L108 46" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-            <rect x="18" y="47" width="84" height="58" rx="14" stroke="#FFFFFF" stroke-width="7" fill="none" />
-            <path d="M18 58 L102 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
-            <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-          </svg>
-          <div class="title">${lg === "uz" ? "TILXAT" : lg === "ru" ? "\u0420\u0410\u0421\u041f\u0418\u0421\u041a\u0410" : lg === "kk" ? "ҚОЛХАТ" : lg === "ky" ? "ТИЛХАТ" : lg === "tg" ? "ТИЛХАТ" : lg === "qr" ? "TILXAT" : "RECEIPT"}</div>
-          <div class="sub">${lg === "uz" ? "pul qarzi olinganligi to'g'risida" : lg === "ru" ? "\u043e \u043f\u043e\u043b\u0443\u0447\u0435\u043d\u0438\u0438 \u0434\u0435\u043d\u0435\u0436\u043d\u043e\u0433\u043e \u0437\u0430\u0439\u043c\u0430" : lg === "kk" ? "ақшалай қарыз алғандығы туралы" : lg === "ky" ? "акчалай карыз алгандыгы жөнүндө" : lg === "tg" ? "дар бораи гирифтани қарзи пулӣ" : lg === "qr" ? "pul qarzi aling'anlig'i tu'g'risinda" : "of a monetary loan"}</div>
-        </div>
-        <div class="body">
-          <p>${sanaStr}</p>
-          <div class="clause"><span class="num">1.</span>${lg === "uz" ? "Men" : lg === "ru" ? "\u042f" : lg === "kk" ? "Мен" : lg === "ky" ? "Мен" : lg === "tg" ? "Ман" : lg === "qr" ? "Men" : "I"}, <span class="field">${qarzdor}</span>${qarzdorTel ? ", tel: " + qarzdorTel : ""} (${lg === "uz" ? "bundan keyin \u2014 Qarzdor" : lg === "ru" ? "\u0434\u0430\u043b\u0435\u0435 \u2014 \u0414\u043e\u043b\u0436\u043d\u0438\u043a" : lg === "kk" ? "бұдан былай — Борышкер" : lg === "ky" ? "мындан ары — Карыз алуучу" : lg === "tg" ? "минбаъд — Қарздор" : lg === "qr" ? "bundan keyin — Qarzdar" : "hereinafter \u2014 Debtor"}), ${lg === "uz" ? "o'z ixtiyorim bilan, quyidagi shaxsdan" : lg === "ru" ? "\u0434\u043e\u0431\u0440\u043e\u0432\u043e\u043b\u044c\u043d\u043e \u043f\u043e\u043b\u0443\u0447\u0438\u043b(\u0430) \u043e\u0442" : lg === "kk" ? "өз еркіммен, келесі тұлғадан" : lg === "ky" ? "өз эрким менен, төмөнкү адамдан" : lg === "tg" ? "бо хоҳиши худ, аз шахси зерин" : lg === "qr" ? "o'z ixtiyorim menen, to'mendegi shaxstan" : "voluntarily received from"} <span class="field">${kreditor}</span>${kreditorTel ? ", tel: " + kreditorTel : ""} (${lg === "uz" ? "bundan keyin \u2014 Kreditor" : lg === "ru" ? "\u0434\u0430\u043b\u0435\u0435 \u2014 \u041a\u0440\u0435\u0434\u0438\u0442\u043e\u0440" : lg === "kk" ? "бұдан былай — Кредитор" : lg === "ky" ? "мындан ары — Кредитор" : lg === "tg" ? "минбаъд — Кредитор" : lg === "qr" ? "bundan keyin — Kreditor" : "hereinafter \u2014 Creditor"}) ${lg === "uz" ? "naqd pul mablag'ini qarz sifatida oldim" : lg === "ru" ? "\u0434\u0435\u043d\u0435\u0436\u043d\u044b\u0435 \u0441\u0440\u0435\u0434\u0441\u0442\u0432\u0430 \u0432 \u0434\u043e\u043b\u0433" : lg === "kk" ? "қолма-қол ақшаны қарызға алдым" : lg === "ky" ? "накталай акчаны карызга алдым" : lg === "tg" ? "маблағи нақдро ҳамчун қарз гирифтам" : lg === "qr" ? "naqd pulg'a qarz sipatinda aldim" : "a monetary loan"}:</div>
-          <p style="text-align:center"><span class="sum">${summaText}</span></p>
-          <div class="clause"><span class="num">2.</span>${lg === "uz" ? "Yuqoridagi summani" : lg === "ru" ? "\u0423\u043a\u0430\u0437\u0430\u043d\u043d\u0443\u044e \u0441\u0443\u043c\u043c\u0443 \u043e\u0431\u044f\u0437\u0443\u044e\u0441\u044c \u0432\u0435\u0440\u043d\u0443\u0442\u044c \u0434\u043e" : lg === "kk" ? "Жоғарыдағы соманы" : lg === "ky" ? "Жогорудагы сумманы" : lg === "tg" ? "Суммаи болоро" : lg === "qr" ? "Joqaridag'i summani" : "I undertake to repay the above amount by"} <span class="field">${qaytStr}</span> ${lg === "uz" ? "sanasigacha to'liq qaytarishni zimmamga olaman." : lg === "ru" ? "" : lg === "kk" ? "күніне дейін толық қайтаруды міндетіме аламын." : lg === "ky" ? "күнүнө чейин толук кайтарууну милдеттенем." : lg === "tg" ? "то санаи көрсетшуда пурра баргардонам." : lg === "qr" ? "sa'nesine deyin to'liq qaytarishni moynima alaman." : ""}</div>
-          <div class="clause"><span class="num">3.</span>${lg === "uz" ? "Mazkur tilxat ikki tomonning erkin xohish-irodasi asosida tuzildi. Tomonlar hujjat mazmuni va oqibatlarini to'liq anglaydilar." : lg === "ru" ? "\u0420\u0430\u0441\u043f\u0438\u0441\u043a\u0430 \u0441\u043e\u0441\u0442\u0430\u0432\u043b\u0435\u043d\u0430 \u043f\u043e \u0434\u043e\u0431\u0440\u043e\u0439 \u0432\u043e\u043b\u0435 \u043e\u0431\u0435\u0438\u0445 \u0441\u0442\u043e\u0440\u043e\u043d." : lg === "kk" ? "Бұл қолхат екі тараптың еркін еркімен жасалды. Тараптар құжаттың мазмұны мен салдарын толық түсінеді." : lg === "ky" ? "Бул тилхат эки тараптын эркин эрки менен түзүлдү. Тараптар документтин мазмунун жана кесепеттерин толук түшүнүшөт." : lg === "tg" ? "Ин тилхат дар асоси хоҳиши озоди ду тараф тартиб дода шуд. Тарафҳо мазмун ва оқибатҳои ҳуҷҷатро пурра дарк мекунанд." : lg === "qr" ? "Bul tilxat eki ta'reptin' erkin xahish-irodasi tiykarinda du'zildi. Ta'repler hu'jjet mazmuni ha'm aqibetlerin to'liq an'laydi." : "Made by free will of both parties."}</div>
-          <div class="clause"><span class="num">4.</span>${lg === "uz" ? "Nizo kelib chiqqan taqdirda, tomonlar uni muzokara yo'li bilan, kelisha olmagan holda esa O'zbekiston Respublikasi qonunchiligiga muvofiq sud tartibida hal etadilar." : lg === "ru" ? "\u0421\u043f\u043e\u0440\u044b \u0440\u0435\u0448\u0430\u044e\u0442\u0441\u044f \u043f\u0435\u0440\u0435\u0433\u043e\u0432\u043e\u0440\u0430\u043c\u0438 \u0438\u043b\u0438 \u0432 \u0441\u0443\u0434\u0435." : lg === "kk" ? "Дау туындаған жағдайда, тараптар оны келіссөздер арқылы, ал келісімге келмеген жағдайда сот тәртібімен шешеді." : lg === "ky" ? "Талаш-тартыш жаралган учурда, тараптар аны сүйлөшүүлөр жолу менен, ал эми келише албаса сот тартибинде чечишет." : lg === "tg" ? "Дар сурати ба вуҷуд омадани баҳс, тарафҳо онро бо роҳи гуфтушунид, дар сурати ба мувофиқа наомадан бошад ба таври судӣ ҳал мекунанд." : lg === "qr" ? "Nizo kelip shıqqan jag'dayda, ta'repler oni muzokara jo'li menen, kelise almag'an jag'dayda bolsa sud ta'rtibinde sheshedi." : "Disputes resolved by negotiation or court."}</div>
-          ${q.paidPart > 0 ? '<div class="clause"><span class="num">5.</span>' + (
-            lg === "uz" ? "Qisman qaytarilgan: <b>" + Number(q.paidPart).toLocaleString("uz-UZ") + " so'm</b>. Qoldiq: <b>" + Number(q.summa).toLocaleString("uz-UZ") + " so'm</b>." :
-            lg === "ru" ? "Частично возвращено: <b>" + Number(q.paidPart).toLocaleString() + " руб/сум</b>. Остаток: <b>" + Number(q.summa).toLocaleString() + " руб/сум</b>." :
-            lg === "kk" ? "Жартылай қайтарылды: <b>" + Number(q.paidPart).toLocaleString() + "</b>. Қалдық: <b>" + Number(q.summa).toLocaleString() + "</b>." :
-            lg === "ky" ? "Жартылай кайтарылды: <b>" + Number(q.paidPart).toLocaleString() + "</b>. Калдык: <b>" + Number(q.summa).toLocaleString() + "</b>." :
-            lg === "tg" ? "Қисман баргардонида шуд: <b>" + Number(q.paidPart).toLocaleString() + "</b>. Боқимонда: <b>" + Number(q.summa).toLocaleString() + "</b>." :
-            lg === "qr" ? "Qisman qaytarilg'an: <b>" + Number(q.paidPart).toLocaleString() + " swm</b>. Qaldiq: <b>" + Number(q.summa).toLocaleString() + " swm</b>." :
-            "Partially repaid: <b>" + Number(q.paidPart).toLocaleString() + "</b>. Remaining: <b>" + Number(q.summa).toLocaleString() + "</b>."
-          ) + "</div>" : ""}
-        </div>
-        <div class="sign">
-          <div class="sign-box"><div class="sign-line">${lg === "uz" ? "Qarzdor" : lg === "ru" ? "\u0414\u043e\u043b\u0436\u043d\u0438\u043a" : lg === "kk" ? "Борышкер" : lg === "ky" ? "Карыз алуучу" : lg === "tg" ? "Қарздор" : lg === "qr" ? "Qarzdar" : "Debtor"}<br>${qarzdor}<br>${lg === "uz" ? "(imzo)" : lg === "ru" ? "(\u043f\u043e\u0434\u043f\u0438\u0441\u044c)" : lg === "kk" ? "(қолы)" : lg === "ky" ? "(кол тамга)" : lg === "tg" ? "(имзо)" : lg === "qr" ? "(imzo)" : "(signature)"}</div></div>
-          <div class="sign-box"><div class="sign-line">${lg === "uz" ? "Kreditor" : lg === "ru" ? "\u041a\u0440\u0435\u0434\u0438\u0442\u043e\u0440" : lg === "kk" ? "Кредитор" : lg === "ky" ? "Кредитор" : lg === "tg" ? "Кредитор" : lg === "qr" ? "Kreditor" : "Creditor"}<br>${kreditor}<br>${lg === "uz" ? "(imzo)" : lg === "ru" ? "(\u043f\u043e\u0434\u043f\u0438\u0441\u044c)" : lg === "kk" ? "(қолы)" : lg === "ky" ? "(кол тамга)" : lg === "tg" ? "(имзо)" : lg === "qr" ? "(imzo)" : "(signature)"}</div></div>
-        </div>
-        <div class="verify-box">
-          <img src="${verifyQR}" alt="QR"/>
-          <div>
-            <div style="font-size:13px;font-weight:bold;color:#4f46e5">\ud83d\udd12 ${lg === "uz" ? "Elektron tasdiq" : lg === "ru" ? "\u042d\u043b\u0435\u043a\u0442\u0440\u043e\u043d\u043d\u043e\u0435 \u043f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0435\u043d\u0438\u0435" : lg === "kk" ? "Электронды растау" : lg === "ky" ? "Электрондук ырастоо" : lg === "tg" ? "Тасдиқи электронӣ" : lg === "qr" ? "Elektron tastiyqlaw" : "Electronic confirmation"}</div>
-            <div style="font-size:11px;color:#555;margin-top:4px;line-height:1.5">${lg === "uz" ? "Ushbu hujjat 'Oila Hisobchi' ilovasida har ikki tomon tomonidan elektron tasdiqlangan. QR kod hujjat haqiqiyligini bildiradi." : lg === "ru" ? "\u041f\u043e\u0434\u0442\u0432\u0435\u0440\u0436\u0434\u0451\u043d \u043e\u0431\u0435\u0438\u043c\u0438 \u0441\u0442\u043e\u0440\u043e\u043d\u0430\u043c\u0438. QR \u0443\u0434\u043e\u0441\u0442\u043e\u0432\u0435\u0440\u044f\u0435\u0442 \u043f\u043e\u0434\u043b\u0438\u043d\u043d\u043e\u0441\u0442\u044c." : lg === "kk" ? "Бұл құжат 'Отбасылық бюджет' қолданбасында екі тараптан электронды түрде расталған. QR-код құжаттың түпнұсқалығын растайды." : lg === "ky" ? "Бул документ 'Үй-бүлөлүк бюджет' тиркемесинде эки тараптан электрондук түрдө ырасталган. QR-код документтин аныктыгын ырастайт." : lg === "tg" ? "Ин ҳуҷҷат дар барномаи 'Бюдҷети оилавӣ' аз ҷониби ҳарду тараф тасдиқи электронӣ шудааст. Коди QR ҳақиқияти ҳуҷҷатро тасдиқ мекунад." : lg === "qr" ? "Bul hu'jjet 'Oila Hisobchisi' ilovasinda ha'r eki ta'rep ta'repinen elektron tastiyqlang'an. QR kod hu'jjet haqiqiylig'in bildiredi." : "Confirmed by both parties. QR verifies authenticity."}</div>
-            <div style="font-size:10px;color:#888;margin-top:4px">${lg === "uz" ? "Hujjat raqami" : lg === "ru" ? "Номер документа" : lg === "kk" ? "Құжат нөмірі" : lg === "ky" ? "Документ номери" : lg === "tg" ? "Рақами ҳуҷҷат" : lg === "qr" ? "Hu'jjet belgisi" : "Doc"}: ${hujjatRaqami} \u00b7 ID: ${q.id}</div>
-          </div>
-        </div>
-        <div class="legal">
-          <b>${lg === "uz" ? "Huquqiy eslatma:" : lg === "ru" ? "\u041f\u0440\u0430\u0432\u043e\u0432\u0430\u044f \u0441\u043f\u0440\u0430\u0432\u043a\u0430:" : lg === "kk" ? "Құқықтық ескерту:" : lg === "ky" ? "Укуктук эскертүү:" : lg === "tg" ? "Эзоҳҳои ҳуқуқӣ:" : lg === "qr" ? "Huquqiy eskertiw:" : "Legal note:"}</b> ${lg === "uz" ? "Mazkur tilxat O'zbekiston Respublikasi Fuqarolik kodeksining qarz shartnomasiga oid normalariga muvofiq tuzilgan va tomonlar o'rtasidagi kelishuvni qayd etuvchi yozma dalil hisoblanadi. To'liq yuridik kuchga ega bo'lishi uchun notarial tasdiqlash yoki E-IMZO tavsiya etiladi. Aniq holatlar bo'yicha malakali yuristga murojaat qiling." : lg === "ru" ? "Данная расписка составлена в соответствии с нормами Гражданского кодекса о договоре займа и является письменным доказательством соглашения. Для полной юридической силы рекомендуется нотариальное заверение или E-IMZO." : lg === "kk" ? "Бұл қолхат қарыз шарты туралы заңнама нормаларына сәйкес жасалған және жазбаша дәлел болып табылады. Толық заңды күшке ие болу үшін нотариалды куәландыру немесе E-IMZO ұсынылады." : lg === "ky" ? "Бул тилхат карыз келишими жөнүндөгү мыйзам нормаларына ылайык түзүлгөн жана жазуу жүзүндөгү далил болуп саналат. Толук юридикалык күчкө ээ болушу үчүн нотариалдык күбөлөндүрүү же E-IMZO сунушталат." : lg === "tg" ? "Ин тилхат мувофиқи меъёрҳои қонунгузорӣ дар бораи шартномаи қарз тартиб дода шудааст ва далели хаттӣ мебошад. Барои эътибори пурраи ҳуқуқӣ тасдиқи нотариалӣ ё E-IMZO тавсия мешавад." : lg === "qr" ? "Bul tilxat qars shartnamasina baylanisli nizam normalarina muvapiq du'zilgen ha'm jazbasha da'lil bolıp tabıladı. Tolıq yuridikalıq ku'shke iye boliwi ushın notarial tastıyıqlaw ya'ki E-IMZO usınıladı." : "This receipt is drawn up in accordance with debt contract regulations and serves as written proof of agreement. Notarization or E-IMZO is recommended for full legal power."}
-        </div>
-      </body>
-    </html>`;
-
-    try {
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      document.body.appendChild(iframe);
-      const doc = iframe.contentDocument || iframe.contentWindow.document;
-      doc.open();
-      doc.write(html);
-      doc.close();
-      let opened = false;
-      iframe.contentWindow.focus();
-        setTimeout(() => {
-          try {
-            iframe.contentWindow.print();
-            opened = true;
-            ok$(lg === "uz" ? "Chop etish darchasi ochildi!" : lg === "ru" ? "Окно печати открыто!" : lg === "kk" ? "Басып шығару терезесі ашылды!" : lg === "ky" ? "Басып чыгаруу терезеси ачылды!" : lg === "tg" ? "Равзанаи чоп кушода шуд!" : lg === "qr" ? "Chop etiw da'rizesi as'ildi!" : "Print dialog opened!");
-          } catch (pe) {
-            console.error("App.jsx Tilxat print failed:", pe);
-          }
-          setTimeout(() => {
-            try {
-              document.body.removeChild(iframe);
-            } catch (errClean) {}
-          }, 1500);
-          if (!opened) {
-            setTilxatView({ html, num: hujjatRaqami });
-          }
-        }, 300);
-      } catch (errIframe) {
-        console.error("App.jsx Tilxat iframe creation failed:", errIframe);
-        setTilxatView({ html, num: hujjatRaqami });
-      }
-    } catch (e) { console.error("tilxat:", e); ok$(lg === "uz" ? "Tilxat yaratishda xato" : lg === "ru" ? "Ошибка создания расписки" : lg === "kk" ? "Қолхат жасаудағы қате" : lg === "ky" ? "Тилхат түзүүдө ката кетти" : lg === "tg" ? "Хато дар сохтани тилхат" : lg === "qr" ? "Tilxat jaratiwda qa'telik" : "Error", "err"); }
   };
 
   // ── Notification handlers ────────────────────────────────
@@ -676,12 +542,12 @@ export default function App() {
     if (!notifEnabled) {
       if ("Notification" in window) {
         const perm = await Notification.requestPermission();
-        if (perm === "granted") { setNotifEnabled(true); localStorage.setItem("oilaV7Notif", "1"); ok$(lg === "uz" ? "Bildirishnomalar yoqildi!" : lg === "ru" ? "Уведомления включены!" : lg === "kk" ? "Хабарландырулар қосылды!" : lg === "ky" ? "Билдирүүлөр күйгүзүлдү!" : lg === "tg" ? "Огоҳиҳо фаъол шуданд!" : lg === "qr" ? "Bildirgi yoqildi!" : "Notifications enabled!"); }
-        else ok$(lg === "uz" ? "Ruxsat berilmadi." : lg === "ru" ? "Доступ запрещен." : lg === "kk" ? "Рұқсат берілмеді." : lg === "ky" ? "Уруксат берилген жок." : lg === "tg" ? "Иҷозат дода нашуд." : lg === "qr" ? "Ruxsat berilmedi." : "Permission denied.", "err");
+        if (perm === "granted") { setNotifEnabled(true); localStorage.setItem("oilaV7Notif", "1"); ok$(t("notif_enabled")); }
+        else ok$(t("permission_denied"), "err");
       }
-    } else { setNotifEnabled(false); localStorage.setItem("oilaV7Notif", "0"); ok$(lg === "uz" ? "O'chirildi." : lg === "ru" ? "Отключено." : lg === "kk" ? "Өшірілді." : lg === "ky" ? "Өчүрүлдү." : lg === "tg" ? "Хомӯш карда шуд." : lg === "qr" ? "O'shirildi." : "Disabled."); }
+    } else { setNotifEnabled(false); localStorage.setItem("oilaV7Notif", "0"); ok$(t("disabled")); }
   };
-  const saveNotifTime = (time) => { setNotifTime(time); localStorage.setItem("oilaV7NotifT", time); ok$(lg === "uz" ? "Vaqt saqlandi: " + time : lg === "ru" ? "Время сохранено: " + time : lg === "kk" ? "Уақыт сақталды: " + time : lg === "ky" ? "Убакыт сакталды: " + time : lg === "tg" ? "Вақт захира шуд: " + time : lg === "qr" ? "Vaqt saqlandi: " + time : "Time saved: " + time); };
+  const saveNotifTime = (time) => { setNotifTime(time); localStorage.setItem("oilaV7NotifT", time); ok$(t("time_saved") + time); };
 
   // ── Accept/Reject xReqs ───────────────────────────────────
   const acceptXReq = async (req) => {
@@ -690,7 +556,7 @@ export default function App() {
       const chkD = dar.filter(i => i.uid === user.id || !i.uid).reduce((s, i) => s + Number(i.summa || 0), 0);
       const chkX = xar.filter(i => i.uid === user.id || !i.uid).reduce((s, i) => s + Number(i.summa || 0), 0);
       if (chkD - chkX < Number(req.summa)) {
-        ok$(lg === "uz" ? "❌ Balans yetarli emas! Balans: " + f(Math.max(0, chkD - chkX), true) : lg === "ru" ? "❌ Недостаточно баланса! Баланс: " + f(Math.max(0, chkD - chkX), true) : lg === "kk" ? "❌ Баланс жеткіліксіз! Баланс: " + f(Math.max(0, chkD - chkX), true) : lg === "ky" ? "❌ Баланс жетишсиз! Баланс: " + f(Math.max(0, chkD - chkX), true) : lg === "tg" ? "❌ Балланси нокофӣ! Балланс: " + f(Math.max(0, chkD - chkX), true) : lg === "qr" ? "❌ Balans jetkilikli emes! Balans: " + f(Math.max(0, chkD - chkX), true) : "❌ Insufficient balance!", "err");
+        ok$(t("insufficient_balance") + f(Math.max(0, chkD - chkX), true), "err");
         return;
       }
     }
@@ -700,17 +566,17 @@ export default function App() {
       const item = { id: req.id, tur: req.tur || "sovga", summa: req.summa, izoh: req.izoh, sana: req.sana, vaqt: nt() };
       const key = "d_" + user.oilaId + "_" + user.id;
       await db.s(key, [item, ...((await db.g(key)) || [])]); setDar(d => [{ ...item, uid: user.id }, ...d]);
-      ok$(lg === "uz" ? "Daromadga qo'shildi!" : lg === "ru" ? "Добавлено в доход!" : lg === "kk" ? "Кіріске қосылды!" : lg === "ky" ? "Кирешеге кошулду!" : lg === "tg" ? "Ба даромад илова шуд!" : lg === "qr" ? "Kirimge qosildi!" : "Added to income!"); return;
+      ok$(t("added_to_income")); return;
     }
     const item = { id: req.id, kategoriya: req.kategoriya, summa: req.summa, izoh: req.izoh + " (so'rov: " + req.fromIsm + ")", sana: req.sana, vaqt: nt(), repeat: false };
     const key = "x_" + user.oilaId + "_" + user.id;
     await db.s(key, [item, ...((await db.g(key)) || [])]); setXar(x => [{ ...item, uid: user.id }, ...x]);
-    ok$(lg === "uz" ? "Xarajat qo'shildi!" : lg === "ru" ? "Расход добавлен!" : lg === "kk" ? "Шығыс қосылды!" : lg === "ky" ? "Чыгым кошулду!" : lg === "tg" ? "Хароҷот илова шуд!" : lg === "qr" ? "Shig'is qosildi!" : "Expense added!");
+    ok$(t("expense_added"));
   };
   const rejectXReq = async (req) => {
     const newReqs = xReqs.filter(r => r.id !== req.id);
     setXReqs(newReqs); await db.s("xreq_" + user.id, newReqs);
-    ok$(lg === "uz" ? "Rad etildi" : lg === "ru" ? "Отклонено" : lg === "kk" ? "Бас тартылды" : lg === "ky" ? "Четке кагылды" : lg === "tg" ? "Рад карда шуд" : lg === "qr" ? "Biykar etildi" : "Rejected", "warn");
+    ok$(t("rejected"), "warn");
   };
 
   // ── AI maslahat ───────────────────────────────────────────
@@ -1029,8 +895,8 @@ export default function App() {
 
   // ── Nav items ─────────────────────────────────────────────
   const navItems = isKid
-    ? [{ id: "bosh", lb: t.home }, { id: "vazifa", lb: lg === "uz" ? "Vazifa" : lg === "ru" ? "Задания" : lg === "kk" ? "Тапсырма" : lg === "ky" ? "Тапшырма" : lg === "tg" ? "Вазифа" : lg === "qr" ? "Waziypa" : "Tasks" }, { id: "bilim", lb: lg === "uz" ? "Bilim" : lg === "ru" ? "Знания" : lg === "kk" ? "Білім" : lg === "ky" ? "Билим" : lg === "tg" ? "Дониш" : lg === "qr" ? "Bilim" : "Learn" }, { id: "maqsad", lb: t.goal }]
-    : [{ id: "bosh", lb: t.home }, { id: "qarz", lb: lg === "uz" ? "Qarz" : lg === "ru" ? "Долги" : lg === "kk" ? "Қарыз" : lg === "ky" ? "Карыз" : lg === "tg" ? "Қарз" : lg === "qr" ? "Qarz" : "Debt" }, { id: "qoshish", pr: true }, { id: "maqsad", lb: t.goal }, { id: "hisobot", lb: t.rep }];
+    ? [{ id: "bosh", lb: t.home }, { id: "vazifa", lb: t.tasks }, { id: "bilim", lb: t.learn }, { id: "maqsad", lb: t.goal }]
+    : [{ id: "bosh", lb: t.home }, { id: "qarz", lb: t.debts }, { id: "qoshish", pr: true }, { id: "maqsad", lb: t.goal }, { id: "hisobot", lb: t.rep }];
 
   // ── Shared page props ─────────────────────────────────────
   const pageProps = {
@@ -1043,7 +909,7 @@ export default function App() {
     showPremModal, setShowPremModal, activatePremium,
     gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng,
     canSeeReport, srchR, lineD, barD, pieD,
-    delX, acceptXReq, rejectXReq, delTx, editTx,
+    acceptXReq, rejectXReq, delTx, editTx,
   };
 
   return (

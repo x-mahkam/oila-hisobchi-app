@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { db } from "./firebase.js";
 import { useApp } from "./context/AppContext.jsx";
+import i18n from "./i18n/index.js";
 import { RADIUS, SPACE, TYPE, SHADOW, MOTION, OPACITY, COMP, Z } from "./utils/tokens.js";
 import { injectUiCss } from "./components/ui/motion.js";
 import { gardenTheme, skyMode, SKY_GRAD, ART } from "./garden/gardenTokens.js";
@@ -117,24 +118,15 @@ const fTime = s => {
 };
 
 // ── Nisbiy vaqt (tarix uchun) ───────────────────────────────
-const ago = (t, lg) => {
+const ago = (t) => {
   const d = Date.now() - t;
   const m = Math.floor(d / 60000);
-  const L = (uz, ru, en, kk, ky, tg, qr) => {
-    return lg === "uz" ? uz :
-           lg === "ru" ? ru :
-           lg === "kk" ? kk :
-           lg === "ky" ? ky :
-           lg === "tg" ? tg :
-           lg === "qr" ? qr :
-           en;
-  };
-  if (m < 1) return L("hozirgina", "только что", "just now", "жаңа ғана", "жаңы эле", "ҳозиргина", "hazir g'ana");
-  if (m < 60) return m + L(" daqiqa oldin", " мин назад", " min ago", " минут бұрын", " мүнөт мурун", " дақиқа пеш", " minut burın");
+  if (m < 1) return i18n.t("just_now");
+  if (m < 60) return m + i18n.t("min_ago");
   const h = Math.floor(m / 60);
-  if (h < 24) return h + L(" soat oldin", " ч назад", " hours ago", " сағат бұрын", " саат мурун", " соат пеш", " saat burın");
+  if (h < 24) return h + i18n.t("hours_ago");
   const days = Math.floor(h / 24);
-  return days + L(" kun oldin", " дн назад", " days ago", " күн бұрын", " күн мурун", " рӯз пеш", " ku'n burın");
+  return days + i18n.t("days_ago");
 };
 
 // ── Modal (bog' uslubida, RADIUS.l, E3) ─────────────────────
