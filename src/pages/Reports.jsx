@@ -74,14 +74,14 @@ export default function ReportsPage({
           /* 2) ERROR — tushunarli xabar + Retry */
           <>
             <InfoCard th={th} icon={RIco.warn(th.rd, 18)}>{advErr}</InfoCard>
-            <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{lg === "uz" ? "Qayta urinish" : "Retry"}</PrimaryButton>
+            <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{t("rp_retry")}</PrimaryButton>
           </>
         ) : adv ? (
           /* 3) NATIJA */
           <AppCard th={th} style={{ lineHeight: 1.85, ...TYPE.body, color: th.t1, whiteSpace: "pre-wrap" }}>{adv}</AppCard>
         ) : (
           /* 4) Bo'sh holat (sahifaga to'g'ridan-to'g'ri kelinsa) */
-          <InfoCard th={th} icon={Ico.brain(th.ac)}>{lg === "uz" ? "Tahlilni boshlash uchun quyidagi tugmani bosing." : "Tap the button below to start the analysis."}</InfoCard>
+          <InfoCard th={th} icon={Ico.brain(th.ac)}>{t("rp_startAnalysisHint")}</InfoCard>
         )}
         {!advL && !advErr && <PrimaryButton th={th} onClick={aiAdv} style={{ marginTop: SPACE.s2 + 2 }}>{Ico.repeat("#fff")}{t.na}</PrimaryButton>}
       </div>
@@ -101,19 +101,19 @@ export default function ReportsPage({
       <PageHeader th={th} title={tm() + " " + t.mr} />
 
       {!canSeeReport && azolar.length > 1 && (
-        <InfoCard th={th} icon={RIco.lock(th.ac)}>{lg === "uz" ? "Siz faqat o'z hisobotingizni ko'rasiz. Umumiy oila hisoboti uchun oila boshidan ruxsat so'rang." : "You see only your own report. Ask the head for full access."}</InfoCard>
+        <InfoCard th={th} icon={RIco.lock(th.ac)}>{t("rp_onlyOwnReport")}</InfoCard>
       )}
 
       {/* ── YANGI: Vizual chart bloki ── */}
       <ReportVisualBlock
-        th={th} lg={lg} f={f}
+        th={th} lg={lg} t={t} f={f}
         bX={bX} bD={bD} fjX={fjX} fjD={fjD}
         KATS={KATS} KN={KN}
         xar={xar} dar={dar} user={user} azolar={azolar} canSeeReport={canSeeReport}
       />
 
       {/* Sprint 3B: AI Summary — trend tahlili + oylik xulosa */}
-      <SectionHeader th={th}>{lg === "uz" ? "Foydali tahlil" : lg === "ru" ? "Полезный анализ" : "Useful analysis"}</SectionHeader>
+      <SectionHeader th={th}>{t("rp_usefulAnalysis")}</SectionHeader>
       <MonthlySummaryCard th={th} lg={lg} f={f} ai={reportAI} />
       <ReportsAISummary th={th} lg={lg} f={f} summary={reportAI.summary} trends={reportAI.trends} />
 
@@ -150,12 +150,12 @@ export default function ReportsPage({
           const ratio = hX > 0 ? hD / hX : 2;
           const pts = ratio >= 1.5 ? 25 : Math.round(15 + (ratio - 1) * 20);
           score += pts;
-          checks.push({ ok: true, t: lg === "uz" ? `Daromad xarajatdan ko'p (+${pts} ball)` : `Income exceeds expenses (+${pts} pts)` });
+          checks.push({ ok: true, t: t("rp_incomeExceeds", { pts }) });
         } else {
           const lossRatio = hD > 0 ? (hX - hD) / hD : 1;
           const penalty = Math.min(25, Math.round(10 + lossRatio * 15));
           score -= penalty;
-          checks.push({ ok: false, t: lg === "uz" ? `Xarajat daromaddan ko'p (-${penalty} ball)` : `Expenses exceed income (-${penalty} pts)` });
+          checks.push({ ok: false, t: t("rp_expenseExceeds", { penalty }) });
         }
 
         // 2. Budget Control (Max 20 pts)
@@ -164,12 +164,12 @@ export default function ReportsPage({
             const usagePct = hX / sBdj;
             const pts = Math.max(5, Math.round((1 - usagePct) * 20));
             score += pts;
-            checks.push({ ok: true, t: lg === "uz" ? `Budjet limiti doirasida (+${pts} ball)` : `Within budget limit (+${pts} pts)` });
+            checks.push({ ok: true, t: t("rp_withinBudget", { pts }) });
           } else {
             const overPct = (hX - sBdj) / sBdj;
             const penalty = Math.min(20, Math.round(10 + overPct * 20));
             score -= penalty;
-            checks.push({ ok: false, t: lg === "uz" ? `Budjet limitidan oshib ketdingiz (-${penalty} ball)` : `Exceeded budget limit (-${penalty} pts)` });
+            checks.push({ ok: false, t: t("rp_overBudget", { penalty }) });
           }
         }
 
@@ -177,16 +177,16 @@ export default function ReportsPage({
         const savePct = hD > 0 ? ((hD - hX) / hD) * 100 : 0;
         if (savePct >= 30) {
           score += 20;
-          checks.push({ ok: true, t: lg === "uz" ? "Ajoyib jamg'arma sur'ati: 30%+ (+20 ball)" : "Outstanding savings rate: 30%+ (+20 pts)" });
+          checks.push({ ok: true, t: t("rp_outstandingSavings") });
         } else if (savePct >= 10) {
           const pts = Math.round(10 + (savePct - 10) * 0.5);
           score += pts;
-          checks.push({ ok: true, t: lg === "uz" ? `Yaxshi jamg'arma sur'ati: ${Math.round(savePct)}% (+${pts} ball)` : `Good savings rate: ${Math.round(savePct)}% (+${pts} pts)` });
+          checks.push({ ok: true, t: t("rp_goodSavings", { pct: Math.round(savePct), pts }) });
         } else if (savePct > 0) {
           score += 5;
-          checks.push({ ok: true, t: lg === "uz" ? "Ozgina jamg'arma bor (+5 ball)" : "Some savings (+5 pts)" });
+          checks.push({ ok: true, t: t("rp_someSavings") });
         } else {
-          checks.push({ ok: false, t: lg === "uz" ? "Jamg'arma ko'rsatkichi past" : "No savings rate" });
+          checks.push({ ok: false, t: t("rp_noSavings") });
         }
 
         // 4. Category Diversification (Max 15 pts)
@@ -200,22 +200,22 @@ export default function ReportsPage({
           const topRatio = topKat ? topKat.sum / hX : 0;
           if (topRatio < 0.4) {
             score += 15;
-            checks.push({ ok: true, t: lg === "uz" ? "Sog'lom va muvozanatli xarajatlar (+15 ball)" : "Balanced expenditures (+15 pts)" });
+            checks.push({ ok: true, t: t("rp_balancedExpenses") });
           } else if (topRatio <= 0.6) {
             score += 5;
-            checks.push({ ok: true, t: lg === "uz" ? `${topKat.nom} ulushi bir oz yuqori (+5 ball)` : `${topKat.nom} share slightly high (+5 pts)` });
+            checks.push({ ok: true, t: t("rp_catShareHigh", { cat: topKat.nom }) });
           } else if (topKat) {
             score -= 5;
-            checks.push({ ok: false, t: lg === "uz" ? `${topKat.nom} xarajati juda baland (-5 ball)` : `${topKat.nom} spending too high (-5 pts)` });
+            checks.push({ ok: false, t: t("rp_catTooHigh", { cat: topKat.nom }) });
           }
         }
 
         // 5. Goals / Dreams (Max 10 pts)
         if (sMaq.length > 0) {
           score += 10;
-          checks.push({ ok: true, t: lg === "uz" ? "Moliyaviy reja va maqsadlar bor (+10 ball)" : "Have financial goals (+10 pts)" });
+          checks.push({ ok: true, t: t("rp_hasGoals") });
         } else {
-          checks.push({ ok: false, t: lg === "uz" ? "Maqsadlar belgilanmagan" : "No goals set" });
+          checks.push({ ok: false, t: t("rp_noGoals") });
         }
 
         // 6. Active Debt Burden (Penalty up to 10 pts)
@@ -223,21 +223,21 @@ export default function ReportsPage({
         if (activeDebt > 0 && hD > 0) {
           if (activeDebt > hD * 2) {
             score -= 10;
-            checks.push({ ok: false, t: lg === "uz" ? "Qarz yuki o'ta yuqori (-10 ball)" : "Extremely high debt load (-10 pts)" });
+            checks.push({ ok: false, t: t("rp_debtTooHigh") });
           } else if (activeDebt > hD) {
             score -= 5;
-            checks.push({ ok: false, t: lg === "uz" ? "Qarz oylik daromaddan yuqori (-5 ball)" : "Debt exceeds monthly income (-5 pts)" });
+            checks.push({ ok: false, t: t("rp_debtExceedsIncome") });
           }
         }
 
         score = Math.max(0, Math.min(100, Math.round(score)));
         const sColor = score >= 80 ? th.gr : score >= 55 ? th.am : th.rd;
-        const sLabel = score >= 80 ? (lg === "uz" ? "Zo'r!" : "Excellent!") : score >= 55 ? (lg === "uz" ? "Yaxshi" : "Good") : (lg === "uz" ? "Yaxshilash kerak" : "Needs work");
+        const sLabel = score >= 80 ? t("rp_excellent") : score >= 55 ? t("rp_good") : t("rp_needsWork");
         if (hX === 0 && hD === 0) return (
           <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s4 + 2 }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s1 + 2 }}>{Ico.brain(th.t3)}</div>
-            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}</div>
-            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s1 }}>{lg === "uz" ? "Hisoblash uchun xarajat va daromad kiriting" : "Add expenses and income to calculate"}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{t("rp_financialHealth")}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s1 }}>{t("rp_addDataHint")}</div>
           </AppCard>
         );
         return (
@@ -248,7 +248,7 @@ export default function ReportsPage({
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}><span style={{ ...TYPE.title, fontSize: TYPE.title.fontSize + 2, color: sColor, fontVariantNumeric: "tabular-nums" }}>{score}</span><span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 1, color: th.t2 }}>/100</span></div>
               </div>
               <div style={{ flex: 1 }}>
-                <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{lg === "uz" ? "Moliyaviy sog'liq" : "Financial health"}{hFb ? (lg === "uz" ? " (oxirgi 30 kun)" : " (last 30d)") : ""}</div>
+                <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, fontWeight: 600, marginBottom: 2 }}>{t("rp_financialHealth")}{hFb ? t("rp_last30d") : ""}</div>
                 <div style={{ ...TYPE.heading, fontSize: TYPE.heading.fontSize + 1, color: sColor }}>{sLabel}</div>
               </div>
             </div>
@@ -275,35 +275,35 @@ export default function ReportsPage({
         const lowSpender = [...memStats].filter(m => m.ax > 0).sort((p, q) => p.ax - q.ax)[0];
         const mostActive = [...memStats].sort((p, q) => q.cnt - p.cnt)[0];
         const awards = [];
-        if (topSaver && topSaver.bal > 0) awards.push({ ico: RIco.trophy, color: th.am, titleUz: "Eng ko'p tejagan", titleEn: "Top saver", who: topSaver, val: "+" + f(topSaver.bal, true) });
-        if (lowSpender && mostActive && lowSpender.id !== (topSaver && topSaver.id)) awards.push({ ico: RIco.gem, color: th.gr, titleUz: "Eng kam xarajat", titleEn: "Lowest spender", who: lowSpender, val: f(lowSpender.ax, true) });
-        if (mostActive && mostActive.cnt > 0) awards.push({ ico: RIco.bolt, color: th.ac, titleUz: "Eng faol a'zo", titleEn: "Most active", who: mostActive, val: mostActive.cnt + (lg === "uz" ? " yozuv" : " records") });
+        if (topSaver && topSaver.bal > 0) awards.push({ ico: RIco.trophy, color: th.am, titleKey: "rp_topSaver", who: topSaver, val: "+" + f(topSaver.bal, true) });
+        if (lowSpender && mostActive && lowSpender.id !== (topSaver && topSaver.id)) awards.push({ ico: RIco.gem, color: th.gr, titleKey: "rp_lowestSpender", who: lowSpender, val: f(lowSpender.ax, true) });
+        if (mostActive && mostActive.cnt > 0) awards.push({ ico: RIco.bolt, color: th.ac, titleKey: "rp_mostActive", who: mostActive, val: mostActive.cnt + t("rp_recordsWord") });
         if (awards.length === 0) return null;
         return (
           <AppCard th={th} style={{ background: th.am + ALPHA.faint, border: "1.5px solid " + th.am + ALPHA.med, marginTop: SPACE.s2 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s1 }}>{RIco.medal(th.am)}<div style={{ ...TYPE.body, fontWeight: 800, color: th.am }}>{lg === "uz" ? "Oilaviy reyting" : "Family ranking"}</div></div>
-            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s3 + 2 }}>{tm()} · {lg === "uz" ? "Bu oy yutuqlari" : "This month's achievements"}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s1 }}>{RIco.medal(th.am)}<div style={{ ...TYPE.body, fontWeight: 800, color: th.am }}>{t("rp_familyRanking")}</div></div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s3 + 2 }}>{tm()} · {t("rp_monthAchievements")}</div>
             {awards.map((aw, i) => (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.sur, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + (SPACE.s3 + 2) + "px", marginBottom: SPACE.s2 + 1, border: "1px solid " + aw.color + ALPHA.med }}>
                 <div style={{ width: SPACE.s8 + SPACE.s2 + 2, height: SPACE.s8 + SPACE.s2 + 2, borderRadius: RADIUS.s + 2, background: aw.color + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{aw.ico(aw.color)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: aw.color, fontWeight: 700, marginBottom: 2 }}>{lg === "uz" ? aw.titleUz : aw.titleEn}</div>
+                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: aw.color, fontWeight: 700, marginBottom: 2 }}>{t(aw.titleKey)}</div>
                   <div style={{ ...TYPE.body, fontWeight: 700, color: th.t1, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}><UIAvatar th={th} src={aw.who.photo} name={aw.who.ism} size={20} />{aw.who.ism}{aw.who.id === user.id && <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontSize: TYPE.tiny.fontSize - 1, color: aw.color }}>({t.me})</span>}</div>
                 </div>
                 <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 800, color: aw.color, flexShrink: 0, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{aw.val}</div>
               </div>
             ))}
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, textAlign: "center", marginTop: SPACE.s1 + 2, fontStyle: "italic" }}>{lg === "uz" ? "Oilaviy tejamkorlikni rag'batlantiring!" : "Encourage family savings!"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, textAlign: "center", marginTop: SPACE.s1 + 2, fontStyle: "italic" }}>{t("rp_encourageSavings")}</div>
           </AppCard>
         );
       })()}
 
       {/* Hisobot doirasi: O'zimning / Oilamning */}
       <div style={{ marginTop: SPACE.s1 + 2, marginBottom: SPACE.s2 + 2 }}>
-        <SectionHeader th={th} style={{ margin: "0 0 " + (SPACE.s2 - 1) + "px" }}>{lg === "uz" ? "Hisobotni yuklab olish" : "Download report"}</SectionHeader>
+        <SectionHeader th={th} style={{ margin: "0 0 " + (SPACE.s2 - 1) + "px" }}>{t("rp_downloadReport")}</SectionHeader>
         {canSeeReport && azolar.length > 1 && (
           <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, gap: 3, border: "1.5px solid " + th.bor, marginBottom: SPACE.s2 + 2 }}>
-            {[["mine", (lg === "uz" ? "O'zimning" : "Mine")], ["family", (lg === "uz" ? "Oilamning" : "Family")]].map(([key, label]) => (
+            {[["mine", t("rp_mineLabel")], ["family", t("rp_familyLabel")]].map(([key, label]) => (
               <button key={key} className="ui-press" onClick={() => setPdfScope(key)} style={{
                 flex: 1, padding: (SPACE.s2 + 1) + "px 0", border: "none", borderRadius: RADIUS.s - 1, cursor: "pointer", fontFamily: "inherit",
                 fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
@@ -351,16 +351,41 @@ function getMondayR(year, week) {
 function fmtLocalR(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
 }
-const HAFTA_KUN = ["Du","Se","Ch","Pa","Ju","Sh","Ya"]; // Dushanba → Yakshanba
+const WEEKDAYS_SHORT = {
+  uz: ["Du","Se","Ch","Pa","Ju","Sh","Ya"],
+  en: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"],
+  ru: ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"],
+  kk: ["Дс","Сс","Ср","Бс","Жм","Сб","Жс"],
+  ky: ["Дүй","Шейш","Шар","Бейш","Жума","Ишм","Жек"],
+  tg: ["Дш","Сш","Чш","Пш","Ҷм","Шн","Як"],
+  qr: ["Dú","Se","Sá","Pú","Jm","Sn","Ya"],
+}; // Dushanba → Yakshanba
 const SLIDE_H = 232; // barcha slaydlar bir xil balandlik
-const OY_QISQA = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
-const fmtRangeUz = (s) => { const d = new Date(s); return d.getDate() + " " + OY_QISQA[d.getMonth()] + " " + d.getFullYear(); };
+const MONTHS_SHORT = {
+  uz: ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"],
+  en: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  ru: ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
+  kk: ["Қаң","Ақп","Нау","Сәу","Мам","Мау","Шіл","Там","Қыр","Қаз","Қар","Жел"],
+  ky: ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
+  tg: ["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
+  qr: ["Qań","Aqp","Naw","Sáw","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"],
+};
+const MONTHS_FULL = {
+  uz: ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"],
+  en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  ru: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+  kk: ["Қаңтар","Ақпан","Наурыз","Сәуір","Мамыр","Маусым","Шілде","Тамыз","Қыркүйек","Қазан","Қараша","Желтоқсан"],
+  ky: ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
+  tg: ["Январ","Феврал","Март","Апрел","Май","Июн","Июл","Август","Сентябр","Октябр","Ноябр","Декабр"],
+  qr: ["Qańtar","Aqpan","Nawrız","Sáwir","Mayıs","Iyun","Iyul","Avgust","Sentyabr","Oktyabr","Noyabr","Dekabr"],
+};
+const fmtRangeUz = (s, lg = "uz") => { const d = new Date(s); return d.getDate() + " " + (MONTHS_SHORT[lg] || MONTHS_SHORT.uz)[d.getMonth()] + " " + d.getFullYear(); };
 const DATE_COLORS = CHART; // DS 2.7: yagona tartibli chart palitra
 
 // ═══════════════════════════════════════════════════════════════
 // ReportVisualBlock — 4 slide swipeable chart
 // ═══════════════════════════════════════════════════════════════
-function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, user, azolar, canSeeReport }) {
+function ReportVisualBlock({ th, lg, t, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, user, azolar, canSeeReport }) {
   // Kategoriya ikonkasi: mavjud KatIco/DarIco (professional outline), maxsus idlar uchun RIco
   const catIco = (id, c, sz=18) => {
     if (id === "qarz") return RIco.hand(c, sz);
@@ -398,19 +423,18 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       const mo = getMondayR(thisYear, w);
       const su = new Date(mo.getTime() + 6 * 86400000);
       const sub = `${mo.getDate()}.${String(mo.getMonth()+1).padStart(2,"0")} – ${su.getDate()}.${String(su.getMonth()+1).padStart(2,"0")}`;
-      if (w === thisWeek) return { key: `${thisYear}-W${w}`, label: "Bu hafta", sub };
-      if (w === thisWeek - 1) return { key: `${thisYear}-W${w}`, label: "O'tgan hafta", sub };
-      return { key: `${thisYear}-W${w}`, label: `${w}-hafta`, sub };
+      if (w === thisWeek) return { key: `${thisYear}-W${w}`, label: t("rp_thisWeek"), sub };
+      if (w === thisWeek - 1) return { key: `${thisYear}-W${w}`, label: t("rp_lastWeek"), sub };
+      return { key: `${thisYear}-W${w}`, label: t("rp_weekNum", { w }), sub };
     }),
     oy: Array.from({ length: thisMonth + 1 }, (_, i) => {
-      const months_uz = ["Yanvar","Fevral","Mart","Aprel","May","Iyun","Iyul","Avgust","Sentabr","Oktabr","Noyabr","Dekabr"];
       const m = i;
-      return { key: `${thisYear}-${String(m+1).padStart(2,"0")}`, label: months_uz[m], sub: String(thisYear) };
+      return { key: `${thisYear}-${String(m+1).padStart(2,"0")}`, label: (MONTHS_FULL[lg] || MONTHS_FULL.uz)[m], sub: String(thisYear) };
     }),
     yil: [
       { key: `${thisYear-2}`, label: String(thisYear-2), sub: "" },
-      { key: `${thisYear-1}`, label: "O'tgan yil", sub: String(thisYear-1) },
-      { key: `${thisYear}`,   label: "Bu yil",     sub: String(thisYear) },
+      { key: `${thisYear-1}`, label: t("rp_lastYear"), sub: String(thisYear-1) },
+      { key: `${thisYear}`,   label: t("rp_thisYear"), sub: String(thisYear) },
     ],
   };
 
@@ -489,14 +513,14 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       });
       // Qarz berish xarajatlari — yorqin rang bilan (qoraytirilmaydi)
       const qzX = filteredX.filter(x => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
-      if (qzX > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz berildi" : "Loan given", color: CHART[6], sum: qzX });
+      if (qzX > 0) base.push({ id: "qarz", name: t("rp_loanGiven"), color: CHART[6], sum: qzX });
       // Maqsadga (jamg'armaga) qo'shilgan pul — alohida segment
       const mqX = filteredX.filter(x => x.kategoriya === "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0);
-      if (mqX > 0) base.push({ id: "maqsad", name: lg === "uz" ? "Jamg'arma (maqsad)" : "Goal savings", color: CHART[2], sum: mqX });
+      if (mqX > 0) base.push({ id: "maqsad", name: t("rp_goalSavingsCat"), color: CHART[2], sum: mqX });
       // Ro'yxatda yo'q har qanday kategoriya ham chetda qolmasin — donut DOIM 100%
       const knownX = new Set([...KATS.map(k => k.id), "qarz", "maqsad"]);
       const otherX = filteredX.filter(x => !knownX.has(x.kategoriya)).reduce((s, x) => s + Number(x.summa || 0), 0);
-      if (otherX > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: CHART[7], sum: otherX });
+      if (otherX > 0) base.push({ id: "__other", name: t("rp_otherRecords"), color: CHART[7], sum: otherX });
       return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
     }
     const base = DARS.map((d, i) => {
@@ -505,11 +529,11 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     });
     // Qarz olish daromadlari — yorqin rang bilan
     const qzD = filteredD.filter(x => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0);
-    if (qzD > 0) base.push({ id: "qarz", name: lg === "uz" ? "Qarz olindi" : "Loan received", color: CHART[4], sum: qzD });
+    if (qzD > 0) base.push({ id: "qarz", name: t("rp_loanReceived"), color: CHART[4], sum: qzD });
     // Ro'yxatda yo'q har qanday daromad turi ham chetda qolmasin
     const knownD = new Set([...DARS.map(d => d.id), "qarz"]);
     const otherD = filteredD.filter(x => !knownD.has(x.tur)).reduce((s, x) => s + Number(x.summa || 0), 0);
-    if (otherD > 0) base.push({ id: "__other", name: lg === "uz" ? "Boshqa yozuvlar" : "Other records", color: CHART[7], sum: otherD });
+    if (otherD > 0) base.push({ id: "__other", name: t("rp_otherRecords"), color: CHART[7], sum: otherD });
     return base.filter(c => c.sum > 0).sort((a, b) => b.sum - a.sum);
   }, [filteredX, filteredD, type, lg]);
 
@@ -519,7 +543,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
     if (catData.length <= 6) return catData;
     const top = catData.slice(0, 5);
     const rest = catData.slice(5).reduce((sm, c) => sm + c.sum, 0);
-    return [...top, { id: "__rest", name: lg === "uz" ? "Boshqalar" : "Others", color: CHART[7], sum: rest }];
+    return [...top, { id: "__rest", name: t("rp_others"), color: CHART[7], sum: rest }];
   }, [catData, lg]);
 
   // Sanalar bo'yicha xarajatlar (slide 1 uchun)
@@ -558,16 +582,16 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         const d = new Date(monday.getTime() + i * 86400000);
         const sana = fmtLocalR(d);
         const sum = curr.filter(x => x.sana === sana).reduce((s, x) => s + Number(x.summa||0), 0);
-        return { label: `${HAFTA_KUN[i]} ${d.getDate()}`, sum, sana };
+        return { label: `${(WEEKDAYS_SHORT[lg] || WEEKDAYS_SHORT.uz)[i]} ${d.getDate()}`, sum, sana };
       });
     }
     if (period === "yil") {
       const y = parseInt(selectedOpt.key.slice(0,4));
-      const months_uz = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
+      const monShort = MONTHS_SHORT[lg] || MONTHS_SHORT.uz;
       return Array.from({ length: 12 }, (_, i) => {
         const prefix = `${y}-${String(i+1).padStart(2,"0")}`;
         const sum = curr.filter(x => x.sana?.startsWith(prefix)).reduce((s, x) => s + Number(x.summa||0), 0);
-        return { label: months_uz[i], sum };
+        return { label: monShort[i], sum };
       });
     }
     return [];
@@ -616,14 +640,17 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
   // ── Donut SVG ────────────────────────────────────────────
   const DonutEl = ({ size = 140, highlightIdx, data = catData, total = totalX }) => {
     const cx = size/2, cy = size/2, R = size*0.36, ri = size*0.24, gap = 0.025;
-    if (!data.length || total === 0) return (
-      <svg width={size} height={size}>
-        <circle cx={cx} cy={cy} r={(R+ri)/2} fill="none" stroke={th.bor} strokeWidth={R-ri} opacity={0.3}/>
-        <circle cx={cx} cy={cy} r={ri-3} fill={th.bg}/>
-        <text x={cx} y={cy-6} textAnchor="middle" fill={th.t3} fontSize={9} fontWeight={600}>MA'LUMOT</text>
-        <text x={cx} y={cy+8} textAnchor="middle" fill={th.t3} fontSize={9} fontWeight={600}>YO'Q</text>
-      </svg>
-    );
+    if (!data.length || total === 0) {
+      const [noDataL1, noDataL2] = t("rp_noDataShort").toUpperCase().split("\n");
+      return (
+        <svg width={size} height={size}>
+          <circle cx={cx} cy={cy} r={(R+ri)/2} fill="none" stroke={th.bor} strokeWidth={R-ri} opacity={0.3}/>
+          <circle cx={cx} cy={cy} r={ri-3} fill={th.bg}/>
+          <text x={cx} y={cy-6} textAnchor="middle" fill={th.t3} fontSize={9} fontWeight={600}>{noDataL1}</text>
+          <text x={cx} y={cy+8} textAnchor="middle" fill={th.t3} fontSize={9} fontWeight={600}>{noDataL2}</text>
+        </svg>
+      );
+    }
     let cursor = -Math.PI/2;
     const segs = data.map((cat, i) => {
       const angle = (cat.sum / total) * 2 * Math.PI - gap;
@@ -670,7 +697,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           <button className="ui-press" onClick={() => { setCustomRange(null); setSlideIdx(0); }} aria-label="Orqaga" style={{ width: 36, height: 36, borderRadius: RADIUS.s, background: th.surH, border: "1.5px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 4L6 8l4 4" stroke={th.t1} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
           </button>
-          <span style={{ ...TYPE.body, fontWeight: 700, marginLeft: 10, color: th.t1 }}>{lg === "uz" ? "Asosiy davrga qaytish" : "Back to default period"}</span>
+          <span style={{ ...TYPE.body, fontWeight: 700, marginLeft: 10, color: th.t1 }}>{t("rp_backToDefault")}</span>
         </div>
       )}
 
@@ -682,7 +709,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           
           {/* Xarajat / Daromad Toggle */}
           <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s, padding: 2, border: "1.5px solid " + th.bor, flex: 1.2 }}>
-            {[["xarajat", lg==="uz"?"Xarajat":"Expense"], ["daromad", lg==="uz"?"Daromad":"Income"]].map(([key, label]) => {
+            {[["xarajat", t("rp_expenseToggle")], ["daromad", t("rp_incomeToggle")]].map(([key, label]) => {
               const active = type === key;
               return (
                 <button key={key} className="ui-press" onClick={() => { setType(key); setSlideIdx(0); setHovCat(null); setHovMem(null); }} style={{
@@ -698,7 +725,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           {/* O'zim / Oila Toggle (Faqat ruxsat bo'lsa) */}
           {canSeeReport && azolar.length > 1 ? (
             <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s, padding: 2, border: "1.5px solid " + th.bor, flex: 1 }}>
-              {[["mine", lg==="uz"?"O'zim":"Mine"], ["family", lg==="uz"?"Oila":"Family"]].map(([key, label]) => {
+              {[["mine", t("rp_mineShort")], ["family", t("rp_familyShort")]].map(([key, label]) => {
                 const active = scope === key;
                 return (
                   <button key={key} className="ui-press" onClick={() => { setScope(key); setSlideIdx(0); }} style={{
@@ -720,7 +747,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             
             {/* Hafta / Oy / Yil Toggle */}
             <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s, padding: 2, border: "1.5px solid " + th.bor, flex: 1 }}>
-              {[["hafta", lg==="uz"?"Hafta":"Week"], ["oy", lg==="uz"?"Oy":"Month"], ["yil", lg==="uz"?"Yil":"Year"]].map(([key, label]) => {
+              {[["hafta", t("rp_week")], ["oy", t("rp_month")], ["yil", t("rp_year")]].map(([key, label]) => {
                 const active = period === key;
                 return (
                   <button key={key} className="ui-press" onClick={() => setPeriod(key)} style={{
@@ -734,7 +761,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             </div>
 
             {/* Kalendar tugmasi */}
-            <button className="ui-press" onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} aria-label={lg==="uz"?"Davr tanlash":"Pick range"} style={{ width: 38, height: 38, borderRadius: RADIUS.s, background: th.surH, border: "1.5px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <button className="ui-press" onClick={() => { setRFrom(customRange ? customRange.from : fmtLocalR(new Date(now.getFullYear(), now.getMonth(), 1))); setRTo(customRange ? customRange.to : fmtLocalR(now)); setShowRangePicker(true); }} aria-label={t("rp_pickRange")} style={{ width: 38, height: 38, borderRadius: RADIUS.s, background: th.surH, border: "1.5px solid " + th.bor, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               {RIco.cal(th.t1, 18)}
             </button>
 
@@ -768,9 +795,9 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       {/* ── Tanlangan davr ko'rsatkichi (Custom Range) ── */}
       {customRange && (
         <button className="ui-press" onClick={() => { setRFrom(customRange.from); setRTo(customRange.to); setShowRangePicker(true); }} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s2, width: "100%", background: "transparent", border: "none", cursor: "pointer", padding: "2px 0 " + SPACE.s3 + "px", ...TYPE.body, fontSize: 13, fontWeight: 800, color: th.t1, fontFamily: "inherit" }}>
-          {fmtRangeUz(customRange.from)}{RIco.chevD(th.t2, 9)}
+          {fmtRangeUz(customRange.from, lg)}{RIco.chevD(th.t2, 9)}
           <span style={{ color: th.t2, fontWeight: 400 }}>~</span>
-          {fmtRangeUz(customRange.to)}{RIco.chevD(th.t2, 9)}
+          {fmtRangeUz(customRange.to, lg)}{RIco.chevD(th.t2, 9)}
         </button>
       )}
 
@@ -787,13 +814,13 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
               <DonutEl size={140} highlightIdx={null} data={dateData} total={dateData.reduce((sm, d) => sm + d.sum, 0)}/>
               <div style={{ position:"absolute", top:0, left:0, right:0, bottom:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", pointerEvents:"none" }}>
                 <div style={{ fontSize: TYPE.caption.fontSize - 1, fontWeight:900, color:th.t1, textAlign:"center", lineHeight:1.2 }}>
-                  {totalX > 0 ? "+" + fmtN(totalX) : lg==="uz"?"Ma'lumot\nyoq":"No data"}
+                  {totalX > 0 ? "+" + fmtN(totalX) : t("rp_noDataShort")}
                 </div>
               </div>
             </div>
             <div style={{ flex:1, minWidth:0 }}>
               {dateData.length === 0
-                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3, lineHeight:1.6 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data this period"}</div>
+                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3, lineHeight:1.6 }}>{type==="xarajat"?t("rp_noExpenseData"):t("rp_noIncomeData")}</div>
                 : dateData.slice(0,5).map((d) => {
                     const col = d.color || th.ac;
                     return (
@@ -803,7 +830,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
                           <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2, fontWeight:600 }}>
                             {(() => {
                               const dt = new Date(d.sana);
-                              const months = ["Yan","Fev","Mar","Apr","May","Iyn","Iyl","Avg","Sen","Okt","Noy","Dek"];
+                              const months = MONTHS_SHORT[lg] || MONTHS_SHORT.uz;
                               return `${months[dt.getMonth()]} ${dt.getDate()}`;
                             })()}
                           </div>
@@ -840,7 +867,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             </div>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:7 }}>
               {catData.length === 0
-                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3 }}>{lg==="uz"?(type==="xarajat"?"Bu davrda xarajat yo'q":"Bu davrda daromad yo'q"):"No data"}</div>
+                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t3 }}>{type==="xarajat"?t("rp_noExpenseData"):t("rp_noIncomeData")}</div>
                 : donutCats.map((cat, i) => (
                     <div key={cat.id} style={{ display:"flex", alignItems:"center", gap:7, cursor:"pointer" }}
                       onMouseEnter={() => setHovCat(i)} onMouseLeave={() => setHovCat(null)}
@@ -861,8 +888,8 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         {slideIdx === 2 && !customRange && (
           <div style={{ height:SLIDE_H, padding:"14px 16px 6px", display:"flex", flexDirection:"column" }}>
             <div style={{ display:"flex", gap:18, marginBottom:6 }}>
-              <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"Jami:":"Total:"} <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
-              <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"O'rtacha:":"Avg:"} <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
+              <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{t("rp_total")} <b style={{ color:th.t1 }}>{totalX.toLocaleString("uz-UZ")}</b></div>
+              <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{t("rp_average")} <b style={{ color:th.t1 }}>{lineAvg.toLocaleString("uz-UZ")}</b></div>
             </div>
             <div style={{ flex:1, display:"flex", alignItems:"center", overflow:"hidden" }}>
               <div style={{ width:"100%" }}>
@@ -884,7 +911,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
                       <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:900, color:members[hovMem].color }}>{memTotal>0?(members[hovMem].sum/memTotal*100).toFixed(1):0}%</div>
                     </>
                   : <>
-                      <div style={{ fontSize: TYPE.tiny.fontSize, fontWeight:700, color:th.t2 }}>{lg==="uz"?"Oila jami":"Family total"}</div>
+                      <div style={{ fontSize: TYPE.tiny.fontSize, fontWeight:700, color:th.t2 }}>{t("rp_familyTotalSlide")}</div>
                       <div style={{ fontSize: TYPE.caption.fontSize, fontWeight:900, color:th.t1 }}>{memTotal>0?fmtN(memTotal):"\u2014"}</div>
                     </>
                 }
@@ -892,7 +919,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
             </div>
             <div style={{ flex:1, minWidth:0, display:"flex", flexDirection:"column", gap:6 }}>
               {members.length === 0
-                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{lg==="uz"?"Bu davrda ma'lumot yo'q":"No data this period"}</div>
+                ? <div style={{ fontSize: TYPE.caption.fontSize, color:th.t2 }}>{t("rp_noDataThisPeriod")}</div>
                 : members.slice(0,6).map((m, i) => (
                     <div key={m.id} style={{ display:"flex", alignItems:"center", gap:8, cursor:"pointer" }}
                       onMouseEnter={() => setHovMem(i)} onMouseLeave={() => setHovMem(null)}
@@ -914,10 +941,10 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, padding: "8px 0 12px 0", borderTop: "1px solid " + th.bor + "22", background: th.surH + "22" }}>
           {/* Subtle Dynamic Caption describing the active slide */}
           <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0.2, fontSize: 10.5, color: th.t2, fontWeight: 700, transition: "all 0.2s" }}>
-            {slideIdx === 0 && (lg === "uz" ? "Kunlik taqsimot tahlili" : "Daily distribution analysis")}
-            {slideIdx === 1 && (lg === "uz" ? "Kategoriya ulushlari (%)" : "Category shares (%)")}
-            {slideIdx === 2 && (lg === "uz" ? "Dinamika grafigi" : "Trend graph")}
-            {slideIdx === 3 && (lg === "uz" ? "Oila a'zolari hissasi" : "Family contribution")}
+            {slideIdx === 0 && t("rp_slideDaily")}
+            {slideIdx === 1 && t("rp_slideCategory")}
+            {slideIdx === 2 && t("rp_slideTrend")}
+            {slideIdx === 3 && t("rp_slideFamily")}
           </div>
 
           {/* Swipe indicator dots */}
@@ -937,31 +964,31 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
           {/* Micro Swipe Invitation */}
           <div style={{ ...TYPE.tiny, textTransform: "none", fontSize: 9, color: th.t3, fontStyle: "italic", opacity: 0.8, marginTop: 2, display: "flex", alignItems: "center", gap: 3 }}>
             <svg width="8" height="8" viewBox="0 0 12 12" fill="none" style={{ opacity: 0.5 }}><path d="M4 10L1 6l3-4M8 2l3 4-3 4" stroke={th.t3} strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            {lg === "uz" ? "Slaydlarni suring" : "Swipe to change"}
+            {t("rp_swipeHint")}
           </div>
         </div>
       </div>
 
       {/* ── Davr tanlash modali ── */}
       {showRangePicker && (
-        <Dialog th={th} open onClose={() => setShowRangePicker(false)} title={lg==="uz"?"Davrni tanlang":"Select period"}>
+        <Dialog th={th} open onClose={() => setShowRangePicker(false)} title={t("rp_selectPeriod")}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s1 + "px", borderBottom: "1px solid " + th.bor }}>
-            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{lg==="uz"?"Boshlanish sanasi":"Start date"}</span>
+            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{t("rp_startDate")}</span>
             <input type="date" value={rFrom} onChange={e => setRFrom(e.target.value)} style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px", color: th.t1, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, fontFamily: "inherit", colorScheme: th.dark ? "dark" : "light" }}/>
           </div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s1 + "px", marginBottom: SPACE.s4 + SPACE.s1 }}>
-            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{lg==="uz"?"Tugash sanasi":"End date"}</span>
+            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.t1 }}>{t("rp_endDate")}</span>
             <input type="date" value={rTo} onChange={e => setRTo(e.target.value)} style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 2) + "px", color: th.t1, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, fontFamily: "inherit", colorScheme: th.dark ? "dark" : "light" }}/>
           </div>
           <div style={{ display: "flex", gap: SPACE.s2 + 2 }}>
-            <GhostButton th={th} onClick={() => setShowRangePicker(false)} style={{ flex: 1 }}>{lg==="uz"?"Bekor qilish":"Cancel"}</GhostButton>
+            <GhostButton th={th} onClick={() => setShowRangePicker(false)} style={{ flex: 1 }}>{t("rp_cancel")}</GhostButton>
             <PrimaryButton th={th} onClick={() => {
               if (!rFrom || !rTo) return;
               const a2 = rFrom <= rTo ? rFrom : rTo;
               const b2 = rFrom <= rTo ? rTo : rFrom;
               setCustomRange({ from: a2, to: b2 });
               setShowRangePicker(false); setSlideIdx(0); setHovCat(null); setHovMem(null);
-            }} style={{ flex: 1, marginBottom: 0 }}>{lg==="uz"?"Tasdiqlash":"Confirm"}</PrimaryButton>
+            }} style={{ flex: 1, marginBottom: 0 }}>{t("rp_confirm")}</PrimaryButton>
           </div>
         </Dialog>
       )}
@@ -970,7 +997,7 @@ function ReportVisualBlock({ th, lg, f, bX, bD, fjX, fjD, KATS, KN, xar, dar, us
       {catData.length > 0 && (
         <AppCard th={th} style={{ padding: SPACE.s4 + "px " + (SPACE.s3 + 2) + "px", marginBottom: 0 }}>
           <div style={{ ...TYPE.tiny, fontWeight: 700, letterSpacing: 1.5, color: th.t2, marginBottom: SPACE.s3 + 2 }}>
-            {type==="xarajat" ? (lg==="uz"?"Kategoriyalar":"Categories") : (lg==="uz"?"Daromad turlari":"Income types")}
+            {type==="xarajat" ? t("rp_categories") : t("rp_incomeTypes")}
           </div>
           {catData.map((cat, i) => {
             const pct = totalX>0 ? cat.sum/totalX*100 : 0;
