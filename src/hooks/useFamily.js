@@ -3,13 +3,12 @@ import { db } from "../firebase.js";
 import { td, nt, f, hp } from "../utils/formatters.js";
 import { canApproveTask, canCompleteTask, canAssignTask, canDeleteTask } from "../utils/permissions.js";
 import { useApp } from "../context/AppContext.jsx";
-import i18n from "../i18n/index.js";
 
 export function useFamily() {
   const { user, oila, azolar, setAzolar, setOila,
           vazifalar, setVazifalar, kidBalances, setKidBalances,
           xar, setXar, dar, setDar,
-          ok$, buzz, addStar, addNotif, fireConfetti, setShowPremModal } = useApp();
+          ok$, buzz, addStar, addNotif, fireConfetti, t, setShowPremModal } = useApp();
 
   // ── Kid / Gift local states ──
   const [showGift,  setShowGift]  = useState(false);
@@ -41,7 +40,7 @@ export function useFamily() {
   const vazifaDone = useCallback(async (id) => {
     const vv = vazifalar.find(v => v.id === id);
     if (!canCompleteTask(user, vv))
-      return ok$(i18n.t("family_task_not_assigned", { defaultValue: "Bu vazifa sizga biriktirilmagan" }), "err");
+      return ok$(t("uf_taskNotAssigned"), "err");
     buzz(15);
     const upd = vazifalar.map(v => v.id===id ? {...v, status:"done", doneSana:td()} : v);
     await db.s("vazifa_" + user.oilaId, upd);
@@ -54,7 +53,7 @@ export function useFamily() {
         const newNotifs = [{
           id: Date.now(),
           type: "vazifa_done",
-          text: i18n.t("family_task_completed_parent_notif", { ism: user.ism, title: vv.title, defaultValue: `👶 ${user.ism} vazifani bajardi: "${vv.title}". Tasdiqlash kutilmoqda.` }),
+          text: t("uf_kidDoneNotifText", { kid: user.ism, title: vv.title }),
           sana: new Date().toISOString(),
           read: false
         }, ...pkn];
@@ -64,13 +63,13 @@ export function useFamily() {
       console.error("Parent notif error:", e);
     }
 
-    ok$(i18n.t("family_task_marked_done", { defaultValue: "Bajarildi deb belgilandi! Ota-ona tasdiqlaydi." }));
-  }, [vazifalar, user, azolar, ok$, buzz]);
+    ok$(t("uf_markedDone"));
+  }, [vazifalar, user, azolar, ok$, buzz, t]);
 
   // Vazifani tasdiqlash (ota-ona)
   const vazifaApprove = useCallback(async (id) => {
     if (!canApproveTask(user))
-      return ok$(i18n.t("family_task_only_adults_approve", { defaultValue: "Tasdiqlashni faqat katta oila a'zolari bajaradi" }), "err");
+      return ok$(t("uf_onlyAdultsApprove"), "err");
     buzz(20);
     const v = vazifalar.find(x => x.id===id);
     if (!v) return;
@@ -79,14 +78,14 @@ export function useFamily() {
       const updX = vazifalar.map(x => x.id===id ? {...x, status:"expired"} : x);
       await db.s("vazifa_" + user.oilaId, updX);
       setVazifalar(updX);
-      return ok$(i18n.t("family_task_expired", { defaultValue: "Muddati o'tgan — mukofot berilmadi" }), "err");
+      return ok$(t("uf_deadlinePassed"), "err");
     }
 
     const myDar = dar.filter(d=>d.uid===user.id||!d.uid).reduce((s,d)=>s+Number(d.summa||0),0);
     const myXar = xar.filter(x=>x.uid===user.id||!x.uid).reduce((s,x)=>s+Number(x.summa||0),0);
     const myBal = myDar - myXar;
     if (myBal < v.reward) {
-      return ok$(i18n.t("family_insufficient_balance_needed", { amount: f(v.reward, true), defaultValue: "❌ Balansingizda yetarli mablag' yo'q! Kerak: " + f(v.reward, true) }), "err");
+      return ok$(t("uf_insufficientBalanceNeed", { amt: f(v.reward, true) }), "err");
     }
 
     const upd = vazifalar.map(x => x.id===id ? {...x, status:"approved", paidSana:td()} : x);
@@ -120,9 +119,11 @@ export function useFamily() {
     await db.s("kidbal_" + user.oilaId, kb);
     setKidBalances(kb);
 
+
+
     const xItem = {
       id: Date.now(), kategoriya:"boshqa", summa:v.reward,
-      izoh: i18n.t("family_task_reward_label", { title: v.title || "", defaultValue: "Vazifa mukofoti: " + (v.title || "") }),
+      izoh: t("uf_taskRewardLabel", { title: v.title || "" }),
       sana:td(), vaqt:new Date().toTimeString().slice(0,5), uid:user.id, repeat:false
     };
     const xk = "x_" + user.oilaId + "_" + user.id;
@@ -133,29 +134,28 @@ export function useFamily() {
       const kn = (await db.g("notif_" + kidId)) || [];
       await db.s("notif_" + kidId, [{
         id:Date.now(), type:"vazifa",
-        text: i18n.t("family_task_approved_kid_notif", { reward: f(v.reward, true), defaultValue: "🏆 Vazifa tasdiqlandi! +" + f(v.reward, true) }),
+        text: t("uf_taskApprovedPlus", { amt: f(v.reward, true) }),
         sana:new Date().toISOString(), read:false
       }, ...kn]);
     } catch {}
 
-    const vTitleSafe = v.title || "";
-    addStar(3, i18n.t("family_task_completed_history", { title: vTitleSafe, defaultValue: "Vazifa bajarildi: " + vTitleSafe }));
-    ok$(i18n.t("family_task_approved_toast", { reward: f(v.reward, true), defaultValue: "Tasdiqlandi! Bola " + f(v.reward, true) + " oldi 🎉" }));
-  }, [vazifalar, kidBalances, user, xar, dar, ok$, buzz, addStar, azolar, setAzolar, setXar, setKidBalances, f]);
+    addStar(3, t("uf_taskCompletedStar", { title: v.title || "" }));
+    ok$(t("uf_approvedKidGot", { amt: f(v.reward, true) }));
+  }, [vazifalar, kidBalances, user, xar, dar, ok$, buzz, addStar, t, azolar, setAzolar, setXar, setKidBalances, f]);
 
   // Gift Money
   const addGiftMoney = async () => {
-    if (!giftSum || Number(giftSum) <= 0) return ok$(i18n.t("enter_amount", { defaultValue: "Summani kiriting" }), "err");
+    if (!giftSum || Number(giftSum) <= 0) return ok$(t("uf_enterAmount"), "err");
     buzz(15);
     const summa = Number(giftSum);
     const kb = { ...kidBalances }; kb[user.id] = (kb[user.id] || 0) + summa;
     await db.s("kidbal_" + user.oilaId, kb); setKidBalances(kb);
     try {
       const hist = (await db.g("kidgift_" + user.id)) || [];
-      await db.s("kidgift_" + user.id, [{ id: Date.now(), summa, from: giftFrom.trim() || i18n.t("family_gift", { defaultValue: "Sovg'a" }), sana: td() }, ...hist].slice(0, 100));
+      await db.s("kidgift_" + user.id, [{ id: Date.now(), summa, from: giftFrom.trim() || t("uf_giftFallback"), sana: td() }, ...hist].slice(0, 100));
     } catch {}
     setShowGift(false); setGiftSum(""); setGiftFrom("");
-    ok$(i18n.t("family_gift_added_pocket", { amount: f(summa, true), defaultValue: "🎁 " + f(summa, true) + " cho'ntagingizga qo'shildi!" }));
+    ok$(t("uf_addedToPocket", { amt: f(summa, true) }));
     fireConfetti();
   };
 
@@ -163,25 +163,22 @@ export function useFamily() {
   const addKidAccount = async () => {
     const nowY = new Date().getFullYear();
     const by = Number(kidBirthYear);
-    if (kidName.trim().length < 2)    return ok$(i18n.t("family_child_name_required", { defaultValue: "Bola ismini kiriting (kamida 2 belgi)" }), "err");
-    if (kidSurname.trim().length < 2) return ok$(i18n.t("family_surname_required", { defaultValue: "Familyani kiriting (kamida 2 belgi)" }), "err");
+    if (kidName.trim().length < 2)    return ok$(t("uf_enterKidName"), "err");
+    if (kidSurname.trim().length < 2) return ok$(t("uf_enterSurname"), "err");
     if (!/^\d{4}$/.test(String(kidBirthYear)) || by < nowY - 17 || by > nowY - 3)
-      return ok$(i18n.t("family_invalid_birth_year", { defaultValue: "Tug'ilgan yili noto'g'ri (bola 3–17 yoshda bo'lishi kerak)" }), "err");
+      return ok$(t("uf_invalidBirthYear"), "err");
     if (kidGrade !== "" && (Number(kidGrade) < 1 || Number(kidGrade) > 11))
-      return ok$(i18n.t("family_invalid_grade", { defaultValue: "Sinf 1 dan 11 gacha bo'lishi kerak" }), "err");
-    if (kidLogin.trim().length < 3)   return ok$(i18n.t("family_login_min_chars", { defaultValue: "Login kamida 3 belgi bo'lsin" }), "err");
-    if (kidPw.length < 4)             return ok$(i18n.t("family_password_min_chars", { defaultValue: "Parol kamida 4 belgi bo'lsin" }), "err");
+      return ok$(t("uf_gradeRange"), "err");
+    if (kidLogin.trim().length < 3)   return ok$(t("uf_loginMinChars"), "err");
+    if (kidPw.length < 4)             return ok$(t("uf_pwMinChars"), "err");
     buzz(12);
     const loginKey = kidLogin.trim().toLowerCase();
-    if (await db.gFresh("kidlogin_" + loginKey)) return ok$(i18n.t("family_login_taken", { defaultValue: "Bu login band, boshqa login tanlang" }), "err");
+    if (await db.gFresh("kidlogin_" + loginKey)) return ok$(t("uf_loginTaken"), "err");
     
     // Check for Premium limit (max 2 members in free version)
     if ((oila?.azolarIds || oila?.azolar || []).length >= 2 && !oila?.premium) {
       setShowPremModal(true);
-      return ok$(
-        i18n.t("family_members_limit", { defaultValue: "Bu oilada a'zolar limiti to'lgan (2). Cheksiz a'zo qo'shish uchun Premium'ga o'ting." }),
-        "err"
-      );
+      return ok$(t("uf_familyLimitReached"), "err");
     }
 
     try {
@@ -196,7 +193,7 @@ export function useFamily() {
       setAzolar([...azolar, nu]);
       setShowAddKid(false); setKidName(""); setKidSurname(""); setKidBirthYear(""); setKidGender(""); setKidGrade(""); setKidLogin(""); setKidPw("");
       setKidCreated({ ism: nu.ism, login: loginKey, pw: kidPw });
-    } catch (e) { ok$(i18n.t("error_occurred", { err: e.code || e.message, defaultValue: "Xato: " + (e.code || e.message) }), "err"); }
+    } catch (e) { ok$(t("uf_errorCode", { msg: e.code || e.message }), "err"); }
   };
 
   // Eski bola login-lookup'larini davolash
@@ -219,7 +216,7 @@ export function useFamily() {
   const delKidAccount = async (kid) => {
     if (!kid || kid.rol !== "kid") return;
     if (user?.rol !== "bosh" && kid.parentId !== user?.id)
-      return ok$(i18n.t("family_only_creator_delete", { defaultValue: "Faqat oila boshi yoki akkauntni yaratgan ota-ona o'chira oladi" }), "err");
+      return ok$(t("uf_onlyHeadCanDelete"), "err");
     buzz(15);
     try {
       if (kid.login) await db.del("kidlogin_" + kid.login);
@@ -229,14 +226,14 @@ export function useFamily() {
       if (oila?.id) await db.s("oila_" + oila.id, o2);
       await db.s("fam_" + user.oilaId, { ...o2, azolar: ids });
       setOila(o2); setAzolar(azolar.filter(a => a.id !== kid.id));
-      ok$(i18n.t("family_child_account_deleted", { ism: kid.ism, defaultValue: kid.ism + " akkaunti o'chirildi" }));
-    } catch (e) { ok$(i18n.t("error_occurred", { err: e.code || e.message, defaultValue: "Xato: " + (e.code || e.message) }), "err"); }
+      ok$(t("uf_kidDeleted", { name: kid.ism }));
+    } catch (e) { ok$(t("uf_errorCode", { msg: e.code || e.message }), "err"); }
   };
 
   // Purge Data
   const purgeData = async (fromS, toS, wholeFamily) => {
     if (wholeFamily && user?.rol !== "bosh")
-      return ok$(i18n.t("family_only_head_purge", { defaultValue: "Butun oila ma'lumotini faqat oila boshi tozalay oladi" }), "err");
+      return ok$(t("uf_onlyHeadClearFamily"), "err");
     const inRange = sn => (!fromS || (sn || "") >= fromS) && (!toS || (sn || "") <= toS);
     const targets = wholeFamily ? azolar : azolar.filter(a => a.id === user.id);
     buzz(15);
@@ -253,9 +250,9 @@ export function useFamily() {
       const ids = new Set(targets.map(m => m.id));
       setXar(xar.filter(r => !(ids.has(r.uid) && inRange(r.sana))));
       setDar(dar.filter(r => !(ids.has(r.uid) && inRange(r.sana))));
-      ok$(i18n.t("family_records_purged", { count: removed, defaultValue: removed + " ta yozuv o'chirildi" }));
+      ok$(t("uf_recordsDeleted", { n: removed }));
       return true;
-    } catch (e) { ok$(i18n.t("error_occurred", { err: e.code || e.message, defaultValue: "Xato: " + (e.code || e.message) }), "err"); return false; }
+    } catch (e) { ok$(t("uf_errorCode", { msg: e.code || e.message }), "err"); return false; }
   };
 
   // Add Task (Vazifa)
@@ -264,14 +261,14 @@ export function useFamily() {
     const assigneeId = isKidUser ? user.id : vAssignee;
 
     if (!isKidUser && !canAssignTask(user)) {
-      return ok$(i18n.t("family_only_adults_assign", { defaultValue: "Vazifani faqat katta oila a'zolari bera oladi" }), "err");
+      return ok$(t("uf_onlyAdultsAssign"), "err");
     }
 
     const cleanRewardStr = String(vReward).replace(/\D/g, "");
     const parsedReward = Number(cleanRewardStr);
 
     if (!vTitle.trim() || !cleanRewardStr || parsedReward <= 0 || !assigneeId) {
-      return ok$(i18n.t("fill_all_fields", { defaultValue: "Barcha maydonlarni to'ldiring" }), "err");
+      return ok$(t("uf_fillAllFields2"), "err");
     }
     buzz(12);
     const kd = isKidUser ? user : azolar.find(a => a.id === assigneeId);
@@ -311,7 +308,7 @@ export function useFamily() {
           const newNotifs = [{
             id: Date.now(),
             type: "vazifa_proposed",
-            text: i18n.t("family_vazifa_proposed_parent_notif", { ism: user.ism, title: item.title, reward: f(item.reward, true), defaultValue: `💡 ${user.ism} yangi vazifa taklif qildi: "${item.title}" (${f(item.reward, true)}).` }),
+            text: t("uf_proposedTaskNotifText", { kid: user.ism, title: item.title, amt: f(item.reward, true) }),
             sana: new Date().toISOString(),
             read: false
           }, ...pkn];
@@ -320,15 +317,15 @@ export function useFamily() {
       } catch (e) {
         console.error("Proposed task notification error:", e);
       }
-      ok$(i18n.t("family_task_proposal_sent", { defaultValue: "Taklif ota-onaga jo'natildi! 💡" }));
+      ok$(t("uf_proposalSentToParents"));
     } else {
-      ok$(i18n.t("family_task_added_toast", { defaultValue: "Vazifa qo'shildi! 🎯" }));
+      ok$(t("uf_taskAdded"));
     }
   };
 
   const vazifaAcceptProposed = useCallback(async (id, customReward) => {
     if (!canApproveTask(user))
-      return ok$(i18n.t("family_only_adults_accept_proposal", { defaultValue: "Taklifni faqat katta oila a'zolari qabul qiladi" }), "err");
+      return ok$(t("uf_onlyAdultsAccept"), "err");
     buzz(15);
     const v = vazifalar.find(x => x.id === id);
     if (!v) return;
@@ -338,7 +335,7 @@ export function useFamily() {
     const finalReward = Number(cleanRewardStr);
 
     if (isNaN(finalReward) || finalReward <= 0) {
-      return ok$(i18n.t("family_invalid_price", { defaultValue: "Noto'g'ri narx" }), "err");
+      return ok$(t("uf_invalidPrice"), "err");
     }
 
     const upd = vazifalar.map(x => x.id === id ? { ...x, status: "pending", reward: finalReward, acceptedBy: user.id, acceptedByName: user.ism } : x);
@@ -350,19 +347,19 @@ export function useFamily() {
       await db.s("notif_" + v.assignedTo, [{
         id: Date.now(),
         type: "vazifa_accepted",
-        text: i18n.t("family_vazifa_accepted_kid_notif", { title: v.title, reward: f(finalReward, true), defaultValue: `🎉 Ota-onangiz "${v.title}" taklifingizni qabul qildi! Mukofot: ${f(finalReward, true)}.` }),
+        text: t("uf_proposalAcceptedNotifText", { title: v.title, amt: f(finalReward, true) }),
         sana: new Date().toISOString(),
         read: false
       }, ...kn]);
     } catch (e) {}
 
-    ok$(i18n.t("family_proposal_accepted_toast", { defaultValue: "Taklif qabul qilindi! Vazifa faollashtirildi." }));
-  }, [vazifalar, user, ok$, buzz, f]);
+    ok$(t("uf_proposalAccepted"));
+  }, [vazifalar, user, ok$, buzz, t, f]);
 
   const delVazifa = async (id) => {
     const v = vazifalar.find(x => x.id === id);
     if (!canDeleteTask(user, v))
-      return ok$(i18n.t("err_delete_task_not_creator", { defaultValue: "Faqat o'zingiz bergan yoki taklif qilgan vazifani o'chira olasiz" }), "err");
+      return ok$(t("uf_onlyCreatorDelete"), "err");
     const upd = vazifalar.filter(x => x.id !== id);
     await db.s("vazifa_" + user.oilaId, upd); setVazifalar(upd);
   };
