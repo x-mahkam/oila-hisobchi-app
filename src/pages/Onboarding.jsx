@@ -1,7 +1,8 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { ONB_SLIDES } from "../utils/constants.js";
 import { PrimaryButton, PremiumButton, GhostButton, injectUiCss } from "../components/ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, GARDEN, PREMIUM, OPACITY, COMP } from "../utils/tokens.js";
+import { fetchLanguageList } from "../i18n/translationService.js";
 
 // ═══ Slayd illyustratsiyalari — outline SVG (emoji YO'Q, DS 6-qoida) ═══
 // Garden slaydidan tashqari hammasi fintech outline uslubida.
@@ -64,17 +65,14 @@ const ILLOS = {
   ),
 };
 
-// Til tugmalari — statik ro'yxat (komponent tashqarisida)
-const LANGS = ["uz", "en", "ru", "kk", "ky", "tg", "qr"];
-const LANGS_MAP = {
-  uz: { label: "🇺🇿 O'zbekcha", name: "O'zbekcha" },
-  ru: { label: "🇷🇺 Русский", name: "Русский" },
-  kk: { label: "🇰🇿 Қазақша", name: "Қазақша" },
-  ky: { label: "🇰🇬 Кыргызча", name: "Кыргызча" },
-  tg: { label: "🇹🇯 Тоҷикӣ", name: "Тоҷикӣ" },
-  qr: { label: "🇺🇿 Qaraqalpaqsha", name: "Qaraqalpaqsha" },
-  en: { label: "🇬🇧 English", name: "English" }
-};
+// Til ro'yxati Firestore'dagi "languages" kolleksiyasidan (enabled: true)
+// olinadi — bu yerda emas (bilan Profile.jsx'dagi bilan bir xil naqsh).
+// Hali yuklanmagan/oflayn bo'lsa — build ichidagi zaxira ko'rsatiladi.
+const FALLBACK_LANGS = [
+  { code: "uz", nativeName: "O'zbekcha", flag: "🇺🇿" },
+  { code: "en", nativeName: "English", flag: "🇬🇧" },
+  { code: "ru", nativeName: "Русский", flag: "🇷🇺" },
+];
 const TXT = {
   skip: { uz: "O'tkazib yuborish", ru: "Пропустить", en: "Skip", kk: "Өткізіп жіберу", ky: "Өткөрүп жиберүү", tg: "Гузаштан", qr: "O'tkazib yuborish" },
   next: { uz: "Keyingi", ru: "Далее", en: "Next", kk: "Келесі", ky: "Кийинки", tg: "Кӯдаки", qr: "Keyingi" },
@@ -104,6 +102,14 @@ const Illo = memo(function Illo({ id, color }) {
 export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbStep }) {
   injectUiCss();
   const [showLgDD, setShowLgDD] = useState(false);
+  const [langList, setLangList] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetchLanguageList().then((list) => { if (alive && list.length) setLangList(list); });
+    return () => { alive = false; };
+  }, []);
+  const langs = useMemo(() => langList || FALLBACK_LANGS, [langList]);
+  const currentLang = langs.find((l) => l.code === lg) || langs[0];
   const s = ONB_SLIDES[onbStep];
   if (!s) return null;
   const finish = () => { try { localStorage.setItem("oilaV7Onb", "1"); } catch {} setOnbStep(-1); };
@@ -123,16 +129,16 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
         <div style={{ position: "relative", zIndex: 100 }}>
           <button onClick={() => setShowLgDD(v => !v)} className="ui-press"
             style={{ background: th.sur, border: "1px solid " + (showLgDD ? th.ac : th.bor), borderRadius: RADIUS.s - 2, padding: (SPACE.s1 + 2) + "px " + SPACE.s3 + "px", color: th.t1, cursor: "pointer", ...TYPE.caption, fontWeight: 600, fontFamily: "inherit", display: "flex", alignItems: "center", gap: 6 }}>
-            <span>{(LANGS_MAP[lg] || LANGS_MAP.uz).label}</span>
+            <span>{currentLang.flag} {currentLang.nativeName}</span>
             <span style={{ transform: showLgDD ? "rotate(180deg)" : "none", transition: "transform .2s", display: "inline-flex", fontSize: 10 }}>▼</span>
           </button>
           {showLgDD && (
             <div style={{ position: "absolute", top: "100%", left: 0, marginTop: 4, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, minWidth: 165, maxHeight: 180, overflowY: "auto", zIndex: 200, boxShadow: "0 6px 20px rgba(0,0,0,0.15)" }}>
-              {LANGS.map(l => (
-                <button key={l} onClick={() => { setLg(l); localStorage.setItem("oilaV7L", l); setShowLgDD(false); }}
-                  style={{ width: "100%", background: lg === l ? th.ac + ALPHA.faint : "none", border: "none", borderBottom: "1px solid " + th.bor, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", color: lg === l ? th.ac : th.t1, ...TYPE.caption, fontWeight: lg === l ? 700 : 500, textAlign: "left" }}>
-                  <span>{LANGS_MAP[l].label}</span>
-                  {lg === l && <span style={{ color: th.ac, fontSize: 12 }}>✓</span>}
+              {langs.map(l => (
+                <button key={l.code} onClick={() => { setLg(l.code); setShowLgDD(false); }}
+                  style={{ width: "100%", background: lg === l.code ? th.ac + ALPHA.faint : "none", border: "none", borderBottom: "1px solid " + th.bor, padding: "10px 14px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", color: lg === l.code ? th.ac : th.t1, ...TYPE.caption, fontWeight: lg === l.code ? 700 : 500, textAlign: "left" }}>
+                  <span>{l.flag} {l.nativeName}</span>
+                  {lg === l.code && <span style={{ color: th.ac, fontSize: 12 }}>✓</span>}
                 </button>
               ))}
             </div>

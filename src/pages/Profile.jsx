@@ -15,6 +15,7 @@ import { useDailyReminder } from "../hooks/useDailyReminder.js";
 import { db, fbAuth } from "../firebase.js";
 import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { normTel, td, hp } from "../utils/formatters.js";
+import { fetchLanguageList } from "../i18n/translationService.js";
 import { NativeBiometric } from "capacitor-native-biometric";
 import KidCreatedModal from "../components/modals/KidCreatedModal.jsx";
 import {
@@ -149,6 +150,23 @@ export default function ProfilePage({
   const [showLgDD, setShowLgDD] = useState(false);
   const STY = useMemo(() => makeS(th), [th]);
   const uz = lg === "uz";
+
+  // Til ro'yxati Firestore'dagi "languages" kolleksiyasidan (enabled: true).
+  // Yangi til qo'shilganda bu ro'yxat kod o'zgarishisiz avtomatik yangilanadi.
+  // Hali yuklanmagan/oflayn bo'lsa — build ichidagi zaxira (uz/en/ru) ko'rsatiladi.
+  const FALLBACK_LANGS = useMemo(() => ([
+    { code: "uz", nativeName: "O'zbek", flag: "🇺🇿" },
+    { code: "en", nativeName: "English", flag: "🇬🇧" },
+    { code: "ru", nativeName: "Русский", flag: "🇷🇺" },
+  ]), []);
+  const [langList, setLangList] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetchLanguageList().then((list) => { if (alive && list.length) setLangList(list); });
+    return () => { alive = false; };
+  }, []);
+  const langs = langList || FALLBACK_LANGS;
+  const currentLangLabel = (langs.find((l) => l.code === lg) || {}).nativeName || lg.toUpperCase();
 
   // Local Settings/Profile State
   const [edN, setEdN] = useState(false);
@@ -1709,25 +1727,17 @@ export default function ProfilePage({
 
           {/* Til */}
           <AppCard th={th} pad={0}>
-            <ListItem th={th} icon={Ico.globe(th.ac)} title={t.til} sub={{uz: "O'zbek", ru: "Русский", en: "English", kk: "Қазақша", ky: "Кыргызча", tg: "Тоҷикӣ", qr: "Qaraqalpaqsha"}[lg] || lg.toUpperCase()} onClick={() => setShowLgDD(v => !v)}
+            <ListItem th={th} icon={Ico.globe(th.ac)} title={t.til} sub={currentLangLabel} onClick={() => setShowLgDD(v => !v)}
               right={<span style={{ transform: showLgDD ? "rotate(90deg)" : "none", transition: MOTION.trFast("transform"), display: "flex" }}>{Ico.right(th.t2)}</span>}
               divider={showLgDD} />
             {showLgDD && (
               <div style={{ maxHeight: SPACE.s16 * 4 + SPACE.s4, overflowY: "auto" }}>
-                {[
-                  { id: "uz", l: "O'zbek", emoji: "🇺🇿" },
-                  { id: "ru", l: "Русский", emoji: "🇷🇺" },
-                  { id: "kk", l: "Қазақша", emoji: "🇰🇿" },
-                  { id: "ky", l: "Кыргызча", emoji: "🇰🇬" },
-                  { id: "tg", l: "Тоҷикӣ", emoji: "🇹🇯" },
-                  { id: "qr", l: "Qaraqalpaqsha", emoji: "🇺🇿" },
-                  { id: "en", l: "English", emoji: "🇬🇧" }
-                ].map((l, i, arr) => (
-                  <ListItem key={l.id} th={th} divider={i < arr.length - 1}
-                    icon={<span style={{ fontSize: 20 }}>{l.emoji}</span>}
-                    title={l.l}
-                    onClick={() => { setLg(l.id); localStorage.setItem("oilaV7L", l.id); setShowLgDD(false); }}
-                    right={lg === l.id ? Ico.check(th.ac) : <span />} />
+                {langs.map((l, i, arr) => (
+                  <ListItem key={l.code} th={th} divider={i < arr.length - 1}
+                    icon={<span style={{ fontSize: 20 }}>{l.flag}</span>}
+                    title={l.nativeName}
+                    onClick={() => { setLg(l.code); setShowLgDD(false); }}
+                    right={lg === l.code ? Ico.check(th.ac) : <span />} />
                 ))}
               </div>
             )}

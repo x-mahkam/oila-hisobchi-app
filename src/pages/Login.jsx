@@ -6,6 +6,13 @@ import { Ico } from "../utils/icons.jsx";
 import { COUNTRIES, VALS, RELATIONS, TL } from "../utils/constants.js";
 import { td, nt, normTel, hp } from "../utils/formatters.js";
 import { db, auth, setOwnerCtx, fbAuth } from "../firebase.js";
+import { fetchLanguageList } from "../i18n/translationService.js";
+
+const FALLBACK_LANGS = [
+  { code: "uz", nativeName: "O'zbekcha", flag: "🇺🇿" },
+  { code: "en", nativeName: "English", flag: "🇬🇧" },
+  { code: "ru", nativeName: "Русский", flag: "🇷🇺" },
+];
 
 export default function LoginPage() {
   const {
@@ -43,16 +50,15 @@ export default function LoginPage() {
   const [resetSent,    setResetSent]    = useState(false);
   const [showLgDD,     setShowLgDD]     = useState(false);
 
-  const LANGS_MAP = {
-    uz: { label: "🇺🇿 O'zbekcha", name: "O'zbekcha" },
-    ru: { label: "🇷🇺 Русский", name: "Русский" },
-    kk: { label: "🇰🇿 Қазақша", name: "Қазақша" },
-    ky: { label: "🇰🇬 Кыргызча", name: "Кыргызча" },
-    tg: { label: "🇹🇯 Тоҷикӣ", name: "Тоҷикӣ" },
-    qr: { label: "🇺🇿 Qaraqalpaqsha", name: "Qaraqalpaqsha" },
-    en: { label: "🇬🇧 English", name: "English" }
-  };
-  const LANG_KEYS = ["uz", "en", "ru", "kk", "ky", "tg", "qr"];
+  // Til ro'yxati Firestore'dagi "languages" kolleksiyasidan (enabled: true).
+  const [langList, setLangList] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    fetchLanguageList().then((list) => { if (alive && list.length) setLangList(list); });
+    return () => { alive = false; };
+  }, []);
+  const langs = langList || FALLBACK_LANGS;
+  const currentLang = langs.find((l) => l.code === lg) || langs[0];
 
   useEffect(() => {
     try {
@@ -376,15 +382,15 @@ export default function LoginPage() {
           {/* Custom Language Dropdown Selector */}
           <div style={{position:"relative",minWidth:165}}>
             <button onClick={()=>{ buzz(5); setShowLgDD(v=>!v); }} style={{...STY.ch(showLgDD, th.ac), padding:"8px 14px", display:"flex", alignItems:"center", gap:6, width:"100%", justifyContent:"space-between", height:"100%"}}>
-              <span style={{fontSize:13}}>{(LANGS_MAP[lg] || LANGS_MAP.uz).label}</span>
+              <span style={{fontSize:13}}>{currentLang.flag} {currentLang.nativeName}</span>
               <span style={{transform:showLgDD?"rotate(180deg)":"none",transition:"transform .2s",display:"flex",alignItems:"center"}}>{Ico.chevron(th.t2,false)}</span>
             </button>
             {showLgDD && (
               <div style={{position:"absolute",top:"100%",left:0,right:0,marginTop:4,background:th.sur,border:"1.5px solid "+th.bor,borderRadius:12,maxHeight:180,overflowY:"auto",zIndex:200,boxShadow:"0 8px 24px rgba(0,0,0,.15)"}}>
-                {LANG_KEYS.map(l => (
-                  <button key={l} onClick={()=>{ buzz(5); setLg(l); localStorage.setItem("oilaV7L",l); setShowLgDD(false); }} style={{width:"100%",background:lg===l?th.ac+"11":"none",border:"none",borderBottom:"1px solid "+th.bor,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:lg===l?th.ac:th.t1,fontSize:13}}>
-                    <span>{LANGS_MAP[l].label}</span>
-                    {lg===l && Ico.check(th.ac)}
+                {langs.map(l => (
+                  <button key={l.code} onClick={()=>{ buzz(5); setLg(l.code); setShowLgDD(false); }} style={{width:"100%",background:lg===l.code?th.ac+"11":"none",border:"none",borderBottom:"1px solid "+th.bor,padding:"10px 14px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",color:lg===l.code?th.ac:th.t1,fontSize:13}}>
+                    <span>{l.flag} {l.nativeName}</span>
+                    {lg===l.code && Ico.check(th.ac)}
                   </button>
                 ))}
               </div>
