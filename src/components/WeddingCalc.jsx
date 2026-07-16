@@ -8,6 +8,7 @@
 //  Ma'lumot: Firebase "toy_<oilaId>" kaliti
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { db } from "../firebase.js";
 import { AppCard, PrimaryButton, Badge, TextInput } from "./ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, CHART } from "../utils/tokens.js";
@@ -53,17 +54,17 @@ const CATS = [
 // ── Shablonlar: [1 kishi to'yxona, 1 kishi osh, {kategoriya: reja}] ──
 const TEMPLATES = {
   ixcham: {
-    uz: "Ixcham to'y", ru: "Скромная", e: "🌿", d: "Kichik davra, asosiy narsalar",
+    uz: "Ixcham to'y", ru: "Скромная", e: "🌿", d: "Kichik davra, asosiy narsalar", d_ru: "Скромная свадьба, только самое главное",
     perG: 120000, oshG: 45000, guests: { fotiha: 40, qizbazmi: 50, nikoh: 120, kelinsalom: 40, charlar: 80 },
     cats: { sarpo: 15000000, taqinchoq: 10000000, mebel: 25000000, fotovideo: 6000000, sanatkor: 8000000, transport: 3000000, taklifnoma: 2000000, boshqa: 3000000 },
   },
   orta: {
-    uz: "O'rtacha to'y", ru: "Средняя", e: "⭐", d: "Eng ko'p tanlanadigan daraja",
+    uz: "O'rtacha to'y", ru: "Средняя", e: "⭐", d: "Eng ko'p tanlanadigan daraja", d_ru: "Самый популярный выбор",
     perG: 200000, oshG: 65000, guests: { fotiha: 60, qizbazmi: 80, nikoh: 200, kelinsalom: 60, charlar: 150 },
     cats: { sarpo: 30000000, taqinchoq: 25000000, mebel: 50000000, fotovideo: 12000000, sanatkor: 20000000, transport: 6000000, taklifnoma: 4000000, boshqa: 6000000 },
   },
   katta: {
-    uz: "Katta to'y", ru: "Большая", e: "👑", d: "Keng davra, premium xizmatlar",
+    uz: "Katta to'y", ru: "Большая", e: "👑", d: "Keng davra, premium xizmatlar", d_ru: "Большое торжество, премиум услуги",
     perG: 350000, oshG: 90000, guests: { fotiha: 100, qizbazmi: 120, nikoh: 350, kelinsalom: 100, charlar: 250 },
     cats: { sarpo: 60000000, taqinchoq: 60000000, mebel: 100000000, fotovideo: 25000000, sanatkor: 60000000, transport: 12000000, taklifnoma: 8000000, boshqa: 12000000 },
   },
@@ -86,7 +87,18 @@ const NumIn = ({ value, onChange, th, placeholder, suffix }) => (
 );
 
 export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }) {
-  const L = (uz, ru = uz) => (lg === "ru" ? ru : uz);
+  const { t, i18n } = useTranslation();
+  const L = (key, uz, ru = uz, en = uz, kk = uz, ky = uz, tg = uz, qr = uz) => {
+    const activeLg = i18n.language || lg || "uz";
+    const fallback = activeLg === "uz" ? uz :
+                     activeLg === "ru" ? ru :
+                     activeLg === "kk" ? kk :
+                     activeLg === "ky" ? ky :
+                     activeLg === "tg" ? tg :
+                     activeLg === "qr" ? qr :
+                     en;
+    return t(key, fallback);
+  };
   const oilaId = user?.oilaId;
 
   const [data, setData]   = useState(null);   // null = yuklanmoqda
@@ -177,7 +189,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
   const makeGoal = async () => {
     if (!addMq || !calc) return;
     await addMq({
-      ism: L("💒 To'y", "💒 Свадьба") + (data.date ? " · " + data.date : ""),
+      ism: L("wedding_goal_title", "💒 To'y", "💒 Свадьба") + (data.date ? " · " + data.date : ""),
       maqsad: calc.forecast,
       rang: "#ec4899",
       shared: true,
@@ -200,7 +212,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
       // Yangi hisob qo'shish (cheksiz, eskisi o'chmaydi)
       list = [{
         id: Date.now(),
-        name: wName.trim() || (L("To'y hisobi", "Смета свадьбы") + (savedList.length ? " " + (savedList.length + 1) : "")),
+        name: wName.trim() || (L("wedding_default_name", "To'y hisobi", "Смета свадьбы") + (savedList.length ? " " + (savedList.length + 1) : "")),
         date: data.date || "",
         total: calc.forecast,       // jami xarajat (prognoz)
         status: wStatus,            // reja | jarayon | yakun
@@ -214,7 +226,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
     setData(false); setStep(null); setEdit(null);
     setEditingId(null); setWName(""); setWStatus("reja"); setScreen("list");
     try { await db.s("toy_" + oilaId, { saved: list, upd: Date.now() }); } catch {}
-    ok$ && ok$(isEdit ? L("Hisob yangilandi", "Смета обновлена") : L("Hisob saqlandi", "Смета сохранена"));
+    ok$ && ok$(isEdit ? L("wedding_updated", "Hisob yangilandi", "Смета обновлена") : L("wedding_saved", "Hisob saqlandi", "Смета сохранена"));
   };
 
   const delWedding = async (id) => {
@@ -224,7 +236,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
     if (data && data.events) setData({ ...base, saved: list });
     try { await db.s("toy_" + oilaId, { ...base, saved: list, upd: Date.now() }); } catch {}
     if (editingId === id) setEditingId(null);
-    ok$ && ok$(L("O'chirildi", "Удалено"));
+    ok$ && ok$(L("deleted", "O'chirildi", "Удалено"));
   };
 
   // ── Saqlangan to'yni qayta ochish (to'liq ma'lumot bilan) ──
@@ -251,13 +263,13 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
     const rows1 = EVENTS.filter(ev => data.events[ev.id]?.on).map(ev => {
       const e = data.events[ev.id];
       const p = (e.guests || 0) * ((e.perG || 0) + (e.oshG || 0));
-      return `<tr><td>${ev.e} ${L(ev.uz, ev.ru)}</td><td style="text-align:center">${e.guests}</td><td class="r">${fmt((e.perG||0)+(e.oshG||0))}</td><td class="r"><b>${fmt(fc({ plan: p, fact: e.fact }))}</b></td><td class="r">${fmt(e.dep||0)}</td></tr>`;
+      return `<tr><td>${ev.e} ${L("wevent_" + ev.id, ev.uz, ev.ru)}</td><td style="text-align:center">${e.guests}</td><td class="r">${fmt((e.perG||0)+(e.oshG||0))}</td><td class="r"><b>${fmt(fc({ plan: p, fact: e.fact }))}</b></td><td class="r">${fmt(e.dep||0)}</td></tr>`;
     }).join("");
     const rows2 = CATS.filter(c => fc(data.cats[c.id]||{}) > 0).map(c => {
       const it = data.cats[c.id];
-      return `<tr><td>${c.e} ${L(c.uz, c.ru)}</td><td class="r">${fmt(it.plan||0)}</td><td class="r"><b>${fmt(fc(it))}</b></td><td class="r">${fmt(it.dep||0)}</td></tr>`;
+      return `<tr><td>${c.e} ${L("wcat_" + c.id, c.uz, c.ru)}</td><td class="r">${fmt(it.plan||0)}</td><td class="r"><b>${fmt(fc(it))}</b></td><td class="r">${fmt(it.dep||0)}</td></tr>`;
     }).join("");
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${L("To'y smetasi","Смета свадьбы")}</title>
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>${L("wedding_smeta_title", "To'y smetasi","Смета свадьбы")}</title>
       <style>
         body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;padding:26px;max-width:720px;margin:0 auto}
         h1{font-size:21px;margin:0 0 2px;color:#be185d} .sub{font-size:12px;color:#6b7280;margin-bottom:18px}
@@ -267,19 +279,19 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
         .r{text-align:right} .tot{margin-top:18px;border-top:2px solid #be185d;padding-top:10px;font-size:13.5px;line-height:2}
         .tot b{float:right}
       </style></head><body>
-      <h1>💒 ${L("TO'Y SMETASI", "СМЕТА СВАДЬБЫ")}</h1>
-      <div class="sub">${L(data.side === "qiz" ? "Qiz tomoni" : "O'g'il tomoni", data.side === "qiz" ? "Сторона невесты" : "Сторона жениха")}${data.date ? " · " + L("To'y sanasi", "Дата") + ": " + data.date : ""} · ${new Date().toLocaleDateString("ru-RU")}</div>
-      <h2>🎪 ${L("Marosimlar", "Мероприятия")}</h2>
-      <table><tr><th>${L("Marosim","Мероприятие")}</th><th>${L("Mehmon","Гостей")}</th><th class="r">${L("1 kishi","На чел.")}</th><th class="r">${L("Prognoz","Прогноз")}</th><th class="r">${L("Zaklad","Задаток")}</th></tr>${rows1}</table>
-      <h2>🧾 ${L("Umumiy xarajatlar", "Общие расходы")}</h2>
-      <table><tr><th>${L("Modda","Статья")}</th><th class="r">${L("Reja","План")}</th><th class="r">${L("Prognoz","Прогноз")}</th><th class="r">${L("Zaklad","Задаток")}</th></tr>${rows2}</table>
+      <h1>💒 ${L("wedding_smeta_header", "TO'Y SMETASI", "СМЕТА СВАДЬБЫ")}</h1>
+      <div class="sub">${L(data.side === "qiz" ? "wedding_girl_side" : "wedding_boy_side", data.side === "qiz" ? "Qiz tomoni" : "O'g'il tomoni", data.side === "qiz" ? "Сторона невесты" : "Сторона жениха")}${data.date ? " · " + L("wedding_date_label", "To'y sanasi", "Дата") + ": " + data.date : ""} · ${new Date().toLocaleDateString("ru-RU")}</div>
+      <h2>🎪 ${L("wedding_events", "Marosimlar", "Мероприятия")}</h2>
+      <table><tr><th>${L("wedding_event_col", "Marosim","Мероприятие")}</th><th>${L("wedding_guest_col", "Mehmon","Гостей")}</th><th class="r">${L("wedding_per_person_col", "1 kishi","На чел.")}</th><th class="r">${L("wedding_forecast_col", "Prognoz","Прогноз")}</th><th class="r">${L("wedding_deposit_col", "Zaklad","Задаток")}</th></tr>${rows1}</table>
+      <h2>🧾 ${L("wedding_other_costs", "Umumiy xarajatlar", "Общие расходы")}</h2>
+      <table><tr><th>${L("wedding_item_col", "Modda","Статья")}</th><th class="r">${L("wedding_plan_col", "Reja","План")}</th><th class="r">${L("wedding_forecast_col", "Prognoz","Прогноз")}</th><th class="r">${L("wedding_deposit_col", "Zaklad","Задаток")}</th></tr>${rows2}</table>
       <div class="tot">
-        ${L("JAMI PROGNOZ","ИТОГО ПРОГНОЗ")}: <b>${fmt(calc.forecast)} ${L("so'm","сум")}</b><br/>
-        ${L("To'langan zaklad","Оплачено (задаток)")}: <b>${fmt(calc.dep)} ${L("so'm","сум")}</b><br/>
-        ${L("To'lanishi qolgan","Осталось оплатить")}: <b>${fmt(calc.remain)} ${L("so'm","сум")}</b>
-        ${data.date && calc.months > 0 ? `<br/>${L("Jamg'arish","Накопления")}: <b>${fmt(calc.perMonth)} ${L("so'm/oy","сум/мес")} × ${calc.months} ${L("oy","мес")}</b>` : ""}
+        ${L("wedding_total_forecast", "JAMI PROGNOZ","ИТОГО ПРОГНОЗ")}: <b>${fmt(calc.forecast)} ${L("wedding_som_unit", "so'm","сум")}</b><br/>
+        ${L("wedding_paid_deposit", "To'langan zaklad","Оплачено (задаток)")}: <b>${fmt(calc.dep)} ${L("wedding_som_unit", "so'm","сум")}</b><br/>
+        ${L("wedding_remaining_pay", "To'lanishi qolgan","Осталось оплатить")}: <b>${fmt(calc.remain)} ${L("wedding_som_unit", "so'm","сум")}</b>
+        ${data.date && calc.months > 0 ? `<br/>${L("wedding_savings", "Jamg'arish","Накопления")}: <b>${fmt(calc.perMonth)} ${L("wedding_som_month_unit", "so'm/oy","сум/мес")} × ${calc.months} ${L("wedding_month_unit", "oy","мес")}</b>` : ""}
       </div>
-      <div style="margin-top:22px;font-size:10px;color:#9ca3af">Oila Hisobchi · ${L("to'y kalkulyatori","свадебный калькулятор")}</div>
+      <div style="margin-top:22px;font-size:10px;color:#9ca3af">Oila Hisobchi · ${L("wedding_calc_footer", "to'y kalkulyatori","свадебный калькулятор")}</div>
       </body></html>`;
     try {
       const fr = document.createElement("iframe");
@@ -290,55 +302,51 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
         try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch {}
         setTimeout(() => document.body.removeChild(fr), 4000);
       };
-    } catch { ok$ && ok$(L("Chop etib bo'lmadi", "Не удалось"), "err"); }
+    } catch { ok$ && ok$(L("print_failed", "Chop etib bo'lmadi", "Не удалось"), "err"); }
   };
 
   // ── Smetani nusxalash ──
   const copySmeta = async () => {
     if (!data || !calc) return;
-    const lines = [L("💒 TO'Y SMETASI", "💒 СМЕТА СВАДЬБЫ"), ""];
+    const lines = [L("wedding_smeta_header", "💒 TO'Y SMETASI", "💒 СМЕТА СВАДЬБЫ"), ""];
     EVENTS.forEach(ev => {
       const e = data.events[ev.id];
       if (!e?.on) return;
       const p = (e.guests || 0) * ((e.perG || 0) + (e.oshG || 0));
-      lines.push(`${ev.e} ${L(ev.uz, ev.ru)} — ${e.guests} ${L("mehmon", "гостей")}: ${fmt(fc({ plan: p, fact: e.fact }))} ${L("so'm", "сум")}${e.dep ? ` (${L("zaklad", "задаток")}: ${fmt(e.dep)})` : ""}`);
+      lines.push(`${ev.e} ${L("wevent_" + ev.id, ev.uz, ev.ru)} — ${e.guests} ${L("wedding_guest_unit", "mehmon", "гостей")}: ${fmt(fc({ plan: p, fact: e.fact }))} ${L("wedding_som_unit", "so'm", "сум")}${e.dep ? ` (${L("wedding_deposit_col", "zaklad", "задаток")}: ${fmt(e.dep)})` : ""}`);
     });
     lines.push("");
     CATS.forEach(c => {
       const it = data.cats[c.id];
       if (!it || fc(it) === 0) return;
-      lines.push(`${c.e} ${L(c.uz, c.ru)}: ${fmt(fc(it))} ${L("so'm", "сум")}${it.dep ? ` (${L("zaklad", "задаток")}: ${fmt(it.dep)})` : ""}`);
+      lines.push(`${c.e} ${L("wcat_" + c.id, c.uz, c.ru)}: ${fmt(fc(it))} ${L("wedding_som_unit", "so'm", "сум")}${it.dep ? ` (${L("wedding_deposit_col", "zaklad", "задаток")}: ${fmt(it.dep)})` : ""}`);
     });
-    lines.push("", `${L("JAMI PROGNOZ", "ИТОГО")}: ${fmt(calc.forecast)} ${L("so'm", "сум")}`, `${L("To'langan zaklad", "Оплачено")}: ${fmt(calc.dep)}`, `${L("To'lanishi qolgan", "Осталось")}: ${fmt(calc.remain)}`);
-    try { await navigator.clipboard.writeText(lines.join("\n")); ok$ && ok$(L("📋 Smeta nusxalandi!", "📋 Смета скопирована!")); } catch { ok$ && ok$(L("Nusxalab bo'lmadi", "Не удалось"), "err"); }
+    lines.push("", `${L("wedding_total_forecast", "JAMI PROGNOZ", "ИТОГО")}: ${fmt(calc.forecast)} ${L("wedding_som_unit", "so'm", "сум")}`, `${L("wedding_paid_deposit", "To'langan zaklad", "Оплачено")}: ${fmt(calc.dep)}`, `${L("wedding_remaining_pay", "To'lanishi qolgan", "Осталось")}: ${fmt(calc.remain)}`);
+    try { await navigator.clipboard.writeText(lines.join("\n")); ok$ && ok$(L("wedding_copied", "📋 Smeta nusxalandi!", "📋 Смета скопирована!")); } catch { ok$ && ok$(L("copy_failed", "Nusxalab bo'lmadi", "Не удалось"), "err"); }
   };
 
   const P = { pink: "#ec4899", vio: "#a855f7" };
-  const card = { background: th.sur, border: "1px solid " + th.bor, borderRadius: 18, padding: "14px 14px", marginBottom: 12 };
-  const btnP = { border: "none", cursor: "pointer", fontFamily: "inherit", borderRadius: 14, fontWeight: 800 };
+  const btnP = { border: "none", cursor: "pointer", fontFamily: "inherit" };
 
-  // ══════════ RENDER ══════════
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 70, maxWidth: 480, margin: "0 auto", background: th.bg, overflowY: "auto", fontFamily: "inherit" }}>
-      <style>{`@keyframes wcPop{0%{transform:translateY(10px);opacity:0}100%{transform:translateY(0);opacity:1}}`}</style>
-
+    <div style={{ background: th.bg, color: th.t1, minHeight: "100vh" }}>
       {/* ── Sarlavha ── */}
       <div style={{ display: "flex", alignItems: "center", padding: "14px 16px 8px", position: "sticky", top: 0, background: th.bg + "ee", backdropFilter: "blur(8px)", zIndex: 5 }}>
         <button onClick={() => { if (screen === "list") onClose(); else { setScreen("list"); setStep(null); } }} style={{ ...btnP, width: 40, height: 40, borderRadius: 12, background: th.sur, border: "1px solid " + th.bor, color: th.t1, fontSize: 17 }}>←</button>
         <div style={{ flex: 1, textAlign: "center" }}>
-          <div style={{ fontSize: 17, fontWeight: 800, color: th.t1 }}>💒 {L("To'y kalkulyatori", "Свадебный калькулятор")}</div>
-          {saved && <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700 }}>✓ {L("saqlandi", "сохранено")}</div>}
+          <div style={{ fontSize: 17, fontWeight: 800, color: th.t1 }}>💒 {L("wedding_calc_title", "To'y kalkulyatori", "Свадебный калькулятор")}</div>
+          {saved && <div style={{ fontSize: 10, color: "#22c55e", fontWeight: 700 }}>✓ {L("saved", "saqlandi", "сохранено")}</div>}
         </div>
         <div style={{ width: 40 }} />
       </div>
 
-      {data === null && <div style={{ textAlign: "center", padding: "60px 0", color: th.t2 }}>{L("Yuklanmoqda...", "Загрузка...")}</div>}
+      {data === null && <div style={{ textAlign: "center", padding: "60px 0", color: th.t2 }}>{L("loading", "Yuklanmoqda...", "Загрузка...")}</div>}
 
       {/* ══ BOSH EKRAN: Mening to'ylarim ro'yxati (maqsadlar sahifasidek) ══ */}
       {screen === "list" && data !== null && (
         <div style={{ padding: "6px 16px 50px", animation: "wcPop .25s ease" }}>
           {/* Yangi to'y hisoblash */}
-          <PrimaryButton th={th} onClick={startNew} style={{ marginBottom: SPACE.s3 }}>{WIco.plus("#fff", 16)}{L("Yangi to'y hisoblash", "Новый расчёт свадьбы")}</PrimaryButton>
+          <PrimaryButton th={th} onClick={startNew} style={{ marginBottom: SPACE.s3 }}>{WIco.plus("#fff", 16)}{L("wedding_new_calc", "Yangi to'y hisoblash", "Новый расчёт свадьбы")}</PrimaryButton>
 
           {/* Tugallanmagan hisob (davom etish) */}
           {data && data.events && (
@@ -346,8 +354,8 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
               <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
                 <div style={{ width: SPACE.s8 + SPACE.s2, height: SPACE.s8 + SPACE.s2, borderRadius: RADIUS.s + 2, background: CHART[3] + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{WIco.rings(CHART[3], 20)}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ ...TYPE.subtitle, color: th.t1 }}>{L("Davom etayotgan hisob", "Незавершённый расчёт")}</div>
-                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: CHART[3], fontWeight: 700, marginTop: SPACE.s1, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.open(CHART[3])}{L("Davom etish uchun bosing", "Продолжить")}</div>
+                  <div style={{ ...TYPE.subtitle, color: th.t1 }}>{L("wedding_inprogress_calc", "Davom etayotgan hisob", "Незавершённый расчёт")}</div>
+                  <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: CHART[3], fontWeight: 700, marginTop: SPACE.s1, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.open(CHART[3])}{L("wedding_continue_action", "Davom etish uchun bosing", "Продолжить")}</div>
                 </div>
               </div>
             </AppCard>
@@ -355,7 +363,7 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
 
           {savedList.length > 0 ? (
             <>
-              <div style={{ ...TYPE.tiny, fontWeight: 700, letterSpacing: 1.5, color: th.t2, margin: SPACE.s2 + "px " + SPACE.s1 + "px " + SPACE.s2 + "px" }}>{L("Mening to'ylarim", "Мои свадьбы")} · {savedList.length}</div>
+              <div style={{ ...TYPE.tiny, fontWeight: 700, letterSpacing: 1.5, color: th.t2, margin: SPACE.s2 + "px " + SPACE.s1 + "px " + SPACE.s2 + "px" }}>{L("wedding_my_weddings", "Mening to'ylarim", "Мои свадьбы")} · {savedList.length}</div>
               {savedList.map(w => {
                 const st = WSTATUS.find(s => s.id === w.status) || WSTATUS[0];
                 const tone = th[st.tone];
@@ -369,14 +377,14 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
                           <div style={{ ...TYPE.subtitle, color: th.t1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
                           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 - 1, flexWrap: "wrap" }}>
                             {w.date && <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.cal(th.t2)}{w.date}</span>}
-                            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{fmt(w.total)} {L("so'm", "сум")}</span>
+                            <span style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, fontWeight: 700, color: th.t1, fontVariantNumeric: "tabular-nums" }}>{fmt(w.total)} {L("wedding_som_unit", "so'm", "сум")}</span>
                           </div>
-                          {w.snapshot && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: CHART[3], fontWeight: 700, marginTop: SPACE.s1, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.open(CHART[3])}{L("Ochish uchun bosing", "Нажмите чтобы открыть")}</div>}
+                          {w.snapshot && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: CHART[3], fontWeight: 700, marginTop: SPACE.s1, display: "inline-flex", alignItems: "center", gap: SPACE.s1 }}>{WIco.open(CHART[3])}{L("wedding_open_action", "Ochish uchun bosing", "Нажмите чтобы открыть")}</div>}
                         </div>
                       </div>
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: SPACE.s2, flexShrink: 0 }}>
-                        <Badge th={th} type="status" tone={tone}>{L(st.uz, st.ru)}</Badge>
-                        <button type="button" className="ui-press" onClick={() => delWedding(w.id)} aria-label={L("O'chirish", "Удалить")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: SPACE.s1 - 2 }}>{WIco.trash(th.t2)}</button>
+                        <Badge th={th} type="status" tone={tone}>{L("wstatus_" + st.id, st.uz, st.ru)}</Badge>
+                        <button type="button" className="ui-press" onClick={() => delWedding(w.id)} aria-label={L("delete", "O'chirish", "Удалить")} style={{ background: "none", border: "none", cursor: "pointer", display: "flex", padding: SPACE.s1 - 2 }}>{WIco.trash(th.t2)}</button>
                       </div>
                     </div>
                   </AppCard>
@@ -386,8 +394,8 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
           ) : (!data || !data.events) && (
             <div style={{ textAlign: "center", padding: SPACE.s12 + "px " + SPACE.s6 + "px" }}>
               <div style={{ display: "inline-flex", marginBottom: SPACE.s3 }}>{WIco.rings(th.t3, 40)}</div>
-              <div style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s1 }}>{L("Hali to'y hisobi yo'q", "Пока нет расчётов")}</div>
-              <div style={{ ...TYPE.caption, color: th.t2 }}>{L("Yuqoridagi tugma orqali birinchi hisobni yarating", "Создайте первый расчёт кнопкой выше")}</div>
+              <div style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s1 }}>{L("wedding_no_calcs_yet", "Hali to'y hisobi yo'q", "Пока нет расчетов")}</div>
+              <div style={{ ...TYPE.caption, color: th.t2 }}>{L("wedding_no_calcs_desc", "Yuqoridagi tugma orqali birinchi hisobni yarating", "Создайте первый расчет кнопкой выше")}</div>
             </div>
           )}
         </div>
@@ -396,11 +404,11 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
       {/* ══ WIZARD ══ */}
       {screen === "wizard" && step === "side" && (
         <div style={{ padding: "14px 16px", animation: "wcPop .25s ease" }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: th.t1, textAlign: "center", marginBottom: 4 }}>{L("Siz qaysi tomonsiz?", "Какая вы сторона?")}</div>
-          <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18 }}>{L("Marosim va xarajatlar shunga qarab tavsiya qilinadi", "От этого зависят рекомендации")}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: th.t1, textAlign: "center", marginBottom: 4 }}>{L("wedding_which_side", "Siz qaysi tomonsiz?", "Какая вы сторона?")}</div>
+          <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18 }}>{L("wedding_which_side_desc", "Marosim va xarajatlar shunga qarab tavsiya qilinadi", "От этого зависят рекомендации")}</div>
           {[
-            { id: "ogil", e: "🤵", t: L("O'g'il tomoni", "Сторона жениха"), d: L("Nikoh to'yi, kelin salom, charlar", "Свадьба, келин салом, чарлар") },
-            { id: "qiz",  e: "👰", t: L("Qiz tomoni", "Сторона невесты"),   d: L("Fotiha, qiz bazmi, sarpo-mebel", "Фотиха, девичник, приданое") },
+            { id: "ogil", e: "🤵", t: L("wedding_boy_side", "O'g'il tomoni", "Сторона жениха"), d: L("wedding_boy_side_desc", "Nikoh to'yi, kelin salom, charlar", "Свадьба, келин салом, чарлар") },
+            { id: "qiz",  e: "👰", t: L("wedding_girl_side", "Qiz tomoni", "Сторона невесты"),   d: L("wedding_girl_side_desc", "Fotiha, qiz bazmi, sarpo-mebel", "Фотиха, девичник, приданое") },
           ].map(s => (
             <button key={s.id} onClick={() => { setWSide(s.id); setWEv(EVENTS.filter(e => e.sides.includes(s.id)).map(e => e.id)); setStep("events"); }}
               style={{ ...btnP, width: "100%", textAlign: "left", background: th.sur, border: "1.5px solid " + th.bor, padding: "18px 16px", marginBottom: 12, display: "flex", alignItems: "center", gap: 14 }}>
@@ -417,20 +425,20 @@ export default function WeddingCalc({ user, lg = "uz", th, onClose, addMq, ok$ }
 
       {screen === "wizard" && step === "events" && (
         <div style={{ padding: "14px 16px", animation: "wcPop .25s ease" }}>
-          <div style={{ fontSize: 15, fontWeight: 800, color: th.t1, textAlign: "center", marginBottom: 4 }}>{L("Qaysi marosimlar bo'ladi?", "Какие мероприятия?")}</div>
-          <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18 }}>{L("Keyin ham o'zgartirish mumkin", "Можно изменить позже")}</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: th.t1, textAlign: "center", marginBottom: 4 }}>{L("wedding_which_events", "Qaysi marosimlar bo'ladi?", "Какие мероприятия?")}</div>
+          <div style={{ fontSize: 12, color: th.t2, textAlign: "center", marginBottom: 18 }}>{L("wedding_which_events_desc", "Keyin ham o'zgartirish mumkin", "Можно изменить позже")}</div>
           {EVENTS.map(ev => {
             const on = wEv.includes(ev.id);
             return (
               <button key={ev.id} onClick={() => setWEv(v => on ? v.filter(x => x !== ev.id) : [...v, ev.id])}
                 style={{ ...btnP, width: "100%", textAlign: "left", background: on ? P.pink + "14" : th.sur, border: "1.5px solid " + (on ? P.pink : th.bor), padding: "14px 16px", marginBottom: 10, display: "flex", alignItems: "center", gap: 12 }}>
                 <span style={{ fontSize: 24 }}>{ev.e}</span>
-                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, color: th.t1 }}>{L(ev.uz, ev.ru)}</span>
+                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 700, color: th.t1 }}>{L("wevent_" + ev.id, ev.uz, ev.ru)}</span>
                 <span style={{ width: 24, height: 24, borderRadius: 8, border: "2px solid " + (on ? P.pink : th.bor), background: on ? P.pink : "transparent", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 800 }}>{on ? "✓" : ""}</span>
               </button>
             );
           })}
-          <button disabled={!wEv.length} onClick={() => setStep("tpl")} style={{ ...btnP, width: "100%", padding: 15, marginTop: 8, background: wEv.length ? `linear-gradient(135deg,${P.pink},${P.vio})` : th.bor, color: "#fff", fontSize: 15 }}>{L("Davom etish", "Продолжить")} →</button>
+          <button disabled={!wEv.length} onClick={() => setStep("tpl")} style={{ ...btnP, width: "100%", padding: 15, marginTop: 8, background: wEv.length ? `linear-gradient(135deg,${P.pink},${P.vio})` : th.bor, color: "#fff", fontSize: 15 }}>{L("continue", "Davom etish", "Продолжить")} →</button>
         </div>
       )}
 

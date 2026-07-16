@@ -5,6 +5,7 @@
 //  Ball: yaxshi natija liderbordga ham qo'shiladi (kuniga 1 marta/o'yin)
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { db } from "../firebase.js";
 
 const WORDS = [
@@ -49,7 +50,19 @@ const makeWordQ = (used) => {
 const TOTAL_Q = 10;
 
 export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
-  const L = (uz, ru = uz) => (lg === "ru" ? ru : uz);
+  const { t, i18n } = useTranslation();
+  const L = (key, uz, ru = uz, en = uz, kk = uz, ky = uz, tg = uz, qr = uz) => {
+    const activeLg = i18n.language || lg || "uz";
+    const fallback = activeLg === "uz" ? uz :
+                     activeLg === "ru" ? ru :
+                     activeLg === "kk" ? kk :
+                     activeLg === "ky" ? ky :
+                     activeLg === "tg" ? tg :
+                     activeLg === "qr" ? qr :
+                     en;
+    return t(key, fallback);
+  };
+
   const [view, setView] = useState("hub");     // hub | math-lvl | play | result
   const [game, setGame] = useState(null);      // math | word
   const [lvl, setLvl] = useState(1);
@@ -96,14 +109,14 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
 
     setBest(nb);
     try { await db.s("kidgame_" + user.id, nb); } catch {}
-    if (finalScore === TOTAL_Q && addStar) { try { addStar(1, L("O'yinda 10/10 natija!", "10/10 в игре!")); } catch {} }
+    if (finalScore === TOTAL_Q && addStar) { try { addStar(1, L("game_perfect_notif", "O'yinda 10/10 natija!", "10/10 в игре!", "10/10 score in game!")); } catch {} }
   };
 
   const GAMES = [
-    { id: "math", t: "Matematik Ninja", d: L("Qo'shish, ayirish, ko'paytirish — tezkor hisob!", "Быстрый счёт!"), e: "🥷", g: "linear-gradient(135deg,#7c3aed,#a855f7)", art: "➕✖️", on: () => setView("math-lvl") },
-    { id: "word", t: "So'z Ustasi", d: L("O'zbekcha so'zning inglizcha tarjimasini top", "Найди перевод слова"), e: "🇬🇧", g: "linear-gradient(135deg,#ea580c,#f59e0b)", art: "🔤", on: () => startGame("word") },
-    { id: "geo",  t: "Geografiya", d: L("Davlatlar va bayroqlar", "Страны и флаги"), e: "🌍", g: "linear-gradient(135deg,#0e7490,#06b6d4)", art: "🗺️", soon: true },
-    { id: "sci",  t: "Tabiat fanlari", d: L("Fizika, kimyo, biologiya savollari", "Наука"), e: "🔬", g: "linear-gradient(135deg,#15803d,#22c55e)", art: "🧪", soon: true },
+    { id: "math", t: "Matematik Ninja", d: L("game_math_desc", "Qo'shish, ayirish, ko'paytirish — tezkor hisob!", "Быстрый счёт!", "Addition, subtraction, multiplication — fast calculations!"), e: "🥷", g: "linear-gradient(135deg,#7c3aed,#a855f7)", art: "➕✖️", on: () => setView("math-lvl") },
+    { id: "word", t: "So'z Ustasi", d: L("game_word_desc", "O'zbekcha so'zning inglizcha tarjimasini top", "Найди перевод слова", "Find the English translation of the Uzbek word"), e: "🇬🇧", g: "linear-gradient(135deg,#ea580c,#f59e0b)", art: "🔤", on: () => startGame("word") },
+    { id: "geo",  t: "Geografiya", d: L("game_geo_desc", "Davlatlar va bayroqlar", "Страны и флаги", "Countries and flags"), e: "🌍", g: "linear-gradient(135deg,#0e7490,#06b6d4)", art: "🗺️", soon: true },
+    { id: "sci",  t: "Tabiat fanlari", d: L("game_sci_desc", "Fizika, kimyo, biologiya savollari", "Наука", "Physics, chemistry, biology questions"), e: "🔬", g: "linear-gradient(135deg,#15803d,#22c55e)", art: "🧪", soon: true },
   ];
 
   const btn = { border: "none", cursor: "pointer", fontFamily: "inherit" };
@@ -119,7 +132,7 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
       {/* ── Sarlavha ── */}
       <div style={{ display: "flex", alignItems: "center", padding: "16px 16px 8px", position: "sticky", top: 0, background: "#0d0d12ee", backdropFilter: "blur(8px)", zIndex: 5 }}>
         <button onClick={() => view === "hub" ? onClose() : setView("hub")} style={{ ...btn, width: 40, height: 40, borderRadius: 12, background: "#1c1c26", color: "#fff", fontSize: 18 }}>←</button>
-        <div style={{ flex: 1, textAlign: "center", fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>{L("O'YINLAR", "ИГРЫ")}</div>
+        <div style={{ flex: 1, textAlign: "center", fontSize: 19, fontWeight: 800, color: "#fff", letterSpacing: 1 }}>{L("games_title", "O'YINLAR", "ИГРЫ", "GAMES")}</div>
         <div style={{ width: 40 }} />
       </div>
 
@@ -127,7 +140,7 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
       {view === "hub" && (
         <div style={{ padding: "8px 16px 40px" }}>
           <div style={{ fontSize: 12.5, color: "#8b8b9e", marginBottom: 16, textAlign: "center" }}>
-            {L("O'ynab bilim ol! Yaxshi natija liderbordga ball qo'shadi 🏆", "Играй и учись! Очки идут в лидерборд 🏆")}
+            {L("games_subtitle", "O'ynab bilim ol! Yaxshi natija liderbordga ball qo'shadi 🏆", "Играй и учись! Очки идут в лидерборд 🏆", "Play and learn! High score adds points to the leaderboard 🏆")}
           </div>
           {GAMES.map(g => (
             <div key={g.id} onClick={() => !g.soon && g.on()} style={{ background: g.g, borderRadius: 22, padding: "18px 18px", marginBottom: 14, cursor: g.soon ? "default" : "pointer", position: "relative", overflow: "hidden", opacity: g.soon ? 0.65 : 1, animation: "kgPop .3s ease" }}>
@@ -136,11 +149,11 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
               <div style={{ fontSize: 12.5, color: "rgba(255,255,255,.88)", maxWidth: "72%", lineHeight: 1.5 }}>{g.d}</div>
               <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center" }}>
                 {g.soon
-                  ? <span style={{ fontSize: 10.5, fontWeight: 800, background: "rgba(0,0,0,.3)", color: "#fff", borderRadius: 10, padding: "4px 10px" }}>{L("Tez kunda", "Скоро")}</span>
+                  ? <span style={{ fontSize: 10.5, fontWeight: 800, background: "rgba(0,0,0,.3)", color: "#fff", borderRadius: 10, padding: "4px 10px" }}>{L("soon", "Tez kunda", "Скоро", "Coming soon")}</span>
                   : <>
-                      <span style={{ fontSize: 11, fontWeight: 800, background: "rgba(255,255,255,.22)", color: "#fff", borderRadius: 10, padding: "4px 12px" }}>▶ {L("O'ynash", "Играть")}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, background: "rgba(255,255,255,.22)", color: "#fff", borderRadius: 10, padding: "4px 12px" }}>▶ {L("play_action", "O'ynash", "Играть", "Play")}</span>
                       {(g.id === "math" ? Math.max(bestOf("math1"), bestOf("math2"), bestOf("math3")) : bestOf("word")) > 0 &&
-                        <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.85)", fontWeight: 700 }}>🏅 {L("Rekord", "Рекорд")}: {g.id === "math" ? Math.max(bestOf("math1"), bestOf("math2"), bestOf("math3")) : bestOf("word")}/{TOTAL_Q}</span>}
+                        <span style={{ fontSize: 10.5, color: "rgba(255,255,255,.85)", fontWeight: 700 }}>🏅 {L("record", "Rekord", "Рекорд", "Record")}: {g.id === "math" ? Math.max(bestOf("math1"), bestOf("math2"), bestOf("math3")) : bestOf("word")}/{TOTAL_Q}</span>}
                     </>}
               </div>
             </div>
@@ -152,11 +165,11 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
       {view === "math-lvl" && (
         <div style={{ padding: "20px 16px", animation: "kgPop .25s ease" }}>
           <div style={{ textAlign: "center", fontSize: 44, marginBottom: 8 }}>🥷</div>
-          <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 18 }}>{L("Darajani tanla", "Выбери уровень")}</div>
+          <div style={{ textAlign: "center", fontSize: 18, fontWeight: 800, color: "#fff", marginBottom: 18 }}>{L("select_level", "Darajani tanla", "Выбери уровень", "Select level")}</div>
           {[
-            { l: 1, t: L("Oson", "Легко"), d: "+ − (20 gacha)", c: "#22c55e" },
-            { l: 2, t: L("O'rta", "Средне"), d: "+ − × (50 gacha)", c: "#f59e0b" },
-            { l: 3, t: L("Qiyin", "Сложно"), d: "+ − × ÷ (100 gacha)", c: "#ef4444" },
+            { l: 1, t: L("level_easy", "Oson", "Легко", "Easy"), d: "+ − (20 gacha)", c: "#22c55e" },
+            { l: 2, t: L("level_medium", "O'rta", "Средне", "Medium"), d: "+ − × (50 gacha)", c: "#f59e0b" },
+            { l: 3, t: L("level_hard", "Qiyin", "Сложно", "Hard"), d: "+ − × ÷ (100 gacha)", c: "#ef4444" },
           ].map(x => (
             <button key={x.l} onClick={() => startGame("math", x.l)} style={{ ...btn, width: "100%", background: "#1c1c26", border: "1.5px solid " + x.c + "55", borderRadius: 18, padding: "16px", marginBottom: 12, textAlign: "left", display: "flex", alignItems: "center", gap: 14 }}>
               <span style={{ width: 44, height: 44, borderRadius: 12, background: x.c + "22", color: x.c, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19, fontWeight: 800 }}>{x.l}</span>
@@ -184,7 +197,7 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
           {/* Savol */}
           <div key={qNum} style={{ background: "#1c1c26", borderRadius: 22, padding: "34px 20px", textAlign: "center", marginBottom: 20, animation: "kgPop .25s ease" }}>
             <div style={{ fontSize: 11, color: "#8b8b9e", fontWeight: 700, marginBottom: 10 }}>
-              {game === "math" ? L("Hisobla", "Посчитай") : L("Inglizchasi qanday?", "Как по-английски?")}
+              {game === "math" ? L("calculate", "Hisobla", "Посчитай", "Calculate") : L("how_in_english", "Inglizchasi qanday?", "Как по-английски?", "How is it in English?")}
             </div>
             <div style={{ fontSize: game === "math" ? 32 : 30, fontWeight: 800, color: "#fff", letterSpacing: 0.5 }}>{q.q}</div>
           </div>
@@ -209,14 +222,14 @@ export default function KidsGames({ user, lg = "uz", onClose, addStar }) {
         <div style={{ padding: "30px 20px", textAlign: "center", animation: "kgPop .3s ease" }}>
           <div style={{ fontSize: 62, marginBottom: 10 }}>{score >= 8 ? "🏆" : score >= 5 ? "👏" : "💪"}</div>
           <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", marginBottom: 6 }}>
-            {score >= 8 ? L("Ajoyib natija!", "Отлично!") : score >= 5 ? L("Yaxshi!", "Хорошо!") : L("Yana urinib ko'r!", "Попробуй ещё!")}
+            {score >= 8 ? L("excellent_score", "Ajoyib natija!", "Отлично!", "Excellent result!") : score >= 5 ? L("good_score", "Yaxshi!", "Хорошо!", "Good!") : L("try_again", "Yana urinib ko'r!", "Попробуй ещё!", "Try again!")}
           </div>
           <div style={{ fontSize: 40, fontWeight: 800, color: "#8b5cf6", marginBottom: 4 }}>{score}<span style={{ fontSize: 20, color: "#8b8b9e" }}>/{TOTAL_Q}</span></div>
-          {score >= 5 && <div style={{ fontSize: 12.5, color: "#22c55e", fontWeight: 700, marginBottom: 4 }}>+{score >= 8 ? 5 : 2} {L("liderbord balli (kuniga 1 marta)", "очков лидерборда")}</div>}
-          {score === TOTAL_Q && <div style={{ fontSize: 12.5, color: "#f59e0b", fontWeight: 700 }}>⭐ +1 {L("yulduz — mukammal natija uchun!", "звезда за идеал!")}</div>}
+          {score >= 5 && <div style={{ fontSize: 12.5, color: "#22c55e", fontWeight: 700, marginBottom: 4 }}>+{score >= 8 ? 5 : 2} {L("leaderboard_points_info", "liderbord balli (kuniga 1 marta)", "очков лидерборда", "leaderboard points (once a day)")}</div>}
+          {score === TOTAL_Q && <div style={{ fontSize: 12.5, color: "#f59e0b", fontWeight: 700 }}>⭐ +1 {L("star_perfect_result", "yulduz — mukammal natija uchun!", "звезда за идеал!", "star — for a perfect result!")}</div>}
           <div style={{ display: "flex", gap: 12, marginTop: 26 }}>
-            <button onClick={() => setView("hub")} style={{ ...btn, flex: 1, background: "#1c1c26", borderRadius: 16, padding: 15, color: "#8b8b9e", fontWeight: 800, fontSize: 14 }}>{L("O'yinlar", "Игры")}</button>
-            <button onClick={() => game === "math" ? startGame("math", lvl) : startGame("word")} style={{ ...btn, flex: 1.4, background: "linear-gradient(135deg,#8b5cf6,#6366f1)", borderRadius: 16, padding: 15, color: "#fff", fontWeight: 800, fontSize: 14 }}>🔄 {L("Yana o'ynash", "Ещё раз")}</button>
+            <button onClick={() => setView("hub")} style={{ ...btn, flex: 1, background: "#1c1c26", borderRadius: 16, padding: 15, color: "#8b8b9e", fontWeight: 800, fontSize: 14 }}>{L("games_back", "O'yinlar", "Игры", "Games")}</button>
+            <button onClick={() => game === "math" ? startGame("math", lvl) : startGame("word")} style={{ ...btn, flex: 1.4, background: "linear-gradient(135deg,#8b5cf6,#6366f1)", borderRadius: 16, padding: 15, color: "#fff", fontWeight: 800, fontSize: 14 }}>🔄 {L("play_again", "Yana o'ynash", "Ещё раз", "Play again")}</button>
           </div>
         </div>
       )}

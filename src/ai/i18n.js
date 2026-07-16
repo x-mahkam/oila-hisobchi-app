@@ -4,6 +4,8 @@
 //  Goals moduliga tegmaslik uchun alohida namespace.
 // ─────────────────────────────────────────────────────────────
 
+import i18n from "../i18n/index.js";
+
 const DICT = {
   // Card sarlavhalari
   cardHealth:    { uz: "Byudjet salomatligi",   ru: "Здоровье бюджета",     en: "Budget health" },
@@ -136,9 +138,14 @@ const DICT = {
 };
 
 export function T(key, lg = "uz", ...args) {
-  const entry = DICT[key];
-  if (!entry) return key;
-  let s = entry[lg] || entry.uz || entry.en || key;
+  // Try to load translation dynamically from i18n instance first (with prefix "ai_")
+  let s = i18n.t("ai_" + key, { defaultValue: "" });
+  if (!s) {
+    const entry = DICT[key];
+    if (!entry) return key;
+    const activeLg = i18n.language || lg;
+    s = entry[activeLg] || entry.uz || entry.en || key;
+  }
   let i = 0;
   s = s.replace(/%[ds]/g, () => (i < args.length ? String(args[i++]) : ""));
   return s;

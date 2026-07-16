@@ -7,6 +7,7 @@ import {
 } from "../ui/index.js";
 import { SPACE, TYPE, RADIUS, ALPHA, PREMIUM, SHADOW } from "../../utils/tokens.js";
 import { useApp } from "../../context/AppContext.jsx";
+import { useTranslation } from "react-i18next";
 
 // ── Premium-lokal outline SVG ikonkalar (DS 6-qoida) ──
 const PIco = {
@@ -30,42 +31,45 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
   const [rcOfferings, setRcOfferings] = useState(null);
   const [rcError, setRcError] = useState("");
 
-  const L = (uz, ru, en, kk, ky, tg, qr) => {
-    return lg === "uz" ? uz :
-           lg === "ru" ? ru :
-           lg === "kk" ? kk :
-           lg === "ky" ? ky :
-           lg === "tg" ? tg :
-           lg === "qr" ? qr :
-           en;
+  const { t, i18n } = useTranslation();
+  const L = (key, uz, ru = uz, en = uz, kk = uz, ky = uz, tg = uz, qr = uz) => {
+    const activeLg = i18n.language || lg || "uz";
+    const fallback = activeLg === "uz" ? uz :
+                     activeLg === "ru" ? ru :
+                     activeLg === "kk" ? kk :
+                     activeLg === "ky" ? ky :
+                     activeLg === "tg" ? tg :
+                     activeLg === "qr" ? qr :
+                     en;
+    return t(key, fallback);
   };
 
-  const uz = lg === "uz";
+  const uz = (i18n.language || lg || "uz") === "uz";
   const gold = PREMIUM.gold;
 
   const TIERS = {
     monthly: {
       id: "monthly",
-      title: L("Oylik", "Ежемесячно", "Monthly", "Ай сайын", "Ай сайын", "Ҳармоҳа", "Aylıq"),
+      title: L("tier_monthly_title", "Oylik", "Ежемесячно", "Monthly", "Ай сайын", "Ай сайын", "Ҳармоҳа", "Aylıq"),
       price: "15 000 UZS",
-      sub: L("Har oy to'lanadi", "Оплачивается ежемесячно", "Billed monthly", "Ай сайын төленеді", "Ай сайын төлөнөт", "Ҳар моҳ пардохт мешавад", "Ha'r ay to'lenedi"),
+      sub: L("tier_monthly_sub", "Har oy to'lanadi", "Оплачивается ежемесячно", "Billed monthly", "Ай сайын төленеді", "Ай сайын төлөнөт", "Ҳар моҳ пардохт мешавад", "Ha'r ay to'lenedi"),
       tag: null,
       val: 15000,
     },
     yearly: {
       id: "yearly",
-      title: L("Yillik obuna", "Годовая подписка", "Yearly Plan", "Жылдық жазылым", "Жылдык жазылуу", "Обунаи солона", "Jıllıq obuna"),
+      title: L("tier_yearly_title", "Yillik obuna", "Годовая подписка", "Yearly Plan", "Жылдық жазылым", "Жылдык жазылуу", "Обунаи солона", "Jıllıq obuna"),
       price: "99 000 UZS",
-      sub: L("Yiliga bir marta to'lov", "Оплата раз в год", "Billed annually", "Жылына бір рет төлеу", "Жылына бир жолу төлөө", "Пардохт як бор дар сол", "Jılına bir ma'rte to'lew"),
-      tag: L("Eng ommabop (-45%)", "Самый популярный (-45%)", "Popular (-45%)", "Ең танымал (-45%)", "Эң популярдуу (-45%)", "Маҳбубтарин (-45%)", "En' ommabop (-45%)"),
+      sub: L("tier_yearly_sub", "Yiliga bir marta to'lov", "Оплата раз в год", "Billed annually", "Жылына бір рет төлеу", "Жылына бир жолу төлөө", "Пардохт як бор дар сол", "Jılına bir ma'rte to'lew"),
+      tag: L("tier_yearly_tag", "Eng ommabop (-45%)", "Самый популярный (-45%)", "Popular (-45%)", "Ең танымал (-45%)", "Эң популярдуу (-45%)", "Маҳбубтарин (-45%)", "En' ommabop (-45%)"),
       val: 99000,
     },
     lifetime: {
       id: "lifetime",
-      title: L("Umrbod (Lifetime)", "Пожизненно (Lifetime)", "Lifetime Access", "Өмір бойы (Lifetime)", "Өмүр бою (Lifetime)", "Барои ҳамеша (Lifetime)", "U'mrbod (Lifetime)"),
+      title: L("tier_lifetime_title", "Umrbod (Lifetime)", "Пожизненно (Lifetime)", "Lifetime Access", "Өмір бойы (Lifetime)", "Өмүр бою (Lifetime)", "Барои ҳамеша (Lifetime)", "U'mrbod (Lifetime)"),
       price: "199 000 UZS",
-      sub: L("Bir martalik to'lov, abadiy!", "Единоразовый платеж, навсегда!", "One-time payment, forever!", "Бір реттік төлем, мәңгілікке!", "Бир жолку төлөм, түбөлүккө!", "Пардохти яккарата, барои ҳамеша!", "Bir ma'rtelik to'lew, a'badiy!"),
-      tag: L("Eng yaxshi qiymat", "Лучшая цена", "Best value", "Ең жақсы баға", "Эң жакшы баа", "Арзиши олӣ", "En' jaqsı qıymat"),
+      sub: L("tier_lifetime_sub", "Bir martalik to'lov, abadiy!", "Единоразовый платеж, навсегда!", "One-time payment, forever!", "Бір реттік төлем, мәңгілікке!", "Бир жолку төлөм, түбөлүккө!", "Пардохти яккарата, барои ҳамеша!", "Bir ma'rtelik to'lew, a'badiy!"),
+      tag: L("tier_lifetime_tag", "Eng yaxshi qiymat", "Лучшая цена", "Best value", "Ең жақсы баға", "Эң жакшы баа", "Арзиши олӣ", "En' jaqsı qıymat"),
       val: 199000,
     }
   };
@@ -112,7 +116,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
       }
 
       if (!selectedPackage) {
-        throw new Error(L("RevenueCat obuna paketi topilmadi", "Пакет подписки RevenueCat не найден", "No active RevenueCat packages found", "RevenueCat жазылым пакеті табылмады", "RevenueCat жазылуу пакети табылган жок", "Бастаи обунаи RevenueCat ёфт нашуд", "RevenueCat obuna paketi tabılmadı"));
+        throw new Error(L("rc_package_not_found", "RevenueCat obuna paketi topilmadi", "Пакет подписки RevenueCat не найден", "No active RevenueCat packages found", "RevenueCat жазылым пакеті табылмады", "RevenueCat жазылуу пакети табылган жок", "Бастаи обунаи RevenueCat ёфт нашуд", "RevenueCat obuna paketi tabılmadı"));
       }
 
       const res = await Purchases.purchasePackage({ aPackage: selectedPackage });
@@ -128,7 +132,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
     } catch (e) {
       console.error("RevenueCat purchase error:", e);
       if (!e.userCancelled) {
-        alert(L("To'lov amalga oshmadi: ", "Ошибка оплаты: ", "Payment failed: ", "Төлем сәтсіз аяқталды: ", "Төлөм ишке ашкан жок: ", "Пардохт ноком шуд: ", "To'lew a'melge aspadi: ") + (e.message || e));
+        alert(L("payment_failed_prefix", "To'lov amalga oshmadi: ", "Ошибка оплаты: ", "Payment failed: ", "Төлем сәтсіз аяқталды: ", "Төлөм ишке ашкан жок: ", "Пардохт ноком шуд: ", "To'lew a'melge aspadi: ") + (e.message || e));
       }
     } finally {
       setIsLoading(false);
@@ -147,17 +151,17 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
         const ent = Object.values(entitlements)[0];
         const verifyRes = await activatePremium(ent.transactionIdentifier || "restore_token", ent.productIdentifier);
         if (verifyRes.success) {
-          alert(L("Xaridlar muvaffaqiyatli tiklandi!", "Покупки успешно восстановлены!", "Purchases restored successfully!", "Сатып алулар сәтті қалпына келтірілді!", "Сатып алуулар ийгиликтүү калыбына келтирилди!", "Харидҳо бомуваффақият барқарор шуданд!", "Satıp alıwlar tabıslı qalpına keltirildi!"));
+          alert(L("restore_success", "Xaridlar muvaffaqiyatli tiklandi!", "Покупки успешно восстановлены!", "Purchases restored successfully!", "Сатып алулар сәтті қалпына келтірілді!", "Сатып алуулар ийгиликтүү калыбына келтирилди!", "Харидҳо бомуваффақият барқарор шуданд!", "Satıp alıwlar tabıslı qalpına keltirildi!"));
           onClose();
         } else {
-          alert(L("Xaridni tasdiqlashda xatolik: ", "Ошибка подтверждения покупки: ", "Verification error: ", "Сатып алуды растау қатесі: ", "Сатып алууну ырастоо катасы: ", "Хатогии тасдиқи харид: ", "Satıp alıwdı tastıyıqlawda qa'telik: ") + verifyRes.message);
+          alert(L("restore_verify_error", "Xaridni tasdiqlashda xatolik: ", "Ошибка подтверждения покупки: ", "Verification error: ", "Сатып алуды растау қатесі: ", "Сатып алууну ырастоо катасы: ", "Хатогии тасдиқи харид: ", "Satıp alıwdı tastıyıqlawda qa'telik: ") + verifyRes.message);
         }
       } else {
-        alert(L("Faol premium xaridlar topilmadi.", "Активные премиум покупки не найдены.", "No active premium purchases found.", "Белсенді премиум сатып алулар табылмады.", "Активдүү премиум сатып алуулар табылган жок.", "Харидҳои фаъоли премиум ёфт нашуданд.", "Faol premium satıp alıwlar tabılmadı."));
+        alert(L("restore_not_found", "Faol premium xaridlar topilmadi.", "Активные премиум покупки не найдены.", "No active premium purchases found.", "Белсенді премиум сатып алулар табылмады.", "Активдүү премиум сатып алуулар табылган жок.", "Харидҳои фаъоли премиум ёфт нашуданд.", "Faol premium satıp alıwlar tabılmadı."));
       }
     } catch (e) {
       console.error("Restore Purchases Error:", e);
-      alert(L("Xaridlarni tiklashda xatolik: ", "Ошибка восстановления покупок: ", "Error restoring purchases: ", "Сатып алуларды қалпына келтіру қатесі: ", "Сатып алууларды калыбына келтирүү катасы: ", "Хатогии барқарорсозии харидҳо: ", "Satıp alıwlardı qalpına keltiriwde qa'telik: ") + e.message);
+      alert(L("restore_error", "Xaridlarni tiklashda xatolik: ", "Ошибка восстановления покупок: ", "Error restoring purchases: ", "Сатып алуларды қалпына келтіру қатесі: ", "Сатып алууларды калыбына келтирүү катасы: ", "Хатогии барқарорсозии харидҳо: ", "Satıp alıwlardı qalpına keltiriwde qa'telik: ") + e.message);
     } finally {
       setIsLoading(false);
     }
@@ -221,24 +225,24 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
   ];
 
   const FREE_ITEMS = [
-    L("3 ta maqsad", "3 цели", "3 goals", "3 мақсат", "3 максат", "3 ҳадаф", "3 maqset"),
-    L("2 oila a'zosi", "2 члена семьи", "2 members", "2 отбасы мүшесі", "2 үй-бүлө мүчөсү", "2 аъзои оила", "2 shan'araq ag'zası"),
-    L("Asosiy hisobot", "Базовый отчет", "Basic report", "Негізгі есеп", "Негизги отчет", "Ҳисоботи асосӣ", "Asosiy esabat")
+    L("free_item_1", "3 ta maqsad", "3 цели", "3 goals", "3 мақсат", "3 максат", "3 ҳадаф", "3 maqset"),
+    L("free_item_2", "2 oila a'zosi", "2 члена семьи", "2 members", "2 отбасы мүшесі", "2 үй-бүлө мүчөсү", "2 аъзои оила", "2 shan'araq ag'zası"),
+    L("free_item_3", "Asosiy hisobot", "Базовый отчет", "Basic report", "Негізгі есеп", "Негизги отчет", "Ҳисоботи асосӣ", "Asosiy esabat")
   ];
-  const PREM_ITEMS = FEATURES.map(f => L(f.uz, f.ru, f.en, f.kk, f.ky, f.tg, f.qr));
+  const PREM_ITEMS = FEATURES.map((f, idx) => L(`premium_feature_${idx}`, f.uz, f.ru, f.en, f.kk, f.ky, f.tg, f.qr));
 
   const FAQ = [
     {
-      q: L("Premium nimani beradi?", "Что дает Premium?", "What does Premium include?", "Premium не береді?", "Premium эмнени берет?", "Premium чӣ медиҳад?", "Premium ne beredi?"),
-      a: L("Cheksiz maqsad va a'zolar, PDF/Excel eksport, ovoz kiritish, QR skaner va foydali tavsiyalar — barcha cheklovlar olib tashlanadi.", "Безлимитные цели и члены семьи, экспорт в PDF/Excel, голосовой ввод, QR-сканер и полезные рекомендации — все ограничения снимаются.", "Unlimited goals & members, PDF/Excel export, voice input, QR scanner and useful insights — all limits removed.", "Шексіз мақсаттар мен мүшелер, PDF/Excel экспорты, дауыспен енгізу, QR сканер және пайдалы ұсыныстар — барлық шектеулер алынып тасталады.", "Чексиз максаттар жана мүчөлөр, PDF/Excel экспорту, үн менен киргизүү, QR сканер жана пайдалуу сунуштар — бардык чектөөлөр алынып салынат.", "Ҳадафҳо ва аъзоёни номаҳдуд, интиқоли PDF/Excel, воридоти овозӣ, сканери QR ва тавсияҳои муфид — ҳамаи маҳдудиятҳо бардошта мешаванд.", "Sheksiz maqset ha'm ag'zalar, PDF/Excel eksport, ovoz kirgiziw, QR skaner ha'm paydalı ma'slahatlar — barlıq sheklewler alıp taslanadı.")
+      q: L("faq_q_1", "Premium nimani beradi?", "Что дает Premium?", "What does Premium include?", "Premium не береді?", "Premium эмнени берет?", "Premium чӣ медиҳад?", "Premium ne beredi?"),
+      a: L("faq_a_1", "Cheksiz maqsad va a'zolar, PDF/Excel eksport, ovoz kiritish, QR skaner va foydali tavsiyalar — barcha cheklovlar olib tashlanadi.", "Безлимитные цели и члены семьи, экспорт в PDF/Excel, голосовой ввод, QR-сканер и полезные рекомендации — все ограничения снимаются.", "Unlimited goals & members, PDF/Excel export, voice input, QR scanner and useful insights — all limits removed.", "Шексіз мақсаттар мен мүшелер, PDF/Excel экспорты, дауыспен енгізу, QR сканер және пайдалы ұсыныстар — барлық шектеулер алынып тасталады.", "Чексиз максаттар жана мүчөлөр, PDF/Excel экспорту, үн менен киргизүү, QR сканер жана пайдалуу сунуштар — бардык чектөөлөр алынып салынат.", "Ҳадафҳо ва аъзоёни номаҳдуд, интиқоли PDF/Excel, воридоти овозӣ, сканери QR ва тавсияҳои муфид — ҳамаи маҳдудиятҳо бардошта мешаванд.", "Sheksiz maqset ha'm ag'zalar, PDF/Excel eksport, ovoz kirgiziw, QR skaner ha'm paydalı ma'slahatlar — barlıq sheklewler alıp taslanadı.")
     },
     {
-      q: L("Butun oilaga ta'sir qiladimi?", "Влияет ли это на всю семью?", "Does it apply to the whole family?", "Бүкіл отбасыға әсер ете ме?", "Бүткүл үй-бүлөгө таасир этеби?", "Оё ин ба тамоми оила дахл дорад?", "Butun shan'araqqa ta'sir qılamadı ma?"),
-      a: L("Ha. Oila boshlig'i faollashtirsa, Premium obunasi butun oila a'zolariga avtomatik qo'llanadi.", "Да. Если глава семьи активирует, Premium автоматически применяется ко всем членам семьи.", "Yes. When the family head activates, Premium applies to the whole family.", "Иә. Егер отбасы басшысы белсендірсе, Premium жазылымы барлық отбасы мүшелеріне автоматты түрде қолданылады.", "Ооба. Эгер үй-бүлө башчысы активдештирсе, Premium жазылуусу бардык үй-бүлө мүчөлөрүнө автоматтык түрдө қолдонулат.", "Бале. Агар сарвари оила фаъол кунад, обунаи Premium ба таври автоматӣ ба тамоми аъзоёни оила татбиқ мешавад.", "Awa. Shan'araq basshısı belsendirse, Premium obunası butun shan'araq ag'zalarına avtomatik qollanıladı.")
+      q: L("faq_q_2", "Butun oilaga ta'sir qiladimi?", "Влияет ли это на всю семью?", "Does it apply to the whole family?", "Бүкіл отбасыға әсер ете ме?", "Бүткүл үй-бүлөгө таасир этеби?", "Оё ин ба тамоми оила дахл дорад?", "Butun shan'araqqa ta'sir qılamadı ma?"),
+      a: L("faq_a_2", "Ha. Oila boshlig'i faollashtirsa, Premium obunasi butun oila a'zolariga avtomatik qo'llanadi.", "Да. Если глава семьи активирует, Premium автоматически применяется ко всем членам семьи.", "Yes. When the family head activates, Premium applies to the whole family.", "Иә. Егер отбасы басшысы белсендірсе, Premium жазылымы барлық отбасы мүшелеріне автоматты түрде қолданылады.", "Ооба. Эгер үй-бүлө башчысы активдештирсе, Premium жазылуусу бардык үй-бүлө мүчөлөрүнө автоматтык түрде қолдонулат.", "Бале. Агар сарвари оила фаъол кунад, обунаи Premium ба таври автоматӣ ба тамоми аъзоёни оила татбиқ мешавад.", "Awa. Shan'araq basshısı belsendirse, Premium obunası butun shan'araq ag'zalarına avtomatik qollanıladı.")
     },
     {
-      q: L("Bekor qilsam ma'lumotlarim yo'qoladimi?", "Пропадут ли мои данные при отмене?", "Do I lose data if I cancel?", "Бас тартсам, деректерім жоғала ма?", "Жокко чыгарсам, маалыматтарым жоголобу?", "Оё ҳангоми бекор кардан маълумоти ман гум мешавад?", "Bekor qilsam mag'luwmatlarım jo'qoladı ma?"),
-      a: L("Yo'q. Barcha yozuvlaringiz saqlanib qoladi, faqat Premium imkoniyatlar cheklanadi.", "Нет. Все ваши записи сохранятся, только функции Premium станут ограниченными.", "No. All your records stay — only Premium features become limited.", "Жоқ. Барлық жазбаларыңыз сақталады, тек Premium мүмкіндіктері шектеледі.", "Жок. Бардык жазууларыңыз сакталат, болгону Premium мүмкүнчүлүктөрү чектелет.", "Не. Ҳамаи сабтҳои шумо боқӣ мемонанд, танҳо имкониятҳои Premium маҳдуд мешаванд.", "Jo'q. Barlıq jazıwların'ız saqlanıp qaladı, tek Premium imkaniyatlar sheklenedi.")
+      q: L("faq_q_3", "Bekor qilsam ma'lumotlarim yo'qoladimi?", "Пропадут ли мои данные при отмене?", "Do I lose data if I cancel?", "Бас тартсам, деректерім жоғала ма?", "Жокко чыгарсам, маалыматтарым жоголобу?", "Оё ҳангоми бекор кардан маълумоти ман гум мешавад?", "Bekor qilsam mag'luwmatlarım jo'qoladı ma?"),
+      a: L("faq_a_3", "Yo'q. Barcha yozuvlaringiz saqlanib qoladi, faqat Premium imkoniyatlar cheklanadi.", "Нет. Все ваши записи сохранятся, только функции Premium станут ограниченными.", "No. All your records stay — only Premium features become limited.", "Жоқ. Барлық жазбаларыңыз сақталады, тек Premium мүмкіндіктері шектеледі.", "Жок. Бардык жазууларыңыз сакталат, болгону Premium мүмкүнчүлүктөрү чектелет.", "Не. Ҳамаи сабтҳои шумо боқӣ мемонанд, танҳо имкониятҳои Premium маҳдуд мешаванд.", "Jo'q. Barlıq jazıwların'ız saqlanıp qaladı, tek Premium imkaniyatlar sheklenedi.")
     }
   ];
 
@@ -256,12 +260,12 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
             <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.10)", pointerEvents: "none" }} />
             <div style={{ position: "relative" }}>
               <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>{PIco.gem("#fff", SPACE.s8)}</div>
-              <div style={{ ...TYPE.title, color: "#fff", fontWeight: 800 }}>{isPremium ? (uz ? "Premium Faol!" : "Premium Active!") : (uz ? "Oila Hisobchi Premium" : "Oila Hisobchi Premium")}</div>
-              <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", marginTop: SPACE.s1 }}>{isPremium ? (uz ? "Barcha premium imkoniyatlaridan foydalanmoqdasiz" : "All features unlocked") : (uz ? "Aqlli va barakali moliya boshqaruvi" : "Smart and blessed financial control")}</div>
+              <div style={{ ...TYPE.title, color: "#fff", fontWeight: 800 }}>{isPremium ? L("premium_hero_active", "Premium Faol!", "Премиум активен!", "Premium Active!", "Премиум белсенді!", "Премиум активдүү!", "Премиуми фаъол!", "Premium Faol!") : L("premium_hero_inactive", "Oila Hisobchi Premium", "Семейный Бюджет Премиум", "Family Budget Premium", "Семейный Бюджет Премиум", "Семейный Бюджет Премиум", "Семейный Бюджет Премиум", "Oila Hisobchi Premium")}</div>
+              <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.85)", marginTop: SPACE.s1 }}>{isPremium ? L("premium_hero_active_sub", "Barcha premium imkoniyatlaridan foydalanmoqdasiz", "Вы используете все премиум функции", "All features unlocked", "Барлық премиум мүмкіндіктерді пайдаланудасыз", "Бардык премиум функцияларын колдонуп жатасыз", "Шумо тамоми имкониятҳои премиумро истифода мебаред", "Barlıq premium imkaniyatlarınan paydalanbaqtasız") : L("premium_hero_inactive_sub", "Aqlli va barakali moliya boshqaruvi", "Умное и благословенное управление финансами", "Smart and blessed financial control", "Ақылды және берекелі қаржылық басқару", "Акылдуу жана берекелүү каржылык башкаруу", "Идоракунии оқилона ва бобаракати молиявӣ", "Aqıllı ha'm barakalı moliya basqarıwı")}</div>
               <div style={{ marginTop: SPACE.s3, display: "flex", justifyContent: "center" }}>
                 {isPremium
-                  ? <Badge th={th} type="success" icon={PIco.check(th.gr)} style={{ background: "rgba(255,255,255,0.95)" }}>{uz ? "Obuna faol" : "Subscription active"}</Badge>
-                  : <Badge th={th} type="premium" icon={null}>{uz ? "Cheklovlarni olib tashlang" : "Remove all limits"}</Badge>}
+                  ? <Badge th={th} type="success" icon={PIco.check(th.gr)} style={{ background: "rgba(255,255,255,0.95)" }}>{L("prem_sub_active", "Obuna faol", "Подписка активна", "Subscription active", "Жазылым белсенді", "Жазылуу активдүү", "Обуна фаъол", "Obuna faol")}</Badge>
+                  : <Badge th={th} type="premium" icon={null}>{L("prem_remove_limits", "Cheklovlarni olib tashlang", "Снимите ограничения", "Remove all limits", "Шектеулерді алып тастаңыз", "Чектөөлөрдү алып салыңыз", "Маҳдудиятҳоро бардоред", "Sheklewlerdi alıp taslan'z")}</Badge>}
               </div>
             </div>
           </div>
@@ -269,7 +273,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
           {/* ═══ 2. Tiers (Obuna turlari) ═══ */}
           {!isPremium && (
             <div style={{ marginBottom: SPACE.s4 }}>
-              <SectionHeader th={th}>{uz ? "Obuna rejasini tanlang" : "Choose your plan"}</SectionHeader>
+              <SectionHeader th={th}>{L("prem_choose_plan", "Obuna rejasini tanlang", "Выберите тарифный план", "Choose your plan", "Тарифтік жоспарды таңдаңыз", "Тарифтик планды тандаңыз", "Нақшаи обунаро таҳрир кунед", "Obuna rejasin tan'lan'")}</SectionHeader>
               <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
                 {Object.values(TIERS).map((tier) => {
                   const isSelected = activeTier === tier.id;
@@ -305,21 +309,21 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
           )}
 
           {/* ═══ 3. Features list ═══ */}
-          <SectionHeader th={th}>{uz ? "Premium imkoniyatlar" : "Premium features"}</SectionHeader>
+          <SectionHeader th={th}>{L("prem_features", "Premium imkoniyatlar", "Премиум возможности", "Premium features", "Премиум мүмкіндіктер", "Премиум мүмкүнчүлүктөр", "Имкониятҳои премиум", "Premium imkaniyatlar")}</SectionHeader>
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s4 }}>
             {FEATURES.map((ft, i) => (
               <ListItem key={i} th={th} divider={i < FEATURES.length - 1}
                 icon={ft.ico(gold)} iconTone={gold}
-                title={uz ? ft.uz : ft.en}
+                title={L(`prem_feature_title_${i}`, ft.uz, ft.ru, ft.en, ft.kk, ft.ky, ft.tg, ft.qr)}
                 right={isPremium ? PIco.check(th.gr, 16) : <Badge th={th} type="pro" />} />
             ))}
           </AppCard>
 
           {/* ═══ 4. Taqqoslash: Bepul / Premium ═══ */}
-          <SectionHeader th={th}>{uz ? "Bepul vs Premium" : "Free vs Premium"}</SectionHeader>
+          <SectionHeader th={th}>{L("prem_vs_free", "Bepul vs Premium", "Бесплатно vs Премиум", "Free vs Premium", "Тегін vs Премиум", "Акысыз vs Премиум", "Ройгон vs Премиум", "Bepul vs Premium")}</SectionHeader>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3, marginBottom: SPACE.s5 }}>
             <div style={{ background: th.surH, border: "1px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s4 }}>
-              <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, marginBottom: SPACE.s3, textAlign: "center", textTransform: "uppercase", fontSize: 10 }}>{uz ? "Bepul" : "Free"}</div>
+              <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t2, marginBottom: SPACE.s3, textAlign: "center", textTransform: "uppercase", fontSize: 10 }}>{L("prem_free_badge", "Bepul", "Бесплатно", "Free", "Тегін", "Акысыз", "Ройгон", "Bepul")}</div>
               {FREE_ITEMS.map((item, ii) => (
                 <div key={ii} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8, ...TYPE.caption, color: th.t2, fontSize: TYPE.caption.fontSize - 1 }}>
                   <span style={{ display: "flex", flexShrink: 0 }}>{PIco.check(th.t3, 12)}</span>{item}
@@ -337,7 +341,7 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
           </div>
 
           {/* ═══ 5. FAQ ═══ */}
-          <SectionHeader th={th}>{uz ? "Ko'p so'raladigan savollar" : "FAQ"}</SectionHeader>
+          <SectionHeader th={th}>{L("prem_faq", "Ko'p so'raladigan savollar", "Часто задаваемые вопросы", "FAQ", "Жиі қойылатын сұрақтар", "Көп берилүүчү суроолор", "Саволҳои камтарин", "Ko'p soraladıg'an sawollar")}</SectionHeader>
           <AppCard th={th} pad={0} style={{ marginBottom: SPACE.s6 }}>
             {FAQ.map((f, i) => (
               <div key={i} style={{ borderBottom: i < FAQ.length - 1 ? "1px solid " + th.bor : "none" }}>
@@ -359,8 +363,8 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
               <PremiumButton th={th} onClick={handlePurchaseClick} style={{ marginBottom: SPACE.s2 }}>
                 {PIco.gem("#fff", 18)}
                 {isLoading 
-                  ? (uz ? "Yuklanmoqda..." : "Loading...") 
-                  : (uz ? `Davom etish: ${TIERS[activeTier].price}` : `Continue: ${TIERS[activeTier].price}`)}
+                  ? L("loading", "Yuklanmoqda...", "Загрузка...", "Loading...", "Жүктелуде...", "Жүктөлүүдө...", "Боргирӣ...", "Ju'klenbekte...") 
+                  : L("continue_price", "Davom etish: {{price}}", "Продолжить: {{price}}", "Continue: {{price}}", "Жалғастыру: {{price}}", "Улантуу: {{price}}", "Идома додан: {{price}}", "Davom etis': {{price}}").replace("{{price}}", TIERS[activeTier].price)}
               </PremiumButton>
             ) : (
               <div style={{
@@ -376,21 +380,19 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
                 lineHeight: 1.5,
                 fontWeight: 600
               }}>
-                {uz 
-                  ? "Premium xarid faqat Android ilovasi (Google Play) orqali mavjud. Iltimos, Oila Hisobchi ilovasini Play Store'dan o'rnating." 
-                  : "Premium purchase is only available on the Android app (Google Play). Please install the Oila Hisobchi app from the Play Store."}
+                {L("premium_play_store_only", "Premium xarid faqat Android ilovasi (Google Play) orqali mavjud. Iltimos, Oila Hisobchi ilovasini Play Store'dan o'rnating.", "Премиум-покупка доступна только через приложение для Android (Google Play). Пожалуйста, установите приложение Семейный Бюджет из Play Store.", "Premium purchase is only available on the Android app (Google Play). Please install the Family Budget app from the Play Store.", "Премиум сатып алу тек Android қосымшасы (Google Play) арқылы қолжетімді. Семейный Бюджет қосымшасын Play Store-дан орнатыңыз.", "Премиум сатып алуу Android колдонмосу (Google Play) аркылы гана жеткиликтүү. Сураныч, Семейный Бюджет колдонмосун Play Storeдон орнотуңуз.", "Хариди премиум танҳо тавассути барномаи Android (Google Play) дастрас аст. Лутфан, барномаи Семейный Бюджет-ро аз Play Store насб кунед.", "Premium xarid tek Android qosımshası (Google Play) arqalı bar. Iltimos, Oila Hisobchi qosımshasın Play Store'dan ornatın'.")}
               </div>
             )
           ) : (
-            <PrimaryButton th={th} onClick={onClose} style={{ marginBottom: SPACE.s4 }}>{uz ? "Yopish" : "Close"}</PrimaryButton>
+            <PrimaryButton th={th} onClick={onClose} style={{ marginBottom: SPACE.s4 }}>{L("close", "Yopish", "Закрыть", "Close", "Жабу", "Жабуу", "Пӯшидан", "Jabıw")}</PrimaryButton>
           )}
 
           {!isPremium && (
             <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: 12, alignItems: "center" }}>
-              <GhostButton th={th} onClick={onClose} style={{ width: "auto", margin: "0 auto", border: "none" }}>{uz ? "Keyinroq" : "Later"}</GhostButton>
+              <GhostButton th={th} onClick={onClose} style={{ width: "auto", margin: "0 auto", border: "none" }}>{L("later", "Keyinroq", "Позже", "Later", "Кейінірек", "Кийинчерээк", "Дертар", "Keyinirek")}</GhostButton>
               {Capacitor.isNativePlatform() && (
                 <GhostButton th={th} onClick={handleRestorePurchases} style={{ width: "auto", margin: "0 auto " + SPACE.s4 + "px", fontSize: 11, border: "none", opacity: 0.7 }}>
-                  {uz ? "Sotib olinganlarni tiklash (Restore Purchases)" : "Restore Purchases"}
+                  {L("restore_purchases", "Sotib olinganlarni tiklash (Restore Purchases)", "Восстановить покупки (Restore Purchases)", "Restore Purchases", "Сатып алуларды қалпына келтіру (Restore Purchases)", "Сатып алууларды калыбына келтирүү (Restore Purchases)", "Барқарорсозии харидҳо (Restore Purchases)", "Satıp alıwlardı qalpına keltiriw (Restore Purchases)")}
                 </GhostButton>
               )}
             </div>
@@ -407,17 +409,15 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
             </svg>
           </div>
 
-          <div className="anim-scaleIn" style={{ ...TYPE.hero, color: th.t1, fontWeight: 900, marginBottom: SPACE.s2 }}>{uz ? "Tabriklaymiz!" : "Congratulations!"}</div>
+          <div className="anim-scaleIn" style={{ ...TYPE.hero, color: th.t1, fontWeight: 900, marginBottom: SPACE.s2 }}>{L("congratulations", "Tabriklaymiz!", "Поздравляем!", "Congratulations!", "Құттықтаймыз!", "Куттуктайбыз!", "Табрик мекунем!", "Qutlıqlaymız!")}</div>
           <div style={{ ...TYPE.title, color: gold, fontWeight: 800, marginBottom: SPACE.s3 }}>Oila Hisobchi Premium</div>
 
           <div style={{ ...TYPE.body, color: th.t2, lineHeight: 1.6, maxWidth: 320, margin: "0 auto " + SPACE.s6 + "px" }}>
-            {uz
-              ? `Xaridingiz muvaffaqiyatli amalga oshirildi! Premium obuna (${TIERS[activeTier].title}) butun oilangiz uchun faollashtirildi.`
-              : `Your purchase was successful! Premium subscription (${TIERS[activeTier].title}) has been activated for your entire family.`}
+            {L("purchase_success_desc", "Xaridingiz muvaffaqiyatli amalga oshirildi! Premium obuna ({{plan}}) butun oilangiz uchun faollashtirildi.", "Покупка успешно совершена! Премиум подписка ({{plan}}) активирована для всей вашей семьи.", "Your purchase was successful! Premium subscription ({{plan}}) has been activated for your entire family.", "Сатып алуыңыз сәтті аяқталды! Премиум жазылым ({{plan}}) бүкіл отбасыңыз үшін белсендірілді.", "Сатып алууңуз ийгиликтүү ишке ашты! Премиум жазылуу ({{plan}}) бүткүл үй-бүлөңүз үчүн активдештирилди.", "Хариди шумо бомуваффақият анҷом ёфт! Обунаи премиум ({{plan}}) барои тамоми оилаи шумо фаъол карда шуд.", "Satıp alıwın'ız tabıslı a'melge asırıldı! Premium obuna ({{plan}}) barlıq shan'aran'ız ushın belsendirildi.").replace("{{plan}}", TIERS[activeTier].title)}
           </div>
 
           <PrimaryButton th={th} onClick={handleSuccessDone} style={{ width: "100%", background: th.gr, borderColor: th.gr, marginBottom: 0 }}>
-            {uz ? "Ilovani boshlash" : "Start using Premium"}
+            {L("start_using_premium", "Ilovani boshlash", "Начать использование", "Start using Premium", "Қосымшаны бастау", "Колдонмону баштоо", "Оғози барнома", "Qosımshanı baslaw")}
           </PrimaryButton>
         </div>
       )}

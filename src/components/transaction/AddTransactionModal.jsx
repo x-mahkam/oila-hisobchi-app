@@ -3,6 +3,7 @@ import { KatIco, DarIco, MoneyInput, Av } from "../common/index.jsx";
 import { KATS, KN, DARS, DN } from "../../utils/constants.js";
 import { Ico } from "../../utils/icons.jsx";
 import { td } from "../../utils/formatters.js";
+import { useTranslation } from "react-i18next";
 
 export default function AddTransactionModal({
   th, STY, lg, f, ok$, buzz,
@@ -15,6 +16,11 @@ export default function AddTransactionModal({
   prefill, onVoice, onScan,
   onClose,
 }) {
+  const { t, i18n } = useTranslation();
+  const activeLg = i18n.language || lg || "uz";
+  const catNames = KN[activeLg] || KN.en || KN.uz;
+  const incNames = DN[activeLg] || DN.en || DN.uz;
+
   const tab = addModalTab;
   const setTab = setAddModalTab;
   const step = addStep;
@@ -47,10 +53,10 @@ export default function AddTransactionModal({
       {/* Header */}
       <div style={{ background: th.sur, borderBottom: "1px solid " + th.bor, padding: "14px 18px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
         <button onClick={() => { if (step === "form") { setStep("kat"); } else { onClose(); } }} style={{ background: "none", border: "none", fontSize: 15, color: th.t2, cursor: "pointer", fontWeight: 600, padding: "4px 0" }}>
-          {step === "form" ? "← " + (lg === "uz" ? "Orqaga" : "Back") : (lg === "uz" ? "Bekor" : "Cancel")}
+          {step === "form" ? "← " + t("back", "Back") : t("cancel", "Cancel")}
         </button>
         <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>
-          {step === "kat" ? (lg === "uz" ? "Nima qo'shamiz?" : "What to add?") : kat ? (tab === "xarajat" ? (lg === "uz" ? "Xarajat" : "Expense") : (lg === "uz" ? "Daromad" : "Income")) : ""}
+          {step === "kat" ? t("nima_qoshimiz", "What to add?") : kat ? (tab === "xarajat" ? t("exp", "Expense") : t("inc", "Income")) : ""}
         </div>
         <div style={{ width: 50 }} />
       </div>
@@ -60,11 +66,11 @@ export default function AddTransactionModal({
           <div style={{ display: "flex", background: th.bg, borderRadius: 14, padding: 3, gap: 3 }}>
             <button onClick={() => { setTab("xarajat"); setKat(null); }} style={{ flex: 1, padding: "11px", borderRadius: 11, border: "none", background: tab === "xarajat" ? th.rd : "transparent", color: tab === "xarajat" ? "#fff" : th.t2, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
-              {lg === "uz" ? "Xarajat" : "Expense"}
+              {t("exp", "Expense")}
             </button>
             <button onClick={() => { setTab("daromad"); setKat(null); }} style={{ flex: 1, padding: "11px", borderRadius: 11, border: "none", background: tab === "daromad" ? th.gr : "transparent", color: tab === "daromad" ? "#fff" : th.t2, fontWeight: 800, fontSize: 14, cursor: "pointer", transition: "all .2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg>
-              {lg === "uz" ? "Daromad" : "Income"}
+              {t("inc", "Income")}
             </button>
           </div>
         </div>
@@ -73,7 +79,7 @@ export default function AddTransactionModal({
         <div style={{ background: th.sur, padding: "10px 16px 12px", flexShrink: 0, borderBottom: "1px solid " + th.bor }}>
           <div style={{ fontSize: 14, fontWeight: 800, color: th.gr, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="17" y1="17" x2="7" y2="7"/><polyline points="7 17 7 7 17 7"/></svg>
-            {lg === "uz" ? "Daromad qo'shish" : "Add income"}
+            {t("add_income", "Add income")}
           </div>
         </div>
       )}
@@ -83,20 +89,20 @@ export default function AddTransactionModal({
         {/* ── Ovoz va Chek skaneri ── */}
         {step === "kat" && tab === "xarajat" && !isKid && (onVoice || onScan) && (
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-            {onVoice && <button onClick={() => { onClose(); onVoice(); }} style={{ flex: 1, background: "linear-gradient(135deg,#8b5cf620,#6366f115)", border: "1.5px solid #8b5cf655", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#a78bfa", fontWeight: 700, fontSize: 12.5 }}>{Ico.mic("#a78bfa")} {lg === "uz" ? "Ovoz bilan" : "Voice"}</button>}
-            {onScan && <button onClick={() => { onClose(); onScan(); }} style={{ flex: 1, background: "linear-gradient(135deg,#10b98120,#05966915)", border: "1.5px solid #10b98155", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#34d399", fontWeight: 700, fontSize: 12.5 }}>{Ico.camera("#34d399")} {lg === "uz" ? "Chek skaneri" : "Scan receipt"}</button>}
+            {onVoice && <button onClick={() => { onClose(); onVoice(); }} style={{ flex: 1, background: "linear-gradient(135deg,#8b5cf620,#6366f115)", border: "1.5px solid #8b5cf655", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#a78bfa", fontWeight: 700, fontSize: 12.5 }}>{Ico.mic("#a78bfa")} {t("voice_input", "Voice")}</button>}
+            {onScan && <button onClick={() => { onClose(); onScan(); }} style={{ flex: 1, background: "linear-gradient(135deg,#10b98120,#05966915)", border: "1.5px solid #10b98155", borderRadius: 13, padding: "11px 8px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7, color: "#34d399", fontWeight: 700, fontSize: 12.5 }}>{Ico.camera("#34d399")} {t("scan_receipt", "Scan receipt")}</button>}
           </div>
         )}
         {step === "kat" && tab === "xarajat" && !isKid && (
           <div style={{ padding: "14px 16px" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 10, letterSpacing: 0.5 }}>{lg === "uz" ? "KATEGORIYA TANLANG" : "SELECT CATEGORY"}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 10, letterSpacing: 0.5 }}>{t("select_category", "SELECT CATEGORY")}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
               {KATS.map((k, i) => (
                 <button key={k.id} onClick={() => { setKat(k.id); setStep("form"); }} style={{ background: th.sur, border: "1.5px solid " + th.bor, borderRadius: 16, padding: "12px 6px 10px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6, transition: "all .15s" }}>
                   <div style={{ width: 44, height: 44, borderRadius: 13, background: k.c + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <KatIco id={k.id} c={k.c} s={22} />
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: th.t1, textAlign: "center", lineHeight: 1.2 }}>{KN[lg][i]}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: th.t1, textAlign: "center", lineHeight: 1.2 }}>{catNames[i]}</span>
                 </button>
               ))}
             </div>
@@ -105,14 +111,14 @@ export default function AddTransactionModal({
         {/* DAROMAD KATEGORIYA */}
         {step === "kat" && tab === "daromad" && (
           <div style={{ padding: "14px 16px" }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 10, letterSpacing: 0.5 }}>{lg === "uz" ? "DAROMAD TURINI TANLANG" : "SELECT INCOME TYPE"}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 10, letterSpacing: 0.5 }}>{t("select_income_type", "SELECT INCOME TYPE")}</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
               {DARS.map((d, i) => (
                 <button key={d.id} onClick={() => { setKat(d.id); setStep("form"); }} style={{ background: th.sur, border: "1.5px solid " + th.bor, borderRadius: 16, padding: "12px 6px 10px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 13, background: d.c + "18", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <DarIco id={d.id} c={d.c} s={22} />
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: th.t1, textAlign: "center", lineHeight: 1.2 }}>{DN[lg][i]}</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: th.t1, textAlign: "center", lineHeight: 1.2 }}>{incNames[i]}</span>
                 </button>
               ))}
             </div>
@@ -126,22 +132,22 @@ export default function AddTransactionModal({
                 <KatIco id={kat} c={KATS.find(k => k.id === kat)?.c || th.ac} s={22} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{KN[lg][KATS.findIndex(k => k.id === kat)]}</div>
-                <div style={{ fontSize: 11, color: th.t2 }}>{lg === "uz" ? "Xarajat kategoriyasi" : "Expense category"}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{catNames[KATS.findIndex(k => k.id === kat)]}</div>
+                <div style={{ fontSize: 11, color: th.t2 }}>{t("expense_category", "Expense category")}</div>
               </div>
             </div>
-            <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+            <label style={STY.lb}>{t("amount_uzs", "Amount (so'm)")}</label>
             <MoneyInput style={{ ...STY.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fS} onChange={setFS} placeholder="0" autoFocus th={th} />
-            <label style={STY.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
-            <input style={STY.ip} value={fIz} onChange={e => setFIz(e.target.value)} placeholder={lg === "uz" ? "Nima uchun?" : "What for?"} />
-            <label style={STY.lb}>{lg === "uz" ? "Sana" : "Date"}</label>
+            <label style={STY.lb}>{t("note", "Note")}</label>
+            <input style={STY.ip} value={fIz} onChange={e => setFIz(e.target.value)} placeholder={t("what_for", "What for?")} />
+            <label style={STY.lb}>{t("date", "Date")}</label>
             <input type="date" style={STY.ip} value={fSn} onChange={e => setFSn(e.target.value)} />
             {azolar.length > 1 && (
               <>
-                <label style={STY.lb}>{lg === "uz" ? "Kim uchun?" : "For whom?"}</label>
+                <label style={STY.lb}>{t("for_whom", "For whom?")}</label>
                 <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 6, marginBottom: 12 }}>
                   <button onClick={() => setXForMember("")} style={{ flexShrink: 0, background: !xForMember ? th.ac + "18" : th.surH, border: "1.5px solid " + (!xForMember ? th.ac : th.bor), borderRadius: 11, padding: "9px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: !xForMember ? th.ac : th.t2, fontSize: 12, fontWeight: 600 }}>
-                    <Av src={user?.photo} name={user?.ism} size={22} ac={th.ac} />{lg === "uz" ? "O'zim" : "Me"}
+                    <Av src={user?.photo} name={user?.ism} size={22} ac={th.ac} />{t("myself", "Me")}
                   </button>
                   {azolar.filter(a => a.id !== user.id).map(a => (
                     <button key={a.id} onClick={() => setXForMember(a.id)} style={{ flexShrink: 0, background: xForMember === a.id ? th.ac + "18" : th.surH, border: "1.5px solid " + (xForMember === a.id ? th.ac : th.bor), borderRadius: 11, padding: "9px 13px", cursor: "pointer", display: "flex", alignItems: "center", gap: 6, color: xForMember === a.id ? th.ac : th.t2, fontSize: 12, fontWeight: 600 }}>
@@ -153,10 +159,10 @@ export default function AddTransactionModal({
             )}
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16, background: th.sur, border: "1px solid " + th.bor, borderRadius: 13, padding: "12px 14px" }}>
               <input type="checkbox" id="rep2" checked={fRp} onChange={e => setFRp(e.target.checked)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: th.ac }} />
-              <label htmlFor="rep2" style={{ fontSize: 13, color: th.t1, cursor: "pointer" }}>{lg === "uz" ? "Takroriy (oy sayin)" : "Recurring (monthly)"}</label>
+              <label htmlFor="rep2" style={{ fontSize: 13, color: th.t1, cursor: "pointer" }}>{t("recurring_monthly", "Recurring (monthly)")}</label>
             </div>
             <button onClick={saveX} style={{ ...STY.bt(th.rd, "#dc2626"), marginBottom: 8 }}>
-              {Ico.check("#fff")}{lg === "uz" ? " Xarajatni saqlash" : " Save expense"}
+              {Ico.check("#fff")}{t("save_expense", "Save expense")}
             </button>
           </div>
         )}
@@ -168,16 +174,16 @@ export default function AddTransactionModal({
                 <DarIco id={kat} c={DARS.find(d => d.id === kat)?.c || th.gr} s={22} />
               </div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{DN[lg][DARS.findIndex(d => d.id === kat)]}</div>
-                <div style={{ fontSize: 11, color: th.t2 }}>{lg === "uz" ? "Daromad turi" : "Income type"}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: th.t1 }}>{incNames[DARS.findIndex(d => d.id === kat)]}</div>
+                <div style={{ fontSize: 11, color: th.t2 }}>{t("income_type", "Income type")}</div>
               </div>
             </div>
-            <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+            <label style={STY.lb}>{t("amount_uzs", "Amount (so'm)")}</label>
             <MoneyInput style={{ ...STY.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fDS} onChange={setFDS} placeholder="0" autoFocus th={th} />
-            <label style={STY.lb}>{lg === "uz" ? "Izoh (ixtiyoriy)" : "Note (optional)"}</label>
-            <input style={STY.ip} value={fDI} onChange={e => setFDI(e.target.value)} placeholder={lg === "uz" ? "Masalan: may oyligi" : "e.g. May salary"} />
+            <label style={STY.lb}>{t("note", "Note")}</label>
+            <input style={STY.ip} value={fDI} onChange={e => setFDI(e.target.value)} placeholder={t("income_type", "Income type")} />
             <button onClick={saveD} style={{ ...STY.bt(), marginBottom: 8 }}>
-              {Ico.check("#fff")}{lg === "uz" ? " Daromadni saqlash" : " Save income"}
+              {Ico.check("#fff")}{t("save_income", "Save income")}
             </button>
           </div>
         )}
