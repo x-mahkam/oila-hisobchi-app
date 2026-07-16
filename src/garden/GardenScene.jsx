@@ -423,7 +423,7 @@ const GoalTree = memo(function GoalTree({ goal, progress, onClick }) {
 });
 
 export const GardenScene = memo(function GardenScene({
-  gt, mode, L, plots, selected, coins, now, fTime,
+  gt, mode, t, plots, selected, coins, now, fTime,
   waterReady, waterTimer, digAnim, growAnim, waterAnim, sunNote,
   flyRewards, sunCycle,
   onPlotTap, onSunTap, onAction, onSpeedUp,
@@ -709,7 +709,7 @@ export const GardenScene = memo(function GardenScene({
               )}
               {sunNote === p.id && (
                 <div style={{ maxWidth: 150, textAlign: "center", ...TYPE.caption, fontWeight: 800, color: gt.onSky, lineHeight: 1.35, textShadow: "0 1px 3px " + ART.trunkLo, animation: "gdNote 3s ease forwards", pointerEvents: "none" }}>
-                  {L("Vaqt hali tugamadi, iltimos sabr qiling", "Время ещё не вышло, подождите")}
+                  {t("g199")}
                 </div>
               )}
               <div style={{ animation: ready ? "gdSunPulse 2s ease-in-out infinite, gdSunGlow 2s ease-in-out infinite" : "none", opacity: ready ? 1 : 0.88, transform: ready ? "none" : "scale(.86)" }}>
@@ -778,7 +778,7 @@ export const GardenScene = memo(function GardenScene({
             animation: "gdBounce 3s ease-in-out infinite",
             filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))",
             cursor: "pointer"
-          }} title="Mushukcha qo'riqchi 🐱">
+          }} title={t("dec_mushuk_qoriqchi_name")}>
             🐱
           </div>
         )}
@@ -795,7 +795,7 @@ export const GardenScene = memo(function GardenScene({
             animation: "gdCanBounce 2.5s ease-in-out infinite",
             filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.15))",
             cursor: "pointer"
-          }} title="Qushcha qo'riqchi 🐦">
+          }} title={t("dec_qush_qoriqchi_name")}>
             🐦
           </div>
         )}
@@ -816,7 +816,7 @@ export const GardenScene = memo(function GardenScene({
                 animation: "gdBounce 0.8s ease-in-out infinite",
                 WebkitTapHighlightColor: "transparent",
                 filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))"
-              }} title={L("Zararkunanda! Uni bosib yo'qoting! 🐛", "Вредитель! Нажмите, чтобы уничтожить! 🐛")}>
+              }} title={t("g200")}>
               🐛
             </div>
           );
@@ -896,14 +896,14 @@ export const GardenScene = memo(function GardenScene({
               <span style={{ ...TYPE.body, fontWeight: 800, color: gt.onSky, textShadow: "0 1px 4px " + ART.trunkLo }}>−{SPEEDUP_COST}</span>
             </div>
             <div style={{ background: gt.goldGrad, borderRadius: RADIUS.pill, padding: (SPACE.s1 + 1) + "px " + SPACE.s4 + "px", ...TYPE.caption, fontWeight: 800, color: gt.onSky, boxShadow: SHADOW.e1(ART.sunLo) }}>
-              {L("Tezlatish", "Ускорить")}
+              {t("g201")}
             </div>
           </button>
         )}
 
         {/* ── Asosiy harakat (o'ng past): ekish / sug'orish / hosil ── */}
         <div style={{ position: "absolute", right: SPACE.s4, bottom: full ? "max(" + SPACE.s4 + "px, env(safe-area-inset-bottom))" : SPACE.s4, zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 }}>
-          <button onClick={onAction} className="ui-press-fab ui-press" aria-label={L("Bog' harakati", "Действие")}
+          <button onClick={onAction} className="ui-press-fab ui-press" aria-label={t("g202")}
             style={{ 
               width: 72, 
               height: 72, 
@@ -943,9 +943,9 @@ export const GardenScene = memo(function GardenScene({
             )}
           </button>
           <div style={{ background: gt.sceneScrim, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 2) + "px " + SPACE.s3 + "px", ...TYPE.caption, fontWeight: 800, color: actionReady ? ART.leafGlint : ART.coinHi, fontVariantNumeric: "tabular-nums" }}>
-            {selStage < 0 ? L("Ekish", "Посеять")
-              : selPlot?.harvestReady ? L("Hosil!", "Урожай!")
-              : waterReady ? L("Sug'orish", "Полить")
+            {selStage < 0 ? t("g153")
+              : selPlot?.harvestReady ? t("g203")
+              : waterReady ? t("g204")
               : fTime(waterTimer)}
           </div>
         </div>

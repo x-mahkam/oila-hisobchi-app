@@ -43,7 +43,7 @@ export const GProgress = memo(function GProgress({ value = 0, height = SPACE.s2 
 });
 
 /** Daraja — yarim doira gauge: gradient yoy + glow + markazda raqam. */
-export const LevelGauge = memo(function LevelGauge({ gt, level, progress, stageName, L }) {
+export const LevelGauge = memo(function LevelGauge({ gt, level, progress, stageName, t }) {
   const size = 210, stroke = 15;
   const r = (size - stroke) / 2;
   const half = Math.PI * r;
@@ -66,7 +66,7 @@ export const LevelGauge = memo(function LevelGauge({ gt, level, progress, stageN
           style={{ transition: MOTION.trSlow("stroke-dashoffset"), filter: "drop-shadow(0 0 8px " + gt.glow + ")" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-end", paddingBottom: 0 }}>
-        <div style={{ ...TYPE.tiny, color: gt.ink3 }}>{L("Daraja", "Уровень")}</div>
+        <div style={{ ...TYPE.tiny, color: gt.ink3 }}>{t("g078")}</div>
         <div style={{ ...TYPE.display, color: gt.ink1, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{level}</div>
         <div style={{ ...TYPE.caption, fontWeight: 700, color: gt.acc, marginTop: SPACE.s1 - 2 }}>{stageName}</div>
       </div>
@@ -121,7 +121,7 @@ const chev = c => <svg width="14" height="14" viewBox="0 0 16 16" fill="none" st
  * PlantCard — har uchastkaning Garden Card ko'rinishi.
  * Holatlar: locked · empty (ekishga tayyor) · growing · ready.
  */
-export const PlantCard = memo(function PlantCard({ gt, plot, cost, L, onClick, selected }) {
+export const PlantCard = memo(function PlantCard({ gt, plot, cost, t, onClick, selected }) {
   const locked = !(plot.id === 0 || plot.unlocked || plot.stage >= 0);
   const st = plot.stage;
   const stInfo = st >= 0 ? STAGES[st] : null;
@@ -145,26 +145,26 @@ export const PlantCard = memo(function PlantCard({ gt, plot, cost, L, onClick, s
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: 2 }}>
           <span style={{ ...TYPE.subtitle, color: gt.ink1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-            {L("Uchastka", "Участок")} {plot.id + 1}
+            {t("g187")} {plot.id + 1}
           </span>
-          {state === "locked" && <GChip gt={gt} tone="soil">{L("Yopiq", "Закрыт")}</GChip>}
-          {state === "empty" && <GChip gt={gt} tone="water">{L("Ekishga tayyor", "Готов к посеву")}</GChip>}
-          {state === "growing" && <GChip gt={gt} tone="leaf">{L("O'smoqda", "Растёт")}</GChip>}
-          {state === "ready" && <GChip gt={gt} tone="gold">{L("Hosilga tayyor", "Урожай готов")}</GChip>}
+          {state === "locked" && <GChip gt={gt} tone="soil">{t("g188")}</GChip>}
+          {state === "empty" && <GChip gt={gt} tone="water">{t("g189")}</GChip>}
+          {state === "growing" && <GChip gt={gt} tone="leaf">{t("g190")}</GChip>}
+          {state === "ready" && <GChip gt={gt} tone="gold">{t("g191")}</GChip>}
         </div>
         {state === "locked" && (
           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s1 }}>
             <CoinSVG size={14} />
             <span style={{ ...TYPE.caption, fontWeight: 700, color: gt.gold, fontVariantNumeric: "tabular-nums" }}>{cost?.toLocaleString()}</span>
-            <span style={{ ...TYPE.caption, color: gt.ink3 }}>{L("evaziga ochiladi", "для открытия")}</span>
+            <span style={{ ...TYPE.caption, color: gt.ink3 }}>{t("g192")}</span>
           </div>
         )}
-        {state === "empty" && <div style={{ ...TYPE.caption, color: gt.ink2 }}>{L("Baraka urug'ini eking", "Посейте семя Бараки")}</div>}
+        {state === "empty" && <div style={{ ...TYPE.caption, color: gt.ink2 }}>{t("g193")}</div>}
         {(state === "growing" || state === "ready") && (
           <>
             <div style={{ ...TYPE.caption, color: gt.ink2, marginBottom: SPACE.s1 }}>
-              {L(stInfo.name, stInfo.nameRu)}
-              {state === "growing" && <span style={{ color: gt.ink3 }}> · {plot.waterCount || 0}/{need} {L("suv", "полив")}</span>}
+              {t("stage_" + stInfo.id)}
+              {state === "growing" && <span style={{ color: gt.ink3 }}> · {plot.waterCount || 0}/{need} {t("g194")}</span>}
             </div>
             <GProgress value={prog} gold={state === "ready"} height={SPACE.s2 - 2} />
           </>
@@ -176,7 +176,7 @@ export const PlantCard = memo(function PlantCard({ gt, plot, cost, L, onClick, s
 });
 
 /** AchievementCard — collectible karta (badge emas). */
-export const AchievementCard = memo(function AchievementCard({ gt, icon, title, desc, reward, unlocked, L }) {
+export const AchievementCard = memo(function AchievementCard({ gt, icon, title, desc, reward, unlocked, t }) {
   return (
     <div style={{ background: unlocked ? ART.sun + ALPHA.faint : gt.sur, border: unlocked ? "1.5px solid " + ART.sun + ALPHA.strong : "1px dashed " + gt.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px " + SPACE.s3 + "px", display: "flex", flexDirection: "column", gap: SPACE.s2, boxSizing: "border-box" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -184,7 +184,7 @@ export const AchievementCard = memo(function AchievementCard({ gt, icon, title, 
           {icon}
         </div>
         {unlocked
-          ? <GChip gt={gt} tone="gold">{L("Ochildi", "Открыто")}</GChip>
+          ? <GChip gt={gt} tone="gold">{t("g195")}</GChip>
           : <LockSVG size={15} tone={gt.ink3} />}
       </div>
       <div>
@@ -227,7 +227,7 @@ export const TipCard = memo(function TipCard({ gt, title, children }) {
 });
 
 /** GardenEmpty — illyustrativ bo'sh holat (DS 5.13 istisnosi). */
-export const GardenEmpty = memo(function GardenEmpty({ gt, L, onPlant }) {
+export const GardenEmpty = memo(function GardenEmpty({ gt, t, onPlant }) {
   return (
     <div style={{ background: gt.sur, border: "1px dashed " + gt.bor, borderRadius: RADIUS.m, padding: SPACE.s8 + "px " + SPACE.s4 + "px", marginBottom: SPACE.s3, textAlign: "center" }}>
       <div className="ui-fadeUp">
@@ -248,14 +248,14 @@ export const GardenEmpty = memo(function GardenEmpty({ gt, L, onPlant }) {
           <path d="M16 66 q2 -7 5.6 -8 q-1 7 -5.6 8 Z" fill={ART.grassHi} />
           <path d="M102 70 q2 -7 5.6 -8 q-1 7 -5.6 8 Z" fill={ART.grassHi} />
         </svg>
-        <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{L("Bog'ingiz sizni kutmoqda", "Ваш сад ждёт вас")}</div>
+        <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{t("g196")}</div>
         <div style={{ ...TYPE.caption, color: gt.ink2, lineHeight: 1.5, maxWidth: 250, margin: "0 auto " + SPACE.s4 + "px" }}>
-          {L("Birinchi Baraka urug'ini eking — har bir moliyaviy amal daraxtingizni o'stiradi.", "Посейте первое семя — каждое финансовое действие растит ваше дерево.")}
+          {t("g197")}
         </div>
         <button className="ui-press" onClick={onPlant}
           style={{ background: gt.accGrad, border: "none", borderRadius: RADIUS.m, padding: (SPACE.s3 - 1) + "px " + SPACE.s6 + "px", color: gt.sur, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", boxShadow: SHADOW.e1(ART.leafLo), fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: SPACE.s2 }}>
           <SeedSVG size={22} />
-          {L("Urug' ekish", "Посеять семя")}
+          {t("g198")}
         </button>
       </div>
     </div>
