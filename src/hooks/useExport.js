@@ -1,10 +1,9 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { KATS, KN, DARS, DN } from "../utils/constants.js";
-import i18n from "../i18n/index.js";
 
 export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
-  const { isPremium, setShowPremModal, ok$, user, oila, azolar } = useApp();
+  const { isPremium, setShowPremModal, lg, ok$, user, oila, azolar, t } = useApp();
   const [exportLoading, setExportLoading] = useState(false);
 
   const downloadFile = (content, filename, mime) => {
@@ -45,64 +44,41 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       const exjX = exX.reduce((s, x) => s + Number(x.summa || 0), 0);
       const exjD = exD.reduce((s, d) => s + Number(d.summa || 0), 0);
       const rows = [];
-      rows.push([i18n.t("export_family_report", { defaultValue: "OILA HISOBOTI" }), month].join(";"));
+      rows.push([t("xp_familyReportTitle"), month].join(";"));
       rows.push("");
-      rows.push([i18n.t("export_total_income", { defaultValue: "Jami daromad" }), exjD].join(";"));
-      rows.push([i18n.t("export_total_expense", { defaultValue: "Jami xarajat" }), exjX].join(";"));
-      rows.push([i18n.t("export_balance", { defaultValue: "Balans" }), exjD - exjX].join(";"));
-      rows.push([i18n.t("export_budget", { defaultValue: "Budjet" }), bdj].join(";"));
+      rows.push([t("xp_totalIncome"), exjD].join(";"));
+      rows.push([t("xp_totalExpense"), exjX].join(";"));
+      rows.push([t("xp_balance"), exjD - exjX].join(";"));
+      rows.push([t("xp_budget"), bdj].join(";"));
       rows.push("");
       if (exX.length > 0) {
-        rows.push([i18n.t("export_expenses", { defaultValue: "XARAJATLAR" }).toUpperCase()].join(";"));
+        rows.push([t("xp_expensesHeader")].join(";"));
         rows.push(
-          [
-            "#",
-            i18n.t("export_date", { defaultValue: "Sana" }),
-            i18n.t("export_category", { defaultValue: "Kategoriya" }),
-            i18n.t("export_note", { defaultValue: "Izoh" }),
-            i18n.t("export_who", { defaultValue: "Kim" }),
-            i18n.t("export_amount", { defaultValue: "Summa" })
-          ]
+          ["#", t("xp_colDate"), t("xp_colCategory"), t("xp_colNote"), t("xp_colWho"), t("xp_colAmount")]
             .map(esc)
             .join(";")
         );
-        exX.forEach((x, i) => {
-          const catName = i18n.t("cat_" + x.kategoriya, { defaultValue: KN[i18n.language]?.[KATS.findIndex((k) => k.id === x.kategoriya)] || x.kategoriya });
-          rows.push([i + 1, x.sana, catName, x.izoh || "", gN(x.uid), x.summa].map(esc).join(";"));
-        });
+        exX.forEach((x, i) =>
+          rows.push([i + 1, x.sana, KN[lg][KATS.findIndex((k) => k.id === x.kategoriya)] || "", x.izoh || "", gN(x.uid), x.summa].map(esc).join(";"))
+        );
         rows.push("");
       }
       if (exD.length > 0) {
-        rows.push([i18n.t("export_income", { defaultValue: "DAROMADLAR" }).toUpperCase()].join(";"));
+        rows.push([t("xp_incomeHeader")].join(";"));
         rows.push(
-          [
-            "#",
-            i18n.t("export_date", { defaultValue: "Sana" }),
-            i18n.t("export_type", { defaultValue: "Tur" }),
-            i18n.t("export_note", { defaultValue: "Izoh" }),
-            i18n.t("export_who", { defaultValue: "Kim" }),
-            i18n.t("export_amount", { defaultValue: "Summa" })
-          ]
+          ["#", t("xp_colDate"), t("xp_colType"), t("xp_colNote"), t("xp_colWho"), t("xp_colAmount")]
             .map(esc)
             .join(";")
         );
-        exD.forEach((d, i) => {
-          const incName = i18n.t("inc_" + d.tur, { defaultValue: DN[i18n.language]?.[DARS.findIndex((dr) => dr.id === d.tur)] || d.tur });
-          rows.push([i + 1, d.sana, incName, d.izoh || "", gN(d.uid), d.summa].map(esc).join(";"));
-        });
+        exD.forEach((d, i) =>
+          rows.push([i + 1, d.sana, DN[lg][DARS.findIndex((dr) => dr.id === d.tur)] || "", d.izoh || "", gN(d.uid), d.summa].map(esc).join(";"))
+        );
         rows.push("");
       }
       if (qarzlar.length > 0) {
-        rows.push([i18n.t("export_debts", { defaultValue: "QARZLAR" }).toUpperCase()].join(";"));
+        rows.push([t("xp_debtsHeader")].join(";"));
         rows.push(
-          [
-            "#",
-            i18n.t("export_person", { defaultValue: "Kim" }),
-            i18n.t("export_type", { defaultValue: "Tur" }),
-            i18n.t("export_amount", { defaultValue: "Summa" }),
-            i18n.t("export_date", { defaultValue: "Sana" }),
-            i18n.t("export_status", { defaultValue: "Holat" })
-          ]
+          ["#", t("xp_colPerson"), t("xp_colType"), t("xp_colAmount"), t("xp_colDate"), t("xp_colStatus")]
             .map(esc)
             .join(";")
         );
@@ -111,10 +87,10 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
             [
               i + 1,
               q.kim,
-              q.tur === "bergan" ? i18n.t("export_lent", { defaultValue: "Berdim" }) : i18n.t("export_borrowed", { defaultValue: "Oldim" }),
+              q.tur === "bergan" ? t("xp_lent") : t("xp_borrowed"),
               q.summa,
               q.sana,
-              q.paid ? i18n.t("export_returned", { defaultValue: "Qaytarilgan" }) : i18n.t("export_active", { defaultValue: "Faol" }),
+              q.paid ? t("xp_returned") : t("xp_active"),
             ]
               .map(esc)
               .join(";")
@@ -123,14 +99,9 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       }
       const csv = "\uFEFF" + rows.join("\n");
       const okk = downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
-      ok$(
-        okk
-          ? i18n.t("export_downloaded_success", { defaultValue: "Yuklab olindi!" })
-          : i18n.t("error_generic", { defaultValue: "Xatolik" }),
-        okk ? "ok" : "err"
-      );
+      ok$(okk ? t("xp_downloaded") : t("xp_error"), okk ? "ok" : "err");
     } catch (e) {
-      ok$(i18n.t("error_generic", { defaultValue: "Xatolik" }) + ": " + e.message, "err");
+      ok$(t("xp_errorMsg", { msg: e.message }), "err");
     }
     setExportLoading(false);
   };
@@ -145,9 +116,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       const sc = scopeArg === "mine" || scopeArg === "family" ? scopeArg : canSeeReport ? "family" : "mine";
       const pX = sc === "family" && canSeeReport ? bX : bX.filter((x) => x.uid === user?.id || !x.uid);
       const pD = sc === "family" && canSeeReport ? bD : bD.filter((d) => d.uid === user?.id || !d.uid);
-      const pdfWho = sc === "family"
-        ? i18n.t("export_family_report_title", { defaultValue: "Oila hisoboti" })
-        : (user?.ism || "") + " \u00b7 " + i18n.t("export_personal_report_title", { defaultValue: "Shaxsiy hisobot" });
+      const pdfWho = sc === "family" ? t("xp_familyReport") : t("xp_personalReport", { name: user?.ism || "" });
       const jX2 = pX.reduce((s, x) => s + Number(x.summa || 0), 0);
       const jD2 = pD.reduce((s, d) => s + Number(d.summa || 0), 0);
 
@@ -163,7 +132,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
 
       const donutSVG = (data, centerLabel) => {
         const total = data.reduce((s, d) => s + d.sum, 0);
-        if (total <= 0) return `<div style='height:130px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px'>${i18n.t("no_data", { defaultValue: "Ma'lumot yo'q" })}</div>`;
+        if (total <= 0) return "<div style='height:130px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px'>" + t("xp_noData") + "</div>";
         let a = -Math.PI / 2;
         const segs = data
           .slice(0, 6)
@@ -246,19 +215,18 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
           labels +
           "</svg>" +
           "<div style='font-size:9px;color:#6b7280;text-align:center;margin-top:4px'>" +
-          i18n.t("export_daily_max", { defaultValue: "Kunlik xarajatlar \u00b7 maks: " }) +
-          mx.toLocaleString() +
+          t("xp_dailyMax", { max: mx.toLocaleString() }) +
           "</div>"
         );
       })();
 
       // Diagramma ma'lumotlari
       const knownKat = new Set([...KATS.map((k) => k.id), "qarz", "maqsad"]);
-      const katData = KATS.map((k, i) => ({ name: i18n.t("cat_" + k.id, { defaultValue: KN[i18n.language]?.[i] || k.id }), color: k.c, sum: pX.filter((x) => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) }))
+      const katData = KATS.map((k, i) => ({ name: KN[lg][i], color: k.c, sum: pX.filter((x) => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0) }))
         .concat([
-          { name: i18n.t("export_loan_given", { defaultValue: "Qarz berildi" }), color: "#F97316", sum: pX.filter((x) => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) },
-          { name: i18n.t("export_goal_savings", { defaultValue: "Jamg'arma (maqsad)" }), color: "#EAB308", sum: pX.filter((x) => x.kategoriya === "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0) },
-          { name: i18n.t("export_other_records", { defaultValue: "Boshqa yozuvlar" }), color: "#94A3B8", sum: pX.filter((x) => !knownKat.has(x.kategoriya)).reduce((s, x) => s + Number(x.summa || 0), 0) },
+          { name: t("xp_loanGiven"), color: "#F97316", sum: pX.filter((x) => x.kategoriya === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) },
+          { name: t("xp_goalSavings"), color: "#EAB308", sum: pX.filter((x) => x.kategoriya === "maqsad").reduce((s, x) => s + Number(x.summa || 0), 0) },
+          { name: t("xp_otherRecords"), color: "#94A3B8", sum: pX.filter((x) => !knownKat.has(x.kategoriya)).reduce((s, x) => s + Number(x.summa || 0), 0) },
         ])
         .filter((d) => d.sum > 0)
         .sort((a, b) => b.sum - a.sum);
@@ -267,7 +235,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       const secondDonut =
         sc === "family" && canSeeReport && azolar.length > 1
           ? {
-              title: i18n.t("export_members_share", { defaultValue: "Oila a'zolari ulushi" }),
+              title: t("xp_membersShare"),
               html: donutSVG(
                 azolar
                   .map((a, i) => ({
@@ -277,24 +245,24 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
                   }))
                   .filter((d) => d.sum > 0)
                   .sort((a, b) => b.sum - a.sum),
-                i18n.t("export_oila_jami", { defaultValue: "Oila jami" })
+                t("xp_familyTotal")
               ),
             }
           : {
-              title: i18n.t("export_income_types", { defaultValue: "Daromad turlari" }),
+              title: t("xp_incomeTypes"),
               html: donutSVG(
-                DARS.map((d, i) => ({ name: i18n.t("inc_" + d.id, { defaultValue: DN[i18n.language]?.[i] || d.id }), color: d.c, sum: pD.filter((x) => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0) }))
+                DARS.map((d, i) => ({ name: DN[lg]?.[i] || d.id, color: d.c, sum: pD.filter((x) => x.tur === d.id).reduce((s, x) => s + Number(x.summa || 0), 0) }))
                   .concat([
-                    { name: i18n.t("export_loan_received", { defaultValue: "Qarz olindi" }), color: "#14B8A6", sum: pD.filter((x) => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) },
+                    { name: t("xp_loanReceived"), color: "#14B8A6", sum: pD.filter((x) => x.tur === "qarz").reduce((s, x) => s + Number(x.summa || 0), 0) },
                     {
-                      name: i18n.t("export_other_records", { defaultValue: "Boshqa yozuvlar" }),
+                      name: t("xp_otherRecords"),
                       color: "#94A3B8",
                       sum: pD.filter((x) => !["oylik", "qoshimcha", "biznes", "sovga", "boshqa", "qarz"].includes(x.tur)).reduce((s, x) => s + Number(x.summa || 0), 0),
                     },
                   ])
                   .filter((d) => d.sum > 0)
                   .sort((a, b) => b.sum - a.sum),
-                i18n.t("income", { defaultValue: "Daromad" })
+                t("xp_income")
               ),
             };
 
@@ -302,25 +270,18 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         const tot = pX.filter((x) => x.kategoriya === k.id).reduce((s, x) => s + Number(x.summa || 0), 0);
         if (!tot) return "";
         const pct2 = jX2 > 0 ? Math.round((tot / jX2) * 100) : 0;
-        const name = i18n.t("cat_" + k.id, { defaultValue: KN[i18n.language]?.[i] || k.id });
-        return "<tr><td>" + name + "</td><td style='text-align:right'>" + tot.toLocaleString() + " so'm</td><td style='text-align:center'>" + pct2 + "%</td></tr>";
+        return "<tr><td>" + KN[lg][i] + "</td><td style='text-align:right'>" + tot.toLocaleString() + " " + t("xp_currency") + "</td><td style='text-align:center'>" + pct2 + "%</td></tr>";
       }).join("");
 
       const xRows = pX
         .slice(0, 40)
-        .map((x) => {
-          const catName = i18n.t("cat_" + x.kategoriya, { defaultValue: KN[i18n.language]?.[KATS.findIndex((k) => k.id === x.kategoriya)] || x.kategoriya });
-          return "<tr><td>" + x.sana + "</td><td>" + catName + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right'>" + Number(x.summa).toLocaleString() + "</td><td>" + gN(x.uid) + "</td></tr>";
-        })
+        .map((x) => "<tr><td>" + x.sana + "</td><td>" + KN[lg][KATS.findIndex((k) => k.id === x.kategoriya)] + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right'>" + Number(x.summa).toLocaleString() + "</td><td>" + gN(x.uid) + "</td></tr>")
         .join("");
 
       const qActive = qarzlar.filter((q) => !q.paid && (sc === "family" && canSeeReport ? true : q.uid === user?.id || !q.uid));
       const qRows = qActive
         .slice(0, 15)
-        .map((q) => {
-          const typeLabel = q.tur === "bergan" ? i18n.t("export_lent", { defaultValue: "Berilgan" }) : i18n.t("export_borrowed", { defaultValue: "Olingan" });
-          return "<tr><td>" + q.kim + "</td><td>" + typeLabel + "</td><td style='text-align:right'>" + Number(q.summa).toLocaleString() + "</td><td>" + (q.qaytSana || "-") + "</td></tr>";
-        })
+        .map((q) => "<tr><td>" + q.kim + "</td><td>" + (q.tur === "bergan" ? t("xp_lentPassive") : t("xp_borrowedPassive")) + "</td><td style='text-align:right'>" + Number(q.summa).toLocaleString() + "</td><td>" + (q.qaytSana || "-") + "</td></tr>")
         .join("");
 
       // QR - referal link
@@ -342,7 +303,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         ".btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#6366f1;color:#fff;border:none;padding:14px 32px;border-radius:30px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.4);z-index:99}" +
         "@media print{.btn{display:none}.charts{page-break-inside:avoid}}</style></head><body>" +
         "<div class='hdr'><svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120' style='width:48px;height:48px;border-radius:12px;margin-right:12px;'><rect width='120' height='120' rx='28' fill='#5D5CFF' /><path d='M12 46 L60 12 L108 46' stroke='#FFFFFF' stroke-width='8' stroke-linecap='round' stroke-linejoin='round' fill='none' /><rect x='18' y='47' width='84' height='58' rx='14' stroke='#FFFFFF' stroke-width='7' fill='none' /><path d='M18 58 L102 58' stroke='#FFFFFF' stroke-width='7' stroke-linecap='round' /><path d='M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z' stroke='#FFFFFF' stroke-width='7' stroke-linecap='round' stroke-linejoin='round' fill='none' /></svg><div><div style='font-size:20px;font-weight:800;color:#6366f1'>Oila Hisobchi</div><div style='font-size:12px;color:#6b7280'>" +
-        (oila && oila.nomi ? oila.nomi : i18n.t("family", { defaultValue: "Oila" })) +
+        (oila && oila.nomi ? oila.nomi : t("xp_familyFallback")) +
         " \u00b7 " +
         pdfWho +
         " \u00b7 " +
@@ -350,20 +311,20 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         "</div></div></div>" +
         "<div style='border-bottom:3px solid #6366f1;margin-bottom:14px'></div>" +
         "<p style='color:#6b7280;font-size:12px'>" +
-        i18n.t("export_generated", { defaultValue: "Yaratildi" }) +
+        t("xp_generated") +
         ": " +
-        new Date().toLocaleString() +
+        new Date().toLocaleString("uz-UZ") +
         "</p>" +
         "<div class='sum'><div class='box'><div class='lbl'>" +
-        i18n.t("income", { defaultValue: "Daromad" }) +
+        t("xp_income") +
         "</div><div class='val g'>" +
         jD2.toLocaleString() +
         "</div></div><div class='box'><div class='lbl'>" +
-        i18n.t("expense", { defaultValue: "Xarajat" }) +
+        t("xp_expense") +
         "</div><div class='val r'>" +
         jX2.toLocaleString() +
         "</div></div><div class='box'><div class='lbl'>" +
-        i18n.t("export_balance_label", { defaultValue: "Balans" }) +
+        t("xp_balance") +
         "</div><div class='val " +
         (jD2 - jX2 >= 0 ? "g" : "r") +
         "'>" +
@@ -371,9 +332,9 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         "</div></div></div>" +
         "<div class='charts'>" +
         "<div class='chart'><div class='ct'>" +
-        i18n.t("export_categories_title", { defaultValue: "Kategoriyalar" }) +
+        t("xp_categories") +
         "</div>" +
-        donutSVG(katData, i18n.t("expense", { defaultValue: "Xarajat" })) +
+        donutSVG(katData, t("xp_expense")) +
         "</div>" +
         "<div class='chart'><div class='ct'>" +
         secondDonut.title +
@@ -381,46 +342,46 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         secondDonut.html +
         "</div>" +
         "<div class='chart'><div class='ct'>" +
-        i18n.t("export_monthly_trend_title", { defaultValue: "Oy dinamikasi" }) +
+        t("xp_monthlyTrend") +
         "</div>" +
         barSVG +
         "</div>" +
         "</div>" +
         "<h2>" +
-        i18n.t("export_categories_title", { defaultValue: "Kategoriyalar" }) +
+        t("xp_categories") +
         "</h2><table><thead><tr><th>" +
-        i18n.t("export_category", { defaultValue: "Kategoriya" }) +
+        t("xp_colCategory") +
         "</th><th style='text-align:right'>" +
-        i18n.t("export_amount", { defaultValue: "Summa" }) +
+        t("xp_colAmount") +
         "</th><th style='text-align:center'>%</th></tr></thead><tbody>" +
         (katRows || "<tr><td colspan=3 style='text-align:center;color:#9ca3af'>-</td></tr>") +
         "</tbody></table>" +
         "<h2>" +
-        i18n.t("export_expenses_title", { defaultValue: "Xarajatlar" }) +
+        t("xp_expensesTitle") +
         "</h2><table><thead><tr><th>" +
-        i18n.t("export_date", { defaultValue: "Sana" }) +
+        t("xp_colDate") +
         "</th><th>" +
-        i18n.t("export_category", { defaultValue: "Kategoriya" }) +
+        t("xp_colCategory") +
         "</th><th>" +
-        i18n.t("export_note", { defaultValue: "Izoh" }) +
+        t("xp_colNote") +
         "</th><th style='text-align:right'>" +
-        i18n.t("export_amount", { defaultValue: "Summa" }) +
+        t("xp_colAmount") +
         "</th><th>" +
-        i18n.t("export_who", { defaultValue: "Kim" }) +
+        t("xp_colWho") +
         "</th></tr></thead><tbody>" +
         (xRows || "<tr><td colspan=5 style='text-align:center;color:#9ca3af'>-</td></tr>") +
         "</tbody></table>" +
         (qRows
           ? "<h2>" +
-            i18n.t("export_active_debts_title", { defaultValue: "Faol qarzlar" }) +
+            t("xp_activeDebtsTitle") +
             "</h2><table><thead><tr><th>" +
-            i18n.t("export_person", { defaultValue: "Kim" }) +
+            t("xp_colPerson") +
             "</th><th>" +
-            i18n.t("export_type", { defaultValue: "Tur" }) +
+            t("xp_colType") +
             "</th><th style='text-align:right'>" +
-            i18n.t("export_amount", { defaultValue: "Summa" }) +
+            t("xp_colAmount") +
             "</th><th>" +
-            i18n.t("export_return_label", { defaultValue: "Qaytarish" }) +
+            t("xp_colReturn") +
             "</th></tr></thead><tbody>" +
             qRows +
             "</tbody></table>"
@@ -428,19 +389,19 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         "<div class='qr'><img src='" +
         refQR +
         "' alt='QR'/><div style='text-align:left'><div style='font-size:13px;font-weight:700;color:#374151'>" +
-        i18n.t("export_invitation_text", { name: user?.ism || "", defaultValue: `${user?.ism || ""} sizni taklif qiladi` }) +
+        t("xp_inviteText", { name: user?.ism || "" }) +
         "</div><div style='font-size:11px;color:#6b7280;margin-top:3px'>" +
-        i18n.t("export_scan_qr_desc", { defaultValue: "QR kodni skanerlab Oila Hisobchi ilovasiga qo'shiling" }) +
+        t("xp_qrScanText") +
         "</div><div style='font-size:9px;color:#9ca3af;margin-top:4px;word-break:break-all'>" +
         refLink +
         "</div></div></div>" +
         "<div class='foot'>" +
-        i18n.t("export_footer_note", { defaultValue: "Bu hisobot Oila Hisobchi ilovasi tomonidan yaratilgan" }) +
+        t("xp_footerGenerated") +
         " \u00b7 " +
         month +
         "</div>" +
         "<button class='btn' onclick='window.print()'>" +
-        i18n.t("export_pdf_button", { defaultValue: "PDF saqlash / Chop etish" }) +
+        t("xp_savePrintBtn") +
         "</button></body></html>";
 
       // Use a hidden iframe to bypass popup blockers and WebView constraints
@@ -475,17 +436,9 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
           const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
 
           if (printInitiated) {
-            ok$(
-              i18n.t("export_print_success_html_fallback", { defaultValue: "Chop etish yuborildi va oflayn HTML hisobot fayli yuklab olindi!" }),
-              "ok"
-            );
+            ok$(t("xp_printedAndDownloaded"), "ok");
           } else {
-            ok$(
-              okk
-                ? i18n.t("export_html_success_pdf_guide", { defaultValue: "HTML hisobot fayli yuklandi! Uni ochib osongina PDF saqlashingiz mumkin." })
-                : i18n.t("error_generic", { defaultValue: "Yuklashda xatolik yuz berdi" }),
-              okk ? "ok" : "err"
-            );
+            ok$(okk ? t("xp_htmlDownloadedHint") : t("xp_downloadError"), okk ? "ok" : "err");
           }
 
           setTimeout(() => {
@@ -497,10 +450,10 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       } catch (errIframe) {
         console.error("Iframe printing failed:", errIframe);
         const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
-        ok$(okk ? i18n.t("export_html_success_pdf_guide", { defaultValue: "HTML hisobot fayli yuklandi!" }) : i18n.t("error_generic", { defaultValue: "Xatolik" }), okk ? "ok" : "err");
+        ok$(okk ? t("xp_htmlDownloaded") : t("xp_error"), okk ? "ok" : "err");
       }
     } catch (e) {
-      ok$(i18n.t("error_generic", { defaultValue: "Xatolik" }) + ": " + e.message, "err");
+      ok$(t("xp_errorMsg", { msg: e.message }), "err");
     }
   };
 
