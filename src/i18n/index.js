@@ -9,6 +9,9 @@ import goalsRu from "../locales/goals.ru.json";
 import budgetaiUz from "../locales/budgetai.uz.json";
 import budgetaiEn from "../locales/budgetai.en.json";
 import budgetaiRu from "../locales/budgetai.ru.json";
+import gardenUz from "../locales/garden.uz.json";
+import gardenEn from "../locales/garden.en.json";
+import gardenRu from "../locales/garden.ru.json";
 import { fetchMeta, getTranslationBundle } from "./translationService.js";
 
 // ═══════════════════════════════════════════════════════════════════
@@ -16,6 +19,7 @@ import { fetchMeta, getTranslationBundle } from "./translationService.js";
 //  "translation" — asosiy ilova matnlari (default namespace).
 //  "goals"       — Smart Goals moduli (src/goals/*).
 //  "budgetai"    — Smart Budget AI moduli (src/ai/*).
+//  "garden"      — Baraka Bog'i (Garden.jsx + garden/*).
 //
 //  Qoida: yangi mustaqil modul o'z lug'atini asosiy "translation"
 //  fazosiga aralashtirmaydi — bu kalit nomlari to'qnashuvining oldini
@@ -23,7 +27,7 @@ import { fetchMeta, getTranslationBundle } from "./translationService.js";
 //  mumkin — namespace ular orasida chegara qo'yadi). Batafsil:
 //  docs/i18n-architecture.md
 // ═══════════════════════════════════════════════════════════════════
-export const NAMESPACES = ["translation", "goals", "budgetai"];
+export const NAMESPACES = ["translation", "goals", "budgetai", "garden"];
 
 // Clean detection logic for Device / Browser Language
 const getInitialLanguage = () => {
@@ -60,9 +64,9 @@ i18n
     ns: NAMESPACES,
     defaultNS: "translation",
     resources: {
-      uz: { translation: uz, goals: goalsUz, budgetai: budgetaiUz },
-      en: { translation: en, goals: goalsEn, budgetai: budgetaiEn },
-      ru: { translation: ru, goals: goalsRu, budgetai: budgetaiRu },
+      uz: { translation: uz, goals: goalsUz, budgetai: budgetaiUz, garden: gardenUz },
+      en: { translation: en, goals: goalsEn, budgetai: budgetaiEn, garden: gardenEn },
+      ru: { translation: ru, goals: goalsRu, budgetai: budgetaiRu, garden: gardenRu },
     },
     lng: initialLanguage,
     fallbackLng: "en",
