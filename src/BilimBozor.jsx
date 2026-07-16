@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { db } from "./firebase.js";
 import { td, nt, f } from "./utils/formatters.js";
 import { PALETTE } from "./utils/tokens.js";
@@ -163,23 +164,11 @@ const formatInputSum = (val) => {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
 };
 
-const getAutoDesc = (coins, pul, isKidRole, lang) => {
+const getAutoDesc = (coins, pul, isKidRole, t) => {
   if (!coins || !pul) return "";
   const cleanPul = Number(String(pul).replace(/\D/g, ""));
   const formattedPul = formatInputSum(cleanPul);
-  if (lang === "ru") {
-    if (isKidRole) {
-      return `Выдадите мне ${formattedPul} сум в качестве вознаграждения за ${coins} Bilim Coin?`;
-    } else {
-      return `Собери ${coins} Bilim Coin и получи вознаграждение в размере ${formattedPul} сум`;
-    }
-  } else {
-    if (isKidRole) {
-      return `Shu ${coins} Bilim Coin uchun menga ${formattedPul} so'm mukofot puli berasizmi?`;
-    } else {
-      return `${coins} Bilim Coin yig' va ${formattedPul} so'm mukofot ol`;
-    }
-  }
+  return t(isKidRole ? "b_autoDescKid" : "b_autoDescParent", { coins, pul: formattedPul });
 };
 
 export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, embedded=false, gameTitle, initialLevel }) {
@@ -188,7 +177,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
   const isKid  = user?.rol === "kid";
   const isBosh = user?.rol === "bosh" || user?.rol === "azo";
   const oilaId = user?.oilaId;
-  const L = (uz, ru=uz) => lg==="ru" ? ru : uz;
+  const { t } = useTranslation("bilimbozor");
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [tab, setTab]               = useState(embedded ? "oyin" : "bozor");
@@ -321,17 +310,16 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
 
   // Auto-generate description (izoh)
   useEffect(() => {
-    const currentAuto = getAutoDesc(vCoins, vPul, isKid, lg);
-    const isCurrentlyEmptyOrAuto = !vDesc || 
+    const currentAuto = getAutoDesc(vCoins, vPul, isKid, t);
+    const isCurrentlyEmptyOrAuto = !vDesc ||
       vDesc === lastAutoDescRef.current ||
-      vDesc === "200 coin yig'ish" ||
-      vDesc === "Набрать 200 монет";
+      vDesc === t("b075");
 
     if (isCurrentlyEmptyOrAuto) {
       setVDesc(currentAuto);
       lastAutoDescRef.current = currentAuto;
     }
-  }, [vCoins, vPul, lg, isKid]);
+  }, [vCoins, vPul, isKid, t]);
 
   // ── Sessiya boshlash ──
   const startSession = (lvl) => {
@@ -433,16 +421,16 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
     const coinsNum = Number(vCoins);
     const amountNum = Number(vPul.replace(/\D/g, ""));
     if (!coinsNum || !amountNum) {
-      showMsg(L("Iltimos, barcha maydonlarni to'ldiring!", "Пожалуйста, заполните все поля!"), "err");
+      showMsg(t("b001"), "err");
       return;
     }
 
     const targetKidId = isKid ? user.id : vKidId;
     if (!targetKidId) {
-      showMsg(L("Iltimos, bolani tanlang!", "Пожалуйста, выберите ребенка!"), "err");
+      showMsg(t("b002"), "err");
       return;
     }
-    const targetKidName = isKid ? (user.ism || "Bola") : ((azolar || []).find(k => k.id === vKidId)?.ism || "Bola");
+    const targetKidName = isKid ? (user.ism || t("b_kidFallback")) : ((azolar || []).find(k => k.id === vKidId)?.ism || t("b_kidFallback"));
 
     const newOffer = {
       id: Date.now(),
@@ -470,10 +458,10 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         await notifyFamily(
           uid,
           "bilim_offer",
-          L("Yangi bilim bozori taklifi", "Новое предложение на рынке знаний"),
+          t("b003"),
           isKid
-            ? L(`${targetKidName} yangi taklif kiritdi: ${coinsNum} coin uchun ${amountNum.toLocaleString()} so'm`, `${targetKidName} сделал предложение: ${amountNum.toLocaleString()} сум за ${coinsNum} монет`)
-            : L(`Ota-onangiz yangi taklif kiritdi: ${coinsNum} coiningizga ${amountNum.toLocaleString()} so'm`, `Родители сделали предложение: ${amountNum.toLocaleString()} сум за ${coinsNum} монет`),
+            ? t("b_notifyKidOffer", { kidName: targetKidName, coins: coinsNum, amount: amountNum.toLocaleString() })
+            : t("b_notifyParentOffer", { coins: coinsNum, amount: amountNum.toLocaleString() }),
           { offerId: newOffer.id }
         );
       }
@@ -485,7 +473,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
     setVCoins("");
     setVPul("");
     setVDesc("");
-    showMsg(L("Taklif muvaffaqiyatli yuborildi! 🚀", "Предложение успешно отправлено! 🚀"));
+    showMsg(t("b004"));
   };
 
   // ── Taklifni qabul qilish (acceptOffer) ──
@@ -495,8 +483,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       const currentCoins = (await db.g("bilim_coins_" + off.kidId)) || 0;
       if (currentCoins < off.coins) {
         const errMsg = isKid 
-          ? L("Sizda yetarli bilim coin yo'q! 🪙", "У вас недостаточно монет знаний! 🪙")
-          : L(`Farzandingizda yetarli bilim coin yo'q! (Mavjud: ${currentCoins}) 🪙`, `У ребенка недостаточно монет знаний! (Доступно: ${currentCoins}) 🪙`);
+          ? t("b005")
+          : t("b_notEnoughKidCoins", { coins: currentCoins });
         showMsg(errMsg, "err");
         return;
       }
@@ -522,7 +510,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         id: Date.now(),
         kategoriya: "boshqa",
         summa: off.amount,
-        izoh: L(`Bilim bozor: taklif qabul qilindi (${off.coins} coin)`, `Маркет знаний: предложение принято (${off.coins} монет)`),
+        izoh: t("b_expenseNote", { coins: off.coins }),
         sana: new Date().toISOString().slice(0, 10),
         vaqt: new Date().toTimeString().slice(0, 5),
         uid: user.id,
@@ -551,7 +539,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       setOffers(updated);
       await db.s("bilim_offer_" + oilaId, updated);
 
-      showMsg(L("🎉 Taklif qabul qilindi va pul o'tkazildi!", "🎉 Предложение принято, средства зачислены!"));
+      showMsg(t("b006"));
 
       // Notify recipient
       try {
@@ -559,17 +547,14 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         await notifyFamily(
           notifyTarget,
           "bilim_offer_accepted",
-          L("Taklif qabul qilindi!", "Предложение принято!"),
-          L(
-            `Taklifingiz qabul qilindi: ${off.coins} coin evaziga ${off.amount.toLocaleString()} so'm o'tkazildi.`,
-            `Ваше предложение принято: ${off.amount.toLocaleString()} сум зачислены за ${off.coins} монет.`
-          )
+          t("b007"),
+          t("b_notifyAccepted", { coins: off.coins, amount: off.amount.toLocaleString() })
         );
       } catch (e2) {
         console.error("Failed to notify acceptance:", e2);
       }
     } catch (e) {
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+      showMsg(t("b008"), "err");
     }
   };
 
@@ -589,7 +574,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       });
       setOffers(updated);
       await db.s("bilim_offer_" + oilaId, updated);
-      showMsg(L("Taklif rad etildi ❌", "Предложение отклонено ❌"));
+      showMsg(t("b009"));
 
       // Notify recipient
       try {
@@ -597,14 +582,14 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         await notifyFamily(
           recipient,
           "bilim_offer_rejected",
-          L("Taklif rad etildi", "Предложение отклонено"),
-          L(`Yuborgan taklifingiz rad etildi: ${off.coins} coin, ${off.amount.toLocaleString()} so'm`, `Ваше предложение отклонено: ${off.coins} монет, ${off.amount.toLocaleString()} сум`)
+          t("b010"),
+          t("b_notifyRejected", { coins: off.coins, amount: off.amount.toLocaleString() })
         );
       } catch (e) {
         console.error(e);
       }
     } catch (e) {
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+      showMsg(t("b008"), "err");
     }
   };
 
@@ -614,7 +599,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       const coinsNum = Number(counterCoins);
       const amountNum = Number(counterPul.replace(/\D/g, ""));
       if (!coinsNum || !amountNum) {
-        showMsg(L("Iltimos, barcha maydonlarni to'ldiring!", "Пожалуйста, заполните все поля!"), "err");
+        showMsg(t("b001"), "err");
         return;
       }
 
@@ -627,7 +612,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         amount: amountNum,
         status: "pending",
         counterOf: off.id,
-        note: L("Qarshi taklif", "Встречное предложение"),
+        note: t("b_counterNote"),
         createdAt: new Date().toISOString(),
         createdBy: user.id
       };
@@ -651,7 +636,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       setCounteringOfferId(null);
       setCounterCoins("");
       setCounterPul("");
-      showMsg(L("Qarshi taklif yuborildi! 🔄", "Встречное предложение отправлено! 🔄"));
+      showMsg(t("b011"));
 
       // Notify recipient
       try {
@@ -659,17 +644,14 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         await notifyFamily(
           recipient,
           "bilim_offer_countered",
-          L("Yangi qarshi taklif!", "Новое встречное предложение!"),
-          L(
-            `Taklifingizga qarshi yangi taklif berildi: ${coinsNum} coin uchun ${amountNum.toLocaleString()} so'm`,
-            `Получено встречное предложение: ${amountNum.toLocaleString()} сум за ${coinsNum} монет`
-          )
+          t("b012"),
+          t("b_notifyCountered", { coins: coinsNum, amount: amountNum.toLocaleString() })
         );
       } catch (e) {
         console.error(e);
       }
     } catch (e) {
-      showMsg(L("❌ Xato yuz berdi", "❌ Ошибка"), "err");
+      showMsg(t("b008"), "err");
     }
   };
 
@@ -719,13 +701,13 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
       <div style={{ padding: "14px 16px 0" }}>
         <PageHeader 
           th={th} 
-          title={embedded ? (gameTitle || L("So'z o'rgan", "Учи слова")) : L("Bilim Bozori", "Рынок знаний")} 
+          title={embedded ? (gameTitle || t("b013")) : t("b014")} 
           onBack={onBack} 
           right={!embedded && (
             <div style={{ display: "flex", alignItems: "center", gap: 6, background: th.am + "18", border: "1px solid " + th.am + "44", padding: "6px 12px", borderRadius: 12 }}>
               {BIco.coin(th.am, 16)}
               <span style={{ fontSize: 13, fontWeight: 800, color: th.t1 }}>
-                {bilimCoins} {L("Coin", "монет")}
+                {bilimCoins} {t("b015")}
               </span>
             </div>
           )}
@@ -737,12 +719,12 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         <div style={{ padding: "0 16px", marginTop: 8 }}>
           <div style={{ display: "flex", background: th.sur, border: `1px solid ${th.bor}`, borderRadius: 16, padding: 4, marginBottom: 16 }}>
             {[
-              { id: "bozor", label: L("Bozor do'koni", "Магазин") },
-              { id: "natija", label: L("Natijalar", "Результаты") }
-            ].map(t => {
-              const isSel = tab === t.id;
+              { id: "bozor", label: t("b016") },
+              { id: "natija", label: t("b017") }
+            ].map(tabItem => {
+              const isSel = tab === tabItem.id;
               return (
-                <button key={t.id} onClick={() => setTab(t.id)}
+                <button key={tabItem.id} onClick={() => setTab(tabItem.id)}
                   style={{
                     flex: 1,
                     padding: "10px 12px",
@@ -756,7 +738,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                     transition: "all 0.2s"
                   }}
                 >
-                  {t.label}
+                  {tabItem.label}
                 </button>
               );
             })}
@@ -780,7 +762,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
           {sessionWords.length===0 && !showResult && !isInitialLoading && (
             <div style={{animation:"slideUp .35s ease"}}>
               <div style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",marginBottom:14,textAlign:"center"}}>
-                {L("Daraja tanlang:","Выберите уровень:")}
+                {t("b018")}
               </div>
               {LEVELS.map(lvl => {
                 const allW = WORDS[lvl.id]||[];
@@ -793,7 +775,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                       {lvl.id===1 ? BIco.leaf(lvl.color, 24) : lvl.id===2 ? BIco.star(lvl.color, 24) : BIco.trophy(lvl.color, 24)}
                     </div>
                     <div style={{flex:1}}>
-                      <div style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b"}}>{lvl.name}</div>
+                      <div style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b"}}>{t("level_" + lvl.id)}</div>
                       <div style={{display:"flex",gap:10,marginTop:4,flexWrap:"wrap"}}>
                         <span style={{fontSize:11,color:"#22c55e",fontWeight:700,display:"inline-flex",alignItems:"center",gap:3}}>{BIco.star("#22c55e", 12)} {newCount} yangi +{lvl.baseCoins} {BIco.coin("#22c55e", 11)}</span>
                         <span style={{fontSize:11,color:"#f59e0b",fontWeight:700,display:"inline-flex",alignItems:"center",gap:3}}>{BIco.fire("#f59e0b", 12)} {seenCount} takror +{Math.round(lvl.baseCoins*0.6)} {BIco.coin("#f59e0b", 11)}</span>
@@ -832,9 +814,9 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 return (
                   <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
                     <div style={{background:seen===0?"#22c55e22":seen===1?"#f59e0b22":"#ef444422",border:`1.5px solid ${seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444"}`,borderRadius:20,padding:"4px 14px",display:"inline-flex",alignItems:"center",gap:6,fontSize:13,fontWeight:700,color:seen===0?"#15803d":seen===1?"#92400e":"#991b1b"}}>
-                      {seen===0 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.star("#22c55e",12)} {L("Yangi so'z","Новое слово")}</span>}
-                      {seen===1 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",12)} {L("1 marta ko'rilgan","Видел 1 раз")}</span>}
-                      {seen>1 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#ef4444",12)} {L("Ko'p ko'rilgan","Повторение")}</span>}
+                      {seen===0 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.star("#22c55e",12)} {t("b019")}</span>}
+                      {seen===1 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",12)} {t("b020")}</span>}
+                      {seen>1 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#ef4444",12)} {t("b021")}</span>}
                       <span style={{color:seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444",display:"inline-flex",alignItems:"center",gap:2}}>+{coinAmt} {BIco.coin(seen===0?"#22c55e":seen===1?"#f59e0b":"#ef4444", 12)}</span>
                     </div>
                   </div>
@@ -846,7 +828,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 <div style={{fontSize:64,marginBottom:12,filter:"drop-shadow(0 4px 6px rgba(0,0,0,0.12))", animation: "bounce 2s infinite ease-in-out"}}>{WORD_EMOJIS[curWord.en.toLowerCase()] || "📝"}</div>
                 <div style={{fontSize:11,fontWeight:700,color:dark?"#94a3b8":"#64748b",letterSpacing:2,marginBottom:4}}>ENGLISH</div>
                 <div style={{fontSize:34,fontWeight:900,color:dark?"#f1f5f9":"#1e293b",letterSpacing:1}}>{curWord.en}</div>
-                {streak>2 && <div style={{marginTop:8,fontSize:13,color:"#f59e0b",fontWeight:700,animation:"pulse 1s ease-in-out infinite",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",14)} {streak} {L("ketma-ket!","подряд!")}</div>}
+                {streak>2 && <div style={{marginTop:8,fontSize:13,color:"#f59e0b",fontWeight:700,animation:"pulse 1s ease-in-out infinite",display:"inline-flex",alignItems:"center",gap:4}}>{BIco.fire("#f59e0b",14)} {streak} {t("b022")}</div>}
               </div>
 
               {/* Variantlar */}
@@ -884,29 +866,29 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                 {sessionScore.right>=8 ? BIco.trophy("#8b5cf6", 48) : sessionScore.right>=5 ? BIco.star("#f59e0b", 48) : BIco.fire("#ef4444", 48)}
               </div>
               <div style={{fontSize:22,fontWeight:900,color:dark?"#f1f5f9":"#1e293b",marginBottom:6}}>
-                {L("Sessiya tugadi!","Сессия завершена!")}
+                {t("b023")}
               </div>
               <div style={{fontSize:15,color:dark?"#94a3b8":"#64748b",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.check("#22c55e", 14)} {sessionScore.right} {L("to'g'ri","верно")}</span>
+                <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.check("#22c55e", 14)} {sessionScore.right} {t("b_correctSession")}</span>
                 <span>/</span>
-                <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.cross("#ef4444", 14)} {sessionScore.wrong} {L("xato","ошибка")}</span>
+                <span style={{display:"inline-flex",alignItems:"center",gap:4}}>{BIco.cross("#ef4444", 14)} {sessionScore.wrong} {t("b024")}</span>
               </div>
               <div style={{background:`linear-gradient(135deg,${curLvl?.color}22,${curLvl?.color}0a)`,border:`2px solid ${curLvl?.color}44`,borderRadius:20,padding:"18px",marginBottom:20}}>
-                <div style={{fontSize:13,color:dark?"#94a3b8":"#64748b"}}>{L("Bu sessiyada:","Заработано:")}</div>
+                <div style={{fontSize:13,color:dark?"#94a3b8":"#64748b"}}>{t("b025")}</div>
                 <div style={{fontSize:30,fontWeight:900,color:"#f59e0b",margin:"6px 0",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>+{sessionScore.earned} {BIco.coin("#f59e0b", 24)}</div>
-                <div style={{fontSize:13,color:dark?"#64748b":"#94a3b8",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{L("Jami:","Всего:")} {bilimCoins} {BIco.coin("#64748b", 12)}</div>
+                <div style={{fontSize:13,color:dark?"#64748b":"#94a3b8",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>{t("b026")} {bilimCoins} {BIco.coin("#64748b", 12)}</div>
                 {sessionScore.right>0 && (
                   <div style={{fontSize:12,color:dark?"#64748b":"#94a3b8",marginTop:6,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                    {BIco.info("#3b82f6", 12)} {L("Yangi so'zlar ko'proq coin beradi","Новые слова дают больше монет")}
+                    {BIco.info("#3b82f6", 12)} {t("b027")}
                   </div>
                 )}
               </div>
               <div style={{display:"flex",gap:10}}>
                 <button onClick={()=>setSessionWords([])} style={{flex:1,padding:"14px",borderRadius:16,border:"none",background:dark?"#334155":"#f1f5f9",color:dark?"#94a3b8":"#64748b",fontWeight:700,fontSize:15,cursor:"pointer"}}>
-                  {L("Orqaga","Назад")}
+                  {t("b028")}
                 </button>
                 <button onClick={()=>startSession(level)} style={{flex:1,padding:"14px",borderRadius:16,border:"none",background:`linear-gradient(135deg,${curLvl?.color},${curLvl?.color}cc)`,color:"#fff",fontWeight:800,fontSize:15,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                  {BIco.fire("#fff", 14)} {L("Yana o'ynash","Ещё раз")}
+                  {BIco.fire("#fff", 14)} {t("b029")}
                 </button>
               </div>
             </div>
@@ -934,16 +916,10 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
             <span style={{ display: "inline-flex", marginTop: 2 }}>{BIco.info(th.ac, 18)}</span>
             <div>
               <strong style={{ display: "block", color: th.t1, marginBottom: 4, fontSize: 14 }}>
-                {L("Bilim Bozori 2.0 — Ikki tomonlama savdolashish 🤝", "Рынок знаний 2.0 — Двусторонний торг 🤝")}
+                {t("b030")}
               </strong>
               <span>
-                {isKid ? L(
-                  "Siz va ota-onangiz o'zaro savdolashishingiz mumkin! Coinlaringiz evaziga so'm taklif qiling, rad eting yoki qarshi taklif bering. Kelishuv qabul qilingandagina coinlar yechiladi va real so'm hisobingizga o'tadi!",
-                  "Вы и родители можете торговаться друг с другом! Предлагайте сум за свои монеты, отклоняйте или делайте встречные предложения. Монеты спишутся и зачислятся на баланс только после согласия обеих сторон!"
-                ) : L(
-                  "Farzandlaringiz bilan bilim coinlari evaziga so'm almashish uchun savdolashing! Takliflarni qabul qiling, rad eting yoki o'z narxingizni (qarshi taklif) yuboring.",
-                  "Торгуйтесь с детьми по обмену монет знаний на сум! Принимайте предложения, отклоняйте или делайте встречные предложения со своей ценой."
-                )}
+                {isKid ? t("b031") : t("b032")}
               </span>
             </div>
           </div>
@@ -962,7 +938,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {BIco.user(th.ac, 18)}
               <span style={{ fontSize: 14, fontWeight: 700, color: th.t1 }}>
-                {isKid ? L("Sizning bilim coinlaringiz:", "Ваши монеты знаний:") : L("Farzandlar balanslari:", "Балансы детей:")}
+                {isKid ? t("b033") : t("b034")}
               </span>
             </div>
             {isKid ? (
@@ -1000,7 +976,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               transition: "all 0.2s"
             }}
           >
-            {BIco.plus(th.ac, 18)} {isKid ? L("Yangi taklif yuborish", "Предложить сделку") : L("Yangi taklif yuborish", "Сделать предложение ребенку")}
+            {BIco.plus(th.ac, 18)} {isKid ? t("b_sendOfferKid") : t("b_sendOfferParent")}
           </button>
 
           {/* Filter offers for parent / kid */}
@@ -1013,8 +989,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               return (
                 <div style={{textAlign:"center",padding:"40px 20px",color:th.t3}}>
                   <div style={{marginBottom:10,display:"flex",justifyContent:"center"}}>{BIco.empty(th.bor, 48)}</div>
-                  <div style={{fontSize:14, fontWeight: 600}}>{L("Hozircha savdolar yo'q","Активных сделок нет")}</div>
-                  <div style={{fontSize:12,marginTop:6, color: th.t2}}>{L("Boshlash uchun yuqoridagi tugma orqali yangi taklif kiritishingiz mumkin.","Для начала создайте новое предложение по кнопке выше.")}</div>
+                  <div style={{fontSize:14, fontWeight: 600}}>{t("b035")}</div>
+                  <div style={{fontSize:12,marginTop:6, color: th.t2}}>{t("b036")}</div>
                 </div>
               );
             }
@@ -1034,19 +1010,19 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                   if (off.status === "pending") {
                     statusColor = "#f59e0b";
                     statusBg = "#f59e0b12";
-                    statusLabel = L("Kutilmoqda", "Ожидает");
+                    statusLabel = t("b037");
                   } else if (off.status === "accepted") {
                     statusColor = "#10b981";
                     statusBg = "#10b98112";
-                    statusLabel = L("Qabul qilindi", "Принято");
+                    statusLabel = t("b038");
                   } else if (off.status === "rejected") {
                     statusColor = "#ef4444";
                     statusBg = "#ef444412";
-                    statusLabel = L("Rad etildi", "Отклонено");
+                    statusLabel = t("b039");
                   } else if (off.status === "countered") {
                     statusColor = "#3b82f6";
                     statusBg = "#3b82f612";
-                    statusLabel = L("Qarshi taklif", "Встречное");
+                    statusLabel = t("b_counterStatus");
                   }
 
                   return (
@@ -1066,8 +1042,8 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                           {BIco.user(th.t2, 14)}
                           <span style={{ fontSize: 12, color: th.t2, fontWeight: 600 }}>
                             {isKid 
-                              ? (off.fromRole === "parent" ? L("Ota-ona taklifi", "Предложение родителей") : L("Siz yuborgan taklif", "Ваше предложение"))
-                              : (off.fromRole === "kid" ? L(`${off.kidName} taklifi`, `Предложение ${off.kidName}`) : L(`Sizning (${off.kidName}ga) taklifingiz`, `Ваше предложение (${off.kidName})`))
+                              ? (off.fromRole === "parent" ? t("b040") : t("b041"))
+                              : (off.fromRole === "kid" ? t("b_offerFromKid", { kidName: off.kidName }) : t("b_offerToKid", { kidName: off.kidName }))
                             }
                           </span>
                         </div>
@@ -1095,16 +1071,16 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                         border: `1px solid ${th.bor}`
                       }}>
                         <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>{L("Bilim Coinlari", "Монеты")}</div>
+                          <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>{t("b042")}</div>
                           <div style={{ fontSize: 16, fontWeight: 800, color: th.am, display: "flex", alignItems: "center", gap: 4 }}>
                             {BIco.coin(th.am, 16)} {off.coins} Coin
                           </div>
                         </div>
                         <span style={{ fontSize: 18, color: th.t3 }}>➔</span>
                         <div style={{ textAlign: "center" }}>
-                          <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>{L("Mukofot", "Вознаграждение")}</div>
+                          <div style={{ fontSize: 11, color: th.t2, marginBottom: 4 }}>{t("b043")}</div>
                           <div style={{ fontSize: 16, fontWeight: 800, color: th.gr }}>
-                            {off.amount.toLocaleString()} so'm
+                            {off.amount.toLocaleString()} {t("b_currency")}
                           </div>
                         </div>
                       </div>
@@ -1139,7 +1115,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                               transition: "all 0.2s"
                             }}
                           >
-                            {L("Rad etish", "Отклонить")}
+                            {t("b044")}
                           </button>
                           
                           <button onClick={() => {
@@ -1160,7 +1136,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                               transition: "all 0.2s"
                             }}
                           >
-                            {L("Savdolashish", "Торговаться")}
+                            {t("b045")}
                           </button>
 
                           <button onClick={() => acceptOffer(off)}
@@ -1178,7 +1154,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                               boxShadow: "0 2px 6px rgba(16,185,129,0.2)"
                             }}
                           >
-                            {L("Qabul qilish", "Принять")}
+                            {t("b046")}
                           </button>
                         </div>
                       )}
@@ -1199,7 +1175,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                           gap: 6
                         }}>
                           <span style={{ display: "inline-flex", animation: "pulse 1.5s infinite" }}>{BIco.star(th.ac, 12)}</span>
-                          {L("Qarshi tomondan javob kutilmoqda...", "Ожидание ответа с другой стороны...")}
+                          {t("b047")}
                         </div>
                       )}
 
@@ -1217,12 +1193,12 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                           animation: "slideDown 0.2s ease"
                         }}>
                           <div style={{ fontSize: 12, fontWeight: 700, color: th.t1 }}>
-                            {L("Yangi qarshi taklif kiritish 🔄", "Ввести встречное предложение 🔄")}
+                            {t("b048")}
                           </div>
                           
                           <div style={{ display: "flex", gap: 8 }}>
                             <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: 10, color: th.t2, display: "block", marginBottom: 4 }}>{L("Coins", "Монеты")}</label>
+                              <label style={{ fontSize: 10, color: th.t2, display: "block", marginBottom: 4 }}>{t("b049")}</label>
                               <input
                                 type="text"
                                 inputMode="numeric"
@@ -1242,7 +1218,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                               />
                             </div>
                             <div style={{ flex: 1 }}>
-                              <label style={{ fontSize: 10, color: th.t2, display: "block", marginBottom: 4 }}>{L("So'm (Mukofot)", "Сум (Награда)")}</label>
+                              <label style={{ fontSize: 10, color: th.t2, display: "block", marginBottom: 4 }}>{t("b050")}</label>
                               <input
                                 type="text"
                                 inputMode="numeric"
@@ -1279,7 +1255,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                                 cursor: "pointer"
                               }}
                             >
-                              {L("Bekor qilish", "Отмена")}
+                              {t("b051")}
                             </button>
                             <button onClick={() => submitCounterOffer(off)}
                               style={{
@@ -1293,7 +1269,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                                 cursor: "pointer"
                               }}
                             >
-                              {L("Yuborish 🔄", "Отправить 🔄")}
+                              {t("b052")}
                             </button>
                           </div>
                         </div>
@@ -1309,7 +1285,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
 
       {/* ══════════ NATIJA ══════════════════════════════════════ */}
       {tab==="natija" && (() => {
-        const kidName = user?.ism || "Bola";
+        const kidName = user?.ism || t("b_kidFallback");
         const analysis = analyzeLearning(sessions, lg, kidName, 30);
         const weekReport = weeklyReport(sessions, lg, kidName);
 
@@ -1350,7 +1326,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               
               const kId = v.uid || "unknown";
               if (!kidYearStats[kId]) {
-                kidYearStats[kId] = { kidName: v.kidName || "Bola", coins: 0, money: 0 };
+                kidYearStats[kId] = { kidName: v.kidName || t("b_kidFallback"), coins: 0, money: 0 };
               }
               kidYearStats[kId].coins += coins;
               kidYearStats[kId].money += money;
@@ -1382,25 +1358,25 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
             {isBosh && (
               <>
                 <div style={{display:"flex", justifyContent:"space-between",alignItems:"center",marginBottom:14}}>
-                  <span style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",display:"flex",alignItems:"center",gap:6}}>{BIco.chart("#3b82f6", 16)} {L("Bola-ona natijalari","Результаты")}</span>
+                  <span style={{fontSize:15,fontWeight:800,color:dark?"#f1f5f9":"#1e293b",display:"flex",alignItems:"center",gap:6}}>{BIco.chart("#3b82f6", 16)} {t("b053")}</span>
                   <button onClick={()=>setTab("bozor")}
                     style={{display:"flex",alignItems:"center",gap:6,background:dark?"#1e293b":"#fff",border:`1.5px solid ${dark?"#334155":"#cbd5e1"}`,borderRadius:12,padding:"6px 12px",fontSize:12,fontWeight:700,color:"#3b82f6",cursor:"pointer"}}>
-                    {BIco.store("#3b82f6", 14)} {L("Bozorga qaytish","Назад в маркет")}
+                    {BIco.store("#3b82f6", 14)} {t("b054")}
                   </button>
                 </div>
 
                 {/* Coin purchase stats card for parents */}
                 <div style={{background: dark ? "#1e293b" : "#fff", border: `1px solid ${dark ? "#334155" : "#e2e8f0"}`, borderRadius: 18, padding: "16px", marginBottom: 16}}>
                   <div style={{fontSize: 14, fontWeight: 800, color: th.t1, marginBottom: 12, display: "flex", alignItems: "center", gap: 6}}>
-                    {BIco.store(th.ac, 16)} {L("Coin xarid qilish statistikasi", "Статистика покупки монет")}
+                    {BIco.store(th.ac, 16)} {t("b055")}
                   </div>
                   
                   {/* Hafta, Oy, Yil grid */}
                   <div style={{display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 14}}>
                     {[
-                      { label: L("Shu haftada", "На этой неделе"), coins: purchaseStats.week.coins, money: purchaseStats.week.money },
-                      { label: L("Shu oyda", "В этом месяце"), coins: purchaseStats.month.coins, money: purchaseStats.month.money },
-                      { label: L("Shu yilda", "В этом году"), coins: purchaseStats.year.coins, money: purchaseStats.year.money }
+                      { label: t("b056"), coins: purchaseStats.week.coins, money: purchaseStats.week.money },
+                      { label: t("b057"), coins: purchaseStats.month.coins, money: purchaseStats.month.money },
+                      { label: t("b058"), coins: purchaseStats.year.coins, money: purchaseStats.year.money }
                     ].map((item, idx) => (
                       <div key={idx} style={{textAlign: "center", background: th.bg, borderRadius: 12, padding: "10px", border: `1px solid ${th.bor}`}}>
                         <div style={{fontSize: 10, color: th.t2, fontWeight: 700, marginBottom: 4}}>{item.label}</div>
@@ -1408,7 +1384,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                           {item.coins} {BIco.coin("#f59e0b", 10)}
                         </div>
                         <div style={{fontSize: 11, fontWeight: 700, color: th.gr, marginTop: 2}}>
-                          {item.money.toLocaleString()} so'm
+                          {item.money.toLocaleString()} {t("b_currency")}
                         </div>
                       </div>
                     ))}
@@ -1418,16 +1394,13 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                   <div style={{borderTop: `1px solid ${th.bor}`, paddingTop: 12}}>
                     {purchaseStats.kids.length === 0 ? (
                       <div style={{fontSize: 12, color: th.t3, textAlign: "center"}}>
-                        {L("Hozircha xarid qilingan coinlar yo'q.", "Пока нет купленных монет.")}
+                        {t("b059")}
                       </div>
                     ) : (
                       <div style={{display: "flex", flexDirection: "column", gap: 8}}>
                         {purchaseStats.kids.map((kStat, idx) => (
                           <div key={idx} style={{fontSize: 12, color: th.t2, lineHeight: "1.4", background: th.bg, padding: "8px 12px", borderRadius: 10}}>
-                            🏆 {L(
-                              `Bu yil farzandingiz ${kStat.kidName}dan jami ${kStat.coins} ta bilim coinni ${kStat.money.toLocaleString()} so'mga sotib oldingiz.`,
-                              `В этом году вы купили у ребенка ${kStat.kidName} в общей сложности ${kStat.coins} монет знаний за ${kStat.money.toLocaleString()} сум.`
-                            )}
+                            🏆 {t("b_yearSummary", { kidName: kStat.kidName, coins: kStat.coins, money: kStat.money.toLocaleString() })}
                           </div>
                         ))}
                       </div>
@@ -1440,10 +1413,10 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
             {/* Umumiy */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
               {[
-                {label:"Bilim Coin", val:bilimCoins, ico:BIco.coin("#f59e0b", 28), color:"#f59e0b"},
-                {label:L("O'ynalgan o'yinlar","Игр сыграно"), val:sessions.length, ico:BIco.book("#3b82f6", 28), color:"#3b82f6"},
-                {label:L("Ketma-ket","Серия"), val:streak, ico:BIco.fire("#ef4444", 28), color:"#ef4444"},
-                {label:L("Bajarilgan","Выполнено"), val:vazifalar.filter(v=>v.uid===user?.id&&v.paid).length, ico:BIco.check("#22c55e", 28), color:"#22c55e"},
+                {label:t("b_bilimCoinLabel"), val:bilimCoins, ico:BIco.coin("#f59e0b", 28), color:"#f59e0b"},
+                {label:t("b060"), val:sessions.length, ico:BIco.book("#3b82f6", 28), color:"#3b82f6"},
+                {label:t("b061"), val:streak, ico:BIco.fire("#ef4444", 28), color:"#ef4444"},
+                {label:t("b062"), val:vazifalar.filter(v=>v.uid===user?.id&&v.paid).length, ico:BIco.check("#22c55e", 28), color:"#22c55e"},
               ].map((s,i) => (
                 <div key={i} style={{background:dark?"#1e293b":"#fff",border:`1px solid ${dark?"#334155":"#e2e8f0"}`,borderRadius:16,padding:"16px",textAlign:"center"}}>
                   <div style={{height:32,display:"flex",alignItems:"center",justifyContent:"center"}}>{s.ico}</div>
@@ -1470,12 +1443,12 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
             {/* Haftalik progress */}
             <div style={{background:dark?"#1e293b":"#fff",border:`1px solid ${dark?"#334155":"#e2e8f0"}`,borderRadius:18,padding:"16px",marginBottom:16}}>
               <div style={{fontSize:14,fontWeight:800,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>
-                {BIco.chart(th.ac, 16)} {L("Haftalik natijalar", "Недельные результаты")}
+                {BIco.chart(th.ac, 16)} {t("b063")}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                 <div style={{textAlign:"center",background:th.bg,borderRadius:12,padding:"10px"}}>
                   <div style={{fontSize:16,fontWeight:900,color:th.ac}}>{weekReport.games}</div>
-                  <div style={{fontSize:10,color:th.t2}}>{L("O'yin", "Игры")}</div>
+                  <div style={{fontSize:10,color:th.t2}}>{t("b064")}</div>
                 </div>
                 <div style={{textAlign:"center",background:th.bg,borderRadius:12,padding:"10px"}}>
                   <div style={{fontSize:16,fontWeight:900,color:"#f59e0b"}}>{weekReport.coins}</div>
@@ -1491,13 +1464,13 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
             {/* Oxirgi o'yinlar tarixi */}
             <div style={{background:dark?"#1e293b":"#fff",border:`1px solid ${dark?"#334155":"#e2e8f0"}`,borderRadius:18,padding:"16px"}}>
               <div style={{fontSize:14,fontWeight:800,color:th.t1,marginBottom:12,display:"flex",alignItems:"center",gap:6}}>
-                {BIco.game(th.ac, 16)} {L("O'yinlar tarixi", "История игр")}
+                {BIco.game(th.ac, 16)} {t("b065")}
               </div>
               
               {sessions.length === 0 ? (
                 <div style={{textAlign:"center",padding:"24px 10px",color:th.t3}}>
                   {BIco.empty(th.t3, 32)}
-                  <div style={{fontSize:12,marginTop:8}}>{L("Hozircha o'yinlar o'ynalmagan", "Игр пока не сыграно")}</div>
+                  <div style={{fontSize:12,marginTop:8}}>{t("b066")}</div>
                 </div>
               ) : (
                 <div style={{display:"flex",flexDirection:"column",gap:10}}>
@@ -1513,7 +1486,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                           <div style={{fontSize:10,color:th.t3,marginTop:2}}>{dateStr}</div>
                         </div>
                         <div style={{textAlign:"right"}}>
-                          <div style={{fontSize:12,fontWeight:800,color:th.gr}}>{s.pct}% {L("to'g'ri", "правильно")}</div>
+                          <div style={{fontSize:12,fontWeight:800,color:th.gr}}>{s.pct}% {t("b_correctPct")}</div>
                           <div style={{fontSize:10,fontWeight:700,color:"#f59e0b",marginTop:2,display:"flex",alignItems:"center",gap:3,justifyContent:"flex-end"}}>
                             +{s.coins} {BIco.coin("#f59e0b", 12)}
                           </div>
@@ -1533,14 +1506,14 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
         <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.7)",zIndex:100,display:"flex",alignItems:"flex-end"}} onClick={()=>setShowAddV(false)}>
           <div style={{background:th.sur,borderRadius:"24px 24px 0 0",padding:"24px 22px 40px",width:"100%"}} onClick={e=>e.stopPropagation()}>
             <div style={{fontSize:17,fontWeight:800,color:th.t1,marginBottom:6,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-              {BIco.plus(th.ac, 16)} {isKid ? L("Taklif yuborish", "Предложить задание") : L("Bilim Vazifasi qo'shish", "Добавить задание")}
+              {BIco.plus(th.ac, 16)} {isKid ? t("b067") : t("b068")}
             </div>
 
             {/* Target parent selection chip row if user is kid */}
             {isKid && (
               <div style={{ marginBottom: 12 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 6, display: "flex", alignItems: "center", gap: 4 }}>
-                  {BIco.user(th.t2, 12)} {L("Kimga yuborilsin?", "Кому отправить предложение?")}
+                  {BIco.user(th.t2, 12)} {t("b069")}
                 </div>
                 <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 6 }}>
                   <button onClick={() => setVParentId("all")}
@@ -1556,7 +1529,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
                       whiteSpace: "nowrap"
                     }}
                   >
-                    {L("Ota-ona", "Родители")}
+                    {t("b070")}
                   </button>
                   {(azolar || []).filter(a => a.rol === "bosh" || a.rol === "azo").map(a => (
                     <button key={a.id} onClick={() => setVParentId(a.id)}
@@ -1581,7 +1554,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
 
             {isBosh && kids.length>1 && (
               <div style={{marginBottom:12}}>
-                <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{BIco.user(th.t2, 12)} {L("Bola tanlang","Выберите ребёнка")}</div>
+                <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:6,display:"flex",alignItems:"center",gap:4}}>{BIco.user(th.t2, 12)} {t("b071")}</div>
                 <div style={{display:"flex",gap:8}}>
                   {kids.map(k => (
                     <button key={k.id} onClick={()=>setVKidId(k.id)}
@@ -1593,7 +1566,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               </div>
             )}
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:4}}>{L("Necha Bilim Coin yig'ilsin?","Сколько монет набрать?")}</div>
+              <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:4}}>{t("b072")}</div>
               <input 
                 value={vCoins} 
                 onChange={e => setVCoins(e.target.value.replace(/\D/g, ""))} 
@@ -1604,7 +1577,7 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               />
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:4}}>{L("Mukofot miqdori (so'm)","Вознаграждение (сум)")}</div>
+              <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:4}}>{t("b073")}</div>
               <input 
                 value={vPul} 
                 onChange={e => {
@@ -1618,26 +1591,26 @@ export default function BilimBozor({ user, lg="uz", onBack, dark, oila, azolar, 
               />
             </div>
             <div style={{marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:4}}>{L("Izoh (ixtiyoriy)","Описание (необязательно)")}</div>
+              <div style={{fontSize:12,fontWeight:700,color:th.t2,marginBottom:4}}>{t("b074")}</div>
               <input 
                 value={vDesc} 
                 onChange={e => setVDesc(e.target.value)} 
                 type="text" 
-                placeholder={L("200 coin yig'ish","Набрать 200 монет")}
+                placeholder={t("b075")}
                 style={{width:"100%",padding:"12px 14px",borderRadius:12,border:`1.5px solid ${th.bor}`,background:th.bg,color:th.t1,fontSize:15,outline:"none",boxSizing:"border-box"}}
               />
             </div>
             {vCoins && vPul && (
               <div style={{background:th.gr+"18",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:13,color:th.gr,fontWeight:600,display:"flex",alignItems:"center",gap:4}}>
-                {BIco.target(th.gr, 14)} {L(`Bola ${vCoins} coin yig'ganda → ${vPul} so'm oladi`,`Когда наберет ${vCoins} монет → получит ${vPul} сум`)}
+                {BIco.target(th.gr, 14)} {t("b_previewReward", { coins: vCoins, amount: vPul })}
               </div>
             )}
             <div style={{display:"flex",gap:10}}>
               <button onClick={()=>setShowAddV(false)} style={{flex:1,padding:"13px",borderRadius:14,border:"none",background:th.bor,color:th.t2,fontWeight:700,cursor:"pointer"}}>
-                {L("Bekor qilish","Отмена")}
+                {t("b051")}
               </button>
               <button onClick={addOffer} style={{flex:1,padding:"13px",borderRadius:14,border:"none",background:`linear-gradient(135deg,${th.ac},${th.ac2})`,color:"#fff",fontWeight:800,cursor:"pointer"}}>
-                {isKid ? L("Taklif jo'natish","Предложить") : L("Taklif jo'natish","Отправить")}
+                {isKid ? t("b_sendKid") : t("b_sendParent")}
               </button>
             </div>
           </div>
