@@ -34,6 +34,13 @@ import weddingKk from "./wedding.kk.json";
 import weddingKy from "./wedding.ky.json";
 import weddingTg from "./wedding.tg.json";
 import weddingQr from "./wedding.qr.json";
+import bilimbozorUz from "./bilimbozor.uz.json";
+import bilimbozorEn from "./bilimbozor.en.json";
+import bilimbozorRu from "./bilimbozor.ru.json";
+import bilimbozorKk from "./bilimbozor.kk.json";
+import bilimbozorKy from "./bilimbozor.ky.json";
+import bilimbozorTg from "./bilimbozor.tg.json";
+import bilimbozorQr from "./bilimbozor.qr.json";
 
 // Bu fayl BARCHA tillar (uz/en/ru/kk/ky/tg/qr) va namespace'lar
 // (translation/goals/budgetai) uchun ikkita narsani avtomatik tekshiradi:
@@ -97,3 +104,4 @@ describeNamespace("goals", goalsUz, { en: goalsEn, ru: goalsRu, kk: goalsKk, ky:
 describeNamespace("budgetai", budgetaiUz, { en: budgetaiEn, ru: budgetaiRu, kk: budgetaiKk, ky: budgetaiKy, tg: budgetaiTg, qr: budgetaiQr });
 describeNamespace("garden", gardenUz, { en: gardenEn, ru: gardenRu, kk: gardenKk, ky: gardenKy, tg: gardenTg, qr: gardenQr });
 describeNamespace("wedding", weddingUz, { en: weddingEn, ru: weddingRu, kk: weddingKk, ky: weddingKy, tg: weddingTg, qr: weddingQr });
+describeNamespace("bilimbozor", bilimbozorUz, { en: bilimbozorEn, ru: bilimbozorRu, kk: bilimbozorKk, ky: bilimbozorKy, tg: bilimbozorTg, qr: bilimbozorQr });
