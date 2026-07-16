@@ -51,11 +51,17 @@ const PLANNED_LANGUAGES = [
   { code: "qr", nativeName: "Qaraqalpaqsha", englishName: "Karakalpak", flag: "🏳️", rtl: false, sort: 7 },
 ];
 
+// Asosiy "translation" fazosidan tashqari mustaqil modul lug'atlari.
+// Har biri src/locales/{ns}.{lang}.json fayllaridan o'qiladi va
+// Firestore'da "translations/{lang}__{ns}" hujjatiga yoziladi — bir xil
+// kolleksiya, alohida qoida yozish shart emas (docs/i18n-architecture.md).
+const NAMESPACES = ["goals", "budgetai"];
+
 async function main() {
   const now = Date.now();
   const versions = {};
 
-  console.log("→ translations/{lang} yozilmoqda...");
+  console.log("→ translations/{lang} yozilmoqda (asosiy)...");
   for (const { code } of READY_LANGUAGES) {
     const localePath = join(__dirname, "..", "src", "locales", `${code}.json`);
     const data = JSON.parse(readFileSync(localePath, "utf8"));
@@ -67,6 +73,18 @@ async function main() {
     await db.collection("translations").doc(code).set({ version: now, updatedAt: now, data });
     versions[code] = now;
     console.log(`  ✓ translations/${code} (${Object.keys(data).length} kalit)`);
+  }
+
+  console.log("→ translations/{lang}__{ns} yozilmoqda (goals, budgetai)...");
+  for (const ns of NAMESPACES) {
+    for (const { code } of READY_LANGUAGES) {
+      const localePath = join(__dirname, "..", "src", "locales", `${ns}.${code}.json`);
+      const data = JSON.parse(readFileSync(localePath, "utf8"));
+      const docId = `${code}__${ns}`;
+      await db.collection("translations").doc(docId).set({ version: now, updatedAt: now, data });
+      versions[docId] = now;
+      console.log(`  ✓ translations/${docId} (${Object.keys(data).length} kalit)`);
+    }
   }
 
   console.log("→ languages/{code} yozilmoqda...");
