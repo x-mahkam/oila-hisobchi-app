@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 import uz from "../locales/uz.json";
 import en from "../locales/en.json";
 import ru from "../locales/ru.json";
+import { fetchMeta, getTranslationBundle } from "./translationService.js";
 
 // Clean detection logic for Device / Browser Language
 const getInitialLanguage = () => {
@@ -60,22 +61,42 @@ try {
 }
 
 /**
- * Dynamically registers a translation resource bundle at runtime.
- * Prepared for Firebase Firestore / Remote Config dynamic language fetching
- * without requiring a new APK release.
- * 
- * @param {string} lng - Language code (e.g. 'tr', 'ar', 'fr', 'de')
- * @param {object} translations - Translation dictionary JSON
+ * Runtime'da tarjima to'plamini (qayta) ro'yxatdan o'tkazadi. Firestore'dan
+ * kelgan yangi versiya build ichidagi zaxira ustiga yoziladi (overwrite),
+ * shuning uchun mavjud til ham yangilanishi mumkin — faqat yangi til emas.
+ *
+ * @param {string} lng - Til kodi (masalan "uz", "kk", "ar")
+ * @param {object} translations - Kalit-qiymat tarjima lug'ati
  */
 export const loadDynamicLanguage = (lng, translations) => {
   try {
-    if (!i18n.hasResourceBundle(lng, "translation")) {
-      i18n.addResourceBundle(lng, "translation", translations, true, true);
-      console.log(`[i18n] Dynamically loaded resource bundle for language: ${lng}`);
-    }
+    i18n.addResourceBundle(lng, "translation", translations, true, true);
   } catch (e) {
-    console.error(`[i18n] Error loading dynamic language ${lng}:`, e);
+    console.error(`[i18n] "${lng}" tilini yuklashda xato:`, e);
   }
 };
+
+/**
+ * Joriy til uchun Firestore'dagi eng so'nggi tarjimani fonda tekshiradi.
+ * Build ichidagi zaxira (uz/en/ru) darhol ko'rsatiladi — bu funksiya faqat
+ * undan keyin, orqadan, agar Firestore'da yangiroq versiya bo'lsa, uni
+ * jonli (hot) almashtiradi. Oflayn/xato holatda jim o'tadi — ilova zaxira
+ * tarjima bilan ishlashda davom etadi.
+ */
+export const syncTranslations = async (lng = i18n.language) => {
+  try {
+    const meta = await fetchMeta();
+    const knownVersion = meta?.versions?.[lng] ?? null;
+    const bundle = await getTranslationBundle(lng, knownVersion);
+    if (bundle?.data) loadDynamicLanguage(lng, bundle.data);
+  } catch (e) {
+    console.warn(`[i18n] "${lng}" Firestore bilan sinxronlanmadi:`, e);
+  }
+};
+
+if (typeof window !== "undefined") {
+  // Ilova ochilishida joriy til fonda Firestore bilan sinxronlanadi.
+  syncTranslations(initialLanguage);
+}
 
 export default i18n;

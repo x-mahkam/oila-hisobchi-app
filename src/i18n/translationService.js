@@ -1,159 +1,79 @@
-import i18n, { loadDynamicLanguage } from "./index";
-import { translationRepository } from "./translationRepository";
-import uzFallback from "../locales/uz.json";
-import enFallback from "../locales/en.json";
-import ruFallback from "../locales/ru.json";
+// ═══════════════════════════════════════════════════════════════════
+//  TRANSLATION SERVICE — Firestore bilan aloqa qatlami.
+//  Faqat shu fayl Firestore'ni biladi; i18n/index.js va React
+//  komponentlari faqat i18next ("t") orqali ishlaydi.
+//
+//  Xarajatni past ushlab turish sxemasi:
+//   1) i18n_meta/current — bitta arzon o'qish, barcha tillarning joriy
+//      versiya raqamini beradi.
+//   2) translations/{lang} to'liq hujjati faqat versiya farq qilganda
+//      o'qiladi — aks holda localStorage keshi ishlatiladi.
+// ═══════════════════════════════════════════════════════════════════
+import { doc, getDoc, collection, getDocs, query, where } from "firebase/firestore";
+import { fbDB } from "../firebase.js";
 
-// Fallback registry for bundled languages
-const fallbackResources = {
-  uz: uzFallback,
-  en: enFallback,
-  ru: ruFallback,
-};
+const BUNDLE_CACHE_PREFIX = "oilaV7_i18n_bundle_";
 
-export class TranslationService {
-  constructor() {
-    this.initialized = false;
-    this.availableLanguages = ["uz", "en", "ru"];
-  }
-
-  /**
-   * Initializes the Enterprise-grade Translation System
-   * This is called on App startup.
-   */
-  async initialize() {
-    if (this.initialized) return;
-
-    console.log("[TranslationService] Initializing dynamic translations...");
-    
-    // 1. Determine active language
-    const activeLang = i18n.language || "en";
-
-    try {
-      // 2. Fetch remote version and list of languages
-      const remoteVersion = await translationRepository.getRemoteVersion();
-      const localVersion = translationRepository.getLocalVersion();
-      
-      const remoteLangs = await translationRepository.getAvailableLanguages();
-      this.availableLanguages = remoteLangs;
-
-      console.log(`[TranslationService] Local Version: ${localVersion} | Remote Version: ${remoteVersion}`);
-
-      if (remoteVersion === localVersion) {
-        // Versions match! Load all from Cache (much faster, zero Firestore reads)
-        console.log("[TranslationService] Versions match. Loading from Cache...");
-        this.loadAllFromCache();
-      } else {
-        // Version changed!
-        console.log("[TranslationService] Version changed or first load. Fetching from Firestore...");
-        
-        // Fetch active language first so UI is unblocked and updated immediately
-        await this.loadLanguageFromFirestore(activeLang);
-
-        // Fetch remaining languages in background
-        this.loadRemainingLanguagesInBackground(activeLang, remoteVersion);
-      }
-    } catch (e) {
-      console.warn("[TranslationService] Sync error, falling back to cached or bundled:", e);
-      this.loadAllFromCache();
-    }
-
-    this.initialized = true;
-    console.log("[TranslationService] Dynamic Translation System initialized.");
-  }
-
-  /**
-   * Loads all available languages from Local Storage Cache into i18n
-   */
-  loadAllFromCache() {
-    this.availableLanguages.forEach((lang) => {
-      const cached = translationRepository.getLocalTranslations(lang);
-      if (cached) {
-        loadDynamicLanguage(lang, cached);
-      } else if (fallbackResources[lang]) {
-        // Bundled fallback
-        loadDynamicLanguage(lang, fallbackResources[lang]);
-      }
-    });
-  }
-
-  /**
-   * Fetches specific language from Firestore, caches it, and registers in i18n
-   */
-  async loadLanguageFromFirestore(lang) {
-    const data = await translationRepository.fetchLanguageTranslations(lang);
-    if (data && Object.keys(data).length > 0) {
-      // Register in i18n
-      loadDynamicLanguage(lang, data);
-      // Cache locally
-      translationRepository.setLocalTranslations(lang, data);
-      console.log(`[TranslationService] Successfully fetched and cached language: ${lang}`);
-      return true;
-    } else {
-      // Fallback if Firestore fetch failed or is empty
-      const cached = translationRepository.getLocalTranslations(lang);
-      if (cached) {
-        loadDynamicLanguage(lang, cached);
-      } else if (fallbackResources[lang]) {
-        loadDynamicLanguage(lang, fallbackResources[lang]);
-      }
-      return false;
-    }
-  }
-
-  /**
-   * Background fetches the other languages to avoid blocking app startup
-   */
-  async loadRemainingLanguagesInBackground(activeLang, newVersion) {
-    setTimeout(async () => {
-      try {
-        const remaining = this.availableLanguages.filter(l => l !== activeLang);
-        const promises = remaining.map(lang => this.loadLanguageFromFirestore(lang));
-        
-        await Promise.all(promises);
-        
-        // Once all fetched and saved, update local version identifier
-        translationRepository.setLocalVersion(newVersion);
-        console.log(`[TranslationService] Background fetch complete. Translation version updated to: ${newVersion}`);
-      } catch (e) {
-        console.error("[TranslationService] Background translations sync failed:", e);
-      }
-    }, 1000); // defer slightly
-  }
-
-  /**
-   * Returns list of all available languages (e.g., ['uz', 'en', 'ru', 'tr', 'ar'])
-   */
-  getLanguages() {
-    return this.availableLanguages;
-  }
-
-  /**
-   * Dynamically switch active interface language
-   */
-  async changeLanguage(lang) {
-    if (i18n.language === lang) return;
-
-    console.log(`[TranslationService] Switching interface language to: ${lang}`);
-    
-    // Check if we need to load this language from Firestore dynamically
-    const hasCache = !!translationRepository.getLocalTranslations(lang);
-    if (!hasCache && !fallbackResources[lang]) {
-      // Totally new language from admin panel! Fetch it on demand
-      await this.loadLanguageFromFirestore(lang);
-    }
-
-    await i18n.changeLanguage(lang);
-    
-    // Keep local storage keys synchronized
-    try {
-      localStorage.setItem("i18nextLng", lang);
-      localStorage.setItem("oilaV7_lg", lang);
-      localStorage.setItem("oilaV7_lg_active", lang);
-    } catch (e) {
-      console.error("[TranslationService] Error saving selected language:", e);
-    }
+function readCachedBundle(lang) {
+  try {
+    const raw = localStorage.getItem(BUNDLE_CACHE_PREFIX + lang);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_e) {
+    return null;
   }
 }
 
-export const translationService = new TranslationService();
+function writeCachedBundle(lang, bundle) {
+  try {
+    localStorage.setItem(BUNDLE_CACHE_PREFIX + lang, JSON.stringify(bundle));
+  } catch (_e) {
+    // Kesh yozib bo'lmasa ham ilova ishlashda davom etadi — keyingi safar
+    // qayta Firestore'dan o'qiladi, xolos.
+  }
+}
+
+/** i18n_meta/current hujjatini o'qiydi. Oflayn/xato bo'lsa null. */
+export async function fetchMeta() {
+  try {
+    const snap = await getDoc(doc(fbDB, "i18n_meta", "current"));
+    return snap.exists() ? snap.data() : null;
+  } catch (e) {
+    console.warn("[i18n] meta o'qilmadi (oflaynmi?):", e.message);
+    return null;
+  }
+}
+
+/**
+ * Berilgan til uchun eng so'nggi tarjima to'plamini qaytaradi:
+ * kesh versiyasi joriy versiyaga teng bo'lsa — Firestore'ga so'rov
+ * yubormasdan keshni qaytaradi; aks holda to'liq hujjatni oladi va
+ * keshni yangilaydi.
+ */
+export async function getTranslationBundle(lang, knownVersion) {
+  const cached = readCachedBundle(lang);
+  if (cached && knownVersion != null && cached.version === knownVersion) {
+    return cached;
+  }
+  try {
+    const snap = await getDoc(doc(fbDB, "translations", lang));
+    if (snap.exists()) {
+      const bundle = snap.data(); // { version, updatedAt, data }
+      writeCachedBundle(lang, bundle);
+      return bundle;
+    }
+  } catch (e) {
+    console.warn(`[i18n] "${lang}" tarjimasi Firestore'dan olinmadi (oflaynmi?):`, e.message);
+  }
+  return cached || null;
+}
+
+/** Yoqilgan (enabled: true) tillar ro'yxati — til tanlash UI'si uchun. */
+export async function fetchLanguageList() {
+  try {
+    const snap = await getDocs(query(collection(fbDB, "languages"), where("enabled", "==", true)));
+    return snap.docs.map((d) => d.data()).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  } catch (e) {
+    console.warn("[i18n] til ro'yxati olinmadi:", e.message);
+    return [];
+  }
+}
