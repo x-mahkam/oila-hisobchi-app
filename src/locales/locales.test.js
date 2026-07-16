@@ -20,6 +20,13 @@ import budgetaiKk from "./budgetai.kk.json";
 import budgetaiKy from "./budgetai.ky.json";
 import budgetaiTg from "./budgetai.tg.json";
 import budgetaiQr from "./budgetai.qr.json";
+import gardenUz from "./garden.uz.json";
+import gardenEn from "./garden.en.json";
+import gardenRu from "./garden.ru.json";
+import gardenKk from "./garden.kk.json";
+import gardenKy from "./garden.ky.json";
+import gardenTg from "./garden.tg.json";
+import gardenQr from "./garden.qr.json";
 
 // Bu fayl BARCHA tillar (uz/en/ru/kk/ky/tg/qr) va namespace'lar
 // (translation/goals/budgetai) uchun ikkita narsani avtomatik tekshiradi:
@@ -81,3 +88,4 @@ function describeNamespace(nsName, base, locales) {
 describeNamespace("translation", uz, { en, ru, kk, ky, tg, qr });
 describeNamespace("goals", goalsUz, { en: goalsEn, ru: goalsRu, kk: goalsKk, ky: goalsKy, tg: goalsTg, qr: goalsQr });
 describeNamespace("budgetai", budgetaiUz, { en: budgetaiEn, ru: budgetaiRu, kk: budgetaiKk, ky: budgetaiKy, tg: budgetaiTg, qr: budgetaiQr });
+describeNamespace("garden", gardenUz, { en: gardenEn, ru: gardenRu, kk: gardenKk, ky: gardenKy, tg: gardenTg, qr: gardenQr });
