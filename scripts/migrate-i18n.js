@@ -16,7 +16,8 @@
 import { readFileSync, existsSync } from "fs";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import admin from "firebase-admin";
+import { initializeApp, cert } from "firebase-admin/app";
+import { getFirestore } from "firebase-admin/firestore";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const keyPath = join(__dirname, "..", "serviceAccountKey.json");
@@ -31,8 +32,8 @@ if (!existsSync(keyPath)) {
 }
 
 const serviceAccount = JSON.parse(readFileSync(keyPath, "utf8"));
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-const db = admin.firestore();
+const app = initializeApp({ credential: cert(serviceAccount) });
+const db = getFirestore(app);
 
 // Hozircha to'liq tarjima qilingan tillar (build ichidagi zaxira bilan bir xil).
 const READY_LANGUAGES = [
