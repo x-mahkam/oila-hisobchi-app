@@ -1060,5 +1060,20 @@
   "ch_average": "Орточо:",
   "ch_familyShareSplit": "Үй-бүлө\nүлүшү",
   "ch_noExpenseForPeriod": "Бул мезгил үчүн чыгым киргизилген эмес",
-  "ch_noIncomeForPeriod": "Бул мезгил үчүн киреше киргизилген эмес"
+  "ch_noIncomeForPeriod": "Бул мезгил үчүн киреше киргизилген эмес",
+  "ut_enterAmount": "Сумманы киргизиңиз",
+  "ut_insufficientBalanceHave": "❌ Баланс жетишсиз! Баланс: {{bal}}",
+  "ut_requestSentMinus": "Суроо жөнөтүлдү! -{{amt}}",
+  "ut_requestSent": "Суроо жөнөтүлдү",
+  "ut_insufficientBalanceFull": "❌ Баланс жетишсиз! Баланс: {{bal}}. Адегенде киреше киргизиңиз.",
+  "ut_limitExceeded": "лимити ашып кетти!",
+  "ut_expenseAddedStar": "Чыгым киргизилди",
+  "ut_expenseAdded": "Чыгым кошулду",
+  "ut_incomeAddedStar": "Киреше киргизилди",
+  "ut_incomeAdded": "Киреше кошулду",
+  "ut_onlyOwnDelete": "Жалгыз өзүңүз киргизген амалдарды өчүрө аласыз",
+  "ut_deleted": "Өчүрүлдү",
+  "ut_onlyOwnEdit": "Жалгыз өзүңүз киргизген амалдарды түзөтө аласыз",
+  "ut_notFound": "Табылган жок",
+  "ut_savedSuccessfully": "Ийгиликтүү сакталды"
 }

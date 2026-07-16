@@ -1060,5 +1060,20 @@
   "ch_average": "Ortasha:",
   "ch_familyShareSplit": "Shańaraq\núlesi",
   "ch_noExpenseForPeriod": "Bul dáwir ushın shıǵın kiritilmegen",
-  "ch_noIncomeForPeriod": "Bul dáwir ushın daramat kiritilmegen"
+  "ch_noIncomeForPeriod": "Bul dáwir ushın daramat kiritilmegen",
+  "ut_enterAmount": "Sumanı kirgiziń",
+  "ut_insufficientBalanceHave": "❌ Balans jetkiliksiz! Balans: {{bal}}",
+  "ut_requestSentMinus": "Sorawı jiberildi! -{{amt}}",
+  "ut_requestSent": "Sorawı jiberildi",
+  "ut_insufficientBalanceFull": "❌ Balans jetkiliksiz! Balans: {{bal}}. Aldın daramat kirgiziń.",
+  "ut_limitExceeded": "limiti asıp ketti!",
+  "ut_expenseAddedStar": "Shıǵın kiritildi",
+  "ut_expenseAdded": "Shıǵın qosıldı",
+  "ut_incomeAddedStar": "Daramat kiritildi",
+  "ut_incomeAdded": "Daramat qosıldı",
+  "ut_onlyOwnDelete": "Tek óziń kirgizgen ámellerdi óshire alasız",
+  "ut_deleted": "Óshirildi",
+  "ut_onlyOwnEdit": "Tek óziń kirgizgen ámellerdi ózgerte alasız",
+  "ut_notFound": "Tabılmadı",
+  "ut_savedSuccessfully": "Sátli saqlandı"
 }

@@ -1060,5 +1060,20 @@
   "ch_average": "Орташа:",
   "ch_familyShareSplit": "Отбасы\nүлесі",
   "ch_noExpenseForPeriod": "Бұл кезең үшін шығын енгізілмеген",
-  "ch_noIncomeForPeriod": "Бұл кезең үшін табыс енгізілмеген"
+  "ch_noIncomeForPeriod": "Бұл кезең үшін табыс енгізілмеген",
+  "ut_enterAmount": "Соманы енгізіңіз",
+  "ut_insufficientBalanceHave": "❌ Баланс жеткіліксіз! Баланс: {{bal}}",
+  "ut_requestSentMinus": "Сұрау жіберілді! -{{amt}}",
+  "ut_requestSent": "Сұрау жіберілді",
+  "ut_insufficientBalanceFull": "❌ Баланс жеткіліксіз! Баланс: {{bal}}. Алдымен табыс енгізіңіз.",
+  "ut_limitExceeded": "лимиті асып кетті!",
+  "ut_expenseAddedStar": "Шығын енгізілді",
+  "ut_expenseAdded": "Шығын қосылды",
+  "ut_incomeAddedStar": "Табыс енгізілді",
+  "ut_incomeAdded": "Табыс қосылды",
+  "ut_onlyOwnDelete": "Тек өзіңіз енгізген амалдарды жоя аласыз",
+  "ut_deleted": "Жойылды",
+  "ut_onlyOwnEdit": "Тек өзіңіз енгізген амалдарды өзгерте аласыз",
+  "ut_notFound": "Табылмады",
+  "ut_savedSuccessfully": "Сәтті сақталды"
 }

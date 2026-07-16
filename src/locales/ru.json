@@ -1060,5 +1060,20 @@
   "ch_average": "Среднее:",
   "ch_familyShareSplit": "Доля\nсемьи",
   "ch_noExpenseForPeriod": "За этот период расходы не внесены",
-  "ch_noIncomeForPeriod": "За этот период доходы не внесены"
+  "ch_noIncomeForPeriod": "За этот период доходы не внесены",
+  "ut_enterAmount": "Введите сумму",
+  "ut_insufficientBalanceHave": "❌ Недостаточно средств! Баланс: {{bal}}",
+  "ut_requestSentMinus": "Запрос отправлен! -{{amt}}",
+  "ut_requestSent": "Запрос отправлен",
+  "ut_insufficientBalanceFull": "❌ Недостаточно средств! Баланс: {{bal}}. Сначала добавьте доход.",
+  "ut_limitExceeded": "лимит превышен!",
+  "ut_expenseAddedStar": "Расход учтён",
+  "ut_expenseAdded": "Расход добавлен",
+  "ut_incomeAddedStar": "Доход учтён",
+  "ut_incomeAdded": "Доход добавлен",
+  "ut_onlyOwnDelete": "Можно удалить только собственные операции",
+  "ut_deleted": "Удалено",
+  "ut_onlyOwnEdit": "Можно редактировать только собственные операции",
+  "ut_notFound": "Не найдено",
+  "ut_savedSuccessfully": "Успешно сохранено"
 }

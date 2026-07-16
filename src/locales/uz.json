@@ -1060,5 +1060,20 @@
   "ch_average": "O'rtacha:",
   "ch_familyShareSplit": "Oila\nulushi",
   "ch_noExpenseForPeriod": "Bu davr uchun xarajat kiritilmagan",
-  "ch_noIncomeForPeriod": "Bu davr uchun daromad kiritilmagan"
+  "ch_noIncomeForPeriod": "Bu davr uchun daromad kiritilmagan",
+  "ut_enterAmount": "Summa kiriting",
+  "ut_insufficientBalanceHave": "❌ Balans yetarli emas! Balans: {{bal}}",
+  "ut_requestSentMinus": "So'rov yuborildi! -{{amt}}",
+  "ut_requestSent": "So'rov yuborildi",
+  "ut_insufficientBalanceFull": "❌ Balans yetarli emas! Balans: {{bal}}. Avval daromad kiriting.",
+  "ut_limitExceeded": "limiti oshdi!",
+  "ut_expenseAddedStar": "Xarajat kiritildi",
+  "ut_expenseAdded": "Xarajat qo'shildi",
+  "ut_incomeAddedStar": "Daromad kiritildi",
+  "ut_incomeAdded": "Daromad qo'shildi",
+  "ut_onlyOwnDelete": "Faqat o'zingiz kiritgan amallarni o'chira olasiz",
+  "ut_deleted": "O'chirildi",
+  "ut_onlyOwnEdit": "Faqat o'zingiz kiritgan amallarni tahrirlay olasiz",
+  "ut_notFound": "Topilmadi",
+  "ut_savedSuccessfully": "Muvaffaqiyatli saqlandi"
 }

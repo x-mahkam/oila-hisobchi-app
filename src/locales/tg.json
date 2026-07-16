@@ -1060,5 +1060,20 @@
   "ch_average": "Миёна:",
   "ch_familyShareSplit": "Ҳиссаи\nоила",
   "ch_noExpenseForPeriod": "Барои ин давра харҷ ворид нашудааст",
-  "ch_noIncomeForPeriod": "Барои ин давра даромад ворид нашудааст"
+  "ch_noIncomeForPeriod": "Барои ин давра даромад ворид нашудааст",
+  "ut_enterAmount": "Маблағро ворид кунед",
+  "ut_insufficientBalanceHave": "❌ Баланс кофӣ нест! Баланс: {{bal}}",
+  "ut_requestSentMinus": "Дархост фиристода шуд! -{{amt}}",
+  "ut_requestSent": "Дархост фиристода шуд",
+  "ut_insufficientBalanceFull": "❌ Баланс кофӣ нест! Баланс: {{bal}}. Аввал даромад ворид кунед.",
+  "ut_limitExceeded": "ҳад гузашт!",
+  "ut_expenseAddedStar": "Харҷ сабт шуд",
+  "ut_expenseAdded": "Харҷ илова шуд",
+  "ut_incomeAddedStar": "Даромад сабт шуд",
+  "ut_incomeAdded": "Даромад илова шуд",
+  "ut_onlyOwnDelete": "Шумо танҳо амалиёти худро нест карда метавонед",
+  "ut_deleted": "Нест шуд",
+  "ut_onlyOwnEdit": "Шумо танҳо амалиёти худро таҳрир карда метавонед",
+  "ut_notFound": "Ёфт нашуд",
+  "ut_savedSuccessfully": "Бомуваффақият захира шуд"
 }

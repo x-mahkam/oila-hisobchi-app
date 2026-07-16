@@ -1060,5 +1060,20 @@
   "ch_average": "Avg:",
   "ch_familyShareSplit": "Family\nshare",
   "ch_noExpenseForPeriod": "No expenses for this period",
-  "ch_noIncomeForPeriod": "No income for this period"
+  "ch_noIncomeForPeriod": "No income for this period",
+  "ut_enterAmount": "Enter amount",
+  "ut_insufficientBalanceHave": "❌ Insufficient balance! Balance: {{bal}}",
+  "ut_requestSentMinus": "Request sent! -{{amt}}",
+  "ut_requestSent": "Request sent",
+  "ut_insufficientBalanceFull": "❌ Insufficient balance! Balance: {{bal}}. Add income first.",
+  "ut_limitExceeded": "limit exceeded!",
+  "ut_expenseAddedStar": "Expense recorded",
+  "ut_expenseAdded": "Expense added",
+  "ut_incomeAddedStar": "Income recorded",
+  "ut_incomeAdded": "Income added",
+  "ut_onlyOwnDelete": "You can only delete your own transactions",
+  "ut_deleted": "Deleted",
+  "ut_onlyOwnEdit": "You can only edit your own transactions",
+  "ut_notFound": "Not found",
+  "ut_savedSuccessfully": "Saved successfully"
 }
