@@ -59,7 +59,7 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
   const contribList = Array.isArray(m.contribs) ? m.contribs : [];
   const nameOf = (c) => {
     const n = (typeof gN === "function") ? gN(c.uid) : "";
-    return (n && n !== "?") ? n : (c.ism || (lg === "uz" ? "A'zo" : "Member"));
+    return (n && n !== "?") ? n : (c.ism || t("gl_member"));
   };
   const members = Object.values(contribList.reduce((acc, c) => {
     const k = c.uid || "?";
@@ -100,7 +100,7 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
           </span>
         </div>
       )}
-      {m.createdAt && <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{GIco.cal(th.t2)}{lg === "uz" ? "Boshlangan" : "Started"}: {m.createdAt}</div>}
+      {m.createdAt && <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginBottom: SPACE.s1, display: "flex", alignItems: "center", gap: SPACE.s1 }}>{GIco.cal(th.t2)}{t("gl_started")}: {m.createdAt}</div>}
       {p < 100 && !smart.hasDeadline && (() => {
         const remain = m.maqsad - m.jamg;
         const perMonth = Math.ceil(m.maqsad / 12);
@@ -108,7 +108,7 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
         return (
           <div style={{ background: m.rang + ALPHA.faint, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 3) + "px", marginBottom: SPACE.s2 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, display: "flex", alignItems: "center", gap: SPACE.s1 + 2 }}>
             <span style={{ flexShrink: 0, display: "flex" }}>{GIco.bulb(m.rang)}</span>
-            <span>{lg === "uz" ? "Har oy " + f(perMonth, true) + " ajratsangiz, ~" + monthsLeft + " oyda yig'asiz" : "Save " + f(perMonth, true) + "/mo to reach in ~" + monthsLeft + " months"}</span>
+            <span>{t("gl_saveMonthlyHint", { amt: f(perMonth, true), months: monthsLeft })}</span>
           </div>
         );
       })()}
@@ -118,11 +118,11 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
           {m.lastContrib && (
             <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, background: m.rang + ALPHA.faint, borderRadius: RADIUS.s - 1, padding: SPACE.s2 + "px " + (SPACE.s2 + 3) + "px", marginBottom: SPACE.s2 + 1 }}>
               <span style={{ flexShrink: 0, display: "flex" }}>{GIco.family(m.rang, 15)}</span>
-              <span style={{ flex: 1, minWidth: 0, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{lg === "uz" ? "Oxirgi hissa" : "Last contribution"}: <b style={{ color: th.t1 }}>{nameOf(m.lastContrib)}</b></span>
+              <span style={{ flex: 1, minWidth: 0, ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t("gl_lastContribution")}: <b style={{ color: th.t1 }}>{nameOf(m.lastContrib)}</b></span>
               <span style={{ ...TYPE.caption, fontWeight: 800, color: m.rang, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>+{f(m.lastContrib.summa, true)}</span>
             </div>
           )}
-          <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{GIco.family(th.t2, 12)}{lg === "uz" ? "A'zolar hissasi" : "Member contributions"}</div>
+          <div style={{ ...TYPE.tiny, color: th.t2, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{GIco.family(th.t2, 12)}{t("gl_memberContributions")}</div>
           <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
             {members.map(mem => {
               const share = m.jamg > 0 ? Math.round(mem.total / m.jamg * 100) : 0;
@@ -159,34 +159,34 @@ const GoalCard = memo(function GoalCard({ m, th, t, f, lg, isKid, user, gN, gP, 
           {/* ── BOLA: pul yig'ildi, ota olib berishini kutmoqda ── */}
           {waiting && isKid && m.uid === user.id && (
             <div style={{ background: th.am + ALPHA.faint, border: "1px solid " + th.am + ALPHA.strong, borderRadius: RADIUS.s + 1, padding: (SPACE.s2 + 2) + "px " + SPACE.s3 + "px", marginTop: SPACE.s2, ...TYPE.caption, color: th.am, fontWeight: 600, lineHeight: 1.5, textAlign: "left" }}>
-              <span style={{ display: "inline-flex", marginRight: SPACE.s1 }}>{GIco.clock(th.am)}</span>{lg === "uz" ? "Oila boshingizga xabar yuborildi — orzuingizni amalga oshirishi kutilmoqda" : "Family head notified — waiting to fulfill"}
-              {m.parentLater && <div style={{ marginTop: SPACE.s1 + 1, color: th.t2, fontWeight: 400 }}>{lg === "uz" ? "Ota-onangiz keyinroq olib berishini aytdi" : "Parent will buy it later"}</div>}
+              <span style={{ display: "inline-flex", marginRight: SPACE.s1 }}>{GIco.clock(th.am)}</span>{t("gl_notifiedParent")}
+              {m.parentLater && <div style={{ marginTop: SPACE.s1 + 1, color: th.t2, fontWeight: 400 }}>{t("gl_parentWillBuyLater")}</div>}
             </div>
           )}
           {/* ── OTA-ONA: pul yig'ildi, olib berish kerak ── */}
           {waiting && !isKid && m.uid !== user.id && (
             <div style={{ background: th.am + ALPHA.faint, border: "1px solid " + th.am + ALPHA.strong, borderRadius: RADIUS.s + 1, padding: (SPACE.s2 + 3) + "px " + SPACE.s3 + "px", marginTop: SPACE.s2, textAlign: "left" }}>
-              <div style={{ ...TYPE.caption, color: th.am, fontWeight: 700, marginBottom: SPACE.s2 + 1, lineHeight: 1.5 }}>{(typeof gN === "function" ? gN(m.uid) : "") + " "}{lg === "uz" ? "bu orzu uchun pul yig'ib bo'ldi! Olib bering." : "saved up for this dream!"}</div>
+              <div style={{ ...TYPE.caption, color: th.am, fontWeight: 700, marginBottom: SPACE.s2 + 1, lineHeight: 1.5 }}>{(typeof gN === "function" ? gN(m.uid) : "") + " "}{t("gl_savedUpMsg")}</div>
               <div style={{ display: "flex", gap: SPACE.s2 }}>
-                <PrimaryButton th={th} onClick={() => parentBoughtMaqsad && parentBoughtMaqsad(m)} style={{ flex: 2, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, marginBottom: 0 }}>{GIco.gift("#fff")}{lg === "uz" ? "Olib berdim" : "Bought it"}</PrimaryButton>
-                {!m.parentLater && <GhostButton th={th} onClick={() => parentLaterMaqsad && parentLaterMaqsad(m)} style={{ flex: 2, background: th.surH, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, color: th.t1 }}>{GIco.clock(th.t2)}{lg === "uz" ? "Keyinroq" : "Later"}</GhostButton>}
+                <PrimaryButton th={th} onClick={() => parentBoughtMaqsad && parentBoughtMaqsad(m)} style={{ flex: 2, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, marginBottom: 0 }}>{GIco.gift("#fff")}{t("gl_boughtIt")}</PrimaryButton>
+                {!m.parentLater && <GhostButton th={th} onClick={() => parentLaterMaqsad && parentLaterMaqsad(m)} style={{ flex: 2, background: th.surH, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, color: th.t1 }}>{GIco.clock(th.t2)}{t("gl_later")}</GhostButton>}
               </div>
-              {m.parentLater && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s2 - 1 }}>{lg === "uz" ? "\"Keyinroq\" deb belgilangan — farzandingiz kutmoqda" : "Marked as later"}</div>}
+              {m.parentLater && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: SPACE.s2 - 1 }}>{t("gl_markedLater")}</div>}
             </div>
           )}
           {/* ── BOLA: ota "olib berdim" dedi — tasdiqlash yoki rad etish ── */}
           {confirmed && isKid && m.uid === user.id && (
             <div style={{ background: th.gr + ALPHA.faint, border: "1px solid " + th.gr + ALPHA.strong, borderRadius: RADIUS.s + 1, padding: (SPACE.s2 + 3) + "px " + SPACE.s3 + "px", marginTop: SPACE.s2, textAlign: "left" }}>
-              <div style={{ ...TYPE.caption, color: th.gr, fontWeight: 700, marginBottom: SPACE.s2 + 1, lineHeight: 1.5 }}>{GIco.gift(th.gr)} {lg === "uz" ? "Ota-onangiz orzuingni amalga oshirdim dedi. Rostdan oldingizmi?" : "Parent says it's bought. Did you receive it?"}</div>
+              <div style={{ ...TYPE.caption, color: th.gr, fontWeight: 700, marginBottom: SPACE.s2 + 1, lineHeight: 1.5 }}>{GIco.gift(th.gr)} {t("gl_confirmReceived")}</div>
               <div style={{ display: "flex", gap: SPACE.s2 }}>
-                <PrimaryButton th={th} onClick={() => kidAcceptMaqsad && kidAcceptMaqsad(m)} style={{ flex: 2, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, marginBottom: 0 }}>{GIco.check("#fff")}{lg === "uz" ? "Ha, oldim!" : "Yes, got it!"}</PrimaryButton>
-                <GhostButton th={th} onClick={() => kidRejectMaqsad && kidRejectMaqsad(m)} style={{ flex: 2, background: th.rd + ALPHA.soft, border: "1px solid " + th.rd + ALPHA.strong, color: th.rd, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize }}>{GIco.x(th.rd)}{lg === "uz" ? "Hali olganim yo'q" : "Not yet"}</GhostButton>
+                <PrimaryButton th={th} onClick={() => kidAcceptMaqsad && kidAcceptMaqsad(m)} style={{ flex: 2, background: th.gr, boxShadow: SHADOW.e0, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize, marginBottom: 0 }}>{GIco.check("#fff")}{t("gl_yesGotIt")}</PrimaryButton>
+                <GhostButton th={th} onClick={() => kidRejectMaqsad && kidRejectMaqsad(m)} style={{ flex: 2, background: th.rd + ALPHA.soft, border: "1px solid " + th.rd + ALPHA.strong, color: th.rd, padding: (SPACE.s2 + 2) + "px 0", fontSize: TYPE.caption.fontSize }}>{GIco.x(th.rd)}{t("gl_notYet")}</GhostButton>
               </div>
             </div>
           )}
           {/* ── OTA-ONA: bola tasdig'i kutilmoqda ── */}
           {confirmed && !isKid && m.uid !== user.id && (
-            <div style={{ ...TYPE.caption, color: th.gr, fontWeight: 600, marginTop: SPACE.s1 + 2, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 }}>{GIco.clock(th.gr)}{lg === "uz" ? "Farzandingiz tasdig'i kutilmoqda" : "Waiting for child confirmation"}</div>
+            <div style={{ ...TYPE.caption, color: th.gr, fontWeight: 600, marginTop: SPACE.s1 + 2, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 }}>{GIco.clock(th.gr)}{t("gl_waitingChildConfirm")}</div>
           )}
         </div>
       ) : (
@@ -285,22 +285,22 @@ export default function GoalsPage({
         <button className="ui-press" onClick={() => setShowToy(true)} style={{ width: "100%", background: "linear-gradient(135deg," + CHART[3] + "," + CHART[5] + ")", border: "none", borderRadius: RADIUS.m, padding: SPACE.s4, cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s3, marginBottom: SPACE.s3 + 2, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(CHART[3]), fontFamily: "inherit" }}>
           <div style={{ width: SPACE.s8 + SPACE.s3, height: SPACE.s8 + SPACE.s3, borderRadius: RADIUS.s + 3, background: "rgba(255,255,255,.2)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{GIco.rings("#fff")}</div>
           <div style={{ flex: 1, textAlign: "left" }}>
-            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{lg === "uz" ? "To'y kalkulyatori" : "Свадебный калькулятор"}</div>
-            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,.88)", marginTop: 2 }}>{lg === "uz" ? "Marosimlar smetasi, mehmon kalkulyatori, jamg'arish rejasi" : "Смета, гости, план накоплений"}</div>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff" }}>{t("gl_weddingCalcTitle")}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: "rgba(255,255,255,.88)", marginTop: 2 }}>{t("gl_weddingCalcDesc")}</div>
           </div>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
         </button>
       )}
 
-      <PageHeader th={th} title={isKid ? (lg === "uz" ? "Orzularim" : "My dreams") : t.goal} style={{ marginBottom: SPACE.s3 }}
-        right={<IconButton th={th} label={lg === "uz" ? "Maqsad qo'shish" : "Add goal"} icon={Ico.add(th.ac)} onClick={() => setAddM(v => !v)} />} />
+      <PageHeader th={th} title={isKid ? t("gl_myDreams") : t.goal} style={{ marginBottom: SPACE.s3 }}
+        right={<IconButton th={th} label={t("gl_addGoal")} icon={Ico.add(th.ac)} onClick={() => setAddM(v => !v)} />} />
 
       {/* ── Bola orzulari bosh slayd (vazifalar va bilim darslari sahifalari kabi premium gradient) ── */}
       {isKid && (
         <div className="ui-fadeUp" style={{ background: "linear-gradient(135deg, " + th.ac + " 0%, " + (th.ac2 || th.ac) + " 55%, " + PREMIUM.gold + " 100%)", borderRadius: RADIUS.l, padding: SPACE.s6 + "px " + (SPACE.s6 - 2) + "px", marginBottom: SPACE.s4, position: "relative", overflow: "hidden", boxShadow: SHADOW.e1(th.ac) }}>
           <div style={{ position: "absolute", top: -SPACE.s8, right: -SPACE.s8, width: SPACE.s16 * 2, height: SPACE.s16 * 2, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.12)" }} />
           <div style={{ position: "relative" }}>
-            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: "rgba(255,255,255,0.9)", marginBottom: SPACE.s1 }}>{lg === "uz" ? "Mening jamg'armalarim" : lg === "ru" ? "Мои сбережения" : "My savings"}</div>
+            <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, color: "rgba(255,255,255,0.9)", marginBottom: SPACE.s1 }}>{t("gl_mySavings")}</div>
             <div style={{ ...TYPE.hero, fontSize: TYPE.hero.fontSize + 4, color: "#fff", marginBottom: SPACE.s1 + 2, fontVariantNumeric: "tabular-nums" }}>
               {(() => {
                 const myDreams = Array.isArray(maq) ? maq.filter(m => m.uid === user.id) : [];
@@ -318,11 +318,11 @@ export default function GoalsPage({
                 return (
                   <>
                     {GIco.target("#fff", 12)}
-                    {myDreams.length} {lg === "uz" ? "ta orzu" : lg === "ru" ? "целей" : "dreams"} · {totalProgress}% {lg === "uz" ? "to'plandi" : lg === "ru" ? "накоплено" : "saved"}
+                    {myDreams.length}{t("gl_dreamsCount")} · {totalProgress}% {t("gl_saved")}
                     {money > 0 && (
                       <>
                         {" · "}
-                        {lg === "uz" ? "Hamyonda" : lg === "ru" ? "В кошельке" : "Wallet"}: {f(money, true)}
+                        {t("gl_wallet")}: {f(money, true)}
                       </>
                     )}
                   </>
@@ -335,7 +335,7 @@ export default function GoalsPage({
 
       {!isKid && canSeeReport && (
         <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, marginBottom: SPACE.s3 + 2, gap: 3 }}>
-          {[["mine", GIco.target, lg === "uz" ? "O'zimning" : "My goals"], ["oila", GIco.family, lg === "uz" ? "Oilamning" : "Family goals"]].map(([key, ico, label]) => (
+          {[["mine", GIco.target, t("gl_myGoalsTab")], ["oila", GIco.family, t("gl_familyGoalsTab")]].map(([key, ico, label]) => (
             <button key={key} className="ui-press" onClick={() => setMaqTab(key)} style={{ flex: 1, padding: (SPACE.s2 + 1) + "px 0", borderRadius: RADIUS.s - 1, border: "none", background: maqTab === key ? th.ac : "transparent", color: maqTab === key ? "#fff" : th.t2, fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 1 }}>
               {ico(maqTab === key ? "#fff" : th.t2)}{label}
             </button>
@@ -360,10 +360,10 @@ export default function GoalsPage({
 
       {editMq && (
         <AppCard th={th} style={{ border: "1.5px solid " + th.am + ALPHA.strong }}>
-          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, marginBottom: SPACE.s2 + 2, color: th.am }}>{lg === "uz" ? "Maqsadni tahrirlash" : "Edit goal"}</div>
-          <label style={STY.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, marginBottom: SPACE.s2 + 2, color: th.am }}>{t("gl_editGoalTitle")}</div>
+          <label style={STY.lb}>{t("gl_goalNameLabel")}</label>
           <input style={STY.ip} value={editMqN} onChange={e => setEditMqN(e.target.value)} placeholder="..." />
-          <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+          <label style={STY.lb}>{t("gl_amountLabel")}</label>
           <MoneyInput style={STY.ip} value={editMqS} onChange={setEditMqS} placeholder="..." th={th} />
           <DeadlineField th={th} STY={STY} lg={lg} value={editDeadline} onChange={setEditDeadline} />
           <ImageField th={th} STY={STY} lg={lg} value={editImg} onChange={setEditImg} />
@@ -393,9 +393,9 @@ export default function GoalsPage({
         if (filteredMaq.length === 0 && !addM) {
           return (
             <EmptyState th={th} preset="goal"
-              title={maqTab === "oila" ? (lg === "uz" ? "Oila a'zolari hali maqsad qo'shmagan" : "No family goals yet") : (lg === "uz" ? "Maqsad qo'ying" : "Add a goal")}
-              message={maqTab === "oila" ? undefined : (lg === "uz" ? "Uy, mashina, sayohat uchun jamg'aring" : "Save for your dreams")}
-              actionText={maqTab !== "oila" ? (lg === "uz" ? "Maqsad qo'shish" : "Add goal") : undefined}
+              title={maqTab === "oila" ? t("gl_noFamilyGoals") : t("gl_setGoal")}
+              message={maqTab === "oila" ? undefined : t("gl_saveForDreams")}
+              actionText={maqTab !== "oila" ? t("gl_addGoal") : undefined}
               onAction={maqTab !== "oila" ? () => setAddM(true) : undefined} />
           );
         }
@@ -436,12 +436,12 @@ function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM, defaultShared
   return (
     <AppCard th={th} style={{ border: "1.5px solid " + th.ac + ALPHA.strong }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s3 }}>
-        <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.ac }}>{lg === "uz" ? "Yangi maqsad" : "New goal"}</div>
+        <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 700, color: th.ac }}>{t("gl_newGoalTitle")}</div>
         <button type="button" className="ui-press" onClick={() => setAddM(false)} aria-label="Close" style={{ border: "none", cursor: "pointer", display: "flex", padding: 4, borderRadius: "50%", background: th.surH + "44" }}>
           {GIco.x(th.t2, 14)}
         </button>
       </div>
-      <label style={STY.lb}>{lg === "uz" ? "Tayyor maqsadlar" : "Quick presets"}</label>
+      <label style={STY.lb}>{t("gl_quickPresets")}</label>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
         {(isKid ? KID_GOAL_PRESETS : GOAL_PRESETS).map((pr, i) => {
           const active = mN === (pr[lg] || pr.uz);
@@ -455,25 +455,25 @@ function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM, defaultShared
           );
         })}
       </div>
-      <label style={STY.lb}>{lg === "uz" ? "Maqsad nomi" : "Goal name"}</label>
-      <input style={STY.ip} value={mN} onChange={e => setMN(e.target.value)} placeholder={lg === "uz" ? "Yoki o'zingiz yozing..." : "Or write your own..."} />
-      <label style={STY.lb}>{lg === "uz" ? "Summa (so'm)" : "Amount"}</label>
+      <label style={STY.lb}>{t("gl_goalNameLabel")}</label>
+      <input style={STY.ip} value={mN} onChange={e => setMN(e.target.value)} placeholder={t("gl_orWriteOwn")} />
+      <label style={STY.lb}>{t("gl_amountLabel")}</label>
       <MoneyInput style={STY.ip} value={mS} onChange={setMS} placeholder="5 000 000" th={th} />
       {!isKid && (
         <div style={{ marginBottom: SPACE.s3 }}>
-          <label style={STY.lb}>{lg === "uz" ? "Maqsad turi" : "Goal type"}</label>
+          <label style={STY.lb}>{t("gl_goalTypeLabel")}</label>
           <div style={{ display: "flex", gap: SPACE.s2 }}>
             {[
-              { key: false, ico: GIco.target, uz: "Shaxsiy", ru: "Личная",   suz: "Faqat siz ko'rasiz",       sru: "Видите только вы" },
-              { key: true,  ico: GIco.family, uz: "Oilaviy", ru: "Семейная", suz: "Oila birga hissa qo'shadi", sru: "Копит вся семья" },
+              { key: false, ico: GIco.target, tKey: "gl_personalType", sKey: "gl_personalTypeDesc" },
+              { key: true,  ico: GIco.family, tKey: "gl_familyType",   sKey: "gl_familyTypeDesc" },
             ].map(opt => {
               const on = mShared === opt.key;
               return (
                 <button key={String(opt.key)} type="button" className="ui-press" onClick={() => setMShared(opt.key)}
                   style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 + 1, background: on ? th.ac + ALPHA.soft : th.bg, border: "1.5px solid " + (on ? th.ac : th.bor), borderRadius: RADIUS.s + 3, padding: SPACE.s3 + "px " + SPACE.s2 + "px", cursor: "pointer", fontFamily: "inherit" }}>
                   <span style={{ display: "flex" }}>{opt.ico(on ? th.ac : th.t2, 20)}</span>
-                  <span style={{ ...TYPE.caption, fontWeight: 800, color: on ? th.ac : th.t1 }}>{lg === "uz" ? opt.uz : opt.ru}</span>
-                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>{lg === "uz" ? opt.suz : opt.sru}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 800, color: on ? th.ac : th.t1 }}>{t(opt.tKey)}</span>
+                  <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, fontWeight: 500, textAlign: "center", lineHeight: 1.3 }}>{t(opt.sKey)}</span>
                 </button>
               );
             })}
@@ -482,22 +482,22 @@ function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM, defaultShared
       )}
       {mS && Number(mS) > 0 && (
         <div style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med, borderRadius: RADIUS.s + 3, padding: SPACE.s3 + "px " + (SPACE.s3 + 3) + "px", marginBottom: SPACE.s3 }}>
-          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, fontWeight: 700, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{GIco.bulb(th.ac)}{lg === "uz" ? "Avtomatik hisob" : "Auto calculation"}</div>
-          {[{ m: 6, l: lg === "uz" ? "6 oyda" : "6 months" }, { m: 12, l: lg === "uz" ? "12 oyda" : "12 months" }, { m: 24, l: lg === "uz" ? "24 oyda" : "24 months" }].map(opt => {
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.ac, fontWeight: 700, marginBottom: SPACE.s2, display: "flex", alignItems: "center", gap: SPACE.s1 + 1 }}>{GIco.bulb(th.ac)}{t("gl_autoCalc")}</div>
+          {[6, 12, 24].map(m => ({ m, l: t("gl_monthsCount", { m }) })).map(opt => {
             const perMonth = Math.ceil(Number(mS) / opt.m);
             return (
               <div key={opt.m} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 + 2, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1 }}>
                 <span style={{ color: th.t2 }}>{opt.l}:</span>
-                <span style={{ color: th.t1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{f(perMonth, true)}/{lg === "uz" ? "oy" : "mo"}</span>
+                <span style={{ color: th.t1, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{f(perMonth, true)}/{t("gl_perMonthShort")}</span>
               </div>
             );
           })}
-          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s2, paddingTop: SPACE.s2, borderTop: "1px solid " + th.bor }}>{lg === "uz" ? "Har oy ajratsangiz, shu muddatda yig'asiz" : "Save monthly to reach your goal"}</div>
+          <div style={{ ...TYPE.caption, fontSize: TYPE.caption.fontSize - 1, color: th.t2, marginTop: SPACE.s2, paddingTop: SPACE.s2, borderTop: "1px solid " + th.bor }}>{t("gl_saveMonthlyHint2")}</div>
         </div>
       )}
       <DeadlineField th={th} STY={STY} lg={lg} value={mDeadline} onChange={v => { setMDeadline(v); setDlErr(false); }} error={dlErr} />
       <ImageField th={th} STY={STY} lg={lg} value={mImg} onChange={setMImg} />
-      <label style={STY.lb}>{lg === "uz" ? "Rang" : "Color"}</label>
+      <label style={STY.lb}>{t("gl_colorLabel")}</label>
       <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
         {[th.gr, th.ac, th.am, CHART[5], th.rd, CHART[4]].map(r => (
           <button key={r} className="ui-press" onClick={() => setMR(r)} aria-label={r} style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.full, background: r, border: mR === r ? "3px solid " + th.t1 : "3px solid transparent", cursor: "pointer", flexShrink: 0 }} />
@@ -506,7 +506,7 @@ function GoalForm({ th, STY, lg, isKid, f, t, submitGoal, setAddM, defaultShared
       <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s2 }}>
         <button type="button" className="ui-press" onClick={() => setAddM(false)}
           style={{ flex: 1, background: th.surH || "rgba(0,0,0,0.05)", border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s3 + "px 0", cursor: "pointer", ...TYPE.caption, fontWeight: 700, color: th.t2, fontFamily: "inherit" }}>
-          {lg === "uz" ? "Bekor qilish" : "Cancel"}
+          {t("gl_cancelBtn")}
         </button>
         <PrimaryButton th={th} onClick={submit} style={{ flex: 2, marginBottom: 0 }}>{t.sv}</PrimaryButton>
       </div>
