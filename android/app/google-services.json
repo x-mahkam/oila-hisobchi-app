@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "571641132083",
+    "project_id": "oila-hisobchi",
+    "storage_bucket": "oila-hisobchi.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:571641132083:android:a866ec8e9d0881e35ddf46",
+        "android_client_info": {
+          "package_name": "com.mahakam.oilahisobchi"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "571641132083-ep59bq99rko48cc79te9n8rqbaprqbtn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC6ofHSfLxvFr-QM3HURxeoQQ9WnmFi8Ok"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "571641132083-ep59bq99rko48cc79te9n8rqbaprqbtn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
