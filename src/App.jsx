@@ -71,6 +71,9 @@ import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils
 import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
+// Bank ilovalari kabi: fonda shu muddatgacha turilsa PIN qulf qayta so'ralmaydi.
+const LOCK_GRACE_MS = 30000; // 30 soniya
+
 export default function App() {
   const {
     user, setUser, oila, setOila, azolar, setAzolar,
@@ -90,6 +93,7 @@ export default function App() {
 
   const [appUnlocked, setAppUnlocked] = useState(false);
   const [hasPin, setHasPin] = useState(false);
+  const bgSinceRef = useRef(null); // fonga o'tgan vaqt belgisi (PIN qulf grace-period uchun)
 
   // Load PIN status
   useEffect(() => {
@@ -110,13 +114,24 @@ export default function App() {
     }
   }, [user?.id]);
 
-  // Background state lock listener
+  // Background state lock listener — bank ilovalari kabi: fondan darhol
+  // qaytilsa (LOCK_GRACE_MS ichida) PIN so'ralmaydi, faqat shu muddatdan
+  // uzoqroq fonda turilsa qulflanadi.
   useEffect(() => {
-    const handleVisibilityChange = () => {
-      const active = document.visibilityState === "visible";
-      if (!active && user?.id && hasPin) {
-        setAppUnlocked(false);
+    const handleStateChange = (active) => {
+      if (!user?.id || !hasPin) return;
+      if (!active) {
+        bgSinceRef.current = Date.now();
+      } else {
+        if (bgSinceRef.current && Date.now() - bgSinceRef.current >= LOCK_GRACE_MS) {
+          setAppUnlocked(false);
+        }
+        bgSinceRef.current = null;
       }
+    };
+
+    const handleVisibilityChange = () => {
+      handleStateChange(document.visibilityState === "visible");
     };
 
     document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -125,9 +140,7 @@ export default function App() {
     if (Capacitor.isNativePlatform()) {
       try {
         CapApp.addListener("appStateChange", ({ isActive }) => {
-          if (!isActive && user?.id && hasPin) {
-            setAppUnlocked(false);
-          }
+          handleStateChange(isActive);
         }).then(listener => {
           capListener = listener;
         });
