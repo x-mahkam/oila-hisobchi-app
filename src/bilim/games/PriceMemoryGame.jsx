@@ -12,6 +12,7 @@ import { playSound } from "../engine/sound.js";
 import { f } from "../../utils/formatters.js";
 import { Star } from "lucide-react";
 import { starsForMemory } from "./levels/memoryLevels.js";
+import { useApp } from "../../context/AppContext.jsx";
 
 // Helper coin icon
 const coinIco = (c, s = 20) => (
@@ -23,15 +24,7 @@ const coinIco = (c, s = 20) => (
 
 export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memory/pairs", name, level, onBack, onNextLevel }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
-  const ru = lg === "ru";
-  const en = lg === "en";
-
-  const L = (uzVal, ruVal, enVal) => {
-    if (ru) return ruVal || uzVal;
-    if (en) return enVal || uzVal;
-    return uzVal;
-  };
+  const { t } = useApp();
 
   // Game states
   const [phase, setPhase] = useState("intro"); // intro | play | result
@@ -267,7 +260,7 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
       {phase === "intro" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <PageHeader th={th} title={L("Narx xotirasi", "Память цен", "Price memory")} onBack={onBack} />
+            <PageHeader th={th} title={t("gam_pmem_title")} onBack={onBack} />
 
             <div style={{ textAlign: "center", margin: "24px 0" }}>
               <div style={{ width: 80, height: 80, borderRadius: RADIUS.l, background: th.ac2 + ALPHA.soft, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s3 }}>
@@ -277,14 +270,10 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
                 </svg>
               </div>
               <h2 style={{ ...TYPE.heading, color: th.t1, fontSize: 24, fontWeight: 900, marginBottom: SPACE.s2 }}>
-                {L("Mahsulot va narxini eslab qoling", "Запоминайте товары и их цены", "Remember products and their prices")}
+                {t("gam_pmem_heading")}
               </h2>
               <p style={{ ...TYPE.caption, color: th.t2, fontSize: 15, lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-                {L(
-                  "Klassik xotira o'yini: mahsulotlar nomi va ularning narxi juftliklarini toping va eslab qolish mahoratingizni sinab ko'ring!",
-                  "Классическая тренировка памяти: сопоставляйте товары с их ценами и развивайте финансовую внимательность!",
-                  "Classic memory game: match products with their correct prices and test your retention skills!"
-                )}
+                {t("gam_pmem_intro")}
               </p>
             </div>
 
@@ -293,10 +282,10 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
                 <div style={{ width: 36, height: 36, borderRadius: RADIUS.m, background: th.gr + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", color: th.gr, fontWeight: "bold" }}>1</div>
                 <div style={{ flex: 1 }}>
                   <h4 style={{ ...TYPE.subtitle, color: th.gr, fontWeight: 800, margin: 0, fontSize: 14 }}>
-                    {L("Kartalarni oching", "Открывайте карты", "Flip cards")}
+                    {t("gam_pmem_step1Title")}
                   </h4>
                   <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {L("Ikkita kartani tanlang — biri mahsulot nomi, ikkinchisi uning narxi.", "Переверните две карточки — одну с названием, другую с ценой.", "Flip any two cards: one is the product, and the other is its price.")}
+                    {t("gam_pmem_step1Desc")}
                   </p>
                 </div>
               </div>
@@ -307,10 +296,10 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
                 <div style={{ width: 36, height: 36, borderRadius: RADIUS.m, background: th.ac + ALPHA.soft, display: "flex", alignItems: "center", justifyContent: "center", color: th.ac, fontWeight: "bold" }}>2</div>
                 <div style={{ flex: 1 }}>
                   <h4 style={{ ...TYPE.subtitle, color: th.ac, fontWeight: 800, margin: 0, fontSize: 14 }}>
-                    {L("Juftliklarni toping", "Сопоставляйте пары", "Match correctly")}
+                    {t("gam_pmem_step2Title")}
                   </h4>
                   <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {L("Agar narxi to'g'ri bo'lsa, juftlik ochiq qoladi. Kamroq urinishda ko'proq coin oling!", "Если сопоставление верное, пара останется открытой. Меньше ходов — больше монет!", "If they match, they stay open. Spend fewer moves to earn bonus coins!")}
+                    {t("gam_pmem_step2Desc")}
                   </p>
                 </div>
               </div>
@@ -320,10 +309,10 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
             {selectedForSession.length > 0 && (
               <div style={{ marginTop: SPACE.s3, marginBottom: SPACE.s3 }}>
                 <h3 style={{ ...TYPE.subtitle, color: th.t1, fontWeight: 800, marginBottom: "8px", fontSize: 15, display: "flex", alignItems: "center", gap: 6 }}>
-                  <span>🛒</span> {L("Bugungi Narxlar Katalogi", "Katalog narxlar bugun", "Today's Price Catalog")}
+                  <span>🛒</span> {t("gam_pmem_catalogTitle")}
                 </h3>
                 <p style={{ ...TYPE.caption, color: th.t2, fontSize: 13, marginBottom: "12px", lineHeight: 1.4 }}>
-                  {L("O'yinni boshlashdan oldin narxlarni yaxshilab eslab qoling!", "Перед началом игры хорошенько запомните цены!", "Before starting the game, memorize these prices carefully!")}
+                  {t("gam_pmem_catalogDesc")}
                 </p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", background: th.sur, border: "1.5px solid " + th.bor, borderRadius: RADIUS.m, padding: "12px", boxSizing: "border-box" }}>
                   {selectedForSession.map(prod => (
@@ -338,7 +327,7 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
           </div>
 
           <PrimaryButton th={th} onClick={startNewGame} style={{ marginTop: SPACE.s3 }}>
-            {L("O'yinni boshlash", "Начать игру", "Start Game")}
+            {t("gam_sort_startGame")}
           </PrimaryButton>
         </div>
       )}
@@ -348,11 +337,11 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
         return (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
             <div>
-              <PageHeader th={th} title={`${L("Urinishlar", "Ходы", "Moves")}: ${moves}`} onBack={() => setPhase("intro")} />
+              <PageHeader th={th} title={`${t("gam_pmem_moves")}: ${moves}`} onBack={() => setPhase("intro")} />
 
               {/* Progress: Matched Pairs */}
               <div style={{ display: "flex", justifyContent: "space-between", ...TYPE.tiny, color: th.t2, marginBottom: 8 }}>
-                <span>{L("Topilgan juftliklar", "Найдено пар", "Matched pairs")}</span>
+                <span>{t("gam_pmem_matchedPairs")}</span>
                 <span style={{ fontWeight: 700, color: th.gr }}>{matchedProductIds.length} / {pairCount}</span>
               </div>
               <div style={{ height: 6, width: "100%", background: th.bor, borderRadius: RADIUS.pill, marginBottom: 24, overflow: "hidden" }}>
@@ -426,11 +415,7 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
 
             <div style={{ marginTop: 24, textAlign: "center" }}>
               <p style={{ ...TYPE.tiny, color: th.t3, textTransform: "none", letterSpacing: 0 }}>
-                {L(
-                  "Eslatma: Mahsulot nomi va uning narxi juftligini toping.",
-                  "Подсказка: Сопоставляйте название товара с его ценой.",
-                  "Tip: Pair the name of the product with its correct price tag."
-                )}
+                {t("gam_pmem_tip")}
               </p>
             </div>
           </div>
@@ -451,39 +436,39 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
               </div>
               <h2 style={{ ...TYPE.display, fontSize: 24, color: th.t1, margin: 0 }}>
                 {finalStars >= 2 
-                  ? L("Ajoyib xotira mahorati! 🏆", "Потрясающая память! 🏆", "Excellent Memory! 🏆") 
-                  : L("Yaxshi o'yin! 👏", "Хорошая игра! 👏", "Well Played! 👏")}
+                  ? t("gam_pmem_excellentMemory")
+                  : t("gam_pmem_wellPlayed")}
               </h2>
               <p style={{ ...TYPE.subtitle, color: th.t2, margin: "6px 0 0 0" }}>
-                {L("Hammasini topdingiz!", "Вы нашли все пары!", "Matched all pairs!")}
+                {t("gam_pmem_matchedAllPairs")}
               </p>
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-              <StatCard th={th} value={moves} label={L("Urinishlar", "Ходы", "Moves")} tone={th.ac} />
-              <StatCard th={th} value={`${elapsed}s`} label={L("Sarflandi", "Время", "Time")} tone={th.gr} />
-              <StatCard th={th} value="100%" label={L("To'g'rilik", "Точность", "Accuracy")} tone={th.ac2} />
-              <StatCard th={th} value={finalStars === 3 ? "Excellent" : finalStars === 2 ? "Great" : "Good"} label="Rating" tone={th.am} />
+              <StatCard th={th} value={moves} label={t("gam_pmem_moves")} tone={th.ac} />
+              <StatCard th={th} value={`${elapsed}s`} label={t("gam_pmem_timeSpent")} tone={th.gr} />
+              <StatCard th={th} value="100%" label={t("gam_pmem_accuracy")} tone={th.ac2} />
+              <StatCard th={th} value={finalStars === 3 ? t("gam_pmem_ratingExcellent") : finalStars === 2 ? t("gam_pmem_ratingGreat") : t("gam_pmem_ratingGood")} label={t("gam_pmem_ratingLabel")} tone={th.am} />
             </div>
 
             {/* Earned Coins */}
             <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
               {coinIco(PREMIUM.gold, 28)}
               <div style={{ flex: 1 }}>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{L("Topilgan coin", "Полученные монеты", "Earned Coins")}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_coinsEarned")}</div>
                 <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedCoins}</div>
               </div>
-              {record && <Badge th={th} tone={PREMIUM.gold}>REKORD</Badge>}
+              {record && <Badge th={th} tone={PREMIUM.gold}>{t("gam_newRecord")}</Badge>}
             </AppCard>
 
             {/* Earned XP */}
             <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med, marginBottom: SPACE.s3 }}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
               <div style={{ flex: 1 }}>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>Tajriba (XP)</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_experienceXp")}</div>
                 <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedXp}</div>
               </div>
-              {leveledUp && <Badge th={th} tone={th.ac2}>YANGI LEVEL!</Badge>}
+              {leveledUp && <Badge th={th} tone={th.ac2}>{t("gam_budget_newLevelBadge")}</Badge>}
             </AppCard>
 
             {/* Dynamic Tier Progress Card */}
@@ -495,15 +480,11 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
                 const base = cur ? cur.need : 0;
                 const diff = next.need - base;
                 tierPct = Math.min(100, Math.max(0, ((totalCoins - base) / diff) * 100));
-                progressText = L(
-                  `${next.need - totalCoins} coin keyingi darajaga (${next[lg] || next.uz})`,
-                  `До следующего уровня (${next[lg] || next.uz}) осталось ${next.need - totalCoins} монет`,
-                  `${next.need - totalCoins} coins to next level (${next[lg] || next.uz})`
-                );
+                progressText = t("gam_nextTierProgress", { remain: next.need - totalCoins, tier: next[lg] || next.uz });
               } else {
-                progressText = L("Siz afsonaviy darajadasiz!", "Вы на легендарном уровне!", "You are at the Legend level!");
+                progressText = t("gam_legendLevel");
               }
-              const tierName = cur ? cur[lg] || cur.uz : L("Boshlang'ich", "Новичок", "Novice");
+              const tierName = cur ? cur[lg] || cur.uz : t("gam_novice");
               const tierColor = cur ? cur.color : th.ac2;
               return (
                 <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, background: th.sur, border: "1px solid " + th.bor, marginBottom: SPACE.s3 }}>
@@ -511,10 +492,10 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
                     {medalSvg(tierColor, 28)}
                     <div style={{ flex: 1 }}>
                       <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>
-                        {L("Sizning darajangiz", "Ваш уровень", "Your Tier")}
+                        {t("gam_yourTier")}
                       </div>
                       <div style={{ ...TYPE.title, color: tierColor, fontSize: 18, fontWeight: 800 }}>
-                        {tierName} ({totalCoins} {L("coin", "монет", "coins")})
+                        {tierName} ({totalCoins} {t("gam_coinsUnit")})
                       </div>
                     </div>
                   </div>
@@ -533,12 +514,12 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
             {/* Action buttons */}
             {level && onNextLevel && finalStars >= 1 && (
               <PrimaryButton th={th} onClick={onNextLevel} style={{ background: th.gr, marginBottom: SPACE.s2 }}>
-                {L("Keyingi bosqich", "Следующий уровень", "Next Level")}
+                {t("gam_nextLevel")}
               </PrimaryButton>
             )}
 
             <PrimaryButton th={th} onClick={startNewGame}>
-              {L("Qayta o'ynash", "Играть еще раз", "Play Again")}
+              {t("gam_playAgain")}
             </PrimaryButton>
             
             <button className="ui-press" onClick={onBack}
@@ -554,7 +535,7 @@ export default function PriceMemoryGame({ user, lg = "uz", dark, gameId = "memor
                 fontWeight: 600,
                 fontSize: 15
               }}>
-              {L("Ortga qaytish", "Назад", "Back")}
+              {t("gam_sort_backToMenu")}
             </button>
           </div>
         );

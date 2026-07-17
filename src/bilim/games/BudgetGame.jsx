@@ -8,20 +8,13 @@ import { addCoins, logGameSession, bestForGame, readCoins } from "../engine/pers
 import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
 import { DIFF, rewardOf, tierFor, medalSvg } from "../registry.jsx";
 import { playSound } from "../engine/sound.js";
+import { useApp } from "../../context/AppContext.jsx";
 
 const coinIco = (c, s = 20) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke={c} strokeWidth="1.5" fill={c} fillOpacity=".2"/><path d="M10 7v6M8 10h4" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></svg>;
 
 export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/budget", name, onBack }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
-  const ru = lg === "ru";
-  const en = lg === "en";
-
-  const L = (uzVal, ruVal, enVal) => {
-    if (ru) return ruVal || uzVal;
-    if (en) return enVal || uzVal;
-    return uzVal;
-  };
+  const { t } = useApp();
 
   const TOTAL_BUDGET = 20000;
   const STEP = 1000;
@@ -30,55 +23,39 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
   const initialCategories = [
     {
       id: "food",
-      name: { uz: "Oziq-ovqat", ru: "Еда", en: "Food" },
+      name: { uz: "Oziq-ovqat", en: "Food", ru: "Еда", kk: "Азық-түлік", ky: "Азык-түлүк", tg: "Хӯрокворӣ", qr: "Aziq-awqat" },
       icon: "🍎",
       min: 5000,
       target: 8000,
       allocated: 0,
-      desc: { 
-        uz: "Busiz yashab bo'lmaydi. Sog'lom va mazali taomlar uchun.",
-        ru: "Без этого не прожить. Для здоровой и вкусной еды.",
-        en: "Cannot live without it. For healthy and delicious food."
-      }
+      desc: { uz: "Busiz yashab bo'lmaydi. Sog'lom va mazali taomlar uchun.", en: "Cannot live without it. For healthy and delicious food.", ru: "Без этого не прожить. Для здоровой и вкусной еды.", kk: "Онсыз өмір сүру мүмкін емес. Дұрыс және дәмді тамақ үшін.", ky: "Аны жок жашоо мүмкүн эмес. Туура жана даамдуу тамак үчүн.", tg: "Бе он зиндагӣ мумкин нест. Барои ғизои солим ва болаззат.", qr: "Onsız jasaw múmkin emes. Densawlıqlı hám dámli tamaq ushın." }
     },
     {
       id: "school",
-      name: { uz: "Maktab", ru: "Школа", en: "School" },
+      name: { uz: "Maktab", en: "School", ru: "Школа", kk: "Мектеп", ky: "Мектеп", tg: "Мактаб", qr: "Mektep" },
       icon: "📚",
       min: 3000,
       target: 5000,
       allocated: 0,
-      desc: {
-        uz: "Darslik, daftar va ruchkalar uchun zarur xarajat.",
-        ru: "Книги, тетради и ручки. Необходимые расходы.",
-        en: "Textbooks, notebooks and pens. Required expenses."
-      }
+      desc: { uz: "Darslik, daftar va ruchkalar uchun zarur xarajat.", en: "Textbooks, notebooks and pens. Required expenses.", ru: "Книги, тетради и ручки. Необходимые расходы.", kk: "Оқулық, дәптер және қалам үшін қажетті шығын.", ky: "Окуу китеп, дептер жана калем үчүн керектүү чыгым.", tg: "Хароҷоти зарурӣ барои дарсномаҳо, дафтарҳо ва қаламҳо.", qr: "Dárislik, defter hám qalam ushın kerekli xarajat." }
     },
     {
       id: "savings",
-      name: { uz: "Jamg'arma", ru: "Копилка", en: "Savings" },
+      name: { uz: "Jamg'arma", en: "Savings", ru: "Копилка", kk: "Жинақ", ky: "Топтом", tg: "Пасандоз", qr: "Jınaq" },
       icon: "🏦",
       min: 2000,
       target: 4000,
       allocated: 0,
-      desc: {
-        uz: "Kelajakdagi orzularingiz yoki kutilmagan kunlar uchun.",
-        ru: "Для будущих целей и непредвиденных ситуаций.",
-        en: "For future goals or unexpected situations."
-      }
+      desc: { uz: "Kelajakdagi orzularingiz yoki kutilmagan kunlar uchun.", en: "For future goals or unexpected situations.", ru: "Для будущих целей и непредвиденных ситуаций.", kk: "Болашақ мақсаттарыңыз немесе күтпеген жағдайлар үшін.", ky: "Келечектеги максаттарыңыз же күтүлбөгөн жагдайлар үчүн.", tg: "Барои ҳадафҳои оянда ё ҳолатҳои ногаҳонӣ.", qr: "Kelesheklik maqsetleriń yamasa kútilmegen jaǵdaylar ushın." }
     },
     {
       id: "fun",
-      name: { uz: "O'yin-kulgi", ru: "Развлечения", en: "Entertainment" },
+      name: { uz: "O'yin-kulgi", en: "Entertainment", ru: "Развлечения", kk: "Ойын-сауық", ky: "Көңүл ачуу", tg: "Дилхушӣ", qr: "Kewil-ashar" },
       icon: "🎈",
       min: 0,
       target: 3000,
       allocated: 0,
-      desc: {
-        uz: "O'yinchoqlar, shirinliklar yoki kino uchun (xohish).",
-        ru: "Игрушки, сладости или кино (желания).",
-        en: "Toys, candies or movies (wants)."
-      }
+      desc: { uz: "O'yinchoqlar, shirinliklar yoki kino uchun (xohish).", en: "Toys, candies or movies (wants).", ru: "Игрушки, сладости или кино (желания).", kk: "Ойыншықтар, тәттілер немесе кино үшін (тілек).", ky: "Оюнчуктар, таттуулар же кино үчүн (каалоо).", tg: "Барои бозичаҳо, ширинӣ ё кино (хоҳиш).", qr: "Oyınshıqlar, tátli-tuwaqlar yamasa kino ushın (tilek)." }
     }
   ];
 
@@ -156,11 +133,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
     // Check constraints
     if (totalSpent < TOTAL_BUDGET) {
       playSound.wrong();
-      setFeedbackMsg(L(
-        `Sizda hali ${TOTAL_BUDGET - totalSpent} so'm pul qoldi! Pulning hammasini taqsimlashingiz kerak.`,
-        `У вас осталось еще ${TOTAL_BUDGET - totalSpent} сум! Распределите весь бюджет.`,
-        `You still have ${TOTAL_BUDGET - totalSpent} UZS left! Allocate the entire budget.`
-      ));
+      setFeedbackMsg(t("gam_budget_notFullyAllocated", { amt: TOTAL_BUDGET - totalSpent, cur: t("xp_currency") }));
       return;
     }
 
@@ -170,41 +143,25 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
 
     if (food.allocated < food.min) {
       playSound.wrong();
-      setFeedbackMsg(L(
-        "Oziq-ovqat uchun juda kam ajratildi! Sog'lom ovqatlanish hayot uchun eng muhim ehtiyojdir.",
-        "Выделили слишком мало на еду! Здоровое питание — это важнейшая потребность для жизни.",
-        "Allocated too little for food! Healthy nutrition is the most essential need for life."
-      ));
+      setFeedbackMsg(t("gam_budget_foodTooLow"));
       return;
     }
 
     if (school.allocated < school.min) {
       playSound.wrong();
-      setFeedbackMsg(L(
-        "Maktab qurollariga yetarli ajratilmadi! Kitob va darsliklar bilim olish uchun juda muhim.",
-        "Недостаточно на школу! Книги и учебники очень важны для получения знаний.",
-        "Not enough for school! Books and school supplies are very important for education."
-      ));
+      setFeedbackMsg(t("gam_budget_schoolTooLow"));
       return;
     }
 
     if (savings.allocated < savings.min) {
       playSound.wrong();
-      setFeedbackMsg(L(
-        "Jamg'armaga yetarli pul solinmadi! Kelajakdagi orzularingiz uchun pul yig'ishni odat qiling.",
-        "Мало денег в копилке! Сделайте привычкой откладывать на будущие цели.",
-        "Not enough in savings! Make it a habit to save money for your future goals."
-      ));
+      setFeedbackMsg(t("gam_budget_savingsTooLow"));
       return;
     }
 
     // Success!
     setIsSuccess(true);
-    setFeedbackMsg(L(
-      "Ajoyib! Siz o'z byudjetingizni ideal darajada taqsimladingiz. Hamma muhim ehtiyojlar qoplandi!",
-      "Отлично! Вы идеально распределили свой бюджет. Все важные потребности покрыты!",
-      "Fantastic! You perfectly allocated your budget. All important needs are fully covered!"
-    ));
+    setFeedbackMsg(t("gam_budget_perfectAllocation"));
     playSound.victory();
     setPhase("result");
   };
@@ -260,7 +217,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
       {phase === "intro" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <PageHeader th={th} title={L("Haftalik Byudjet", "Еженедельный Бюджет", "Weekly Budget")} onBack={onBack} />
+            <PageHeader th={th} title={t("gam_budget_title")} onBack={onBack} />
             
             <div style={{ textAlign: "center", margin: "24px 0" }}>
               <div style={{ width: 80, height: 80, borderRadius: RADIUS.l, background: th.am + ALPHA.soft, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s3 }}>
@@ -269,31 +226,27 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
                 </svg>
               </div>
               <h2 style={{ ...TYPE.heading, color: th.t1, fontSize: 24, fontWeight: 900, marginBottom: SPACE.s2 }}>
-                {L("Pulni to'g'ri taqsimlash", "Учись планировать бюджет", "Budget Planning")}
+                {t("gam_budget_heading")}
               </h2>
               <p style={{ ...TYPE.caption, color: th.t2, fontSize: 15, lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-                {L(
-                  "Sizga 20 000 so'm haftalik pul beriladi. Siz uni barcha zaruriy va qo'shimcha toifalarga muvozanatli taqsimlashingiz kerak!",
-                  "Вам дается 20 000 сум на неделю. Распределите их правильно между важными покупками и развлечениями!",
-                  "You are given 20,000 UZS for a week. Balance this budget across critical needs and minor wants!"
-                )}
+                {t("gam_budget_intro")}
               </p>
             </div>
 
             <AppCard th={th} style={{ background: th.sur, border: "1px solid " + th.bor, marginBottom: SPACE.s3 }}>
               <h4 style={{ ...TYPE.subtitle, color: th.t1, fontWeight: 800, margin: "0 0 8px 0" }}>
-                {L("O'yin qoidalari:", "Правила игры:", "Game Rules:")}
+                {t("gam_budget_rulesTitle")}
               </h4>
               <ul style={{ ...TYPE.caption, color: th.t2, paddingLeft: 20, margin: 0, lineHeight: 1.6, display: "flex", flexDirection: "column", gap: 6 }}>
-                <li>{L("Barcha 20 000 so'm pul oxirigacha taqsimlanishi shart (Qolgan pul 0 bo'lsin).", "Все 20 000 сум должны быть распределены до конца.", "All 20,000 UZS must be fully allocated.")}</li>
-                <li>{L("Oziq-ovqat (kamida 5 000 so'm) va Maktab (kamida 3 000 so'm) birinchi o'rinda bo'lishi kerak.", "Еда (минимум 5 000) и Школа (минимум 3 000) — в первую очередь.", "Food (min 5,000) and School (min 3,000) are top priorities.")}</li>
-                <li>{L("Kelajak uchun Jamg'arma (kamida 2 000 so'm) solishni unutmang!", "Не забудьте положить в Копилку минимум 2 000 сум!", "Don't forget to save at least 2,000 UZS in Savings!")}</li>
+                <li>{t("gam_budget_rule1")}</li>
+                <li>{t("gam_budget_rule2")}</li>
+                <li>{t("gam_budget_rule3")}</li>
               </ul>
             </AppCard>
           </div>
 
           <PrimaryButton th={th} onClick={startNewGame} style={{ marginTop: SPACE.s3 }}>
-            {L("Rejalashtirishni boshlash", "Начать планирование", "Start Planning")}
+            {t("gam_budget_startPlanning")}
           </PrimaryButton>
         </div>
       )}
@@ -302,7 +255,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
       {phase === "play" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <PageHeader th={th} title={L("Byudjet tuzish", "Составление бюджета", "Create Budget")} onBack={() => setPhase("intro")} />
+            <PageHeader th={th} title={t("gam_budget_createBudget")} onBack={() => setPhase("intro")} />
             
             {/* Top Indicator Bar: Budget Left */}
             <div style={{ 
@@ -315,15 +268,15 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
               boxSizing: "border-box"
             }}>
               <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>
-                {L("Taolangan / Jami", "Распределено / Всего", "Allocated / Total")}
+                {t("gam_budget_allocatedTotal")}
               </div>
               <div style={{ ...TYPE.title, fontSize: 24, fontWeight: 900, color: leftAmount === 0 ? th.gr : th.t1, margin: "4px 0" }}>
-                {totalSpent.toLocaleString()} / {TOTAL_BUDGET.toLocaleString()} so'm
+                {totalSpent.toLocaleString()} / {TOTAL_BUDGET.toLocaleString()} {t("xp_currency")}
               </div>
               <div style={{ ...TYPE.caption, fontWeight: 700, color: leftAmount === 0 ? th.gr : th.ac }}>
                 {leftAmount === 0 
-                  ? L("Byudjet tayyor! 🎉", "Бюджет готов! 🎉", "Budget ready! 🎉") 
-                  : L(`Qolgan pul: ${leftAmount.toLocaleString()} so'm`, `Осталось: ${leftAmount.toLocaleString()} сум`, `Money remaining: ${leftAmount.toLocaleString()} UZS`)}
+                  ? t("gam_budget_ready")
+                  : t("gam_budget_moneyRemaining", { amt: leftAmount.toLocaleString(), cur: t("xp_currency") })}
               </div>
             </div>
 
@@ -376,9 +329,9 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
                     {/* Progress relative to standard recommendation */}
                     <div>
                       <div style={{ display: "flex", justifyContent: "space-between", ...TYPE.tiny, color: th.t3, marginBottom: 4 }}>
-                        <span>{L("Tavsiya:", "Рекомендуется:", "Recommended:")} {c.target.toLocaleString()}</span>
+                        <span>{t("gam_budget_recommended")} {c.target.toLocaleString()}</span>
                         <span style={{ fontWeight: 700, color: hasMetMin ? th.gr : th.rd }}>
-                          {hasMetMin ? L("Yetarli", "Достаточно", "Sufficient") : L("Kam", "Мало", "Too low")}
+                          {hasMetMin ? t("gam_budget_sufficient") : t("gam_budget_tooLow")}
                         </span>
                       </div>
                       <div style={{ height: 6, width: "100%", background: th.bor, borderRadius: RADIUS.pill, overflow: "hidden" }}>
@@ -392,7 +345,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
           </div>
 
           <PrimaryButton th={th} onClick={handleVerifyBudget} style={{ marginTop: 24 }}>
-            🎯 {L("Byudjetni tasdiqlash", "Проверить бюджет", "Verify Budget")}
+            🎯 {t("gam_budget_verifyBudget")}
           </PrimaryButton>
         </div>
       )}
@@ -408,7 +361,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
               </svg>
             </div>
             <h2 style={{ ...TYPE.display, fontSize: 24, color: th.t1, margin: 0 }}>
-              {L("Muvaffaqiyatli byudjet! 🏆", "Бюджет спланирован! 🏆", "Successful Budget! 🏆")}
+              {t("gam_budget_successTitle")}
             </h2>
             <p style={{ ...TYPE.caption, color: th.t2, fontSize: 14, margin: "8px 0 0 0", lineHeight: 1.4, maxWidth: 320, marginLeft: "auto", marginRight: "auto" }}>
               {feedbackMsg}
@@ -416,30 +369,30 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-            <StatCard th={th} value="100%" label={L("Samaradorlik", "Эффективность", "Efficiency")} tone={th.gr} />
-            <StatCard th={th} value="4 / 4" label={L("Toifalar", "Категории", "Categories")} tone={th.ac} />
-            <StatCard th={th} value={`${seconds}s`} label={L("Vaqt", "Время", "Time")} tone={th.ac2} />
-            <StatCard th={th} value="Min" label={L("Munosib", "В норме", "Min met")} tone={th.gr} />
+            <StatCard th={th} value="100%" label={t("gam_budget_efficiency")} tone={th.gr} />
+            <StatCard th={th} value="4 / 4" label={t("gam_budget_categories")} tone={th.ac} />
+            <StatCard th={th} value={`${seconds}s`} label={t("gam_time")} tone={th.ac2} />
+            <StatCard th={th} value="Min" label={t("gam_budget_minMet")} tone={th.gr} />
           </div>
 
           {/* Earned Coins */}
           <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
             {coinIco(PREMIUM.gold, 28)}
             <div style={{ flex: 1 }}>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{L("Topilgan coin", "Полученные монеты", "Earned Coins")}</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_coinsEarned")}</div>
               <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedCoins}</div>
             </div>
-            {record && <Badge th={th} tone={PREMIUM.gold}>REKORD</Badge>}
+            {record && <Badge th={th} tone={PREMIUM.gold}>{t("gam_newRecord")}</Badge>}
           </AppCard>
 
           {/* Earned XP */}
           <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med, marginBottom: SPACE.s3 }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
             <div style={{ flex: 1 }}>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>Tajriba (XP)</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_experienceXp")}</div>
               <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedXp}</div>
             </div>
-            {leveledUp && <Badge th={th} tone={th.ac2}>YANGI LEVEL!</Badge>}
+            {leveledUp && <Badge th={th} tone={th.ac2}>{t("gam_budget_newLevelBadge")}</Badge>}
           </AppCard>
 
           {/* Dynamic Tier Progress Card */}
@@ -451,15 +404,11 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
               const base = cur ? cur.need : 0;
               const diff = next.need - base;
               tierPct = Math.min(100, Math.max(0, ((totalCoins - base) / diff) * 100));
-              progressText = L(
-                `${next.need - totalCoins} coin keyingi darajaga (${next[lg] || next.uz})`,
-                `До следующего уровня (${next[lg] || next.uz}) осталось ${next.need - totalCoins} монет`,
-                `${next.need - totalCoins} coins to next level (${next[lg] || next.uz})`
-              );
+              progressText = t("gam_nextTierProgress", { remain: next.need - totalCoins, tier: next[lg] || next.uz });
             } else {
-              progressText = L("Siz afsonaviy darajadasiz!", "Вы на легендарном уровне!", "You are at the Legend level!");
+              progressText = t("gam_legendLevel");
             }
-            const tierName = cur ? cur[lg] || cur.uz : L("Boshlang'ich", "Новичок", "Novice");
+            const tierName = cur ? cur[lg] || cur.uz : t("gam_novice");
             const tierColor = cur ? cur.color : th.ac;
             return (
               <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, background: th.sur, border: "1px solid " + th.bor, marginBottom: SPACE.s3 }}>
@@ -467,10 +416,10 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
                   {medalSvg(tierColor, 28)}
                   <div style={{ flex: 1 }}>
                     <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>
-                      {L("Sizning darajangiz", "Ваш уровень", "Your Tier")}
+                      {t("gam_yourTier")}
                     </div>
                     <div style={{ ...TYPE.title, color: tierColor, fontSize: 18, fontWeight: 800 }}>
-                      {tierName} ({totalCoins} {L("coin", "монет", "coins")})
+                      {tierName} ({totalCoins} {t("gam_coinsUnit")})
                     </div>
                   </div>
                 </div>
@@ -488,7 +437,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
 
           {/* Action buttons */}
           <PrimaryButton th={th} onClick={startNewGame}>
-            {L("Qayta o'ynash", "Играть еще раз", "Play Again")}
+            {t("gam_playAgain")}
           </PrimaryButton>
           
           <button className="ui-press" onClick={() => setPhase("intro")}
@@ -504,7 +453,7 @@ export default function BudgetGame({ user, lg = "uz", dark, gameId = "finance/bu
               fontWeight: 600,
               fontSize: 15
             }}>
-            {L("Ortga qaytish", "Назад в меню", "Back")}
+            {t("gam_sort_backToMenu")}
           </button>
         </div>
       )}
