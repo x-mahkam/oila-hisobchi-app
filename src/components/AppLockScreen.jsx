@@ -11,9 +11,20 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
   const [pin, setPin] = useState("");
   const [storedPinHash, setStoredPinHash] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
+  // Qurilma biometrikani QO'LLAB-QUVVATLAYDIMI — sozlamalardagi "yoqilganmi"
+  // belgisidan mustaqil. Belgi shu qiymatga qarab ko'rsatiladi, shunda
+  // foydalanuvchi avval Sozlamalarga kirib alohida yoqmagan bo'lsa ham
+  // qurilma qo'llab-quvvatlasa PIN ekranida darhol ko'rinadi.
+  const [deviceBiometricAvailable, setDeviceBiometricAvailable] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForgotConfirm, setShowForgotConfirm] = useState(false);
+
+  useEffect(() => {
+    NativeBiometric.isAvailable()
+      .then(result => setDeviceBiometricAvailable(!!result.isAvailable))
+      .catch(() => setDeviceBiometricAvailable(false));
+  }, []);
 
   useEffect(() => {
     if (uid) {
@@ -22,7 +33,7 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
           setStoredPinHash(sec.pinHash || null);
           setBiometricEnabled(!!sec.biometricEnabled);
           if (sec.biometricEnabled) {
-            // Trigger biometrics automatically on mount
+            // Foydalanuvchi avval yoqqan bo'lsa — avtomatik so'raladi.
             triggerBiometrics();
           }
         }
@@ -34,6 +45,7 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
     } else {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   const triggerBiometrics = async () => {
@@ -46,6 +58,15 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
           subtitle: t("alk_biometricSubtitle"),
           description: t("alk_biometricDescription")
         });
+        // Muvaffaqiyatli tasdiqlangach, keyingi safarlar avtomatik
+        // so'ralishi uchun sozlamani ham yoqib qo'yamiz.
+        if (uid && !biometricEnabled) {
+          try {
+            const cur = (await db.g("security_" + uid)) || {};
+            await db.s("security_" + uid, { ...cur, biometricEnabled: true });
+            setBiometricEnabled(true);
+          } catch (_e) {}
+        }
         onUnlock();
       }
     } catch (e) {
@@ -161,7 +182,7 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
 
       {/* Numeric Keyboard */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: SPACE.s2, width: "100%", maxWidth: 300 }}>
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9, biometricEnabled ? "bio" : "", 0, "del"].map((num, ni) => {
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9, deviceBiometricAvailable ? "bio" : "", 0, "del"].map((num, ni) => {
           if (num === "bio") {
             return (
               <button key={ni} className="ui-press" onClick={triggerBiometrics} aria-label={t("alk_fingerprint")}
