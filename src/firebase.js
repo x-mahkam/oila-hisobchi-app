@@ -69,6 +69,24 @@ try {
 }
 export const fbAuth = _fbAuth;
 
+// VAQTINCHALIK DIAGNOSTIKA: sessiya saqlanish muammosini real qurilmada
+// aniqlash uchun. Login ekranida kichik matn sifatida ko'rsatiladi — qaysi
+// bosqichda aynan nima saqlanmayotganini bilish uchun (native platforma
+// aniqlanyaptimi, Preferences'da blob bormi, fbAuth.currentUser tiklandimi).
+// Muammo topilgach OLIB TASHLANADI.
+export async function authDebugSnapshot() {
+  const out = { native: null, fbUser: null, prefsHasBlob: null, prefsErr: null, ls_oilaV7: null };
+  try { out.native = Capacitor.isNativePlatform(); } catch (e) { out.native = "err:" + e; }
+  try { out.fbUser = !!fbAuth.currentUser; } catch (e) { out.fbUser = "err:" + e; }
+  try {
+    const persistKey = `firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`;
+    const { value } = await Preferences.get({ key: persistKey });
+    out.prefsHasBlob = !!value;
+  } catch (e) { out.prefsErr = String((e && e.message) || e); }
+  try { out.ls_oilaV7 = !!localStorage.getItem("oilaV7"); } catch (e) { out.ls_oilaV7 = "err:" + e; }
+  return out;
+}
+
 // Enable Firestore offline persistence (IndexedDB cache)
 if (typeof window !== "undefined") {
   enableMultiTabIndexedDbPersistence(fbDB)
