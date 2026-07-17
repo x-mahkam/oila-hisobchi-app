@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "Отлично",
   "gam_pmem_ratingGreat": "Хорошо",
   "gam_pmem_ratingGood": "Неплохо",
-  "gam_pmem_ratingLabel": "Оценка"
+  "gam_pmem_ratingLabel": "Оценка",
+  "gam_pq_compareTitle": "Сравнение цен",
+  "gam_pq_discountTitle": "Реальная скидка?",
+  "gam_pq_compareIntro": "Сравнивайте предложения и выбирайте самый выгодный (дешевый) вариант!",
+  "gam_pq_discountIntro": "Рассчитайте цену после скидки и улучшите свои финансовые знания!",
+  "gam_pq_levelsHeading": "Уровни",
+  "gam_pq_levelLabel": "Уровень",
+  "gam_pq_areYouReady": "Готовы?"
 }

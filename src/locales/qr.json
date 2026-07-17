@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "Ájayıp",
   "gam_pmem_ratingGreat": "Jaqsı",
   "gam_pmem_ratingGood": "Orta",
-  "gam_pmem_ratingLabel": "Bahalaw"
+  "gam_pmem_ratingLabel": "Bahalaw",
+  "gam_pq_compareTitle": "Bahanı salıstırıw",
+  "gam_pq_discountTitle": "Shegirim haqıyqıy ma?",
+  "gam_pq_compareIntro": "Usınıslardı salıstırıń hám eń paydalı (arzanıraq) variantti tańlań!",
+  "gam_pq_discountIntro": "Shegirimnen keyingi aqırǵı bahanı esaplań hám finanslıq bilimińizdi arttırıń!",
+  "gam_pq_levelsHeading": "Dárejeler",
+  "gam_pq_levelLabel": "Dáreje",
+  "gam_pq_areYouReady": "Tayarsız ba?"
 }

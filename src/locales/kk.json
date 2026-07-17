@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "Өте жақсы",
   "gam_pmem_ratingGreat": "Жақсы",
   "gam_pmem_ratingGood": "Орташа",
-  "gam_pmem_ratingLabel": "Баға"
+  "gam_pmem_ratingLabel": "Баға",
+  "gam_pq_compareTitle": "Бағаны салыстыру",
+  "gam_pq_discountTitle": "Жеңілдік шынайы ма?",
+  "gam_pq_compareIntro": "Ұсыныстарды салыстырыңыз және ең тиімді (арзанырақ) нұсқаны таңдаңыз!",
+  "gam_pq_discountIntro": "Жеңілдіктен кейінгі соңғы бағаны есептеп, қаржылық біліміңізді арттырыңыз!",
+  "gam_pq_levelsHeading": "Деңгейлер",
+  "gam_pq_levelLabel": "Деңгей",
+  "gam_pq_areYouReady": "Дайынсыз ба?"
 }
