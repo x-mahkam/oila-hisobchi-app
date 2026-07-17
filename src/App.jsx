@@ -722,7 +722,7 @@ export default function App() {
 
   // Application Lock Screen Security Check
   if (user?.id && hasPin && !appUnlocked) {
-    return <AppLockScreen th={th} lg={lg} uid={user.id} onUnlock={() => setAppUnlocked(true)} />;
+    return <AppLockScreen th={th} uid={user.id} onUnlock={() => setAppUnlocked(true)} />;
   }
 
   // ── Nav items ─────────────────────────────────────────────
@@ -898,6 +898,7 @@ export default function App() {
           th={th}
           lg={lg}
           f={f}
+          t={t}
           voiceOn={voiceOn}
           voiceText={voiceText}
           setVoiceText={setVoiceText}
