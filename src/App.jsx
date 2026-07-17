@@ -357,6 +357,7 @@ export default function App() {
 
   // ── Local UI state ───────────────────────────────────────
   const [showNotifs,   setShowNotifs]   = useState(false);
+  const [highlightVazifaId, setHighlightVazifaId] = useState(null);
   // Panel ochilganda bildirishnomalar bazadan yangilanadi (bola tasdiq xabarini darhol ko'rsin)
   useEffect(() => {
     if (showNotifs && user?.id) {
@@ -505,12 +506,20 @@ export default function App() {
   // ── Boot / Auth ──────────────────────────────────────────
   useEffect(() => {
     let active = true;
+    // MUHIM: 1.5s juda qisqa edi — Firebase sessiyani IndexedDB'dan tiklashi
+    // ba'zan shundan ko'proq vaqt oladi (ayniqsa birinchi ochilishda). Vaqt
+    // tugashidan oldin "boot tugadi" deyilsa, ilova sessiya tiklanishini
+    // kutmasdan Login ekranini ko'rsatib ulguradi — foydalanuvchi PIN o'rniga
+    // login/parolni qayta kiritishga majbur bo'lgandek ko'rinadigan asosiy
+    // sabab shu edi. Endi pastda auth holati birinchi marta aniqlanishini
+    // (onAuthStateChanged birinchi chaqiruvi) kutib turamiz, bu safety
+    // timeout esa faqat chindan ham "osilib qolgan" holatlar uchun zaxira.
     const safetyTimeout = setTimeout(() => {
       if (active) {
-        console.warn("Safety boot trigger activated (Firebase check took longer than 1.5s)");
+        console.warn("Safety boot trigger activated (Firebase check took longer than 4s)");
         setBoot(false);
       }
-    }, 1500);
+    }, 4000);
 
     (async () => {
       try {
@@ -556,10 +565,21 @@ export default function App() {
           localStorage.removeItem("oilaV7GooglePending");
         } catch (e) { localStorage.removeItem("oilaV7GooglePending"); console.error("Google redirect:", e); }
 
+        // MUHIM: Firebase sessiya tiklanishini (birinchi onAuthStateChanged
+        // chaqiruvini) haqiqatan kutamiz — aks holda pastdagi "finally" darhol
+        // ishga tushib, boot=false qilib, sessiya hali tiklanmasdan turib
+        // Login ekranini ko'rsatib yuboradi.
+        let resolveFirstAuthState;
+        const firstAuthStatePromise = new Promise((resolve) => { resolveFirstAuthState = resolve; });
+        let gotFirstAuthState = false;
+
         auth.onChange(async (fbUser) => {
           // Ro'yxatdan o'tish/kirish jarayoni ketayotgan bo'lsa — aralashmaymiz.
           // doAuth() o'zi to'g'ri user'ni o'rnatadi va ma'lumot yuklaydi.
-          if (authBusyRef.current) return;
+          if (authBusyRef.current) {
+            if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
+            return;
+          }
           if (fbUser) {
             let uid = null;
             try { const s = localStorage.getItem("oilaV7"); if (s) uid = JSON.parse(s).uid; } catch {}
@@ -568,7 +588,10 @@ export default function App() {
             if (!u && uid !== fbUser.uid) u = await db.g("user_" + fbUser.uid);
             if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); }
           }
+          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
         });
+
+        await firstAuthStatePromise;
 
         const dl = localStorage.getItem("oilaV7L"); if (dl) setLg(dl);
         const dd = localStorage.getItem("oilaV7D"); if (dd != null) setDark(dd !== "false");
@@ -832,7 +855,7 @@ export default function App() {
         />
       )}
       {confetti && <Confetti th={th} />}
-      {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} setBilimInitialView={setBilimInitialView} onApproveTime={screenTime.approveExtraTime} onDenyTime={screenTime.denyExtraTime} />}
+      {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} setBilimInitialView={setBilimInitialView} onApproveTime={screenTime.approveExtraTime} onDenyTime={screenTime.denyExtraTime} setHighlightVazifaId={setHighlightVazifaId} />}
       {showHelp && <HelpModal th={th} lg={lg} onClose={() => setShowHelp(false)} onReplayTour={() => { setShowHelp(false); setShowTour(true); }} />}
       {showTour && <ProductTour th={th} lg={lg} steps={DASHBOARD_TOUR_STEPS} onFinish={() => { localStorage.setItem("oilaV7Tour", "1"); setShowTour(false); }} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
@@ -957,7 +980,7 @@ export default function App() {
         {scr === "grafik"  && <ChartsPage     {...pageProps} ctab={ctab} setCtab={setCtab} />}
         {scr === "activity" && <ActivityCenter {...pageProps} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
-        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} vDeadline={vDeadline} setVDeadline={setVDeadline} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} vazifaAcceptProposed={vazifaAcceptProposed} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} />}
+        {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} vDeadline={vDeadline} setVDeadline={setVDeadline} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} vazifaAcceptProposed={vazifaAcceptProposed} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} highlightVazifaId={highlightVazifaId} setHighlightVazifaId={setHighlightVazifaId} />}
         {scr === "bilim"   && <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} initialView={bilimInitialView} onBack={() => setScr("bosh")} gardenData={gardenData} onGarden={() => { setScr("profil"); setPTab("garden"); }} />}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={aiAdvice.adv} setAdv={aiAdvice.setAdv} advL={aiAdvice.advL} advErr={aiAdvice.advErr} aiAdv={aiAdv} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}

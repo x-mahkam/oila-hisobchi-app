@@ -55,7 +55,8 @@ export function useFamily() {
           type: "vazifa_done",
           text: t("uf_kidDoneNotifText", { kid: user.ism, title: vv.title }),
           sana: new Date().toISOString(),
-          read: false
+          read: false,
+          vazifaId: id
         }, ...pkn];
         await db.s("notif_" + p.id, newNotifs);
       }
@@ -135,7 +136,8 @@ export function useFamily() {
       await db.s("notif_" + kidId, [{
         id:Date.now(), type:"vazifa",
         text: t("uf_taskApprovedPlus", { amt: f(v.reward, true) }),
-        sana:new Date().toISOString(), read:false
+        sana:new Date().toISOString(), read:false,
+        vazifaId: v.id
       }, ...kn]);
     } catch {}
 
@@ -310,7 +312,8 @@ export function useFamily() {
             type: "vazifa_proposed",
             text: t("uf_proposedTaskNotifText", { kid: user.ism, title: item.title, amt: f(item.reward, true) }),
             sana: new Date().toISOString(),
-            read: false
+            read: false,
+            vazifaId: item.id
           }, ...pkn];
           await db.s("notif_" + p.id, newNotifs);
         }
@@ -349,7 +352,8 @@ export function useFamily() {
         type: "vazifa_accepted",
         text: t("uf_proposalAcceptedNotifText", { title: v.title, amt: f(finalReward, true) }),
         sana: new Date().toISOString(),
-        read: false
+        read: false,
+        vazifaId: id
       }, ...kn]);
     } catch (e) {}
 

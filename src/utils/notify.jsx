@@ -41,6 +41,7 @@ const TYPE_CAT = {
   qarz: "debt", payment: "debt", pay_result: "debt",
   maqsad_confirm: "goal", maqsad_kid_confirm: "goal", self_confirm: "goal",
   vazifa: "family", link_status: "family",
+  vazifa_proposed: "family", vazifa_accepted: "family", vazifa_done: "family",
   budjet: "budget", xarajat: "budget",
   yangilik: "premium",
   // yangi (helperlar yozadi)
@@ -69,6 +70,7 @@ const TYPE_PRIO = {
   garden_harvest: "normal", garden_energy: "low", garden_daily: "low",
   ai_weekly: "low", ai_monthly: "normal", reminder: "low", daily_reminder: "low",
   vaqt_sorov: "high", vaqt_tasdiq: "high", vaqt_rad: "normal",
+  vazifa_proposed: "high", vazifa_accepted: "normal", vazifa_done: "normal",
   // mavjud turlar
   maqsad_confirm: "high", maqsad_kid_confirm: "high", qarz: "high", budjet: "high", yangilik: "low",
 };

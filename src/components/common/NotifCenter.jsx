@@ -56,6 +56,7 @@ export default function NotifCenter({
   onConfirmParent, onConfirmKid, setScr,
   setBilimInitialView,
   onApproveTime, onDenyTime,
+  setHighlightVazifaId,
 }) {
   const { t } = useApp();
   const [filter, setFilter] = useState("all");     // all | unread | <cat>
@@ -97,9 +98,12 @@ export default function NotifCenter({
         setBilimInitialView("market");
       }
     }
+    if (scr === "vazifa" && sel.vazifaId && setHighlightVazifaId) {
+      setHighlightVazifaId(sel.vazifaId);
+    }
     setSel(null);
     if (scr && setScr) { setScr(scr); onClose && onClose(); }
-  }, [sel, setScr, onClose, setBilimInitialView]);
+  }, [sel, setScr, onClose, setBilimInitialView, setHighlightVazifaId]);
 
   const Chip = ({ id, label }) => (
     <button className="ui-press" onClick={() => setFilter(id)}

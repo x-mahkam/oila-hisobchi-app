@@ -145,7 +145,7 @@ const StatusBadge = memo(function StatusBadge({ th, t, status }) {
 
 // ═══ TaskCard — bitta vazifa kartasi (AppCard ichida, React.memo) ═══
 // Tuzilishi: Icon → Title → (kid) → Reward → Sana → Progress → Status → Actions
-const TaskCard = memo(function TaskCard({ th, t, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAcceptProposed, onAskDelete }) {
+const TaskCard = memo(function TaskCard({ th, t, v, kidName, isKid, canDelete, onDone, onApprove, onReject, onAcceptProposed, onAskDelete, highlighted }) {
   const formatWithSpaces = (val) => {
     const s = String(val).replace(/\D/g, "");
     if (!s) return "";
@@ -167,7 +167,8 @@ const TaskCard = memo(function TaskCard({ th, t, v, kidName, isKid, canDelete, o
   }, [v.id, v.reward]);
 
   return (
-    <AppCard th={th} style={{ position: "relative", overflow: "hidden", paddingLeft: SPACE.s4 + SPACE.s1 }}>
+    <div id={"vazifa-" + v.id}>
+    <AppCard th={th} style={{ position: "relative", overflow: "hidden", paddingLeft: SPACE.s4 + SPACE.s1, ...(highlighted ? { border: "2px solid " + th.ac, boxShadow: "0 0 0 4px " + th.ac + "33" } : {}) }}>
       {/* chap status chizig'i */}
       <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: SPACE.s1, background: m.c }} />
       <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
@@ -297,6 +298,7 @@ const TaskCard = memo(function TaskCard({ th, t, v, kidName, isKid, canDelete, o
         )}
       </div>
     </AppCard>
+    </div>
   );
 });
 
@@ -351,6 +353,7 @@ export default function TasksPage({
   addVazifa,
   vazifaDone, vazifaApprove, vazifaReject, vazifaAcceptProposed, delVazifa,
   cleanupKidDuplicates, isBosh,
+  highlightVazifaId, setHighlightVazifaId,
 }) {
   // Dublikat bola yozuvlaridan (qayta yaratilgan akkauntlar) eng yangisi olinadi
   const kids = useMemo(() => {
@@ -391,6 +394,16 @@ export default function TasksPage({
   };
   useEffect(() => { reloadVazifa(); }, [user?.oilaId]); // eslint-disable-line
   useEffect(() => { if (showAddVazifa) { setSelPreset(null); if (kids.length === 1) setVAssignee(kids[0].id); } }, [showAddVazifa]); // eslint-disable-line
+
+  // Bildirishnomadan aynan bitta vazifaga o'tilganda — shu kartaga sirg'anib
+  // borish va bir necha soniya ajratib ko'rsatish (highlight).
+  useEffect(() => {
+    if (!highlightVazifaId) return;
+    const el = document.getElementById("vazifa-" + highlightVazifaId);
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const tmr = setTimeout(() => setHighlightVazifaId && setHighlightVazifaId(null), 3000);
+    return () => clearTimeout(tmr);
+  }, [highlightVazifaId, setHighlightVazifaId]);
 
   // ── Hisoblashlar (useMemo) ──
   const matchesKid = (v, k) => v.assignedTo === k.id
@@ -646,7 +659,8 @@ export default function TasksPage({
             onApprove={() => vazifaApprove(v.id)}
             onReject={vazifaReject ? () => vazifaReject(v.id) : null}
             onAcceptProposed={vazifaAcceptProposed}
-            onAskDelete={() => askDelete(v.id)} />
+            onAskDelete={() => askDelete(v.id)}
+            highlighted={v.id === highlightVazifaId} />
         ))
       )}
 
