@@ -3,7 +3,6 @@ import { useApp } from "../context/AppContext.jsx";
 import { db } from "../firebase.js";
 import { td, nt } from "../utils/formatters.js";
 import { KATS, KN } from "../utils/constants.js";
-import i18n from "../i18n/index.js";
 
 export function useVoiceInput() {
   const {
@@ -12,8 +11,10 @@ export function useVoiceInput() {
     setXar,
     isPremium,
     setShowPremModal,
+    lg,
     ok$,
     f,
+    t,
   } = useApp();
 
   const [showVoice, setShowVoice] = useState(false);
@@ -70,7 +71,7 @@ export function useVoiceInput() {
       setShowVoice(true);
       setVoiceText("");
       setVoiceParsed(null);
-      ok$(i18n.t("voice_not_supported", { defaultValue: "Brauzer ovozni qo'llamaydi. Qo'lda yozing." }), "warn");
+      ok$(t("uvi_notSupported"), "warn");
       return;
     }
     setShowVoice(true);
@@ -79,7 +80,8 @@ export function useVoiceInput() {
     setVoiceOn(true);
     try {
       const rec = new SR();
-      rec.lang = i18n.language === "uz" ? "uz-UZ" : i18n.language === "ru" ? "ru-RU" : "en-US";
+      const SR_LANG = { uz: "uz-UZ", ru: "ru-RU", kk: "kk-KZ", ky: "ky-KG", tg: "tg-TJ", qr: "uz-UZ", en: "en-US" };
+      rec.lang = SR_LANG[lg] || "en-US";
       rec.interimResults = true;
       rec.continuous = false;
       rec.onresult = (e) => {
@@ -94,7 +96,7 @@ export function useVoiceInput() {
       rec.onerror = (e) => {
         setVoiceOn(false);
         if (e.error === "not-allowed" || e.error === "permission-denied") {
-          ok$(i18n.t("mic_denied", { defaultValue: "Mikrofon ruxsati berilmadi." }), "warn");
+          ok$(t("uvi_micDenied"), "warn");
         }
       };
       rec.onend = () => {
@@ -104,7 +106,7 @@ export function useVoiceInput() {
       rec.start();
     } catch (e) {
       setVoiceOn(false);
-      ok$(i18n.t("voice_error", { defaultValue: "Xatolik. Qo'lda yozing." }), "warn");
+      ok$(t("uvi_error"), "warn");
     }
   };
 
@@ -120,7 +122,7 @@ export function useVoiceInput() {
   const applyVoice = async () => {
     const parsed = voiceParsed || parseVoice(voiceText);
     if (!parsed) {
-      return ok$(i18n.t("voice_no_amount_found", { defaultValue: "Summa topilmadi. Masalan: 'transportga 20 ming'" }), "err");
+      return ok$(t("uvi_noAmountFound"), "err");
     }
     const item = {
       id: Date.now(),
@@ -137,14 +139,7 @@ export function useVoiceInput() {
     setShowVoice(false);
     setVoiceText("");
     setVoiceParsed(null);
-
-    const catIndex = KATS.findIndex(k => k.id === parsed.kat);
-    const catName = i18n.t("cat_" + parsed.kat, { defaultValue: (KN[i18n.language] || KN.uz)[catIndex >= 0 ? catIndex : 0] });
-    ok$(i18n.t("voice_added_expense", {
-      amount: f(parsed.summa, true),
-      cat: catName,
-      defaultValue: `Qo'shildi: ${f(parsed.summa, true)} — ${catName}`
-    }));
+    ok$(t("uvi_added", { amount: f(parsed.summa, true), category: (KN[lg] || KN.uz)[KATS.findIndex(k => k.id === parsed.kat)] }));
   };
 
   return {
