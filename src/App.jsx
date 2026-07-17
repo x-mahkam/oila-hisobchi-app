@@ -247,13 +247,27 @@ export default function App() {
   // db.s har yozuvda shu asosda _u/_o yorlig'ini qo'yadi (rules tekshiruvi uchun).
   useEffect(() => { setOwnerCtx(user?.id || null, user?.oilaId || null); }, [user?.id, user?.oilaId]);
 
+  // Bildirishnomalarni fonda global yangilab turish (qaysi ekranda
+  // turishidan qat'i nazar) — ilgari bu faqat "vazifa" ekrani yoki
+  // bola bosh sahifasida, va faqat bolalar uchun ishlagan, shuning
+  // uchun ota-onalarga bildirishnomalar juda kech (yoki umuman
+  // avtomatik) kelmasdi.
+  useEffect(() => {
+    if (!user?.id) return;
+    const loadNotifs = () => {
+      db.g("notif_" + user.id).then(n => { if (Array.isArray(n)) setNotifs(n); }).catch(() => {});
+    };
+    loadNotifs();
+    const iv = setInterval(loadNotifs, 15000);
+    return () => clearInterval(iv);
+  }, [user?.id, setNotifs]);
+
   // (ota-ona bergan vazifa bola qurilmasida darhol ko'rinishi uchun)
   useEffect(() => {
     if (!user?.oilaId) return;
     if (!(scr === "vazifa" || (scr === "bosh" && isKid))) return;
     const loadVaz = () => {
       db.g("vazifa_" + user.oilaId).then(v => { if (Array.isArray(v)) setVazifalar(v); }).catch(() => {});
-      if (isKid) db.g("notif_" + user.id).then(n => { if (Array.isArray(n)) setNotifs(n); }).catch(() => {});
       db.g("kidbal_" + user.oilaId).then(k => {
         if (!k || typeof k !== "object") return;
         // Bola: dublikat (eski) yozuv id'laridagi pul o'z akkauntiga jamlanadi

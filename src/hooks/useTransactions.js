@@ -70,8 +70,11 @@ export function useTransactions() {
       ok$(t("ut_insufficientBalanceFull", { bal: f(Math.max(0, currentBal), true) }), "err");
       return;
     }
-    const existing = (await db.g(key)) || [];
-    await db.s(key, [item, ...existing]);
+    // MUHIM: Firestore'dan qayta o'qish o'rniga xotiradagi joriy holatdan
+    // (xar) foydalanamiz — bu tarmoq safarini yarmiga qisqartiradi va
+    // tarix uzun bo'lgan foydalanuvchilarda "qo'shish" tugmasi sekin
+    // ishlashining asosiy sababi shu edi.
+    await db.s(key, [item, ...xar.filter(x => x.uid === user.id)]);
     setXar(prev => [item, ...prev]);
 
     // Budjet limit tekshirish
@@ -102,8 +105,7 @@ export function useTransactions() {
       sana: sana || td(), vaqt: nt(), uid: user.id
     };
     const key = "d_" + user.oilaId + "_" + user.id;
-    const existing = (await db.g(key)) || [];
-    await db.s(key, [item, ...existing]);
+    await db.s(key, [item, ...dar.filter(d => d.uid === user.id)]);
     setDar(prev => [item, ...prev]);
     addStar(1, t("ut_incomeAddedStar"));
     ok$(t("ut_incomeAdded"));
@@ -119,7 +121,7 @@ export function useTransactions() {
     buzz(10);
     const isX = !!item.kategoriya;
     const key = (isX ? "x_" : "d_") + user.oilaId + "_" + user.id;
-    const existing = (await db.g(key)) || [];
+    const existing = (isX ? xar : dar).filter(tx => tx.uid === user.id);
     const updated = existing.filter(tx => tx.id !== item.id);
     await db.s(key, updated);
     if (isX) {
@@ -128,7 +130,7 @@ export function useTransactions() {
       setDar(prev => prev.filter(d => !(d.id === item.id && d.uid === user.id)));
     }
     ok$(t("ut_deleted"));
-  }, [user, setXar, setDar, ok$, buzz, t]);
+  }, [user, xar, dar, setXar, setDar, ok$, buzz, t]);
 
   // Tahrirlash (editTx)
   const editTx = useCallback(async (oldItem, updatedData) => {
@@ -139,8 +141,8 @@ export function useTransactions() {
     buzz(10);
     const isX = !!oldItem.kategoriya;
     const key = (isX ? "x_" : "d_") + user.oilaId + "_" + user.id;
-    const existing = (await db.g(key)) || [];
-    
+    const existing = (isX ? xar : dar).filter(tx => tx.uid === user.id);
+
     // update the transaction item
     const index = existing.findIndex(tx => tx.id === oldItem.id);
     if (index === -1) return ok$(t("ut_notFound"), "err");
@@ -167,7 +169,7 @@ export function useTransactions() {
       setDar(prev => prev.map(d => (d.id === oldItem.id && d.uid === user.id) ? newItem : d));
     }
     ok$(t("ut_savedSuccessfully"));
-  }, [user, setXar, setDar, ok$, buzz, t]);
+  }, [user, xar, dar, setXar, setDar, ok$, buzz, t]);
 
   return { addX, addD, delTx, editTx };
 }
