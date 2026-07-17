@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "A'lo",
   "gam_pmem_ratingGreat": "Zo'r",
   "gam_pmem_ratingGood": "Yaxshi",
-  "gam_pmem_ratingLabel": "Baholash"
+  "gam_pmem_ratingLabel": "Baholash",
+  "gam_pq_compareTitle": "Narxni Solishtir",
+  "gam_pq_discountTitle": "Chegirma haqiqiymi?",
+  "gam_pq_compareIntro": "Berilgan takliflarni solishtiring va eng foydali (arzonroq) variantni tanlang!",
+  "gam_pq_discountIntro": "Chegirmadan keyingi yakuniy narxni hisoblang va moliyaviy bilimlaringizni oshiring!",
+  "gam_pq_levelsHeading": "Bosqichlar",
+  "gam_pq_levelLabel": "Bosqich",
+  "gam_pq_areYouReady": "Tayyormisiz?"
 }

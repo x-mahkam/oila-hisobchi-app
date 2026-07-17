@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "Аъло",
   "gam_pmem_ratingGreat": "Хуб",
   "gam_pmem_ratingGood": "Миёна",
-  "gam_pmem_ratingLabel": "Баҳогузорӣ"
+  "gam_pmem_ratingLabel": "Баҳогузорӣ",
+  "gam_pq_compareTitle": "Муқоисаи нарх",
+  "gam_pq_discountTitle": "Тахфиф ҳақиқист?",
+  "gam_pq_compareIntro": "Пешниҳодҳоро муқоиса кунед ва варианти фоидаовартаринро (арзонтаринро) интихоб кунед!",
+  "gam_pq_discountIntro": "Нархи ниҳоии баъди тахфифро ҳисоб кунед ва саводнокии молиявии худро баланд бардоред!",
+  "gam_pq_levelsHeading": "Сатҳҳо",
+  "gam_pq_levelLabel": "Сатҳ",
+  "gam_pq_areYouReady": "Омодаед?"
 }

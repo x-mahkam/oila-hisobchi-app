@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "Эң мыкты",
   "gam_pmem_ratingGreat": "Жакшы",
   "gam_pmem_ratingGood": "Орточо",
-  "gam_pmem_ratingLabel": "Баа"
+  "gam_pmem_ratingLabel": "Баа",
+  "gam_pq_compareTitle": "Бааны салыштыруу",
+  "gam_pq_discountTitle": "Арзандатуу чын беле?",
+  "gam_pq_compareIntro": "Сунуштарды салыштырып, эң пайдалуу (арзаныраак) вариантты тандаңыз!",
+  "gam_pq_discountIntro": "Арзандатуудан кийинки акыркы баасын эсептеп, каржылык билимиңизди жогорулатыңыз!",
+  "gam_pq_levelsHeading": "Деңгээлдер",
+  "gam_pq_levelLabel": "Деңгээл",
+  "gam_pq_areYouReady": "Даярсызбы?"
 }

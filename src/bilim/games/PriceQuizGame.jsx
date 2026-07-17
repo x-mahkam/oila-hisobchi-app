@@ -12,6 +12,7 @@ import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
 import { DIFF, rewardOf, tierFor, medalSvg } from "../registry.jsx";
 import { GAME_LEVELS } from "./levels.js";
 import { playSound, isSoundEnabled, setSoundEnabled } from "../engine/sound.js";
+import { useApp } from "../../context/AppContext.jsx";
 
 const CSS_ID = "bilim-price-game-css";
 const injectCss = () => {
@@ -84,16 +85,8 @@ const OptButton = memo(function OptButton({ th, value, label, state, onPick, dis
 
 export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance/price-compare", name, onBack }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
-  const ru = lg === "ru";
-  const en = lg === "en";
+  const { t } = useApp();
   const kidName = name || (user && (user.ism || "")) || "";
-
-  const L = (uzVal, ruVal, enVal) => {
-    if (ru) return ruVal || uzVal;
-    if (en) return enVal || uzVal;
-    return uzVal;
-  };
 
   const isPriceCompare = gameId === "finance/price-compare";
   const generator = isPriceCompare ? priceCompareGenerator : discountGenerator;
@@ -296,7 +289,7 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
     const levels = GAME_LEVELS[gameId] || [];
     return (
       <div style={{ padding: SPACE.s3 }}>
-        <PageHeader th={th} title={isPriceCompare ? L("Narxni Solishtir", "Сравнение цен", "Compare Prices") : L("Chegirma haqiqiymi?", "Реальная скидка?", "Real Discount?")} onBack={onBack} />
+        <PageHeader th={th} title={isPriceCompare ? t("gam_pq_compareTitle") : t("gam_pq_discountTitle")} onBack={onBack} />
         
         {/* Intro Banner */}
         <div style={{ textAlign: "center", margin: "16px 0 24px" }}>
@@ -313,13 +306,13 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
           </div>
           <p style={{ ...TYPE.caption, color: th.t2, fontSize: 14, maxWidth: 300, margin: "0 auto", lineHeight: 1.4 }}>
             {isPriceCompare 
-              ? L("Berilgan takliflarni solishtiring va eng foydali (arzonroq) variantni tanlang!", "Сравнивайте предложения и выбирайте самый выгодный (дешевый) вариант!", "Compare offers and select the most beneficial (cheaper) option!")
-              : L("Chegirmadan keyingi yakuniy narxni hisoblang va moliyaviy bilimlaringizni oshiring!", "Рассчитайте цену после скидки и улучшите свои финансовые знания!", "Calculate the discounted price and boost your financial literacy!")}
+              ? t("gam_pq_compareIntro")
+              : t("gam_pq_discountIntro")}
           </p>
         </div>
 
         {/* Level Map Grid */}
-        <h3 style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: 12 }}>{L("Bosqichlar", "Уровни", "Levels")}</h3>
+        <h3 style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1, marginBottom: 12 }}>{t("gam_pq_levelsHeading")}</h3>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: SPACE.s3 }}>
           {levels.map((lvl, idx) => {
             const progress = userLevels[lvl.id] || {};
@@ -340,7 +333,7 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
                   cursor: isUnlocked ? "pointer" : "default",
                   boxShadow: isUnlocked ? SHADOW.e1(th.ac) : "none"
                 }}>
-                <span style={{ fontSize: 13, fontWeight: 800, color: isUnlocked ? th.t1 : th.t3 }}>{L("Bosqich", "Уровень", "Level")} {lvl.id}</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: isUnlocked ? th.t1 : th.t3 }}>{t("gam_pq_levelLabel")} {lvl.id}</span>
                 {isUnlocked ? (
                   <div style={{ display: "flex", marginTop: 4 }}>
                     {starIco(stars >= 1, 12)}
@@ -363,7 +356,7 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
     return (
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
         <div style={{ fontSize: 80, fontWeight: 900, color: th.ac, animation: "bgPulse 0.8s infinite ease-in-out" }}>{count}</div>
-        <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: 12 }}>{L("Tayyormisiz?", "Готовы?", "Are you ready?")}</div>
+        <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: 12 }}>{t("gam_pq_areYouReady")}</div>
       </div>
     );
   }
@@ -388,15 +381,15 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
             )}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: th.t1 }}>
-            {finalStars > 0 ? L("Bosqichdan o'tdingiz!", "Уровень пройден!", "Level Passed!") : L("Qayta urinib ko'ring!", "Попробуйте ещё раз!", "Try Again!")}
+            {finalStars > 0 ? t("gam_levelPassed") : t("gam_tryAgain")}
           </div>
-          <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: 4 }}>{r.correct}/{r.total} {L("to'g'ri", "верно", "correct")} ({r.pct}%)</div>
+          <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: 4 }}>{r.correct}/{r.total} {t("gam_correctSuffix")} ({r.pct}%)</div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={r.correct} label={L("To'g'ri", "Верно", "Correct")} tone={th.gr} />
-          <StatCard th={th} value={r.wrong} label={L("Xato", "Ошибки", "Wrong")} tone={th.rd} />
-          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={L("Vaqt", "Время", "Time")} tone={th.ac} />
+          <StatCard th={th} value={r.correct} label={t("gam_correct")} tone={th.gr} />
+          <StatCard th={th} value={r.wrong} label={t("gam_wrong")} tone={th.rd} />
+          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={t("gam_time")} tone={th.ac} />
           <StatCard th={th} value={"x" + r.maxCombo} label="Combo" tone={th.am} />
         </div>
 
@@ -404,20 +397,20 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
         <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
           {coinIco(PREMIUM.gold, 28)}
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{L("Topilgan coin", "Монеты", "Coins earned")}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_coinsEarned")}</div>
             <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.coins}</div>
           </div>
-          {record && <Badge th={th} tone={PREMIUM.gold}>REKORD</Badge>}
+          {record && <Badge th={th} tone={PREMIUM.gold}>{t("gam_newRecord")}</Badge>}
         </AppCard>
 
         {/* XP Card */}
         <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med, marginBottom: SPACE.s3 }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>Tajriba (XP)</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_experienceXp")}</div>
             <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.xp || 0}</div>
           </div>
-          {leveledUp && <Badge th={th} tone={th.ac2}>YANGI LEVEL!</Badge>}
+          {leveledUp && <Badge th={th} tone={th.ac2}>{t("gam_budget_newLevelBadge")}</Badge>}
         </AppCard>
 
         {/* AI verdict */}
@@ -433,10 +426,10 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
 
         {selectedLevel && (
           <PrimaryButton th={th} onClick={() => startLevel(selectedLevel)} style={{ marginTop: SPACE.s2 }}>
-            {L("Qayta o'ynash", "Ещё раз", "Play again")}
+            {t("gam_playAgain")}
           </PrimaryButton>
         )}
-        <button className="ui-press" onClick={() => { eng.setPhase("intro"); setSelectedLevel(null); }} style={{ width: "100%", marginTop: SPACE.s2, background: "transparent", border: "none", color: th.t2, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{L("Ortga qaytish", "Назад", "Back")}</button>
+        <button className="ui-press" onClick={() => { eng.setPhase("intro"); setSelectedLevel(null); }} style={{ width: "100%", marginTop: SPACE.s2, background: "transparent", border: "none", color: th.t2, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{t("gam_sort_backToMenu")}</button>
       </div>
     );
   }
@@ -454,7 +447,7 @@ export default function PriceQuizGame({ user, lg = "uz", dark, gameId = "finance
         }}>
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8l1-5.5z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" fill="#fff" fillOpacity=".2"/></svg>
           <span style={{ fontSize: 15, fontWeight: 800 }}>
-            {L("Qiyinroq darajaga o'tdingiz!", "Уровень повышен!", "Difficulty increased!")}
+            {t("gam_difficultyIncreased")}
           </span>
         </div>
       )}

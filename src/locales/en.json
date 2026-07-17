@@ -1536,5 +1536,12 @@
   "gam_pmem_ratingExcellent": "Excellent",
   "gam_pmem_ratingGreat": "Great",
   "gam_pmem_ratingGood": "Good",
-  "gam_pmem_ratingLabel": "Rating"
+  "gam_pmem_ratingLabel": "Rating",
+  "gam_pq_compareTitle": "Compare Prices",
+  "gam_pq_discountTitle": "Real Discount?",
+  "gam_pq_compareIntro": "Compare offers and select the most beneficial (cheaper) option!",
+  "gam_pq_discountIntro": "Calculate the discounted price and boost your financial literacy!",
+  "gam_pq_levelsHeading": "Levels",
+  "gam_pq_levelLabel": "Level",
+  "gam_pq_areYouReady": "Are you ready?"
 }
