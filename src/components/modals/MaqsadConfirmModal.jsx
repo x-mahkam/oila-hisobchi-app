@@ -1,20 +1,6 @@
 import { useState, useRef } from "react";
-import { useTranslation } from "react-i18next";
 
 export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onCancel, maq, setScr }) {
-  const { t, i18n } = useTranslation();
-  const L = (key, uz, ru = uz, en = uz, kk = uz, ky = uz, tg = uz, qr = uz) => {
-    const activeLg = i18n.language || lg || "uz";
-    const fallback = activeLg === "uz" ? uz :
-                     activeLg === "ru" ? ru :
-                     activeLg === "kk" ? kk :
-                     activeLg === "ky" ? ky :
-                     activeLg === "tg" ? tg :
-                     activeLg === "qr" ? qr :
-                     en;
-    return t(key, fallback);
-  };
-
   const [step, setStep] = useState(1);
   const [giftPhoto, setGiftPhoto] = useState(null);
   const fileInputRef = useRef(null);
@@ -80,9 +66,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
     if (!file) return;
     
     if (file.size > 3 * 1024 * 1024) {
-      alert(
-        L("image_too_large", "Rasm hajmi juda katta! 3 MB gacha yuklang.", "Размер изображения слишком велик! Пожалуйста, загрузите файл размером менее 3 МБ.", "File is too large! Please upload under 3 MB.", "Сурет өлшемі тым үлкен! 3 МБ-тан аспайтын файл жүктеңіз.", "Сүрөттүн өлчөмү өтө чоң! 3 МБ чейин жүктөп бериңиз.", "Андозаи акс хеле калон аст! Лутфан то 3 МБ боргирӣ кунед.", "Su'vret o'lshemi ju'da u'lken! 3 MBg'a shekem ju'klen'.")
-      );
+      alert(t.imageTooLarge);
       return;
     }
     
@@ -94,6 +78,138 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
     };
     reader.readAsDataURL(file);
   };
+
+  // Translations Map
+  const T = {
+    uz: {
+      gReached: "Maqsadga yetdingiz!",
+      didBuy: "Xarid qildingizmi?",
+      noCancel: "Yo'q, voz kechdim",
+      yesBought: "Ha, xarid qildim!",
+      summaryTitle: "Sayohat xulosasi",
+      daysDone: (days) => `Siz ${days} kunda orzuyingizga yetdingiz!`,
+      contribTitle: "Kim qancha hissa qo'shdi:",
+      uploadLabel: "Sovg'a rasmi (ixtiyoriy):",
+      uploadPrompt: "Rasm yuklash",
+      continueBtn: "Davom etish",
+      newDreamTitle: "Yangi orzu?",
+      newDreamPrompt: "Yana bir yangi orzu qo'yasizmi?",
+      addDreamBtn: "Ha, yangi orzu qo'yish",
+      laterBtn: "Keyinroq",
+      member: "A'zo",
+      imageTooLarge: "Rasm hajmi juda katta! 3 MB gacha yuklang.",
+    },
+    ru: {
+      gReached: "Цель достигнута!",
+      didBuy: "Вы купили это?",
+      noCancel: "Нет, отменить",
+      yesBought: "Да, купил!",
+      summaryTitle: "Итоги путешествия",
+      daysDone: (days) => `Вы достигли мечты за ${days} дней!`,
+      contribTitle: "Кто сколько вложил:",
+      uploadLabel: "Фото подарка (необязательно):",
+      uploadPrompt: "Загрузить фото",
+      continueBtn: "Продолжить",
+      newDreamTitle: "Новая мечта?",
+      newDreamPrompt: "Хотите поставить новую мечту?",
+      addDreamBtn: "Да, поставить новую",
+      laterBtn: "Позже",
+      member: "Участник",
+      imageTooLarge: "Размер изображения слишком велик! Пожалуйста, загрузите файл размером менее 3 МБ.",
+    },
+    en: {
+      gReached: "Goal reached!",
+      didBuy: "Did you buy it?",
+      noCancel: "No, cancel",
+      yesBought: "Yes, I bought it!",
+      summaryTitle: "Journey Summary",
+      daysDone: (days) => `You reached your dream in ${days} days!`,
+      contribTitle: "Contribution breakdown:",
+      uploadLabel: "Gift Photo (optional):",
+      uploadPrompt: "Upload Photo",
+      continueBtn: "Continue",
+      newDreamTitle: "New Dream?",
+      newDreamPrompt: "Would you like to set a new dream?",
+      addDreamBtn: "Yes, set new dream",
+      laterBtn: "Later",
+      member: "Member",
+      imageTooLarge: "File is too large! Please upload under 3 MB.",
+    },
+    kk: {
+      gReached: "Мақсатқа жеттіңіз!",
+      didBuy: "Сатып алдыңыз ба?",
+      noCancel: "Жоқ, бас тарттым",
+      yesBought: "Иә, сатып алдым!",
+      summaryTitle: "Саяхат қорытындысы",
+      daysDone: (days) => `Сиз ${days} күнде арманыңызға жеттіңіз!`,
+      contribTitle: "Кім қанша үлес қосты:",
+      uploadLabel: "Сыйлық суреті (міндетті емес):",
+      uploadPrompt: "Сурет жүктеу",
+      continueBtn: "Жалғастыру",
+      newDreamTitle: "Жаңа арман?",
+      newDreamPrompt: "Тағы бір жаңа арман қоясыз ба?",
+      addDreamBtn: "Иә, жаңа арман қою",
+      laterBtn: "Кейінірек",
+      member: "Мүше",
+      imageTooLarge: "Сурет өлшемі тым үлкен! 3 МБ-тан аспайтын файл жүктеңіз.",
+    },
+    ky: {
+      gReached: "Максатка жеттиңиз!",
+      didBuy: "Сатып алдыңызбы?",
+      noCancel: "Жок, баш тарттым",
+      yesBought: "Ооба, сатып алдым!",
+      summaryTitle: "Саякаттын корутундусу",
+      daysDone: (days) => `Сиз ${days} күндө кыялыңызга жеттиңиз!`,
+      contribTitle: "Ким канча салым кошту:",
+      uploadLabel: "Сыйлыктын сүрөтү (милдеттүү эмес):",
+      uploadPrompt: "Сүрөт жүктөө",
+      continueBtn: "Улантуу",
+      newDreamTitle: "Жаңы кыял?",
+      newDreamPrompt: "Дагы бир жаңы кыял коёсузбу?",
+      addDreamBtn: "Ооба, жаңы кыял коюу",
+      laterBtn: "Кийинчерээк",
+      member: "Мүчө",
+      imageTooLarge: "Сүрөттүн өлчөмү өтө чоң! 3 МБ чейин жүктөп бериңиз.",
+    },
+    tg: {
+      gReached: "Шумо ба мақсад расидед!",
+      didBuy: "Шумо харид кардед?",
+      noCancel: "Не, даст кашидам",
+      yesBought: "Бале, харидам!",
+      summaryTitle: "Хулосаи сафар",
+      daysDone: (days) => `Шумо дар ${days} рӯз ба орзуятон расидед!`,
+      contribTitle: "Кӣ чӣ қадар ҳисса гузошт:",
+      uploadLabel: "Акси тӯҳфа (ихтиёрӣ):",
+      uploadPrompt: "Боргирии акс",
+      continueBtn: "Идома додан",
+      newDreamTitle: "Орзуи нав?",
+      newDreamPrompt: "Боз як орзуи нав мегузоред?",
+      addDreamBtn: "Бале, гузоштани орзуи нав",
+      laterBtn: "Дертар",
+      member: "Аъзо",
+      imageTooLarge: "Андозаи акс хеле калон аст! Лутфан то 3 МБ боргирӣ кунед.",
+    },
+    qr: {
+      gReached: "Maqsetke jettin'iz!",
+      didBuy: "Satıp aldın'ız ba?",
+      noCancel: "Yaq, bas tarttım",
+      yesBought: "Awa, satıp aldım!",
+      summaryTitle: "Sayohat ju'wmag'ı",
+      daysDone: (days) => `Siz ${days} ku'nde armanın'ızg'a jettin'iz!`,
+      contribTitle: "Kim qansha u'les qostı:",
+      uploadLabel: "Sıylıq su'vreti (ıqtıyorıy):",
+      uploadPrompt: "Su'vret ju'klew",
+      continueBtn: "Dawam etiw",
+      newDreamTitle: "Jan'a arman?",
+      newDreamPrompt: "Yana bir jan'a arman qoyasız ba?",
+      addDreamBtn: "Awa, jan'a arman qoyıw",
+      laterBtn: "Keyinirek",
+      member: "Ag'za",
+      imageTooLarge: "Súwret ólshemi júdá úlken! 3 MB'ǵa shekem júkleń.",
+    }
+  };
+
+  const t = T[lg] || T.uz;
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 1001, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, backdropFilter: "blur(4px)" }}>
@@ -111,11 +227,11 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 <path d="M12 2a4 4 0 0 0-4 4v5a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4z" />
               </svg>
               <div style={{ fontSize: 20, fontWeight: 800, color: th.t1, marginBottom: 8 }}>
-                {L("goal_reached_title", "Maqsadga yetdingiz!", "Цель достигнута!", "Goal reached!", "Мақсатқа жеттіңіз!", "Максатка жеттиңиз!", "Шумо ба мақсад расидед!", "Maqsetke jettin'iz!")}
+                {t.gReached}
               </div>
               <div style={{ fontSize: 14, color: th.t2, lineHeight: 1.6, padding: "0 10px" }}>
                 <b style={{ color: th.t1 }}>"{info.maqsadIsm}"</b> — {f(info.summa, true)}<br />
-                <span style={{ color: th.t3 }}>{L("did_you_buy", "Xarid qildingizmi?", "Вы купили это?", "Did you buy it?", "Сатып алдыңыз ба?", "Сатып алдыңызбы?", "Шумо харид кардед?", "Satıp aldın'ız ba?")}</span>
+                <span style={{ color: th.t3 }}>{t.didBuy}</span>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
@@ -123,7 +239,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 onClick={() => onCancel(info)} 
                 style={{ flex: 1, background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 14, padding: "13px", color: th.t2, cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
-                {L("no_cancel", "Yo'q, voz kechdim", "Нет, отменить", "No, cancel", "Жоқ, бас тарттым", "Жок, баш тарттым", "Не, даст кашидам", "Yaq, bas tarttım")}
+                {t.noCancel}
               </button>
               <button 
                 onClick={() => setStep(2)} 
@@ -133,7 +249,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                {L("yes_bought", "Ha, xarid qildim!", "Да, купил!", "Yes, I bought it!", "Иә, сатып алдым!", "Ооба, сатып алдым!", "Бале, харидам!", "Awa, satıp aldım!")}
+                {t.yesBought}
               </button>
             </div>
           </div>
@@ -148,10 +264,10 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               <div style={{ fontSize: 18, fontWeight: 800, color: th.t1, marginBottom: 4 }}>
-                {L("journey_summary_title", "Sayohat xulosasi", "Итоги путешествия", "Journey Summary", "Саяхат қорытындысы", "Саякаттын корутундусу", "Хулосаи сафар", "Sayohat ju'wmag'ı")}
+                {t.summaryTitle}
               </div>
               <div style={{ fontSize: 14, color: th.t2, fontWeight: 500, margin: "10px 0" }}>
-                {L("journey_days_done", "Siz {{days}} kunda orzuyingizga yetdingiz!", "Вы достигли мечты за {{days}} дней!", "You reached your dream in {{days}} days!", "Сиз {{days}} күнде арманыңызға жеттіңіз!", "Сиз {{days}} күндө кыялыңызга жеттиңиз!", "Шумо дар {{days}} рӯз ба орзуятон расидед!", "Siz {{days}} ku'nde armanın'ızg'a jettin'iz!").replace("{{days}}", diffDays)}
+                {t.daysDone(diffDays)}
               </div>
             </div>
 
@@ -159,7 +275,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
             {goal?.shared && members.length > 0 && (
               <div style={{ background: th.bg, borderRadius: 16, padding: 14, marginBottom: 16 }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: th.t2, marginBottom: 10 }}>
-                  {L("goal_contrib_title", "Kim qancha hissa qo'shdi:", "Кто сколько вложил:", "Contribution breakdown:", "Кім қанша үлес қосты:", "Ким канча салым кошту:", "Кӣ чӣ қадар ҳисса гузошт:", "Kim qansha u'les qostı:")}
+                  {t.contribTitle}
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {members.map(m => {
@@ -167,7 +283,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                     return (
                       <div key={m.uid} style={{ fontSize: 12 }}>
                         <div style={{ display: "flex", justifyContent: "space-between", color: th.t1, marginBottom: 4 }}>
-                          <span>{m.ism || L("member", "A'zo", "Участник", "Member", "Мүше", "Мүчө", "Аъзо", "Ag'za")}</span>
+                          <span>{m.ism || t.member}</span>
                           <span style={{ fontWeight: 700 }}>{f(m.total, true)} ({pct}%)</span>
                         </div>
                         <div style={{ width: "100%", height: 6, background: th.bor, borderRadius: 3, overflow: "hidden" }}>
@@ -183,7 +299,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
             {/* Gift Photo Upload Component */}
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: th.t2, marginBottom: 8 }}>
-                {L("goal_upload_label", "Sovg'a rasmi (ixtiyoriy):", "Фото подарка (необязательно):", "Gift Photo (optional):", "Сыйлық суреті (міндетті емес):", "Сыйлыктын сүрөтү (милдеттүү эмес):", "Акси тӯҳфа (ихтиёрӣ):", "Sıylıq su'vreti (ıqtıyorıy):")}
+                {t.uploadLabel}
               </div>
               
               {giftPhoto ? (
@@ -218,7 +334,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                     <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
                     <circle cx="12" cy="13" r="4" />
                   </svg>
-                  <span style={{ fontSize: 13, color: th.t2, fontWeight: 500 }}>{L("goal_upload_prompt", "Rasm yuklash", "Загрузить фото", "Upload Photo", "Сурет жүктеу", "Сүрөт жүктөө", "Боргирии акс", "Su'vret ju'klew")}</span>
+                  <span style={{ fontSize: 13, color: th.t2, fontWeight: 500 }}>{t.uploadPrompt}</span>
                 </div>
               )}
             </div>
@@ -227,7 +343,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
               onClick={() => setStep(3)} 
               style={{ width: "100%", background: th.ac, border: "none", borderRadius: 14, padding: "13px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
             >
-              {L("continue", "Davom etish", "Продолжить", "Continue", "Жалғастыру", "Улантуу", "Идома додан", "Dawam etiw")}
+              {t.continueBtn}
             </button>
           </div>
         )}
@@ -242,10 +358,10 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 <path d="M10 22h4" />
               </svg>
               <div style={{ fontSize: 18, fontWeight: 800, color: th.t1, marginBottom: 8 }}>
-                {L("goal_new_dream_title", "Yangi orzu?", "Новая мечта?", "New Dream?", "Жаңа арман?", "Жаңы кыял?", "Орзуи нав?", "Jan'a arman?")}
+                {t.newDreamTitle}
               </div>
               <div style={{ fontSize: 14, color: th.t2 }}>
-                {L("goal_new_dream_prompt", "Yana bir yangi orzu qo'yasizmi?", "Хотите поставить новую мечту?", "Would you like to set a new dream?", "Тағы бір жаңа арман қоясыз ба?", "Дагы бир жаңы кыял коёсузбу?", "Боз як орзуи нав мегузоред?", "Yana bir jan'a arman qoyasız ba?")}
+                {t.newDreamPrompt}
               </div>
             </div>
 
@@ -258,7 +374,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 }} 
                 style={{ width: "100%", background: "linear-gradient(135deg,#10b981,#059669)", border: "none", borderRadius: 14, padding: "13px", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
-                {L("goal_add_dream_btn", "Ha, yangi orzu qo'yish", "Да, поставить новую", "Yes, set new dream", "Иә, жаңа арман қою", "Ооба, жаңы кыял коюу", "Бале, гузоштани орзуи нав", "Awa, jan'a arman qoyıw")}
+                {t.addDreamBtn}
               </button>
               <button 
                 onClick={async () => {
@@ -266,7 +382,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 }} 
                 style={{ width: "100%", background: "transparent", border: "1.5px solid " + th.bor, borderRadius: 14, padding: "13px", color: th.t2, cursor: "pointer", fontWeight: 700, fontSize: 14 }}
               >
-                {L("later", "Keyinroq", "Позже", "Later", "Кейінірек", "Кийинчерээк", "Дертар", "Keyinirek")}
+                {t.laterBtn}
               </button>
             </div>
           </div>

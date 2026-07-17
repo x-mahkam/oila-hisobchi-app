@@ -48,7 +48,7 @@ const LeafIcon = ({ size = 24, color = "#10b981" }) => (
 );
 
 export const BarakaLeafFloating = memo(function BarakaLeafFloating({ pTab, setPTab }) {
-  const { user, scr, setScr, coinEarnedTrigger, buzz, th, lg } = useApp();
+  const { user, scr, setScr, coinEarnedTrigger, buzz, th, t } = useApp();
   
   const [isVisible, setIsVisible] = useState(true);
   const [isBouncing, setIsBouncing] = useState(false);
@@ -291,7 +291,7 @@ export const BarakaLeafFloating = memo(function BarakaLeafFloating({ pTab, setPT
           transform: `translateX(${isVisible ? "0px" : "32px"}) scale(${isBouncing ? 1.25 : 1})`,
           transition: "transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.3s, border-color 0.3s",
         }}
-        title={lg === "uz" ? "Baraka Bog'i" : "Baraka Garden"}
+        title={t("blf_barakaGarden")}
       >
         <LeafIcon size={24} color={th.gr} />
         
