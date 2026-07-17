@@ -107,11 +107,18 @@ export default function App() {
     return false;
   });
   const [hasPin, setHasPin] = useState(false);
+  // MUHIM: "user" o'rnatilgach, "hasPin" tekshiruvi ASINXRON tugaydi — bu
+  // orada (agar kutmasak) ilova bir zumga asosiy ekranni (PIN talab
+  // qilinmagandek) ko'rsatib, keyin PIN aniqlangach qulf ekraniga
+  // "sakrab" o'tadi. hasPinLoaded shu poyga holatini oldini oladi —
+  // pastdagi "boot" render-to'sig'i hasPin aniqlanguncha davom etadi.
+  const [hasPinLoaded, setHasPinLoaded] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
 
   // Load PIN status
   useEffect(() => {
     if (user?.id) {
+      setHasPinLoaded(false);
       db.g("security_" + user.id).then(sec => {
         if (sec && typeof sec === "object" && sec.pinHash) {
           setHasPin(true);
@@ -121,10 +128,13 @@ export default function App() {
       }).catch(err => {
         console.error("Failed to load security settings", err);
         setHasPin(false);
+      }).finally(() => {
+        setHasPinLoaded(true);
       });
     } else {
       setHasPin(false);
       setAppUnlocked(false);
+      setHasPinLoaded(true);
     }
   }, [user?.id]);
 
@@ -755,7 +765,7 @@ export default function App() {
   };
 
 
-  if (boot) {
+  if (boot || (user?.id && !hasPinLoaded)) {
     return (
       <div style={{ ...makeS(th).pg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", gap: 16 }}>
         <div style={{ display: "flex", justifyContent: "center" }}>

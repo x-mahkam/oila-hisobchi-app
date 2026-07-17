@@ -1,6 +1,43 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { Capacitor } from "@capacitor/core";
+import { Preferences } from "@capacitor/preferences";
+
+// MUHIM: Capacitor'ning Android WebView'ida IndexedDB/localStorage ba'zan
+// ishonchsiz ishlaydi (WebView versiyasi, ishlab chiqaruvchi sozlamalari va
+// h.k.ga qarab) — shu sabab standart indexedDBLocalPersistence/
+// browserLocalPersistence ilova to'liq qayta ishga tushganda sessiyani
+// tiklay olmasligi kuzatildi. @capacitor/preferences esa qurilmaning HAQIQIY
+// tizim xotirasidan foydalanadi (Android'da SharedPreferences, iOS'da
+// UserDefaults) — WebView holatidan mustaqil, ancha ishonchli. Shu sababli
+// native platformada buni ustuvor (birinchi) persistence sifatida ishlatamiz.
+const capacitorPreferencesPersistence = {
+  type: "LOCAL",
+  async _isAvailable() {
+    try {
+      await Preferences.set({ key: "__fbAuthAvailTest", value: "1" });
+      await Preferences.remove({ key: "__fbAuthAvailTest" });
+      return true;
+    } catch (_e) {
+      return false;
+    }
+  },
+  async _set(key, value) {
+    await Preferences.set({ key, value: JSON.stringify(value) });
+  },
+  async _get(key) {
+    const { value } = await Preferences.get({ key });
+    return value ? JSON.parse(value) : null;
+  },
+  async _remove(key) {
+    await Preferences.remove({ key });
+  },
+  _addListener(_key, _listener) {
+    // Bitta WebView instansi — tablar orasida sinxronlash shart emas.
+  },
+  _removeListener(_key, _listener) {},
+};
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -21,9 +58,10 @@ export const fbDB = getFirestore(app);
 // saqlash usulini aniq belgilab beramiz (IndexedDB → localStorage → sessionStorage).
 let _fbAuth;
 try {
-  _fbAuth = initializeAuth(app, {
-    persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
-  });
+  const persistenceList = Capacitor.isNativePlatform()
+    ? [capacitorPreferencesPersistence, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+    : [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence];
+  _fbAuth = initializeAuth(app, { persistence: persistenceList });
 } catch (_e) {
   // Vite HMR paytida ikkinchi marta chaqirilsa ("already initialized") yoki
   // boshqa sabab bilan xato bo'lsa — allaqachon mavjud instance'ni olamiz.
