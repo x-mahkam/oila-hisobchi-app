@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, memo } from "react";
+import { useTranslation } from "react-i18next";
 import { db } from "./firebase.js";
 import { useApp } from "./context/AppContext.jsx";
 import i18n from "./i18n/index.js";
@@ -76,24 +77,24 @@ const MSG_ICONS = {
 
 // ── Bog' bezash ashyolari (Tirik va Premium asboblar tanga/quyosh/yulduz evaziga) ────────
 const DECORATION_ITEMS = [
-  { id: "lola", type: "flower", name: "Sehrli Lola", nameRu: "Чудесный Тюльпан", cost: 20, currency: "coin", color: "#ef4444", emoji: "🌷", desc: "Tepranguvchi sehrli qizil lola", descRu: "Колышущийся волшебный тюльпан" },
-  { id: "atorgul", type: "flower", name: "Nafis Atorgul", nameRu: "Изящная Роза", cost: 40, currency: "coin", color: "#ec4899", emoji: "🌹", desc: "Yog'du taratuvchi nafis atorgul", descRu: "Изящная роза со свечением" },
-  { id: "moychechak", type: "flower", name: "Moychechak", nameRu: "Ромашка", cost: 30, currency: "coin", color: "#f59e0b", emoji: "🌼", desc: "Sokin tebranuvchi baxtli moychechak", descRu: "Счастливая колышущаяся ромашка" },
-  { id: "archa", type: "tree", name: "Kichik Archa", nameRu: "Мини-Ель", cost: 80, currency: "coin", color: "#10b981", emoji: "🌲", desc: "Yulduzchalar va o'yinchoqlar bilan bezatilgan archa", descRu: "Вечнозеленая ель со звездами" },
-  { id: "uycha", type: "house", name: "Kichik uycha", nameRu: "Уютный домик", cost: 150, currency: "coin", color: "#8b5cf6", emoji: "🏡", desc: "Mo'risidan shirin tutun chiqadigan shinam uycha", descRu: "Уютный домик с дымком" },
-  { id: "favvora", type: "fountain", name: "Oltin Favvora", nameRu: "Золотой фонтан", cost: 250, currency: "coin", color: "#3b82f6", emoji: "⛲", desc: "Suv sachratib turuvchi oltin favvora", descRu: "Красивый фонтан с брызгами" },
-  { id: "kamalak_guli", type: "magic", name: "Kamalak Guli", nameRu: "Радужный Цветок", cost: 400, currency: "coin", color: "#ec4899", emoji: "✨", desc: "Rangi jilolanuvchi sehrli kamalak guli", descRu: "Легендарный переливающийся цветок" },
+  { id: "lola", key: "lola", type: "flower", cost: 20, currency: "coin", color: "#ef4444", emoji: "🌷" },
+  { id: "atorgul", key: "atorgul", type: "flower", cost: 40, currency: "coin", color: "#ec4899", emoji: "🌹" },
+  { id: "moychechak", key: "moychechak", type: "flower", cost: 30, currency: "coin", color: "#f59e0b", emoji: "🌼" },
+  { id: "archa", key: "archa", type: "tree", cost: 80, currency: "coin", color: "#10b981", emoji: "🌲" },
+  { id: "uycha", key: "uycha", type: "house", cost: 150, currency: "coin", color: "#8b5cf6", emoji: "🏡" },
+  { id: "favvora", key: "favvora", type: "fountain", cost: 250, currency: "coin", color: "#3b82f6", emoji: "⛲" },
+  { id: "kamalak_guli", key: "kamalak_guli", type: "magic", cost: 400, currency: "coin", color: "#ec4899", emoji: "✨" },
 
   // SUN-BASED DECORATIONS
-  { id: "qush_qo'riqchi", type: "companion", name: "Qo'riqchi Qushcha", nameRu: "Птичка-хранитель", cost: 100, currency: "sun", color: "#38bdf8", emoji: "🐦", desc: "Zararkunandalardan daraxtlarni himoya qiladi", descRu: "Защищает деревья от вредителей" },
-  { id: "olcha_daraxti", type: "tree", name: "Olcha Daraxti", nameRu: "Цветущая Вишня", cost: 150, currency: "sun", color: "#f43f5e", emoji: "🌸🌳", desc: "Gilos gullari taratuvchi bahoriy olcha daraxti", descRu: "Сакура с красивыми опадающими лепестками" },
-  { id: "favvora_sehrli", type: "fountain", name: "Sehrli Favvora", nameRu: "Магический Фонтан", cost: 350, currency: "sun", color: "#3b82f6", emoji: "⛲✨", desc: "Rang-barang nur sachratuvchi sehrli favvora", descRu: "Магический фонтан со сказочной подсветкой" },
-  { id: "skameyka", type: "decor", name: "Dam Olish Skameykasi", nameRu: "Уютная Скамья", cost: 80, currency: "sun", color: "#b45309", emoji: "🪑", desc: "Sokin dam olish va suhbatlashish uchun joy", descRu: "Деревянная скамья для отдыха на природе" },
-  { id: "tosh", type: "decor", name: "Baxt Toshi", nameRu: "Камень Счастья", cost: 40, currency: "sun", color: "#64748b", emoji: "🪨", desc: "Zen bog'i uchun qadimiy muvozanat toshi", descRu: "Камень гармонии для дзен-сада" },
+  { id: "qush_qo'riqchi", key: "qush_qoriqchi", type: "companion", cost: 100, currency: "sun", color: "#38bdf8", emoji: "🐦" },
+  { id: "olcha_daraxti", key: "olcha_daraxti", type: "tree", cost: 150, currency: "sun", color: "#f43f5e", emoji: "🌸🌳" },
+  { id: "favvora_sehrli", key: "favvora_sehrli", type: "fountain", cost: 350, currency: "sun", color: "#3b82f6", emoji: "⛲✨" },
+  { id: "skameyka", key: "skameyka", type: "decor", cost: 80, currency: "sun", color: "#b45309", emoji: "🪑" },
+  { id: "tosh", key: "tosh", type: "decor", cost: 40, currency: "sun", color: "#64748b", emoji: "🪨" },
 
   // PRESTIGE STARS DECORATIONS
-  { id: "mushuk_qo'riqchi", type: "companion", name: "Qo'riqchi Mushukcha", nameRu: "Котенок-хранитель", cost: 2, currency: "star", color: "#f97316", emoji: "🐱", desc: "Zararkunandalarni avtomatik haydab turadi", descRu: "Автоматически прогоняет вредителей" },
-  { id: "oltin_qasr", type: "magic", name: "Oltin Qasr", nameRu: "Золотой Замок", cost: 5, currency: "star", color: "#fbbf24", emoji: "🏰", desc: "Dabdabali oltin qasr, barcha bezaklardan ustun", descRu: "Роскошный золотой замок вечного величия" },
+  { id: "mushuk_qo'riqchi", key: "mushuk_qoriqchi", type: "companion", cost: 2, currency: "star", color: "#f97316", emoji: "🐱" },
+  { id: "oltin_qasr", key: "oltin_qasr", type: "magic", cost: 5, currency: "star", color: "#fbbf24", emoji: "🏰" },
 ];
 
 // ── Mono outline ikonka (mukofotlar ro'yxati uchun) ─────────
@@ -144,15 +145,7 @@ const GModal = memo(function GModal({ gt, onClose, children }) {
 export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }) {
   const { maq, setGardenData } = useApp() || { maq: [], setGardenData: null };
   const oilaId = user?.oilaId;
-  const L = (uz, ru = uz) => {
-    const key = "garden_" + uz.toLowerCase()
-      .replace(/[^a-z0-9]/gi, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_+|_+$/g, "");
-    const val = i18n.t(key, { defaultValue: "" });
-    if (val) return val;
-    return lg === "ru" ? ru : uz;
-  };
+  const { t } = useTranslation("garden");
   const gt = gardenTheme(dark);
   injectUiCss();
   injectGardenCss();
@@ -398,8 +391,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           setPests([]);
           showMsg(
             hasCat 
-              ? L("Mushukchangiz hasharotlarni haydab yubordi! 🐱✨", "Ваш котенок прогнал вредителей! 🐱✨")
-              : L("Qushchangiz zararkunandani tutib oldi! 🐦✨", "Ваша птичка поймала вредителя! 🐦✨"),
+              ? t("g001")
+              : t("g002"),
             "leaf"
           );
           saveGarden(plots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
@@ -420,7 +413,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           };
           const nextPests = [...pests, newPest];
           setPests(nextPests);
-          showMsg(L("⚠️ Diqqat! Bog'da hasharotlar paydo bo'ldi! Uni bosing!", "⚠️ Внимание! В саду появились вредители! Нажмите на них!"), "seed");
+          showMsg(t("g003"), "seed");
           saveGarden(plots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
             pests: nextPests
           });
@@ -429,7 +422,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     }, 20000);
 
     return () => clearInterval(interval);
-  }, [plots, pests, purchasedDecorations, oilaId]);
+  }, [plots, pests, purchasedDecorations, oilaId, t]);
 
   const handleSquashPest = async (pestId) => {
     const nextPests = pests.filter(p => p.id !== pestId);
@@ -441,7 +434,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setCoins(nextCoins);
     
     spawnCoin(5, 50, 40, "coin");
-    showMsg(L("Zararkunanda yo'q qilindi! +10 ☀️, +5 🪙", "Вредитель уничтожен! +10 ☀️, +5 🪙"), "leaf");
+    showMsg(t("g004"), "leaf");
     
     await saveGarden(plots, nextCoins, nextEnergy, undefined, undefined, undefined, undefined, undefined, {
       pests: nextPests
@@ -490,7 +483,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const handleSellCrop = async (type, amount = 1) => {
     const available = warehouse[type] || 0;
     if (available < amount) {
-      showMsg(L("Sotish uchun hosil yetarli emas!", "Недостаточно урожая для продажи!"), "seed");
+      showMsg(t("g005"), "seed");
       return;
     }
 
@@ -506,11 +499,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setWarehouse(nextWarehouse);
 
     if (addCoin) {
-      await addCoin(earned, L("Hosil sotildi: " + type, "Продан урожай: " + type)).catch(() => {});
+      await addCoin(earned, t("g_cropSold", { type: t("harvest_type_" + type) })).catch(() => {});
     }
 
     spawnCoin(earned, 50, 50, "coin");
-    showMsg(L(`+${earned} Tanga olindi! Hosil sotildi 🎉`, `Получено +${earned} монет! Урожай продан 🎉`), "coin");
+    showMsg(t("g_cropSoldCoins", { earned }), "coin");
 
     await saveGarden(plots, nextCoins, undefined, undefined, undefined, undefined, undefined, undefined, {
       warehouse: nextWarehouse
@@ -540,7 +533,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
     if (isStar) {
       if (barakaStarsCount < item.cost) {
-        showMsg(L(`Yetarli Baraka yulduzingiz yo'q! ${item.cost} ⭐ kerak`, `Недостаточно звезд Бараки! Нужно ${item.cost} ⭐`), "gift");
+        showMsg(t("g_needStarItem", { cost: item.cost }), "gift");
         return;
       }
       const nextStars = barakaStarsCount - item.cost;
@@ -550,10 +543,10 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       await saveGarden(plots, undefined, undefined, undefined, undefined, decorations, nextPurchased, placedDecorations, {
         barakaStarsCount: nextStars
       });
-      showMsg(L(`${item.name} muvaffaqiyatli xarid qilindi!`, `${item.nameRu} успешно куплен!`), "bloom");
+      showMsg(t("g_itemPurchased", { name: t("dec_" + item.key + "_name") }), "bloom");
     } else if (isSun) {
       if (energy < item.cost) {
-        showMsg(L(`Yetarli quyoshingiz yo'q! ${item.cost} ta kerak`, `Недостаточно солнца! Нужно ${item.cost}`), "sun");
+        showMsg(t("g_needSunItem", { cost: item.cost }), "sun");
         return;
       }
       const nextEnergy = energy - item.cost;
@@ -561,10 +554,10 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       const nextPurchased = [...purchasedDecorations, item.id];
       setPurchasedDecorations(nextPurchased);
       await saveGarden(plots, undefined, nextEnergy, undefined, undefined, decorations, nextPurchased, placedDecorations);
-      showMsg(L(`${item.name} muvaffaqiyatli xarid qilindi!`, `${item.nameRu} успешно куплен!`), "bloom");
+      showMsg(t("g_itemPurchased", { name: t("dec_" + item.key + "_name") }), "bloom");
     } else {
       if (coins < item.cost) {
-        showMsg(L("Yetarli tangangiz yo'q! " + item.cost + " ta kerak", "Недостаточно монет! Нужно " + item.cost), "coin");
+        showMsg(t("g_needCoinItem", { cost: item.cost }), "coin");
         setShowAdModal(true);
         return;
       }
@@ -574,11 +567,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       setPurchasedDecorations(nextPurchased);
 
       if (addCoin) {
-        await addCoin(-item.cost, L(item.name + " sotib olindi", "Куплено " + item.nameRu)).catch(() => {});
+        await addCoin(-item.cost, t("g_itemBoughtLedger", { name: t("dec_" + item.key + "_name") })).catch(() => {});
       }
 
       await saveGarden(plots, nextCoins, undefined, undefined, undefined, decorations, nextPurchased, placedDecorations);
-      showMsg(L(item.name + " muvaffaqiyatli sotib olindi!", item.nameRu + " успешно куплен!"), "bloom");
+      showMsg(t("g_itemPurchased", { name: t("dec_" + item.key + "_name") }), "bloom");
     }
   };
 
@@ -610,7 +603,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setTempCoord(null);
 
     await saveGarden(plots, undefined, undefined, undefined, undefined, decorations, nextPurchased, nextPlaced);
-    showMsg(L(`${placingItem.name} maysazorga joylandi!`, `${placingItem.nameRu} успешно установлен!`), "bloom");
+    showMsg(t("g_placedOnLawn", { name: t("dec_" + placingItem.key + "_name") }), "bloom");
   };
 
   const cancelPlacement = () => {
@@ -629,7 +622,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   // ── O'simlik o'sishini tezlashtirish (50 quyosh = 3h, 100 quyosh = darhol pishadi) ──
   const handleGrowSpeedup = async (plotId, amount) => {
     if (energy < amount) {
-      showMsg(L(`Yetarli quyosh yo'q! ${amount} ta kerak`, `Недостаточно солнца! Нужно ${amount}`), "sun");
+      showMsg(t("g_needSunAmount", { amount }), "sun");
       setShowFertilizerModal(null);
       return;
     }
@@ -663,8 +656,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
     spawnCoin(-amount, 50, 50, "sun");
     showMsg(amount === 100 
-      ? L("Daraxtingiz zudlik bilan pishdi!", "Ваше дерево мгновенно созрело!")
-      : L("Daraxtingiz keyingi bosqichga o'tdi!", "Растение выросло на 1 стадию!"), "bloom");
+      ? t("g006")
+      : t("g007"), "bloom");
     await saveGarden(nextPlots, undefined, nextEnergy, undefined);
   };
 
@@ -676,7 +669,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   // ── Sug'orish (Fast watering with water drops allowed!) ──
   const handleWater = async (plotId, bypassCooldownConfirm = false) => {
     const plot = plots.find(p => p.id === plotId);
-    if (!plot || plot.stage < 0) { showMsg(L("Avval urug' eking", "Сначала посейте семя"), "seed"); return; }
+    if (!plot || plot.stage < 0) { showMsg(t("g008"), "seed"); return; }
 
     const usesDrop = !waterReady;
     if (usesDrop && !bypassCooldownConfirm) {
@@ -685,7 +678,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     }
 
     if (usesDrop && waterDrops <= 0) {
-      showMsg(L("Tezkor sug'orish uchun tomchilar yetarli emas!", "Недостаточно капель для быстрого полива!"), "drop");
+      showMsg(t("g009"), "drop");
       setShowBuyDropsModal(true);
       return;
     }
@@ -713,11 +706,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       setGrowAnim(plotId);
       setTimeout(() => setGrowAnim(null), 2000);
       if (newStage === STAGES.length - 1) harvestReady = true;
-      showMsg(L(STAGES[newStage].name + " bosqichiga yetdi!", "Стадия: " + STAGES[newStage].nameRu + "!"), "leaf");
+      showMsg(t("g_stageReached", { stage: t("stage_" + newStage) }), "leaf");
     } else {
       showMsg(usesDrop 
-        ? L("Tezkor sug'orildi! +5 Energiya", "Полито мгновенно каплей! +5 Энергии")
-        : L("Bog' sug'orildi! +5 Energiya", "Полито! +5 Энергии"), "drop");
+        ? t("g010")
+        : t("g011"), "drop");
     }
 
     const newEnergy = energy + 5;
@@ -781,10 +774,10 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     spawnCoin(earned, 50, 50, "coin");
     
     showMsg(isRainbow
-      ? L(`Kamalak Hosili! +${earned} tanga, +${crystalBonus} kristal`, `Радужный Урожай! +${earned} монет, +${crystalBonus} кристаллов`)
+      ? t("g_harvestRainbow", { earned, crystalBonus })
       : isGolden
-        ? L(`Oltin Hosil! +${earned} tanga, +${crystalBonus} kristal`, `Золотой Урожай! +${earned} монет, +${crystalBonus} кристалла`)
-        : L(`Hosil yig'ildi! +${earned} tanga, +${crystalBonus} kristal`, `Урожай собран! +${earned} монет, +${crystalBonus} кристалл`), "gift");
+        ? t("g_harvestGolden", { earned, crystalBonus })
+        : t("g_harvestNormal", { earned, crystalBonus }), "gift");
         
     await saveGarden(newPlots, newCoins, undefined, newCrystals);
   };
@@ -794,7 +787,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     const plot = PLOTS.find(p => p.id === plotId);
     if (!plot) return;
     if (coins < plot.unlockCost) {
-      showMsg(L("Yetarli tanga yo'q! " + plot.unlockCost + " kerak", "Мало монет! Нужно " + plot.unlockCost), "coin");
+      showMsg(t("g_needCoinUnlock", { cost: plot.unlockCost }), "coin");
       setShowUnlock(null);
       return;
     }
@@ -803,7 +796,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setCoins(newCoins);
     setPlots(newPlots);
     setShowUnlock(null);
-    showMsg(L("Yangi maysazor ochildi!", "Новая лужайка открыта!"), "bloom");
+    showMsg(t("g012"), "bloom");
     await saveGarden(newPlots, newCoins, undefined, undefined);
   };
 
@@ -811,14 +804,14 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const handlePlant = async (plotId, plantType = "normal") => {
     if (plantType === "normal") {
       if (coins < 100) {
-        showMsg(L("Urug' sotib olish uchun 100 tanga yetarli emas!", "Недостаточно 100 монет для покупки семени!"), "coin");
+        showMsg(t("g013"), "coin");
         setShowAdModal(true);
         return;
       }
       const nextCoins = coins - 100;
       setCoins(nextCoins);
       if (addCoin) {
-        await addCoin(-100, L("Urug' ekildi", "Посеяно семя")).catch(() => {});
+        await addCoin(-100, t("g014")).catch(() => {});
       }
       setShowPlant(null);
       for (let step = 1; step <= 4; step++) {
@@ -831,11 +824,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         : p);
       setPlots(newPlots);
       setSelected(plotId);
-      showMsg(L("Standart urug' ekildi!", "Обычное семя успешно посажено!"), "seed");
+      showMsg(t("g015"), "seed");
       await saveGarden(newPlots, nextCoins, undefined, undefined);
     } else if (plantType === "golden") {
       if (energy < 200 && goldenSeeds <= 0) {
-        showMsg(L("Oltin urug' uchun 200 Quyosh yoki 1 dona zaxira kerak!", "Для Золотого семени нужно 200 Солнца или 1 шт. в запасе!"), "sun");
+        showMsg(t("g016"), "sun");
         return;
       }
       let nextEnergy = energy;
@@ -858,13 +851,13 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         : p);
       setPlots(newPlots);
       setSelected(plotId);
-      showMsg(L("Oltin Daraxt ekildi! 2 barobar serhosil!", "Посажено Золотое Дерево! Дает в 2 раза больше урожая!"), "seed");
+      showMsg(t("g017"), "seed");
       await saveGarden(newPlots, undefined, nextEnergy, undefined, undefined, undefined, undefined, undefined, {
         goldenSeeds: nextSeeds
       });
     } else if (plantType === "rainbow") {
       if (rainbowSeeds <= 0) {
-        showMsg(L("Sizda Kamalak Urug'i yo'q! Uni Baraka Yulduzlari do'konidan sotib oling", "У вас нет Радужного семени! Купите в лавке звезд"), "gift");
+        showMsg(t("g018"), "gift");
         return;
       }
       const nextSeeds = rainbowSeeds - 1;
@@ -880,7 +873,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         : p);
       setPlots(newPlots);
       setSelected(plotId);
-      showMsg(L("Afsonaviy Kamalak Daraxti ekildi! 5 barobar mukofotlar!", "Радужное Дерево посажено! Дает в 5 раз больше наград!"), "seed");
+      showMsg(t("g019"), "seed");
       await saveGarden(newPlots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
         rainbowSeeds: nextSeeds
       });
@@ -889,7 +882,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
   // ── Kunlik sovg'a ──
   const handleDailyGift = async () => {
-    if (dailyDone) { showMsg(L("Bugungi sovg'a olingan, ertaga keling!", "Бонус уже получен"), "gift"); return; }
+    if (dailyDone) { showMsg(t("g020"), "gift"); return; }
     const today = new Date().toISOString().slice(0, 10);
     const bonus = 50;
     const newCoins = coins + bonus;
@@ -898,7 +891,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setEnergy(newEnergy);
     setDailyDone(true);
     spawnCoin(bonus, 20, 40);
-    showMsg(L("Kunlik sovg'a! +" + bonus + " tanga, +20 energiya", "Бонус! +" + bonus + " монет"), "gift");
+    showMsg(t("g_dailyGiftMsg", { bonus }), "gift");
     await Promise.all([
       db.s("baraka_daily_" + oilaId, { date: today, coins: bonus }),
       saveGarden(plots, newCoins, newEnergy, undefined),
@@ -927,7 +920,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
     const pos = SUN_POS[plotId] || SUN_POS[0];
     spawnCoin(rewardEnergy, pos.x, 30, "sun");
-    showMsg(L(`+${rewardEnergy} Baraka Quyoshi terildi!`, `+${rewardEnergy} Солнца Бараки собрано!`), "sun");
+    showMsg(t("g_sunCollected", { amount: rewardEnergy }), "sun");
     await saveGarden(newPlots, undefined, newEnergy, undefined, undefined, undefined, undefined, undefined, {
       familySuns: newFamilySuns
     });
@@ -947,14 +940,14 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setWaterTimer(remaining);
     if (remaining <= 0) setWaterReady(true);
     spawnCoin(-SPEEDUP_COST, 50, 78, "coin");
-    showMsg(L("30 daqiqa tejaldi!", "−30 минут!"), "rocket");
+    showMsg(t("g021"), "rocket");
     await saveGarden(plots, newCoins, undefined, undefined, newLW);
   };
 
   // ── Tezkor Suv Tomchilarini Quyosh evaziga sotib olish ──
   const handleBuyWaterDrops = async (cost, amount) => {
     if (energy < cost) {
-      showMsg(L(`Tomchi xarid qilishga yetarli quyosh yo'q! ${cost} kerak`, `Недостаточно солнца! Нужно ${cost}`), "sun");
+      showMsg(t("g_needSunDrop", { cost }), "sun");
       return;
     }
     const nextEnergy = energy - cost;
@@ -963,7 +956,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setWaterDrops(nextDrops);
     setShowBuyDropsModal(false);
     spawnCoin(amount, 50, 45, "drop");
-    showMsg(L(`+${amount} ta suv tomchisi sotib olindi!`, `Куплено +${amount} капель воды!`), "drop");
+    showMsg(t("g_dropsBought", { amount }), "drop");
     await saveGarden(plots, undefined, nextEnergy, undefined, undefined, undefined, undefined, undefined, {
       waterDrops: nextDrops
     });
@@ -973,13 +966,13 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const handleTriggerRain = async () => {
     if (rainActive) return;
     if (energy < 300) {
-      showMsg(L("Baraka yomg'irini chaqirish uchun 300 Quyosh kerak!", "Для вызова Благодатного дождя нужно 300 Солнца!"), "sun");
+      showMsg(t("g022"), "sun");
       return;
     }
     const nextEnergy = energy - 300;
     setEnergy(nextEnergy);
     setRainActive(true);
-    showMsg(L("🌧️ Baraka yomg'iri yog'moqda! Barcha o'simliklar sug'orilmoqda...", "🌧️ Идет Благодатный дождь! Все растения поливаются автоматически..."), "drop");
+    showMsg(t("g023"), "drop");
 
     const nowT = Date.now();
     const nextPlots = plots.map(plot => {
@@ -1009,7 +1002,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     // Rain overlay stops after 6 seconds
     setTimeout(() => {
       setRainActive(false);
-      showMsg(L("🌤️ Baraka yomg'iri tindi! Bog'ingiz yashnab ketdi", "🌤️ Благодатный дождь закончился! Сад зазеленел"), "leaf");
+      showMsg(t("g024"), "leaf");
     }, 6000);
 
     await saveGarden(nextPlots, undefined, nextEnergy, undefined, nowT);
@@ -1017,18 +1010,18 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
   // ── Omad G'ildiragi (Lucky Spin) ──
   const PRIZES = [
-    { label: "300 Tanga", labelRu: "300 Монет", labelShort: "300", labelShortRu: "300", value: "coins_300", color: "#f59e0b", icon: "🪙" },
-    { label: "3 Kristall", labelRu: "3 Кристалла", labelShort: "3 Kristall", labelShortRu: "3 Крист.", value: "crystals_3", color: "#3b82f6", icon: "💎" },
-    { label: "Oltin Urug'", labelRu: "Золотое семя", labelShort: "Oltin", labelShortRu: "Золото", value: "golden_seed", color: "#10b981", icon: "🌱" },
-    { label: "150 Quyosh", labelRu: "150 Солнца", labelShort: "150 ☀️", labelShortRu: "150 ☀️", value: "suns_150", color: "#ec4899", icon: "☀️" },
-    { label: "1000 Tanga", labelRu: "1000 Монет", labelShort: "1000", labelShortRu: "1000", value: "coins_1000", color: "#f59e0b", icon: "💰" },
-    { label: "Sirli Sandiq", labelRu: "Тайный сундук", labelShort: "Sandiq", labelShortRu: "Сундук", value: "mystery_box", color: "#8b5cf6", icon: "🎁" },
+    { value: "coins_300", color: "#f59e0b", icon: "🪙" },
+    { value: "crystals_3", color: "#3b82f6", icon: "💎" },
+    { value: "golden_seed", color: "#10b981", icon: "🌱" },
+    { value: "suns_150", color: "#ec4899", icon: "☀️" },
+    { value: "coins_1000", color: "#f59e0b", icon: "💰" },
+    { value: "mystery_box", color: "#8b5cf6", icon: "🎁" },
   ];
 
   const handleSpin = async () => {
     if (isSpinning) return;
     if (energy < 500) {
-      showMsg(L("Aylantirish uchun 500 Quyosh kerak!", "Для прокрутки нужно 500 Солнца!"), "sun");
+      showMsg(t("g025"), "sun");
       return;
     }
     
@@ -1081,7 +1074,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         setPurchasedDecorations(nextPurchased);
       }
       
-      showMsg(L(`Siz yutdingiz: ${L(prize.label, prize.labelRu)}!`, `Вы выиграли: ${L(prize.label, prize.labelRu)}!`), "gift");
+      showMsg(t("g_wonPrize", { prize: t("prize_" + prize.value + "_label") }), "gift");
       await saveGarden(plots, nextCoins, nextEnergyFinal, nextCrystals, undefined, undefined, nextPurchased, undefined, {
         goldenSeeds: nextSeeds
       });
@@ -1094,42 +1087,27 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     const cost = isFree ? 0 : 20;
     
     if (energy < cost) {
-      showMsg(L(`Maslahat uchun yetarli quyosh yo'q! 20 ta kerak`, `Недостаточно солнца! Нужно 20`), "sun");
+      showMsg(t("g_needSunAdvice"), "sun");
       return;
     }
-    
+
     setLoadingAdvice(true);
     setAiAdvice("");
-    
+
     const nextEnergy = energy - cost;
     if (cost > 0) {
       setEnergy(nextEnergy);
     }
     const nextLastAdvice = Date.now();
     setLastAiAdviceAt(nextLastAdvice);
-    
-    const tipsUz = [
-      "Baraka bog'ingiz go'zal! Oilaviy byudjetda kiyim-kechak xarajatlarini 10% kamaytirib, uni orzuingizdagi maqsadga yo'naltiring.",
-      "Katta intizom! O'tgan oyda oziq-ovqat xarajatlarini nazorat qildingiz. Har kuni kichik summalarni tejasangiz, bolalaringiz kelajagi serob bo'ladi.",
-      "Qarzlar miqdorini kamaytirish uchun ajoyib imkoniyat! Haftalik daromaddan 15% ni qarzni tezroq yopishga yo'naltiring, bu baraka olib keladi.",
-      "Oila a'zolaringiz bilan hamkorlikda 1000 Quyosh to'plashga yaqin qoldingiz! Ushbu hamkorlik sizga bepul +500 Coin taqdim etadi."
-    ];
-    const tipsRu = [
-      "Ваш сад Бараки прекрасен! Сократите семейные расходы на одежду на 10% на этой неделе и направьте их на цель вашей мечты.",
-      "Прекрасная дисциплина! Вы отлично контролировали расходы на продукты. Ежедневная экономия небольших сумм обеспечит будущее детей.",
-      "Отличный шанс уменьшить долги! Направляйте 15% еженедельного дохода на досрочное погашение обязательств для привлечения достатка.",
-      "Вы близки к сбору 1000 Солнц всей семьей! Это принесет вам дополнительный бонус +500 монет."
-    ];
-    
-    const adviceText = L(
-      tipsUz[Math.floor(Math.random() * tipsUz.length)],
-      tipsRu[Math.floor(Math.random() * tipsRu.length)]
-    );
+
+    const tipIndex = Math.floor(Math.random() * 4);
+    const adviceText = t("ai_tip_" + tipIndex);
     
     setTimeout(async () => {
       setAiAdvice(adviceText);
       setLoadingAdvice(false);
-      showMsg(L("Foydali moliyaviy maslahat tayyor!", "Полезный финансовый совет готов!"), "bloom");
+      showMsg(t("g026"), "bloom");
       await saveGarden(plots, undefined, cost > 0 ? nextEnergy : undefined, undefined, undefined, undefined, undefined, undefined, {
         lastAiAdviceAt: nextLastAdvice
       });
@@ -1140,7 +1118,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const handleClaimFamilyBonus = async () => {
     if (familySuns < 1000) return;
     if (familyBonusClaimed) {
-      showMsg(L("Bonus allaqachon olingan!", "Бонус уже получен!"), "gift");
+      showMsg(t("g027"), "gift");
       return;
     }
     
@@ -1149,11 +1127,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setFamilyBonusClaimed(true);
     
     if (addCoin) {
-      await addCoin(500, L("Oilaviy 1000 Quyosh Bonusi!", "Семейный бонус 1000 Солнца!")).catch(() => {});
+      await addCoin(500, t("g028")).catch(() => {});
     }
     
     spawnCoin(500, 50, 45, "coin");
-    showMsg(L("Oila bilan g'alaba! +500 Tanga olindi!", "Семейный успех! Получено +500 монет!"), "gift");
+    showMsg(t("g029"), "gift");
     
     await saveGarden(plots, nextCoins, undefined, undefined, undefined, undefined, undefined, undefined, {
       familyBonusClaimed: true
@@ -1163,7 +1141,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   // ── Prestij: 1000 Quyosh -> 1 Baraka Yulduzi ⭐ ──
   const handleConvertSunsToBaraka = async () => {
     if (energy < 1000) {
-      showMsg(L("Kamida 1000 Quyosh bo'lishi lozim!", "Требуется минимум 1000 Солнца!"), "sun");
+      showMsg(t("g030"), "sun");
       return;
     }
     const nextEnergy = energy - 1000;
@@ -1173,7 +1151,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     setShowPrestigeModal(false);
     
     spawnCoin(1, 50, 50, "gift");
-    showMsg(L("Tabriklaymiz! 1 ta Baraka yulduzi ⭐ olindi!", "Поздравляем! Получена 1 звезда Бараки ⭐!"), "bloom");
+    showMsg(t("g031"), "bloom");
     
     await saveGarden(plots, undefined, nextEnergy, undefined, undefined, undefined, undefined, undefined, {
       barakaStarsCount: nextStars
@@ -1217,37 +1195,37 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const sunsReady = planted.filter(p => now - (p.lastSunAt || 0) >= SUN_CYCLE).length;
 
   const achievements = useMemo(() => ([
-    { icon: <SeedSVG size={22} />,  title: L("Ilk urug'", "Первое семя"),        desc: L("Birinchi Baraka urug'ini eking", "Посейте первое семя"),              reward: L("Quyosh sikli ochiladi", "Открывается цикл солнца"), ok: anyPlanted },
-    { icon: <LeafSVG size={20} />,  title: L("Yosh bog'bon", "Юный садовник"),    desc: L("Daraxtni yosh daraxt bosqichiga yetkazing", "Вырастите деревце"),      reward: "+" + HARVEST_COINS[2] + " " + L("tanga hosili", "монет урожая"), ok: maxStage >= 2 },
-    { icon: <BloomSVG size={20} />, title: L("Gulchi", "Цветовод"),               desc: L("Daraxtingiz gullasin", "Дерево должно зацвести"),                      reward: "+" + HARVEST_COINS[4] + " " + L("tanga hosili", "монет урожая"), ok: maxStage >= 4 },
-    { icon: <PlantSVG stage={6} size={26} animated={false} />, title: L("Baraka ustasi", "Мастер Бараки"), desc: L("Baraka daraxtiga erishing", "Достигните Дерева Бараки"), reward: "+" + HARVEST_COINS[6] + " " + L("tanga, +1 kristal", "монет, +1 кристалл"), ok: maxStage >= 6 },
-    { icon: <MapSVG size={20} />,   title: L("Kengaytiruvchi", "Расширитель"),    desc: L("Ikkinchi uchastkani oching", "Откройте второй участок"),               reward: L("Qo'shimcha quyosh manbai", "Доп. источник солнца"), ok: unlockedCount >= 2 },
-    { icon: <MapSVG size={20} />,   title: L("Yer egasi", "Землевладелец"),       desc: L("Barcha 5 uchastkani oching", "Откройте все 5 участков"),               reward: L("5 barobar daromad oqimi", "5× поток дохода"), ok: unlockedCount >= 5 },
-    { icon: <GemSVG size={18} />,   title: L("Kristall to'plovchi", "Собиратель"), desc: L("5 ta kristal to'plang", "Соберите 5 кристаллов"),                     reward: L("Har hosil +1 kristal", "Каждый урожай +1 кристалл"), ok: crystals >= 5 },
-    { icon: <CoinSVG size={18} />,  title: L("Xazinabon", "Казначей"),            desc: L("1 000 tanga to'plang", "Накопите 1 000 монет"),                        reward: L("Yangi uchastkaga yo'l", "Путь к новому участку"), ok: coins >= 1000 },
-  ]), [anyPlanted, maxStage, unlockedCount, crystals, coins, lg]);
+    { icon: <SeedSVG size={22} />,  title: t("g032"),        desc: t("g033"),              reward: t("g034"), ok: anyPlanted },
+    { icon: <LeafSVG size={20} />,  title: t("g035"),    desc: t("g036"),      reward: "+" + HARVEST_COINS[2] + " " + t("g037"), ok: maxStage >= 2 },
+    { icon: <BloomSVG size={20} />, title: t("g038"),               desc: t("g039"),                      reward: "+" + HARVEST_COINS[4] + " " + t("g037"), ok: maxStage >= 4 },
+    { icon: <PlantSVG stage={6} size={26} animated={false} />, title: t("g040"), desc: t("g041"), reward: "+" + HARVEST_COINS[6] + " " + t("g042"), ok: maxStage >= 6 },
+    { icon: <MapSVG size={20} />,   title: t("g043"),    desc: t("g044"),               reward: t("g045"), ok: unlockedCount >= 2 },
+    { icon: <MapSVG size={20} />,   title: t("g046"),       desc: t("g047"),               reward: t("g048"), ok: unlockedCount >= 5 },
+    { icon: <GemSVG size={18} />,   title: t("g049"), desc: t("g050"),                     reward: t("g051"), ok: crystals >= 5 },
+    { icon: <CoinSVG size={18} />,  title: t("g052"),            desc: t("g053"),                        reward: t("g054"), ok: coins >= 1000 },
+  ]), [anyPlanted, maxStage, unlockedCount, crystals, coins, t]);
 
   const history = useMemo(() => {
     const ev = [];
     plots.forEach(p => {
-      if (p.lastWateredAt > 0) ev.push({ t: p.lastWateredAt, icon: <DropSVG size={12} />, label: L("Uchastka " + (p.id + 1) + " sug'orildi", "Участок " + (p.id + 1) + " полит") });
+      if (p.lastWateredAt > 0) ev.push({ t: p.lastWateredAt, icon: <DropSVG size={12} />, label: t("g_plotWatered", { n: p.id + 1 }) });
     });
-    if (dailyDone) ev.push({ t: now, today: true, icon: <GiftSVG size={16} />, label: L("Kunlik sovg'a olindi", "Ежедневный бонус получен") });
+    if (dailyDone) ev.push({ t: now, today: true, icon: <GiftSVG size={16} />, label: t("g055") });
     return ev.sort((a, b) => b.t - a.t).slice(0, 6);
-  }, [plots, dailyDone, lg]);
+  }, [plots, dailyDone, t]);
 
   const rewards = [
-    { icon: MonoIco.minus(gt.acc),    label: L("Xarajat qo'shish", "Добавить расход"),        amount: 5,  kind: "coin" },
-    { icon: MonoIco.plus(gt.acc),     label: L("Daromad qo'shish", "Добавить доход"),          amount: 10, kind: "coin" },
-    { icon: MonoIco.qr(gt.acc),       label: L("QR kod skanerlash", "Сканировать QR"),         amount: 10, kind: "coin" },
-    { icon: MonoIco.target(gt.acc),   label: L("Maqsad yaratish", "Создать цель"),             amount: 20, kind: "coin" },
-    { icon: MonoIco.check(gt.acc),    label: L("Maqsadga erishish", "Достичь цели"),           amount: 50, kind: "coin" },
-    { icon: MonoIco.card(gt.acc),     label: L("Qarzni yopish", "Закрыть долг"),               amount: 30, kind: "coin" },
-    { icon: MonoIco.users(gt.acc),    label: L("Oila a'zosi qo'shish", "Добавить участника"),  amount: 15, kind: "coin" },
-    { icon: MonoIco.calendar(gt.acc), label: L("7 kun ketma-ket", "7 дней подряд"),            amount: 25, kind: "coin" },
-    { icon: <GiftSVG size={17} />,    label: L("Kunlik sovg'a", "Ежедневный бонус"),           amount: 50, kind: "coin" },
-    { icon: <SunSprite size={19} />,  label: L("Quyosh yig'ish (3 soatda pishadi)", "Собрать солнце (зреет 3 часа)"), amount: SUN_ENERGY, kind: "bolt" },
-    { icon: <RocketSVG size={17} />,  label: L("Tezlatish (−30 daqiqa)", "Ускорить (−30 минут)"), amount: SPEEDUP_COST, kind: "coin", negative: true },
+    { icon: MonoIco.minus(gt.acc),    label: t("g056"),        amount: 5,  kind: "coin" },
+    { icon: MonoIco.plus(gt.acc),     label: t("g057"),          amount: 10, kind: "coin" },
+    { icon: MonoIco.qr(gt.acc),       label: t("g058"),         amount: 10, kind: "coin" },
+    { icon: MonoIco.target(gt.acc),   label: t("g059"),             amount: 20, kind: "coin" },
+    { icon: MonoIco.check(gt.acc),    label: t("g060"),           amount: 50, kind: "coin" },
+    { icon: MonoIco.card(gt.acc),     label: t("g061"),               amount: 30, kind: "coin" },
+    { icon: MonoIco.users(gt.acc),    label: t("g062"),  amount: 15, kind: "coin" },
+    { icon: MonoIco.calendar(gt.acc), label: t("g063"),            amount: 25, kind: "coin" },
+    { icon: <GiftSVG size={17} />,    label: t("g064"),           amount: 50, kind: "coin" },
+    { icon: <SunSprite size={19} />,  label: t("g065"), amount: SUN_ENERGY, kind: "bolt" },
+    { icon: <RocketSVG size={17} />,  label: t("g066"), amount: SPEEDUP_COST, kind: "coin", negative: true },
   ];
 
   const unlockPlot = showUnlock !== null ? PLOTS.find(p => p.id === showUnlock) : null;
@@ -1270,7 +1248,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       {/* ── SAHNA: ekranning ~88% ── */}
       <GardenScene
         full
-        gt={gt} mode={mode} L={L}
+        gt={gt} mode={mode} t={t}
         plots={plots} selected={selected} coins={coins}
         now={now} fTime={fTime}
         waterReady={waterReady} waterTimer={waterTimer}
@@ -1294,19 +1272,19 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
       {/* ── HUD: yuqori panel (orqaga · sarlavha · menyu) ── */}
       <div style={{ position: "absolute", top: "env(safe-area-inset-top)", left: 0, right: 0, zIndex: 40, display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3 + "px " + SPACE.s4 + "px 0" }}>
-        <button className="ui-press" onClick={onBack} aria-label={L("Orqaga", "Назад")} style={glassBtn}>
+        <button className="ui-press" onClick={onBack} aria-label={t("g067")} style={glassBtn}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke={gt.onSky} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
         <div style={{ ...TYPE.heading, color: gt.onSky, textShadow: "0 2px 10px " + gt.skyScrim, letterSpacing: 0.3 }}>
-          {L("Baraka Bog'i", "Сад Бараки")}
+          {t("g068")}
         </div>
         <div style={{ display: "flex", gap: SPACE.s2, alignItems: "center" }}>
           {/* Bezash (Decorate) Button using Stars */}
-          <button className="ui-press" onClick={() => setShowDecorModal(true)} aria-label={L("Bezash", "Декор")} style={glassBtn}>
+          <button className="ui-press" onClick={() => setShowDecorModal(true)} aria-label={t("g069")} style={glassBtn}>
             <span style={{ fontSize: 16 }}>🎪</span>
           </button>
           
-          <button className="ui-press" onClick={() => setShowMenu(true)} aria-label={L("Menyu", "Меню")} style={{ ...glassBtn, position: "relative" }}>
+          <button className="ui-press" onClick={() => setShowMenu(true)} aria-label={t("g070")} style={{ ...glassBtn, position: "relative" }}>
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke={gt.onSky} strokeWidth="1.6" strokeLinecap="round">
               <path d="M3 14.5V9M9 14.5V3.5M15 14.5V6.5" />
             </svg>
@@ -1320,28 +1298,28 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         {/* Omad G'ildiragi (Lucky Spin) */}
         <button className="ui-press" onClick={() => setShowSpinModal(true)} 
           style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.22))", border: "1.5px solid #fbbf24", boxShadow: "0 0 12px rgba(245, 158, 11, 0.55)", cursor: "pointer" }} 
-          title={L("Omad G'ildiragi", "Колесо Удачи")}>
+          title={t("g071")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2s ease-in-out infinite" }}>🎡</span>
         </button>
 
         {/* Baraka yomg'iri (Rain Control) */}
         <button className="ui-press" onClick={handleTriggerRain} 
           style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(3, 105, 161, 0.22))", border: "1.5px solid #38bdf8", boxShadow: "0 0 12px rgba(56, 189, 248, 0.55)", cursor: "pointer" }} 
-          title={L("Baraka yomg'iri (300 ☀️)", "Дождь Бараки (300 ☀️)")}>
+          title={t("g072")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.4s ease-in-out infinite 0.2s" }}>🌧️</span>
         </button>
 
         {/* AI Maslahatchi */}
         <button className="ui-press" onClick={() => { setShowAiAdvisorModal(true); handleGetAiAdvice(); }} 
           style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(109, 33, 168, 0.22))", border: "1.5px solid #c084fc", boxShadow: "0 0 12px rgba(168, 85, 247, 0.55)", cursor: "pointer" }} 
-          title={L("Foydali Maslahatchi", "Полезный Советник")}>
+          title={t("g073")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.8s ease-in-out infinite 0.4s" }}>🔮</span>
         </button>
 
         {/* Baraka Prestij */}
         <button className="ui-press" onClick={() => setShowPrestigeModal(true)} 
           style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(234, 179, 8, 0.22), rgba(202, 138, 4, 0.22))", border: "1.5px solid #facc15", boxShadow: "0 0 12px rgba(234, 179, 8, 0.65)", cursor: "pointer" }} 
-          title={L("Baraka Prestij (Yulduzlar)", "Престиж Бараки (Звезды)")}>
+          title={t("g074")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.2s ease-in-out infinite 0.6s" }}>👑</span>
         </button>
       </div>
@@ -1371,7 +1349,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         <button className="ui-press" onClick={() => setShowPlant(selected)}
           style={{ position: "absolute", left: "50%", top: "34%", transform: "translateX(-50%)", zIndex: 40, background: gt.sceneScrim, border: "1.5px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: SPACE.s2 + "px " + (SPACE.s4 + SPACE.s1) + "px", cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s2, fontFamily: "inherit", animation: "gdBounce 2.2s ease-in-out infinite" }}>
           <SeedSVG size={22} />
-          <span style={{ ...TYPE.subtitle, fontWeight: 700, color: gt.onSky }}>{L("Birinchi urug'ni eking", "Посейте первое семя")}</span>
+          <span style={{ ...TYPE.subtitle, fontWeight: 700, color: gt.onSky }}>{t("g075")}</span>
         </button>
       )}
 
@@ -1384,19 +1362,19 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             {(user?.ism || "B").slice(0, 1).toUpperCase()}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: gt.ink1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism || L("Bog'bon", "Садовник")}</div>
-            <div style={{ ...TYPE.caption, color: gt.ink2 }}>{L("Baraka bog'boni", "Садовник Бараки")}</div>
+            <div style={{ ...TYPE.subtitle, fontWeight: 800, color: gt.ink1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.ism || t("g076")}</div>
+            <div style={{ ...TYPE.caption, color: gt.ink2 }}>{t("g077")}</div>
           </div>
-          <GChip gt={gt} tone="leaf">{L("Daraja", "Уровень")} {anyPlanted ? maxStage : 0}</GChip>
+          <GChip gt={gt} tone="leaf">{t("g078")} {anyPlanted ? maxStage : 0}</GChip>
         </div>
         <GCard gt={gt} style={{ paddingTop: SPACE.s4 + SPACE.s1 }}>
-          <LevelGauge gt={gt} L={L}
+          <LevelGauge gt={gt} t={t}
             level={anyPlanted ? maxStage : 0}
             progress={levelProgress}
-            stageName={anyPlanted ? L(STAGES[maxStage].name, STAGES[maxStage].nameRu) : L("Hali boshlanmagan", "Ещё не начат")} />
+            stageName={anyPlanted ? t("stage_" + maxStage) : t("g079")} />
           <div style={{ marginTop: SPACE.s4 }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 + 2 }}>
-              <span style={{ ...TYPE.tiny, color: gt.ink2, display: "flex", alignItems: "center", gap: SPACE.s1 }}><BoltSVG size={12} />{L("Baraka energiyasi", "Энергия Бараки")}</span>
+              <span style={{ ...TYPE.tiny, color: gt.ink2, display: "flex", alignItems: "center", gap: SPACE.s1 }}><BoltSVG size={12} />{t("g080")}</span>
               <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.ink1, fontVariantNumeric: "tabular-nums" }}>{energy.toLocaleString()} XP</span>
             </div>
             <GProgress value={Math.min(100, energy)} gold height={SPACE.s2} />
@@ -1405,16 +1383,16 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
         {/* Boyliklar */}
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatPill gt={gt} kind="coin" value={coins} label={L("Tanga", "Монеты")} />
-          <StatPill gt={gt} kind="bolt" value={energy} label={L("Energiya", "Энергия")} />
-          <StatPill gt={gt} kind="gem" value={crystals} label={L("Kristall", "Кристаллы")} />
+          <StatPill gt={gt} kind="coin" value={coins} label={t("g081")} />
+          <StatPill gt={gt} kind="bolt" value={energy} label={t("g082")} />
+          <StatPill gt={gt} kind="gem" value={crystals} label={t("g083")} />
         </div>
 
         {/* Oilaviy hamkorlik challenge banneri */}
         <div style={{ margin: `${SPACE.s4}px 0` }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
             <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.ink1, display: "flex", alignItems: "center", gap: 6 }}>
-              <span>👨‍👩‍👧‍👦</span> {L("Oilaviy Challenge", "Семейный Челлендж")}
+              <span>👨‍👩‍👧‍👦</span> {t("g084")}
             </span>
             <span style={{ ...TYPE.tiny, fontWeight: 700, color: familySuns >= 1000 ? "#16a34a" : gt.ink3, fontVariantNumeric: "tabular-nums" }}>
               {familySuns} / 1000 ☀️
@@ -1424,39 +1402,39 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
               <div style={{ flex: 1 }}>
                 <p style={{ ...TYPE.caption, color: gt.ink2, margin: "0 0 6px 0", lineHeight: 1.4, fontSize: 11 }}>
-                  {L("Oila bilan birgalikda 1000 Quyosh yig'ing va qo'shimcha +500 Tanga bonusga ega bo'ling!", "Соберите всей семьей 1000 Солнца и получите супер-бонус +500 монет!")}
+                  {t("g085")}
                 </p>
                 <GProgress value={Math.min(100, (familySuns / 1000) * 100)} gold height={8} />
               </div>
               <button className="ui-press" onClick={handleClaimFamilyBonus} disabled={familySuns < 1000 || familyBonusClaimed}
                 style={{ padding: "8px 12px", borderRadius: RADIUS.m, border: "none", background: (familySuns >= 1000 && !familyBonusClaimed) ? gt.goldGrad : gt.surH, color: (familySuns >= 1000 && !familyBonusClaimed) ? gt.sur : gt.ink3, ...TYPE.tiny, fontWeight: 800, cursor: (familySuns >= 1000 && !familyBonusClaimed) ? "pointer" : "not-allowed", minWidth: 70, flexShrink: 0 }}>
-                {familyBonusClaimed ? L("Olingan", "Получен") : L("Yechish", "Забрать")}
+                {familyBonusClaimed ? t("g086") : t("g087")}
               </button>
             </div>
           </GCard>
         </div>
 
         {/* Kunlik sovg'a va bugungi jarayon */}
-        <GSection gt={gt}>{L("Bugungi jarayon", "Прогресс дня")}</GSection>
+        <GSection gt={gt}>{t("g088")}</GSection>
         <GCard gt={gt} pad={SPACE.s2 + "px " + SPACE.s4 + "px"}>
           <TodayRow gt={gt} icon={<GiftSVG size={20} />}
-            title={L("Kunlik sovg'a", "Ежедневный бонус")}
-            sub={dailyDone ? L("Bugun olindi", "Получен сегодня") : L("+50 tanga, +20 energiya", "+50 монет, +20 энергии")}
+            title={t("g064")}
+            sub={dailyDone ? t("g089") : t("g090")}
             done={dailyDone}
             right={dailyDone
-              ? <GChip gt={gt} tone="leaf">{L("Olindi", "Получен")}</GChip>
-              : <GChip gt={gt} tone="gold">{L("Olish", "Забрать")}</GChip>}
+              ? <GChip gt={gt} tone="leaf">{t("g091")}</GChip>
+              : <GChip gt={gt} tone="gold">{t("g092")}</GChip>}
             onClick={dailyDone ? undefined : handleDailyGift} />
           <TodayRow gt={gt} icon={<DropSVG size={15} />}
-            title={L("Sug'orish", "Полив")}
-            sub={waterReady ? L("Bog' suvga tayyor", "Сад готов к поливу") : L("Keyingi sug'orishgacha", "До следующего полива")}
+            title={t("g093")}
+            sub={waterReady ? t("g094") : t("g095")}
             done={waterReady}
             right={waterReady
-              ? <GChip gt={gt} tone="water">{L("Tayyor", "Готово")}</GChip>
+              ? <GChip gt={gt} tone="water">{t("g096")}</GChip>
               : <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.ink2, fontVariantNumeric: "tabular-nums" }}>{fTime(waterTimer)}</span>} />
           <TodayRow gt={gt} icon={<SunSprite size={22} />}
-            title={L("Pishgan quyoshlar", "Созревшие солнца")}
-            sub={sunsReady > 0 ? L("Bog'dan terib oling", "Соберите в саду") : L("Har o'simlik 3 soatda pishiradi", "Каждое растение зреет 3 часа")}
+            title={t("g097")}
+            sub={sunsReady > 0 ? t("g098") : t("g099")}
             done={sunsReady > 0}
             right={<GChip gt={gt} tone={sunsReady > 0 ? "gold" : "soil"}>{planted.length === 0 ? "—" : sunsReady + " / " + planted.length}</GChip>}
             last />
@@ -1464,48 +1442,48 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
         {/* Yutuqlar */}
         <GSection gt={gt} right={<span style={{ ...TYPE.caption, fontWeight: 700, color: gt.acc, fontVariantNumeric: "tabular-nums" }}>{achievements.filter(a => a.ok).length}/{achievements.length}</span>}>
-          {L("Yutuqlar", "Достижения")}
+          {t("g100")}
         </GSection>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 + 2, marginBottom: SPACE.s3 }}>
           {achievements.map((a, i) => (
-            <AchievementCard key={i} gt={gt} L={L} icon={a.icon} title={a.title} desc={a.desc} reward={a.reward} unlocked={a.ok} />
+            <AchievementCard key={i} gt={gt} t={t} icon={a.icon} title={a.title} desc={a.desc} reward={a.reward} unlocked={a.ok} />
           ))}
         </div>
 
         {/* Tarix */}
-        <GSection gt={gt}>{L("So'nggi faoliyat", "Последняя активность")}</GSection>
+        <GSection gt={gt}>{t("g101")}</GSection>
         <GCard gt={gt} pad={SPACE.s2 + "px " + SPACE.s4 + "px"}>
           {history.length === 0 && (
             <div style={{ ...TYPE.caption, color: gt.ink3, textAlign: "center", padding: SPACE.s4 + "px 0" }}>
-              {L("Bog'da hali faoliyat yo'q — sug'orishdan boshlang", "Активности пока нет — начните с полива")}
+              {t("g102")}
             </div>
           )}
           {history.map((h, i) => (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, padding: (SPACE.s2 + 1) + "px 0", borderBottom: i === history.length - 1 ? "none" : "1px solid " + gt.bor }}>
               <div style={{ width: SPACE.s8, height: SPACE.s8, borderRadius: RADIUS.s, background: gt.surH, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{h.icon}</div>
               <span style={{ flex: 1, ...TYPE.body, color: gt.ink1 }}>{h.label}</span>
-              <span style={{ ...TYPE.caption, color: gt.ink3 }}>{h.today ? L("Bugun", "Сегодня") : ago(h.t, lg)}</span>
+              <span style={{ ...TYPE.caption, color: gt.ink3 }}>{h.today ? t("g103") : ago(h.t, lg)}</span>
             </div>
           ))}
         </GCard>
 
         {/* Qo'llanma (mukofotlar va maslahatlar) */}
-        <GSection gt={gt}>{L("Tanga topish yo'llari", "Как получить монеты")}</GSection>
+        <GSection gt={gt}>{t("g104")}</GSection>
         <GCard gt={gt} pad={SPACE.s1 + "px " + SPACE.s4 + "px"}>
           {rewards.map((r, i) => (
             <RewardRow key={i} gt={gt} icon={r.icon} label={r.label} amount={r.amount} kind={r.kind} negative={r.negative} last={i === rewards.length - 1} />
           ))}
         </GCard>
 
-        <GSection gt={gt}>{L("Maslahatlar", "Советы")}</GSection>
-        <TipCard gt={gt} title={L("Kunlik ritual", "Ежедневный ритуал")}>
-          {L("Har kuni bir marta sug'oring — daraxt bir necha suvdan keyin yangi bosqichga o'tadi. Taymerni 100 tanga evaziga 30 daqiqaga tezlatish mumkin.", "Поливайте раз в день — дерево растёт после нескольких поливов. Таймер можно ускорить за 100 монет.")}
+        <GSection gt={gt}>{t("g105")}</GSection>
+        <TipCard gt={gt} title={t("g106")}>
+          {t("g107")}
         </TipCard>
-        <TipCard gt={gt} title={L("Quyoshlarni boy bermang", "Не упускайте солнца")}>
-          {L("Har bir ekilgan o'simlik 3 soatda bitta quyosh chiqaradi — pishganda bosib +15 energiya oling.", "Каждое растение даёт солнце раз в 3 часа — собирайте по +15 энергии.")}
+        <TipCard gt={gt} title={t("g108")}>
+          {t("g109")}
         </TipCard>
-        <TipCard gt={gt} title={L("Oila bilan tezroq", "Быстрее всей семьёй")}>
-          {L("Xarajat va daromadlarni yozib boring — har bir moliyaviy amal bog'ga tanga olib keladi.", "Записывайте расходы и доходы — каждое действие приносит монеты саду.")}
+        <TipCard gt={gt} title={t("g110")}>
+          {t("g111")}
         </TipCard>
       </BottomSheet>
 
@@ -1521,19 +1499,19 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         <div style={{ position: "absolute", bottom: "4%", left: "5%", right: "5%", zIndex: 48, background: "rgba(15, 23, 42, 0.92)", backdropFilter: "blur(10px)", borderRadius: RADIUS.l, padding: SPACE.s4, border: "1.5px solid #22c55e", display: "flex", flexDirection: "column", gap: SPACE.s3, alignItems: "center", boxShadow: "0 10px 30px -5px rgba(0,0,0,0.5)", animation: "gdHudPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards" }}>
           <div style={{ ...TYPE.body, fontWeight: 800, color: "#fff", display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 24 }}>{placingItem.emoji}</span>
-            {L(`${placingItem.name} joylashuvi`, `Размещение: ${placingItem.nameRu}`)}
+            {t("g_placingTitle", { name: t("dec_" + placingItem.key + "_name") })}
           </div>
           <p style={{ ...TYPE.caption, color: "#94a3b8", textAlign: "center", maxWidth: 280, margin: 0, lineHeight: 1.5 }}>
-            {L("Maysazorning istalgan joyiga bosing, so'ng tasdiqlang", "Нажмите на любое место лужайки, затем подтвердите")}
+            {t("g112")}
           </p>
           <div style={{ display: "flex", gap: SPACE.s3, width: "100%" }}>
             <button className="ui-press" onClick={cancelPlacement}
               style={{ flex: 1, padding: SPACE.s2 + 2, borderRadius: RADIUS.m, border: "1px solid #ef4444", background: "rgba(239, 68, 68, 0.15)", color: "#f87171", ...TYPE.caption, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              {L("Bekor qilish", "Отмена")}
+              {t("g113")}
             </button>
             <button className="ui-press" onClick={confirmPlacement} disabled={!tempCoord}
               style={{ flex: 1.4, padding: SPACE.s2 + 2, borderRadius: RADIUS.m, border: "none", background: tempCoord ? "linear-gradient(135deg, #22c55e, #15803d)" : "#334155", color: "#fff", ...TYPE.caption, fontWeight: 800, cursor: tempCoord ? "pointer" : "not-allowed", opacity: tempCoord ? 1 : 0.5, fontFamily: "inherit" }}>
-              {L("✓ Joylash", "✓ Установить")}
+              {t("g114")}
             </button>
           </div>
         </div>
@@ -1548,10 +1526,13 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             </span>
           </div>
           <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>
-            {L(DECORATION_ITEMS.find(item => item.id === selectedPlacedInstance.itemId)?.name || "Bezak", DECORATION_ITEMS.find(item => item.id === selectedPlacedInstance.itemId)?.nameRu || "Украшение")}
+            {(() => {
+              const foundItem = DECORATION_ITEMS.find(item => item.id === selectedPlacedInstance.itemId);
+              return foundItem ? t("dec_" + foundItem.key + "_name") : t("g_decorFallback");
+            })()}
           </div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("Ushbu bezak ustida qanday amal bajarmoqchisiz?", "Что вы хотите сделать с этим украшением?")}
+            {t("g115")}
           </p>
           <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2 }}>
             <button className="ui-press" onClick={() => {
@@ -1563,7 +1544,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
               setSelectedPlacedInstance(null);
             }}
               style={{ padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: gt.goldGrad, color: gt.sur, ...TYPE.caption, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}>
-              <span style={{ fontSize: 20 }}>🪄 🪴</span> {L("Joyini o'zgartirish", "Переместить")}
+              <span style={{ fontSize: 20 }}>🪄 🪴</span> {t("g116")}
             </button>
             
             <button className="ui-press" onClick={async () => {
@@ -1573,15 +1554,15 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
               setPurchasedDecorations(nextPurchased);
               setSelectedPlacedInstance(null);
               await saveGarden(plots, undefined, undefined, undefined, undefined, decorations, nextPurchased, nextPlaced);
-              showMsg(L("Bezak xaltachaga olindi!", "Украшение убрано в инвентарь!"), "leaf");
+              showMsg(t("g117"), "leaf");
             }}
               style={{ padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.caption, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}>
-              <span style={{ fontSize: 20 }}>🎒 📥</span> {L("Xaltachaga solish", "Убрать в инвентарь")}
+              <span style={{ fontSize: 20 }}>🎒 📥</span> {t("g118")}
             </button>
             
             <button className="ui-press" onClick={() => setSelectedPlacedInstance(null)}
               style={{ padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink3, ...TYPE.caption, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              {L("Yopish", "Закрыть")}
+              {t("g119")}
             </button>
           </div>
         </GModal>
@@ -1594,10 +1575,10 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <span style={{ fontSize: 44 }}>☀️✨</span>
           </div>
           <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>
-            {L("O'simlikni tez o'stirish", "Ускорение роста")}
+            {t("g120")}
           </div>
           <p style={{ ...TYPE.caption, color: gt.ink2, lineHeight: 1.6, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("Quyosh sarflab o'simlik pishishini tezlashtiring. Tezlik kuchi sizning qo'lingizda!", "Потратьте солнца для ускорения роста. Сила роста в ваших руках!")}
+            {t("g121")}
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
@@ -1605,8 +1586,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <button className="ui-press" onClick={() => handleGrowSpeedup(showFertilizerModal, 50)} disabled={energy < 50}
               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid " + gt.bor, borderRadius: RADIUS.m, background: energy >= 50 ? gt.sur : gt.surH, width: "100%", cursor: energy >= 50 ? "pointer" : "not-allowed", opacity: energy >= 50 ? 1 : 0.6 }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 750, color: gt.ink1 }}>⚡ {L("Tez O'stirish", "Быстрый рост")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("3 soatlik o'sishga teng", "Эквивалент 3 часам роста")}</p>
+                <span style={{ ...TYPE.body, fontWeight: 750, color: gt.ink1 }}>⚡ {t("g122")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g123")}</p>
               </div>
               <span style={{ background: gt.goldGrad, color: gt.sur, padding: "4px 10px", borderRadius: RADIUS.pill, ...TYPE.caption, fontWeight: 800 }}>50 ☀️</span>
             </button>
@@ -1615,8 +1596,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <button className="ui-press" onClick={() => handleGrowSpeedup(showFertilizerModal, 100)} disabled={energy < 100}
               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid #10b981", borderRadius: RADIUS.m, background: energy >= 100 ? "rgba(16, 185, 129, 0.04)" : gt.surH, width: "100%", cursor: energy >= 100 ? "pointer" : "not-allowed", opacity: energy >= 100 ? 1 : 0.6 }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 750, color: "#059669" }}>🔥 {L("Zudlik bilan pishirish", "Мгновенное созревание")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("Hosil darhol tayyor bo'ladi", "Урожай готов моментально")}</p>
+                <span style={{ ...TYPE.body, fontWeight: 750, color: "#059669" }}>🔥 {t("g124")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g125")}</p>
               </div>
               <span style={{ background: "linear-gradient(135deg, #10b981, #059669)", color: gt.sur, padding: "4px 10px", borderRadius: RADIUS.pill, ...TYPE.caption, fontWeight: 800 }}>100 ☀️</span>
             </button>
@@ -1624,7 +1605,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
           <button className="ui-press" onClick={() => setShowFertilizerModal(null)}
             style={{ width: "100%", padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-            {L("Bekor qilish", "Отмена")}
+            {t("g113")}
           </button>
         </GModal>
       )}
@@ -1636,24 +1617,24 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <span style={{ fontSize: 52, animation: "gdBounce 2s ease-in-out infinite" }}>💧⏱️</span>
           </div>
           <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>
-            {L("Sug'orish taymeri", "Таймер полива")}
+            {t("g126")}
           </div>
           <p style={{ ...TYPE.caption, color: gt.ink2, lineHeight: 1.6, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("Bepul sug'orish taymeri hali tugamadi.", "Таймер бесплатного полива еще не истек.")}
+            {t("g127")}
             <br />
-            {L("Navbatdagi bepul sug'orishgacha: ", "До следующего бесплатного полива: ")} 
+            {t("g128")} 
             <strong style={{ color: gt.acc, fontVariantNumeric: "tabular-nums" }}>{fTime(waterTimer)}</strong>
           </p>
           
           <div style={{ background: gt.surH, borderRadius: RADIUS.m, padding: SPACE.s3, border: "1px solid " + gt.bor, marginBottom: SPACE.s4, textAlign: "left" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-              <span style={{ ...TYPE.caption, fontWeight: 700, color: gt.ink1 }}>{L("Sizdagi tomchilar:", "Ваши капли:")}</span>
+              <span style={{ ...TYPE.caption, fontWeight: 700, color: gt.ink1 }}>{t("g129")}</span>
               <span style={{ ...TYPE.subtitle, fontWeight: 800, color: "#38bdf8", display: "flex", alignItems: "center", gap: 4 }}>
                 💧 {waterDrops}
               </span>
             </div>
             <p style={{ ...TYPE.caption, color: gt.ink3, margin: 0, fontSize: 11, lineHeight: 1.4 }}>
-              {L("1 ta suv tomchisini ishlatib, taymerni chetlab o'tishni va o'simlikni hoziroq sug'orishni xohlaysizmi?", "Хотите потратить 1 каплю, чтобы обойти таймер и полить растение прямо сейчас?")}
+              {t("g130")}
             </p>
           </div>
 
@@ -1664,7 +1645,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
               handleWater(pid, true);
             }} disabled={waterDrops <= 0}
               style={{ padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: waterDrops > 0 ? "linear-gradient(135deg, #38bdf8, #0ea5e9)" : "#334155", color: "#fff", ...TYPE.caption, fontWeight: 800, cursor: waterDrops > 0 ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}>
-              <span>💧</span> {L("Ha, 1 tomchi ishlatish", "Да, использовать 1 каплю")}
+              <span>💧</span> {t("g131")}
             </button>
             
             {waterDrops <= 0 && (
@@ -1673,13 +1654,13 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                 setShowBuyDropsModal(true);
               }}
                 style={{ padding: SPACE.s3, borderRadius: RADIUS.m, border: "1.5px solid #38bdf8", background: "rgba(56, 189, 248, 0.12)", color: "#38bdf8", ...TYPE.caption, fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit" }}>
-                🛒 {L("Suv tomchilarini sotib olish", "Купить капли воды")}
+                🛒 {t("g132")}
               </button>
             )}
 
             <button className="ui-press" onClick={() => setShowConfirmUseDropModal(null)}
               style={{ padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.caption, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              {L("Kutish", "Подождать")}
+              {t("g133")}
             </button>
           </div>
         </GModal>
@@ -1692,18 +1673,18 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <span style={{ fontSize: 44 }}>📱🎁</span>
           </div>
           <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>
-            📲 {L("Play Market Reklamasi", "Реклама Play Market")}
+            📲 {t("g134")}
           </div>
           
           {!isWatchingAd ? (
             <>
               <p style={{ ...TYPE.caption, color: gt.ink2, lineHeight: 1.6, marginBottom: SPACE.s4, textAlign: "center" }}>
-                {L("Tanganiz yetmadi! 5 soniyalik homiy reklamasini ko'rib, zudlik bilan +100 Tanga olishni xohlaysizmi?", "Недостаточно монет! Хотите посмотреть 5-секундный спонсорский ролик и получить +100 монет?")}
+                {t("g135")}
               </p>
               <div style={{ display: "flex", gap: SPACE.s2 + 2 }}>
                 <button className="ui-press" onClick={() => setShowAdModal(false)}
                   style={{ flex: 1, padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-                  {L("Yo'q", "Нет")}
+                  {t("g136")}
                 </button>
                 <button className="ui-press" onClick={() => {
                   setIsWatchingAd(true);
@@ -1719,7 +1700,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                           setIsWatchingAd(false);
                           setShowAdModal(false);
                           spawnCoin(100, 50, 45);
-                          showMsg(L("+100 tanga qo'shildi!", "+100 монет начислено!"), "gift");
+                          showMsg(t("g137"), "gift");
                           await saveGarden(plots, nextCoins, undefined, undefined);
                         }, 500);
                         return 100;
@@ -1729,22 +1710,22 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                   }, 1000);
                 }}
                   style={{ flex: 1.3, padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: gt.goldGrad, color: gt.sur, ...TYPE.subtitle, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                  {L("Ko'rish", "Смотреть")}
+                  {t("g138")}
                 </button>
               </div>
             </>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "10px 0" }}>
               <div style={{ ...TYPE.body, fontWeight: 700, color: gt.ink1, marginBottom: SPACE.s2 }}>
-                {L("Homiylik reklamasi yuklanmoqda...", "Спонсорский ролик проигрывается...")}
+                {t("g139")}
               </div>
               <div style={{ width: "100%", height: 12, background: gt.surH, borderRadius: RADIUS.pill, overflow: "hidden", marginBottom: SPACE.s4 }}>
                 <div style={{ height: "100%", width: `${adProgress}%`, background: "linear-gradient(90deg, #10b981, #059669)", transition: "width 1s linear" }} />
               </div>
               <p style={{ ...TYPE.caption, color: gt.ink3, textAlign: "center", italic: true, minHeight: 40 }}>
-                {adQuoteIndex === 0 ? L("Farzandlarga moliyaviy bilimlarni o'rgatish kelajak muvaffaqiyati garovidir.", "Финансовая грамотность детей — залог их будущего успеха.") :
-                 adQuoteIndex === 1 ? L("Homiylar ilovamiz bepul va xavfsiz qolishiga yordam berishadi. Rahmat!", "Спонсоры помогают приложению оставаться бесплатным и безопасным.") :
-                 L("Tezroq o'sishi uchun o'simliklarni har kuni sug'orib turing.", "Регулярно поливайте сад Бараки, чтобы деревья росли быстрее.")}
+                {adQuoteIndex === 0 ? t("g140") :
+                 adQuoteIndex === 1 ? t("g141") :
+                 t("g142")}
               </p>
             </div>
           )}
@@ -1757,21 +1738,21 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           <div style={{ width: SPACE.s16, height: SPACE.s16, margin: "0 auto " + SPACE.s3 + "px", borderRadius: RADIUS.full, background: gt.surH, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <LockSVG size={32} tone={gt.ink3} />
           </div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{L("Yangi uchastka", "Новый участок")}</div>
-          <div style={{ ...TYPE.caption, color: gt.ink2, marginBottom: SPACE.s1 }}>{L("Ochish narxi:", "Стоимость:")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{t("g143")}</div>
+          <div style={{ ...TYPE.caption, color: gt.ink2, marginBottom: SPACE.s1 }}>{t("g144")}</div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s2, marginBottom: SPACE.s1 + 2 }}>
             <CoinSVG size={28} />
             <span style={{ ...TYPE.hero, color: gt.gold, fontVariantNumeric: "tabular-nums" }}>{unlockPlot?.unlockCost.toLocaleString()}</span>
           </div>
-          <div style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4 + SPACE.s1 }}>{L("Sizda: " + coins.toLocaleString() + " tanga", "У вас: " + coins.toLocaleString())}</div>
+          <div style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4 + SPACE.s1 }}>{t("g_youHaveCoins", { coins: coins.toLocaleString() })}</div>
           <div style={{ display: "flex", gap: SPACE.s2 + 2 }}>
             <button className="ui-press" onClick={() => setShowUnlock(null)}
               style={{ flex: 1, padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-              {L("Bekor", "Отмена")}
+              {t("g145")}
             </button>
             <button className="ui-press" onClick={() => handleUnlock(showUnlock)} disabled={!canAffordUnlock}
               style={{ flex: 1.3, padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: canAffordUnlock ? gt.goldGrad : gt.surH, color: canAffordUnlock ? gt.sur : gt.ink3, ...TYPE.subtitle, fontWeight: 800, cursor: canAffordUnlock ? "pointer" : "not-allowed", boxShadow: canAffordUnlock ? SHADOW.e1(ART.sunLo) : "none", fontFamily: "inherit", opacity: canAffordUnlock ? 1 : OPACITY.disabled + 0.2 }}>
-              {L("Ochish", "Открыть")}
+              {t("g146")}
             </button>
           </div>
         </GModal>
@@ -1781,17 +1762,17 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       {showPlant !== null && (
         <GModal gt={gt} onClose={() => setShowPlant(null)}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}><SeedSVG size={48} /></div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{L("Ekish uchun urug'ni tanlang", "Выбор семени для посева")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 + 2 }}>{t("g147")}</div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s3, textAlign: "center" }}>
-            {L("Maysazorga qanday daraxt ekmoqchisiz?", "Какое дерево вы хотите посадить на лужайке?")}
+            {t("g148")}
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, maxHeight: 270, overflowY: "auto", paddingRight: 4, marginBottom: SPACE.s4 }}>
             {/* 1. Standart Urug' */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid " + gt.bor, borderRadius: RADIUS.m, background: gt.sur }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1 }}>🌱 {L("Oddiy Pomidor", "Обычный Помидор")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("Hosil: 1x Tanga va XP", "Урожай: 1x Монеты и Опыт")}</p>
+                <span style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1 }}>🌱 {t("g149")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g150")}</p>
               </div>
               <button className="ui-press" onClick={() => handlePlant(showPlant, "normal")}
                 style={{ padding: "6px 12px", borderRadius: RADIUS.pill, border: "none", background: coins >= 100 ? gt.goldGrad : gt.surH, color: coins >= 100 ? gt.sur : gt.ink3, ...TYPE.caption, fontWeight: 800, cursor: "pointer" }}>
@@ -1802,37 +1783,37 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             {/* 2. Oltin Urug' */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid #eab308", borderRadius: RADIUS.m, background: "rgba(234, 179, 8, 0.04)" }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 800, color: "#ca8a04" }}>⭐ {L("Oltin Daraxt", "Золотое Дерево")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("Hosil: 2x Tanga va Kristallar!", "Урожай: 2x Больше монет и кристаллов!")}</p>
-                {goldenSeeds > 0 && <p style={{ ...TYPE.caption, color: "#16a34a", fontWeight: 700, margin: "2px 0 0", fontSize: 10 }}>{L(`Sizda bor: ${goldenSeeds} dona bepul`, `У вас есть: ${goldenSeeds} шт. бесплатно`)}</p>}
+                <span style={{ ...TYPE.body, fontWeight: 800, color: "#ca8a04" }}>⭐ {t("g151")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g152")}</p>
+                {goldenSeeds > 0 && <p style={{ ...TYPE.caption, color: "#16a34a", fontWeight: 700, margin: "2px 0 0", fontSize: 10 }}>{t("g_haveGoldenFree", { n: goldenSeeds })}</p>}
               </div>
               <button className="ui-press" onClick={() => handlePlant(showPlant, "golden")}
                 style={{ padding: "6px 12px", borderRadius: RADIUS.pill, border: "none", background: (energy >= 200 || goldenSeeds > 0) ? "linear-gradient(135deg, #fbbf24, #d97706)" : gt.surH, color: (energy >= 200 || goldenSeeds > 0) ? gt.sur : gt.ink3, ...TYPE.caption, fontWeight: 800, cursor: "pointer" }}>
-                {goldenSeeds > 0 ? L("Ekish", "Посеять") : "200 ☀️"}
+                {goldenSeeds > 0 ? t("g153") : "200 ☀️"}
               </button>
             </div>
 
             {/* 3. Kamalak Urug'i */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid #a855f7", borderRadius: RADIUS.m, background: "rgba(168, 85, 247, 0.04)" }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 800, color: "#9333ea" }}>🌈 {L("Kamalak Daraxti", "Радужное Дерево")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("Hosil: 5x afsonaviy o'lja!", "Урожай: 5x легендарных наград!")}</p>
+                <span style={{ ...TYPE.body, fontWeight: 800, color: "#9333ea" }}>🌈 {t("g154")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g155")}</p>
                 <p style={{ ...TYPE.caption, color: rainbowSeeds > 0 ? "#16a34a" : "#dc2626", fontWeight: 700, margin: "2px 0 0", fontSize: 10 }}>
                   {rainbowSeeds > 0 
-                    ? L(`Zaxirada bor: ${rainbowSeeds} dona`, `В запасе: ${rainbowSeeds} шт.`) 
-                    : L("Yulduzlar do'konidan olinadi", "Покупается в лавке звезд")}
+                    ? t("g_haveRainbowStock", { n: rainbowSeeds })
+                    : t("g156")}
                 </p>
               </div>
               <button className="ui-press" onClick={() => handlePlant(showPlant, "rainbow")} disabled={rainbowSeeds <= 0}
                 style={{ padding: "6px 12px", borderRadius: RADIUS.pill, border: "none", background: rainbowSeeds > 0 ? "linear-gradient(135deg, #a855f7, #7e22ce)" : gt.surH, color: rainbowSeeds > 0 ? gt.sur : gt.ink3, ...TYPE.caption, fontWeight: 800, cursor: rainbowSeeds > 0 ? "pointer" : "not-allowed" }}>
-                {rainbowSeeds > 0 ? L("Ekish", "Посеять") : "0 🌈"}
+                {rainbowSeeds > 0 ? t("g153") : "0 🌈"}
               </button>
             </div>
           </div>
 
           <button className="ui-press" onClick={() => setShowPlant(null)}
             style={{ width: "100%", padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-            {L("Orqaga", "Назад")}
+            {t("g067")}
           </button>
         </GModal>
       )}
@@ -1844,25 +1825,25 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             <span style={{ fontSize: 38 }}>🎪✨</span>
           </div>
           <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s3 }}>
-            {L("Baraka Bog'i bezaklari", "Украшения Сада Бараки")}
+            {t("g157")}
           </div>
 
           {/* Tab Selection */}
           <div style={{ display: "flex", background: gt.surH, borderRadius: RADIUS.pill, padding: 3, marginBottom: SPACE.s4 }}>
             <button className="ui-press" onClick={() => setDecorTab("shop")}
               style={{ flex: 1, padding: (SPACE.s2) + "px", border: "none", background: decorTab === "shop" ? gt.sur : "transparent", color: decorTab === "shop" ? gt.ink1 : gt.ink3, borderRadius: RADIUS.pill, ...TYPE.caption, fontWeight: 750, cursor: "pointer", fontFamily: "inherit" }}>
-              🎪 {L("Do'kon", "Магазин")}
+              🎪 {t("g158")}
             </button>
             <button className="ui-press" onClick={() => setDecorTab("inventory")}
               style={{ flex: 1, padding: (SPACE.s2) + "px", border: "none", background: decorTab === "inventory" ? gt.sur : "transparent", color: decorTab === "inventory" ? gt.ink1 : gt.ink3, borderRadius: RADIUS.pill, ...TYPE.caption, fontWeight: 750, cursor: "pointer", fontFamily: "inherit" }}>
-              🎒 {L("Xaltacham", "Мой инвентарь")}
+              🎒 {t("g159")}
             </button>
           </div>
           
           {/* Tanga / Inventory Counts header */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s3, padding: "0 4px" }}>
             <div style={{ ...TYPE.caption, color: gt.ink3 }}>
-              {decorTab === "shop" ? L("Sizdagi tangalar:", "Ваши монеты:") : L("Sotib olingan bezaklar:", "Купленные украшения:")}
+              {decorTab === "shop" ? t("g160") : t("g161")}
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: SPACE.s1, background: gt.surH, borderRadius: RADIUS.pill, padding: "4px 10px" }}>
               <CoinSVG size={16} />
@@ -1885,11 +1866,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                         {item.emoji}
                       </div>
                       <div style={{ textAlign: "left" }}>
-                        <div style={{ ...TYPE.body, fontWeight: 700, color: gt.ink1 }}>{L(item.name, item.nameRu)}</div>
-                        <div style={{ ...TYPE.caption, color: gt.ink3, fontSize: 11, marginTop: 1 }}>{L(item.desc, item.descRu)}</div>
+                        <div style={{ ...TYPE.body, fontWeight: 700, color: gt.ink1 }}>{t("dec_" + item.key + "_name")}</div>
+                        <div style={{ ...TYPE.caption, color: gt.ink3, fontSize: 11, marginTop: 1 }}>{t("dec_" + item.key + "_desc")}</div>
                         {ownedCount > 0 && (
                           <div style={{ ...TYPE.caption, color: gt.gold, fontSize: 10, fontWeight: 700, marginTop: 2 }}>
-                            {L(`Sizda bor: ${ownedCount} ta`, `У вас есть: ${ownedCount} шт.`)}
+                            {t("g_haveDecorCount", { n: ownedCount })}
                           </div>
                         )}
                       </div>
@@ -1905,7 +1886,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             ) : (
               purchasedDecorations.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "30px 0", color: gt.ink3, ...TYPE.caption }}>
-                  🎒 {L("Xaltachangiz hozircha bo'sh. Do'kondan chiroyli narsalar sotib oling!", "В инвентаре пока пусто. Купите украшения в магазине!")}
+                  🎒 {t("g162")}
                 </div>
               ) : (
                 // Group inventory items by type to avoid duplicating same line
@@ -1924,9 +1905,9 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                           {item.emoji}
                         </div>
                         <div style={{ textAlign: "left" }}>
-                          <div style={{ ...TYPE.body, fontWeight: 700, color: gt.ink1 }}>{L(item.name, item.nameRu)}</div>
+                          <div style={{ ...TYPE.body, fontWeight: 700, color: gt.ink1 }}>{t("dec_" + item.key + "_name")}</div>
                           <div style={{ ...TYPE.caption, color: gt.ink3, fontWeight: 600 }}>
-                            {L(`Zaxirada: ${count} ta`, `В запасе: ${count} шт.`)}
+                            {t("g_decorStock", { n: count })}
                           </div>
                         </div>
                       </div>
@@ -1937,7 +1918,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                         setTempCoord({ x: 50, y: 50 }); // Start placement mode in center of screen
                       }}
                         style={{ padding: SPACE.s2 + "px " + SPACE.s4 + "px", borderRadius: RADIUS.pill, border: "none", background: gt.accGrad, color: gt.sur, ...TYPE.caption, fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
-                        {L("Joylashtirish", "Установить")}
+                        {t("g163")}
                       </button>
                     </div>
                   );
@@ -1948,7 +1929,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
           <button className="ui-press" onClick={() => setShowDecorModal(false)}
             style={{ width: "100%", padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-            {L("Yopish", "Закрыть")}
+            {t("g119")}
           </button>
         </GModal>
       )}
@@ -1956,9 +1937,9 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       {/* ── 1. Omad G'ildiragi (Lucky Spin) Modali ── */}
       {showSpinModal && (
         <GModal gt={gt} onClose={() => { if (!isSpinning) setShowSpinModal(false); }}>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🎡 {L("Omad G'ildiragi", "Колесо Удачи")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🎡 {t("g071")}</div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("Har safar aylantirish 500 Quyosh. Ajoyib mukofotlarni qo'lga kiriting!", "Прокрутка стоит 500 Солнца. Испытайте вашу удачу!")}
+            {t("g164")}
           </p>
 
           {/* Wheel visual container */}
@@ -1999,7 +1980,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                       {prize.icon}
                     </text>
                     <text textAnchor="middle" fontSize="8" fontWeight="900" fill="#ffffff" dy="16" letterSpacing="0.4" style={{ fontFamily: "inherit" }}>
-                      {L(prize.labelShort, prize.labelShortRu || prize.labelShort)}
+                      {t("prize_" + prize.value + "_short")}
                     </text>
                   </g>
                 </g>
@@ -2032,9 +2013,9 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           {/* Results screen */}
           {spinResult && (
             <div style={{ background: gt.surH, borderRadius: RADIUS.m, padding: SPACE.s3, marginBottom: SPACE.s4 }}>
-              <div style={{ ...TYPE.caption, color: gt.ink3 }}>{L("Tabriklaymiz! Siz yutdingiz:", "Поздравляем! Вы выиграли:")}</div>
+              <div style={{ ...TYPE.caption, color: gt.ink3 }}>{t("g165")}</div>
               <div style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1, marginTop: 4, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
-                <span style={{ fontSize: 20 }}>{spinResult.icon}</span> {L(spinResult.label, spinResult.labelRu)}
+                <span style={{ fontSize: 20 }}>{spinResult.icon}</span> {t("prize_" + spinResult.value + "_label")}
               </div>
             </div>
           )}
@@ -2043,12 +2024,12 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             {!isSpinning && (
               <button className="ui-press" onClick={() => setShowSpinModal(false)}
                 style={{ flex: 1, padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer" }}>
-                {L("Yopish", "Закрыть")}
+                {t("g119")}
               </button>
             )}
             <button className="ui-press" onClick={handleSpin} disabled={isSpinning || energy < 500}
               style={{ flex: 1.5, padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: energy >= 500 ? "linear-gradient(135deg, #fbbf24, #d97706)" : gt.surH, color: energy >= 500 ? gt.sur : gt.ink3, ...TYPE.subtitle, fontWeight: 800, cursor: isSpinning ? "not-allowed" : "pointer" }}>
-              {isSpinning ? L("Aylanmoqda...", "Крутится...") : "500 ☀️ " + L("Spin", "Крутить")}
+              {isSpinning ? t("g166") : "500 ☀️ " + t("g167")}
             </button>
           </div>
         </GModal>
@@ -2060,20 +2041,20 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}>
             <span style={{ fontSize: 44 }}>🔮✨</span>
           </div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🔮 {L("Foydali Moliyaviy Maslahatchi", "Полезный Финансовый Советник")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🔮 {t("g168")}</div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("Har kuni 1-maslahat bepul! Keyingi maslahat 20 Quyosh.", "Каждый день 1-й совет бесплатно! Далее по 20 Солнца.")}
+            {t("g169")}
           </p>
 
           <div style={{ background: gt.surH, borderRadius: RADIUS.m, padding: SPACE.s4, minHeight: 110, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s4 }}>
             {loadingAdvice ? (
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
                 <span className="ui-spin" style={{ fontSize: 32 }}>🌀</span>
-                <span style={{ ...TYPE.caption, color: gt.ink3 }}>{L("Miyangiz tahlil qilinmoqda...", "Анализ бюджета...")}</span>
+                <span style={{ ...TYPE.caption, color: gt.ink3 }}>{t("g170")}</span>
               </div>
             ) : (
               <p style={{ ...TYPE.body, color: gt.ink1, margin: 0, textAlign: "left", lineHeight: 1.6, fontStyle: "italic" }}>
-                {aiAdvice || L("Tugmani bosib bepul maslahat oling!", "Нажмите кнопку, чтобы получить финансовый совет!")}
+                {aiAdvice || t("g171")}
               </p>
             )}
           </div>
@@ -2081,11 +2062,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           <div style={{ display: "flex", gap: SPACE.s2 }}>
             <button className="ui-press" onClick={() => setShowAiAdvisorModal(false)}
               style={{ flex: 1, padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer" }}>
-              {L("Yopish", "Закрыть")}
+              {t("g119")}
             </button>
             <button className="ui-press" onClick={handleGetAiAdvice} disabled={loadingAdvice || (energy < 20 && Date.now() - lastAiAdviceAt <= 24 * 60 * 60 * 1000)}
               style={{ flex: 1.5, padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: "linear-gradient(135deg, #a855f7, #6b21a8)", color: "#fff", ...TYPE.subtitle, fontWeight: 800, cursor: "pointer" }}>
-              {Date.now() - lastAiAdviceAt > 24 * 60 * 60 * 1000 ? L("Bepul maslahat", "Бесплатно") : "20 ☀️ " + L("Maslahat", "Получить")}
+              {Date.now() - lastAiAdviceAt > 24 * 60 * 60 * 1000 ? t("g172") : "20 ☀️ " + t("g173")}
             </button>
           </div>
         </GModal>
@@ -2095,20 +2076,20 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       {showPrestigeModal && (
         <GModal gt={gt} onClose={() => setShowPrestigeModal(false)}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}><span style={{ fontSize: 48 }}>👑⭐</span></div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>👑 {L("Baraka Prestij Do'koni", "Лавка Престижа Бараки")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>👑 {t("g174")}</div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("1000 Quyoshni 1 ta yulduzga ⭐ almashtiring va afsonaviy bezaklarni qo'lga kiriting!", "Обменяйте 1000 Солнца на 1 звезду ⭐ для покупки легендарных построек!")}
+            {t("g175")}
           </p>
 
           <div style={{ background: gt.surH, borderRadius: RADIUS.m, padding: SPACE.s3, marginBottom: SPACE.s4, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ textAlign: "left" }}>
-              <div style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1 }}>{L("Kamalak Urug'i", "Радужное семя")}</div>
-              <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("Ekish uchun 1 ta kamalak urug'i", "1 семя радужного дерева")}</p>
-              {rainbowSeeds > 0 && <p style={{ ...TYPE.caption, color: "#16a34a", fontWeight: 700, margin: "2px 0 0", fontSize: 10 }}>{L(`Sizda bor: ${rainbowSeeds} ta`, `У вас есть: ${rainbowSeeds} шт.`)}</p>}
+              <div style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1 }}>{t("g176")}</div>
+              <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g177")}</p>
+              {rainbowSeeds > 0 && <p style={{ ...TYPE.caption, color: "#16a34a", fontWeight: 700, margin: "2px 0 0", fontSize: 10 }}>{t("g_haveDecorCount", { n: rainbowSeeds })}</p>}
             </div>
             <button className="ui-press" onClick={async () => {
               if (barakaStarsCount < 1) {
-                showMsg(L("Sizga kamida 1 yulduz kerak!", "Нужна минимум 1 звезда!"), "gift");
+                showMsg(t("g178"), "gift");
                 return;
               }
               const nextStars = barakaStarsCount - 1;
@@ -2116,7 +2097,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
               setBarakaStarsCount(nextStars);
               setRainbowSeeds(nextSeeds);
               spawnCoin(1, 50, 45, "seed");
-              showMsg(L("Kamalak urug'i xarid qilindi!", "Радужное семя куплено!"), "bloom");
+              showMsg(t("g179"), "bloom");
               await saveGarden(plots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
                 barakaStarsCount: nextStars,
                 rainbowSeeds: nextSeeds
@@ -2130,11 +2111,11 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           <div style={{ display: "flex", gap: SPACE.s2 }}>
             <button className="ui-press" onClick={() => setShowPrestigeModal(false)}
               style={{ flex: 1, padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer" }}>
-              {L("Orqaga", "Назад")}
+              {t("g067")}
             </button>
             <button className="ui-press" onClick={handleConvertSunsToBaraka} disabled={energy < 1000}
               style={{ flex: 1.5, padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: energy >= 1000 ? gt.goldGrad : gt.surH, color: energy >= 1000 ? gt.sur : gt.ink3, ...TYPE.subtitle, fontWeight: 800, cursor: "pointer" }}>
-              {L("1000 ☀️ -> 1 ⭐", "1000 ☀️ -> 1 ⭐")}
+              {t("g180")}
             </button>
           </div>
         </GModal>
@@ -2144,17 +2125,17 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       {showBuyDropsModal && (
         <GModal gt={gt} onClose={() => setShowBuyDropsModal(false)}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}><span style={{ fontSize: 44 }}>🌧️💧</span></div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🌧️ {L("Tezkor sug'orish dori-darmoni", "Быстрый полив каплями")}</div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>🌧️ {t("g181")}</div>
           <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {L("Suv tomchisi (Energiya) evaziga 2 soatlik sug'orish taymerini zudlik bilan chetlab o'ting!", "Покупайте капли воды, чтобы мгновенно поливать без ожидания!")}
+            {t("g182")}
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
             {/* Package A: 100 Suns = 20 drops */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid " + gt.bor, borderRadius: RADIUS.m, background: gt.sur }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1 }}>💧 {L("Kichik Paket", "Малый пакет")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("+20 tezkor suv tomchilari", "+20 быстрых капель воды")}</p>
+                <span style={{ ...TYPE.body, fontWeight: 800, color: gt.ink1 }}>💧 {t("g183")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g184")}</p>
               </div>
               <button className="ui-press" onClick={() => handleBuyWaterDrops(100, 20)}
                 style={{ padding: "6px 12px", borderRadius: RADIUS.pill, border: "none", background: energy >= 100 ? gt.goldGrad : gt.surH, color: energy >= 100 ? gt.sur : gt.ink3, ...TYPE.caption, fontWeight: 800, cursor: "pointer" }}>
@@ -2165,8 +2146,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             {/* Package B: 300 Suns = 100 drops */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid #10b981", borderRadius: RADIUS.m, background: "rgba(16, 185, 129, 0.04)" }}>
               <div style={{ textAlign: "left" }}>
-                <span style={{ ...TYPE.body, fontWeight: 800, color: "#059669" }}>🌊 {L("Megapaket", "Мегапакет")}</span>
-                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{L("+100 tezkor suv tomchilari", "+100 быстрых капель воды")}</p>
+                <span style={{ ...TYPE.body, fontWeight: 800, color: "#059669" }}>🌊 {t("g185")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g186")}</p>
               </div>
               <button className="ui-press" onClick={() => handleBuyWaterDrops(300, 100)}
                 style={{ padding: "6px 12px", borderRadius: RADIUS.pill, border: "none", background: energy >= 300 ? "linear-gradient(135deg, #10b981, #059669)" : gt.surH, color: energy >= 300 ? gt.sur : gt.ink3, ...TYPE.caption, fontWeight: 800, cursor: "pointer" }}>
@@ -2177,7 +2158,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
           <button className="ui-press" onClick={() => setShowBuyDropsModal(false)}
             style={{ width: "100%", padding: SPACE.s3, borderRadius: RADIUS.m, border: "1px solid " + gt.bor, background: "transparent", color: gt.ink2, ...TYPE.subtitle, fontWeight: 700, cursor: "pointer", fontFamily: "inherit" }}>
-            {L("Orqaga", "Назад")}
+            {t("g067")}
           </button>
         </GModal>
       )}
