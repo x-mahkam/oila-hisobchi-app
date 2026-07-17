@@ -60,5 +60,6 @@
   "pace": "Tezlik",
   "scheduled": "keyin",
   "willFire": "Jiberiledi",
-  "planned": "Rejalastırılǵan"
+  "planned": "Rejalastırılǵan",
+  "targetDateLabel": "Maqset sánesi: "
 }

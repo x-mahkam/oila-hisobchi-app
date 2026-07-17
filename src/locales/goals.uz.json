@@ -60,5 +60,6 @@
   "pace": "Sur'at",
   "scheduled": "keyin",
   "willFire": "Yuboriladi",
-  "planned": "Rejalashtirilgan"
+  "planned": "Rejalashtirilgan",
+  "targetDateLabel": "Maqsad sanasi: "
 }

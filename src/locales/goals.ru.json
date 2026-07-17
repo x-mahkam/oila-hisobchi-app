@@ -60,5 +60,6 @@
   "pace": "Темп",
   "scheduled": "потом",
   "willFire": "Отправится",
-  "planned": "Запланировано"
+  "planned": "Запланировано",
+  "targetDateLabel": "Дата цели: "
 }

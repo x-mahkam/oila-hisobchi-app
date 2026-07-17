@@ -4,6 +4,16 @@ import { PrimaryButton, PremiumButton, GhostButton, injectUiCss } from "../compo
 import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, GARDEN, PREMIUM, OPACITY, COMP } from "../utils/tokens.js";
 import { fetchLanguageList } from "../i18n/translationService.js";
 
+const PREMIUM_BENEFITS = {
+  uz: ["Cheksiz maqsad va a'zolar", "PDF/Excel eksport", "Foydali tavsiyalar"],
+  en: ["Unlimited goals & members", "PDF/Excel export", "Useful insights"],
+  ru: ["Безлимитные цели и участники", "Экспорт PDF/Excel", "AI-советы"],
+  kk: ["Шексіз мақсат пен мүшелер", "PDF/Excel экспорты", "Пайдалы кеңестер"],
+  ky: ["Чексиз максат жана мүчөлөр", "PDF/Excel экспорту", "Пайдалуу кеңештер"],
+  tg: ["Ҳадафҳо ва аъзоёни бемаҳдуд", "Содироти PDF/Excel", "Тавсияҳои муфид"],
+  qr: ["Sheksiz maqset hám ag'zalar", "PDF/Excel eksportı", "Paydalı usınıslar"],
+};
+
 // ═══ Slayd illyustratsiyalari — outline SVG (emoji YO'Q, DS 6-qoida) ═══
 // Garden slaydidan tashqari hammasi fintech outline uslubida.
 const ILLOS = {
@@ -155,9 +165,7 @@ export default function OnboardingPage({ th, lg, setLg, dark, onbStep, setOnbSte
         {/* 5-slayd: 3 asosiy foyda */}
         {isPremiumSlide && (
           <div className="ui-fadeUp" style={{ marginTop: SPACE.s4 + SPACE.s1, display: "flex", flexDirection: "column", gap: SPACE.s2, alignItems: "flex-start" }}>
-            {(lg === "uz" ? ["Cheksiz maqsad va a'zolar", "PDF/Excel eksport", "Foydali tavsiyalar"]
-              : lg === "ru" ? ["Безлимитные цели и участники", "Экспорт PDF/Excel", "AI-советы"]
-              : ["Unlimited goals & members", "PDF/Excel export", "Useful insights"]).map(b => (
+            {(PREMIUM_BENEFITS[lg] || PREMIUM_BENEFITS.uz).map(b => (
               <div key={b} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, ...TYPE.caption, fontSize: TYPE.caption.fontSize + 1, fontWeight: 600, color: th.t1 }}>
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}><path d="M3 8l4 4 6-7" stroke={PREMIUM.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                 {b}

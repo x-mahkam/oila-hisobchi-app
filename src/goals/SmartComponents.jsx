@@ -195,7 +195,7 @@ export const Timeline = memo(function Timeline({ th, goal, meta, lg, f }) {
                 </div>
                 <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>
                   {it.type === "deadline" && it.dl
-                    ? (lg === "uz" ? "Maqsad sanasi: " : lg === "ru" ? "Дата цели: " : "Target date: ") + fmtDate(it.dl, lg)
+                    ? T("targetDateLabel", lg) + fmtDate(it.dl, lg)
                     : fmtDate(it.at, lg)}{it.who ? " · " + it.who : ""}
                 </div>
               </div>

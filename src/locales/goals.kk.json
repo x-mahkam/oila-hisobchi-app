@@ -60,5 +60,6 @@
   "pace": "Қарқын",
   "scheduled": "кейін",
   "willFire": "Жіберіледі",
-  "planned": "Жоспарланған"
+  "planned": "Жоспарланған",
+  "targetDateLabel": "Мақсат күні: "
 }

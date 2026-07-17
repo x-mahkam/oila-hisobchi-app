@@ -60,5 +60,6 @@
   "pace": "Pace",
   "scheduled": "scheduled",
   "willFire": "Will fire",
-  "planned": "Scheduled"
+  "planned": "Scheduled",
+  "targetDateLabel": "Target date: "
 }

@@ -60,5 +60,6 @@
   "pace": "Ыргак",
   "scheduled": "кийин",
   "willFire": "Жөнөтүлөт",
-  "planned": "Пландаштырылган"
+  "planned": "Пландаштырылган",
+  "targetDateLabel": "Максат күнү: "
 }
