@@ -1579,5 +1579,6 @@
   "aia_friendUpper": "Do'stim",
   "aia_noDataYet": "Hali bu oy uchun ma'lumot yo'q. Xarajat va daromad kiriting!",
   "aia_analysisHeader": "◆ {{month}} tahlili\n\n",
-  "aia_errorGeneric": "Maslahat tayyorlashda xatolik yuz berdi. Internetni tekshirib, qayta urinib ko'ring."
+  "aia_errorGeneric": "Maslahat tayyorlashda xatolik yuz berdi. Internetni tekshirib, qayta urinib ko'ring.",
+  "un_cleared": "Tozalandi"
 }

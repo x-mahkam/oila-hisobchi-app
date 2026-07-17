@@ -1579,5 +1579,6 @@
   "aia_friendUpper": "Dostım",
   "aia_noDataYet": "Bul ay ushın áli maǵlıwmat joq. Shıǵın hám kiristi kiritiń!",
   "aia_analysisHeader": "◆ {{month}} talqılawı\n\n",
-  "aia_errorGeneric": "Keńes tayarlawda qátelik júz berdi. Internetti tekserip, qayta urınıp kóriń."
+  "aia_errorGeneric": "Keńes tayarlawda qátelik júz berdi. Internetti tekserip, qayta urınıp kóriń.",
+  "un_cleared": "Tazalandı"
 }

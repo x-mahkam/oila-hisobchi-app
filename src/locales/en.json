@@ -1579,5 +1579,6 @@
   "aia_friendUpper": "Friend",
   "aia_noDataYet": "No data yet for this month. Add your expenses and income!",
   "aia_analysisHeader": "◆ {{month}} analysis\n\n",
-  "aia_errorGeneric": "Failed to generate advice. Check your connection and retry."
+  "aia_errorGeneric": "Failed to generate advice. Check your connection and retry.",
+  "un_cleared": "Cleared"
 }
