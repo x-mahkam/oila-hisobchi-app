@@ -1,0 +1,47 @@
+name: Android APK qurish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Kodni yuklab olish
+        uses: actions/checkout@v4
+
+      - name: Node.js o'rnatish
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: JDK o'rnatish
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: NPM paketlarini o'rnatish
+        run: npm install
+
+      - name: Veb qismini qurish
+        run: npm run build
+
+      - name: Capacitor Android bilan sinxronlash
+        run: npx cap sync android
+
+      - name: Gradle wrapper ruxsatini berish
+        run: chmod +x android/gradlew
+
+      - name: Android APK qurish (debug)
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+      - name: APK faylni yuklash
+        uses: actions/upload-artifact@v4
+        with:
+          name: oila-hisobchi-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
