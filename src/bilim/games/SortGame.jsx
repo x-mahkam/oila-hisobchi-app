@@ -9,21 +9,14 @@ import { addCoins, logGameSession, bestForGame, readCoins } from "../engine/pers
 import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
 import { DIFF, rewardOf, tierFor, medalSvg } from "../registry.jsx";
 import { playSound } from "../engine/sound.js";
+import { useApp } from "../../context/AppContext.jsx";
 
 // Helper icons
 const coinIco = (c, s = 20) => <svg width={s} height={s} viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke={c} strokeWidth="1.5" fill={c} fillOpacity=".2"/><path d="M10 7v6M8 10h4" stroke={c} strokeWidth="1.4" strokeLinecap="round"/></svg>;
 
 export default function SortGame({ user, lg = "uz", dark, gameId = "finance/needs-wants", name, onBack }) {
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
-  const ru = lg === "ru";
-  const en = lg === "en";
-
-  const L = (uzVal, ruVal, enVal) => {
-    if (ru) return ruVal || uzVal;
-    if (en) return enVal || uzVal;
-    return uzVal;
-  };
+  const { t } = useApp();
 
   // Game states
   const [phase, setPhase] = useState("intro"); // intro | play | result
@@ -169,7 +162,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
       {phase === "intro" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
           <div>
-            <PageHeader th={th} title={L("Kerak yoki Xohish?", "Потребность или Желание?", "Need or Want?")} onBack={onBack} />
+            <PageHeader th={th} title={t("gam_sort_title")} onBack={onBack} />
             
             <div style={{ textAlign: "center", margin: "24px 0" }}>
               <div style={{ width: 80, height: 80, borderRadius: RADIUS.l, background: th.ac + ALPHA.soft, display: "inline-flex", alignItems: "center", justifyContent: "center", marginBottom: SPACE.s3 }}>
@@ -179,14 +172,10 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                 </svg>
               </div>
               <h2 style={{ ...TYPE.heading, color: th.t1, fontSize: 24, fontWeight: 900, marginBottom: SPACE.s2 }}>
-                {L("Kerakli narsalarni saralash", "Различай нужды и желания", "Sort Needs & Wants")}
+                {t("gam_sort_heading")}
               </h2>
               <p style={{ ...TYPE.caption, color: th.t2, fontSize: 15, lineHeight: 1.5, maxWidth: 320, margin: "0 auto" }}>
-                {L(
-                  "Hayotimiz uchun eng muhim bo'lgan 'Kerak' toifasini oddiy 'Xohishlar'dan ajratishni o'rganamiz!",
-                  "Давай научимся отличать действительно важные для жизни вещи от простых 'Хочу'!",
-                  "Learn to distinguish what is truly essential to live from things that are just simple desires!"
-                )}
+                {t("gam_sort_intro")}
               </p>
             </div>
 
@@ -195,14 +184,10 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                 <span style={{ fontSize: 24 }}>🥦</span>
                 <div>
                   <h4 style={{ ...TYPE.subtitle, color: th.gr, fontWeight: 800, margin: 0 }}>
-                    {L("Kerak (Need)", "Нужно (Потребность)", "Need")}
+                    {t("gam_sort_needTitle")}
                   </h4>
                   <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {L(
-                      "Busiz yashay olmaymiz: non, suv, dori, kiyim, sog'lom taom.",
-                      "Без этого мы не сможем прожить: хлеб, вода, лекарства, тепло.",
-                      "Essential for survival: food, water, medicine, housing."
-                    )}
+                    {t("gam_sort_needDesc")}
                   </p>
                 </div>
               </div>
@@ -213,14 +198,10 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                 <span style={{ fontSize: 24 }}>🎮</span>
                 <div>
                   <h4 style={{ ...TYPE.subtitle, color: th.am, fontWeight: 800, margin: 0 }}>
-                    {L("Xohish (Want)", "Хочу (Желание)", "Want")}
+                    {t("gam_sort_wantTitle")}
                   </h4>
                   <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0 0", fontSize: 13, lineHeight: 1.4 }}>
-                    {L(
-                      "Hayotni qiziq qiladi, lekin shart emas: o'yinchoqlar, konfet, o'yin konsoli.",
-                      "Делает жизнь веселее, но не обязательно: сладости, игры, приставки.",
-                      "Makes life fun but not strictly necessary: toys, candies, gadgets."
-                    )}
+                    {t("gam_sort_wantDesc")}
                   </p>
                 </div>
               </div>
@@ -228,7 +209,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
           </div>
 
           <PrimaryButton th={th} onClick={startNewGame} style={{ marginTop: SPACE.s3 }}>
-            {L("O'yinni boshlash", "Начать игру", "Start Game")}
+            {t("gam_sort_startGame")}
           </PrimaryButton>
         </div>
       )}
@@ -285,9 +266,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                 {isSelected && (
                   <div style={{ marginTop: 16 }}>
                     <Badge th={th} tone={feedback === "correct" ? th.gr : th.rd}>
-                      {feedback === "correct" 
-                        ? L("To'g'ri topdingiz! 🎉", "Правильно! 🎉", "Correct! 🎉") 
-                        : L("Xato! Bu boshqa guruhga tegishli", "Неверно! Это другая категория", "Wrong! That's in the other category")}
+                      {feedback === "correct" ? t("gam_sort_correctFeedback") : t("gam_sort_wrongFeedback")}
                     </Badge>
                   </div>
                 )}
@@ -311,7 +290,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                   opacity: isSelected && selected !== "need" ? 0.4 : 1,
                   boxShadow: SHADOW.e1(th.gr)
                 }}>
-                🥦 {L("Kerak", "Нужно", "Need")}
+                🥦 {t("gam_sort_needBtn")}
               </button>
               
               <button className="ui-press" onClick={() => handleChoice("want")} disabled={isSelected}
@@ -329,7 +308,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                   opacity: isSelected && selected !== "want" ? 0.4 : 1,
                   boxShadow: SHADOW.e1(th.am)
                 }}>
-                🎮 {L("Xohish", "Хочу", "Want")}
+                🎮 {t("gam_sort_wantBtn")}
               </button>
             </div>
           </div>
@@ -351,19 +330,17 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
               )}
             </div>
             <h2 style={{ ...TYPE.display, fontSize: 24, color: th.t1, margin: 0 }}>
-              {score.correct >= 7 
-                ? L("Ajoyib natija! 🎉", "Отличный результат! 🎉", "Great Job! 🎉") 
-                : L("Yana urinib ko'r! 💪", "Попробуй еще раз! 💪", "Try Again! 💪")}
+              {score.correct >= 7 ? t("gam_sort_greatJob") : t("gam_sort_tryAgainResult")}
             </h2>
             <p style={{ ...TYPE.subtitle, color: th.t2, margin: "6px 0 0 0" }}>
-              {score.correct} / {items.length} {L("to'g'ri", "верно", "correct")} ({Math.round(score.correct / items.length * 100)}%)
+              {score.correct} / {items.length} {t("gam_correctSuffix")} ({Math.round(score.correct / items.length * 100)}%)
             </p>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-            <StatCard th={th} value={score.correct} label={L("To'g'ri", "Верно", "Correct")} tone={th.gr} />
-            <StatCard th={th} value={score.wrong} label={L("Xato", "Xato", "Wrong")} tone={th.rd} />
-            <StatCard th={th} value={`${elapsed}s`} label={L("Vaqt", "Время", "Time")} tone={th.ac} />
+            <StatCard th={th} value={score.correct} label={t("gam_correct")} tone={th.gr} />
+            <StatCard th={th} value={score.wrong} label={t("gam_wrong")} tone={th.rd} />
+            <StatCard th={th} value={`${elapsed}s`} label={t("gam_time")} tone={th.ac} />
             <StatCard th={th} value={`x${score.maxCombo}`} label="Combo" tone={th.am} />
           </div>
 
@@ -371,17 +348,17 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
           <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
             {coinIco(PREMIUM.gold, 28)}
             <div style={{ flex: 1 }}>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{L("Topilgan coin", "Полученные монеты", "Earned Coins")}</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_coinsEarned")}</div>
               <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedCoins}</div>
             </div>
-            {record && <Badge th={th} tone={PREMIUM.gold}>REKORD</Badge>}
+            {record && <Badge th={th} tone={PREMIUM.gold}>{t("gam_newRecord")}</Badge>}
           </AppCard>
 
           {/* Earned XP */}
           <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med, marginBottom: SPACE.s3 }}>
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
             <div style={{ flex: 1 }}>
-              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>Tajriba (XP)</div>
+              <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_experienceXp")}</div>
               <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{earnedXp}</div>
             </div>
             {leveledUp && <Badge th={th} tone={th.ac2}>YANGI LEVEL!</Badge>}
@@ -396,15 +373,11 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
               const base = cur ? cur.need : 0;
               const diff = next.need - base;
               tierPct = Math.min(100, Math.max(0, ((totalCoins - base) / diff) * 100));
-              progressText = L(
-                `${next.need - totalCoins} coin keyingi darajaga (${next[lg] || next.uz})`,
-                `До следующего уровня (${next[lg] || next.uz}) осталось ${next.need - totalCoins} монет`,
-                `${next.need - totalCoins} coins to next level (${next[lg] || next.uz})`
-              );
+              progressText = t("gam_nextTierProgress", { remain: next.need - totalCoins, tier: next[lg] || next.uz });
             } else {
-              progressText = L("Siz afsonaviy darajadasiz!", "Вы на легендарном уровне!", "You are at the Legend level!");
+              progressText = t("gam_legendLevel");
             }
-            const tierName = cur ? cur[lg] || cur.uz : L("Boshlang'ich", "Новичок", "Novice");
+            const tierName = cur ? cur[lg] || cur.uz : t("gam_novice");
             const tierColor = cur ? cur.color : th.ac;
             return (
               <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, background: th.sur, border: "1px solid " + th.bor, marginBottom: SPACE.s3 }}>
@@ -412,10 +385,10 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
                   {medalSvg(tierColor, 28)}
                   <div style={{ flex: 1 }}>
                     <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>
-                      {L("Sizning darajangiz", "Ваш уровень", "Your Tier")}
+                      {t("gam_yourTier")}
                     </div>
                     <div style={{ ...TYPE.title, color: tierColor, fontSize: 18, fontWeight: 800 }}>
-                      {tierName} ({totalCoins} {L("coin", "монет", "coins")})
+                      {tierName} ({totalCoins} {t("gam_coinsUnit")})
                     </div>
                   </div>
                 </div>
@@ -433,7 +406,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
 
           {/* Action buttons */}
           <PrimaryButton th={th} onClick={startNewGame}>
-            {L("Qayta o'ynash", "Играть еще раз", "Play Again")}
+            {t("gam_playAgain")}
           </PrimaryButton>
           
           <button className="ui-press" onClick={() => setPhase("intro")}
@@ -449,7 +422,7 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
               fontWeight: 600,
               fontSize: 15
             }}>
-            {L("Ortga qaytish", "Назад в меню", "Back")}
+            {t("gam_sort_backToMenu")}
           </button>
         </div>
       )}

@@ -13,9 +13,10 @@ import {
   ShieldAlert, 
   Lightbulb 
 } from "lucide-react";
+import { useApp } from "../../context/AppContext.jsx";
 
-export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
-  const uz = lg === "uz";
+export default function BankSimGame({ dark, onBack }) {
+  const { t } = useApp();
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [mode, setMode] = useState("deposit"); // deposit | loan
@@ -114,7 +115,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
 
   return (
     <div style={{ paddingBottom: SPACE.s8 }}>
-      <PageHeader th={th} title={uz ? "Bank & Foiz Simulatori" : "Симулятор банковских процентов"} onBack={onBack} />
+      <PageHeader th={th} title={t("gam_bank_title")} onBack={onBack} />
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
@@ -138,7 +139,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           }}
         >
           <TrendingUp size={18} />
-          {uz ? "Omonat (Depozit)" : "Депозит"}
+          {t("gam_bank_depositTab")}
         </button>
 
         <button
@@ -161,7 +162,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           }}
         >
           <Building2 size={18} />
-          {uz ? "Kredit (Qarz)" : "Кредит"}
+          {t("gam_bank_loanTab")}
         </button>
       </div>
 
@@ -173,7 +174,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
             <div>
               <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Boshlang'ich sarmoya (Principal)" : "Начальная сумма"}</span>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_initialPrincipal")}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{f(depPrincipal, true)}</span>
               </div>
               <input 
@@ -189,7 +190,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
 
             <div>
               <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Har oylik qo'shimcha to'lov" : "Ежемесячный взнос"}</span>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_monthlyContribution")}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{f(depMonthly, true)}</span>
               </div>
               <input 
@@ -206,7 +207,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3 }}>
               <div>
                 <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Yillik foiz stavkasi" : "Процентная ставка"}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_annualRate")}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{depRate}%</span>
                 </div>
                 <input 
@@ -222,8 +223,8 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
 
               <div>
                 <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Muddat (Yil)" : "Срок (Лет)"}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{depYears} {uz ? "yil" : "лет"}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_termYears")}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{depYears} {t("gam_bank_yearsUnit")}</span>
                 </div>
                 <input 
                   type="range" 
@@ -241,7 +242,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           {/* Visualization Chart (Stacked Bars) */}
           <AppCard th={th} style={{ padding: SPACE.s4 }}>
             <h3 style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s3 }}>
-              {uz ? "Jamg'arma o'sishi vizualizatsiyasi" : "Визуализация роста накоплений"}
+              {t("gam_bank_savingsGrowthViz")}
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {depositData.map((d) => {
@@ -250,11 +251,11 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
                 return (
                   <div key={d.year} style={{ display: "flex", alignItems: "center", gap: SPACE.s2 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: th.t3, width: 40, flexShrink: 0 }}>
-                      {d.year} {uz ? "-yil" : " год"}
+                      {d.year}{t("gam_bank_yearSuffix")}
                     </span>
                     <div style={{ flex: 1, height: 16, background: th.bor + ALPHA.faint, borderRadius: RADIUS.s, overflow: "hidden", display: "flex" }}>
-                      <div style={{ width: `${principalPct}%`, background: th.ac, transition: "width 0.3s" }} title={`Sarmoya: ${f(d.principal, true)}`} />
-                      <div style={{ width: `${interestPct}%`, background: th.gr, transition: "width 0.3s" }} title={`Foiz daromadi: ${f(d.interest, true)}`} />
+                      <div style={{ width: `${principalPct}%`, background: th.ac, transition: "width 0.3s" }} title={t("gam_bank_savingsPrincipalTooltip", { amt: f(d.principal, true) })} />
+                      <div style={{ width: `${interestPct}%`, background: th.gr, transition: "width 0.3s" }} title={t("gam_bank_savingsInterestTooltip", { amt: f(d.interest, true) })} />
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 800, color: th.t1, width: 85, textStyle: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
                       {f(d.total, false)}
@@ -267,11 +268,11 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
             <div style={{ display: "flex", justifyContent: "center", gap: SPACE.s4, marginTop: SPACE.s3, fontSize: 11, fontWeight: 700 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 12, height: 12, background: th.ac, borderRadius: RADIUS.s }} />
-                <span style={{ color: th.t2 }}>{uz ? "Siz kiritgan pul (Asosiy)" : "Ваш вклад"}</span>
+                <span style={{ color: th.t2 }}>{t("gam_bank_yourContribution")}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 12, height: 12, background: th.gr, borderRadius: RADIUS.s }} />
-                <span style={{ color: th.t2 }}>{uz ? "Foizli daromad (Foyda)" : "Полученные проценты"}</span>
+                <span style={{ color: th.t2 }}>{t("gam_bank_interestIncome")}</span>
               </div>
             </div>
           </AppCard>
@@ -282,10 +283,10 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, textAlign: "left" }}>
                 <thead>
                   <tr style={{ borderBottom: "1.5px solid " + th.bor, color: th.t2 }}>
-                    <th style={{ padding: "8px 12px" }}>{uz ? "Yil" : "Год"}</th>
-                    <th style={{ padding: "8px 12px" }}>{uz ? "Siz kiritgan pul" : "Вклад"}</th>
-                    <th style={{ padding: "8px 12px" }}>{uz ? "Foiz foyda" : "Проценты"}</th>
-                    <th style={{ padding: "8px 12px" }}>{uz ? "Jami balans" : "Баланс"}</th>
+                    <th style={{ padding: "8px 12px" }}>{t("gam_bank_tableYear")}</th>
+                    <th style={{ padding: "8px 12px" }}>{t("gam_bank_tableContribution")}</th>
+                    <th style={{ padding: "8px 12px" }}>{t("gam_bank_tableInterest")}</th>
+                    <th style={{ padding: "8px 12px" }}>{t("gam_bank_tableBalance")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -308,12 +309,10 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
               <Lightbulb size={24} color={th.gr} style={{ flexShrink: 0 }} />
               <div>
                 <h4 style={{ ...TYPE.subtitle, fontSize: 14, color: th.gr, fontWeight: 800 }}>
-                  {uz ? "Murakkab foizning kuchi (Dunyoning 8-mo'jizasi!)" : "Сила сложного процента"}
+                  {t("gam_bank_compoundPowerTitle")}
                 </h4>
                 <p style={{ ...TYPE.caption, fontSize: 12, color: th.t2, marginTop: 4, lineHeight: 1.5 }}>
-                  {uz 
-                    ? "Murakkab foiz hisobiga siz topgan foizlaringiz ham yangi foizlar keltirishni boshlaydi. Vaqt o'tgan sayin o'sish tezlashadi (eksponensial). Shuning uchun jamg'arishni qanchalik erta boshlasangiz, shunchalik ko'p boylik yig'asiz!" 
-                    : "За счет сложного процента начисленные проценты начинают приносить новые проценты. Со временем рост ускоряется. Чем раньше вы начнете копить, тем быстрее вырастет ваш капитал!"}
+                  {t("gam_bank_compoundPowerDesc")}
                 </p>
               </div>
             </div>
@@ -328,7 +327,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
             <div>
               <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Kredit summasi (Loan Amount)" : "Сумма кредита"}</span>
+                <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_loanAmount")}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{f(loanPrincipal, true)}</span>
               </div>
               <input 
@@ -345,7 +344,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3 }}>
               <div>
                 <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Kredit foiz stavkasi" : "Процент по кредиту"}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_loanRateLabel")}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{loanRate}%</span>
                 </div>
                 <input 
@@ -361,8 +360,8 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
 
               <div>
                 <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
-                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{uz ? "Muddat (Yil)" : "Срок (Лет)"}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{loanYears} {uz ? "yil" : "года"}</span>
+                  <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_termYears")}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{loanYears} {t("gam_bank_yearsUnit")}</span>
                 </div>
                 <input 
                   type="range" 
@@ -380,11 +379,11 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           {/* Quick Metrics display */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 }}>
             <div style={{ background: th.sur, border: "1px solid " + th.bor, padding: SPACE.s4, borderRadius: RADIUS.m }}>
-              <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Oylik to'lov" : "Ежемесячный платеж"}</div>
+              <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_bank_monthlyPayment")}</div>
               <div style={{ fontSize: 16, fontWeight: 900, color: th.rd, marginTop: 4 }}>{f(loanData.monthlyPayment, true)}</div>
             </div>
             <div style={{ background: th.sur, border: "1px solid " + th.bor, padding: SPACE.s4, borderRadius: RADIUS.m }}>
-              <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Ortiqcha to'lov (Interest)" : "Переплата"}</div>
+              <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_bank_overpayment")}</div>
               <div style={{ fontSize: 16, fontWeight: 900, color: th.rd, marginTop: 4 }}>{f(loanData.totalInterest, true)}</div>
             </div>
           </div>
@@ -392,7 +391,7 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
           {/* Visualization Chart */}
           <AppCard th={th} style={{ padding: SPACE.s4 }}>
             <h3 style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s3 }}>
-              {uz ? "Kredit to'lovlari vizualizatsiyasi (Jami: " + f(loanData.totalPaid, true) + ")" : "Общая переплата по кредиту"}
+              {t("gam_bank_loanPaymentsViz", { total: f(loanData.totalPaid, true) })}
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {loanData.history.map((d) => {
@@ -401,11 +400,11 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
                 return (
                   <div key={d.year} style={{ display: "flex", alignItems: "center", gap: SPACE.s2 }}>
                     <span style={{ fontSize: 11, fontWeight: 800, color: th.t3, width: 40, flexShrink: 0 }}>
-                      {d.year} {uz ? "-yil" : " год"}
+                      {d.year}{t("gam_bank_yearSuffix")}
                     </span>
                     <div style={{ flex: 1, height: 16, background: th.bor + ALPHA.faint, borderRadius: RADIUS.s, overflow: "hidden", display: "flex" }}>
-                      <div style={{ width: `${principalPct}%`, background: th.ac, transition: "width 0.3s" }} title={`To'langan asosiy qarz: ${f(d.paidPrincipal, true)}`} />
-                      <div style={{ width: `${interestPct}%`, background: th.rd, transition: "width 0.3s" }} title={`To'langan foizlar: ${f(d.paidInterest, true)}`} />
+                      <div style={{ width: `${principalPct}%`, background: th.ac, transition: "width 0.3s" }} title={t("gam_bank_principalPaidTooltip", { amt: f(d.paidPrincipal, true) })} />
+                      <div style={{ width: `${interestPct}%`, background: th.rd, transition: "width 0.3s" }} title={t("gam_bank_interestPaidTooltip", { amt: f(d.paidInterest, true) })} />
                     </div>
                     <span style={{ fontSize: 11, fontWeight: 800, color: th.t1, width: 85, textStyle: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
                       {f(d.totalPaid, false)}
@@ -418,11 +417,11 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
             <div style={{ display: "flex", justifyContent: "center", gap: SPACE.s4, marginTop: SPACE.s3, fontSize: 11, fontWeight: 700 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 12, height: 12, background: th.ac, borderRadius: RADIUS.s }} />
-                <span style={{ color: th.t2 }}>{uz ? "Siz olgan pul (Asosiy)" : "Тело кредита"}</span>
+                <span style={{ color: th.t2 }}>{t("gam_bank_loanPrincipalLegend")}</span>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                 <div style={{ width: 12, height: 12, background: th.rd, borderRadius: RADIUS.s }} />
-                <span style={{ color: th.t2 }}>{uz ? "Bankka ortiqcha to'lov (Foiz)" : "Переплата по процентам"}</span>
+                <span style={{ color: th.t2 }}>{t("gam_bank_loanInterestLegend")}</span>
               </div>
             </div>
           </AppCard>
@@ -433,12 +432,10 @@ export default function BankSimGame({ user, lg = "uz", dark, onBack }) {
               <ShieldAlert size={24} color={th.rd} style={{ flexShrink: 0 }} />
               <div>
                 <h4 style={{ ...TYPE.subtitle, fontSize: 14, color: th.rd, fontWeight: 800 }}>
-                  {uz ? "Ehtiyot bo'ling: Qarz tuzog'i!" : "Внимание: Долговая ловушка!"}
+                  {t("gam_bank_debtTrapTitle")}
                 </h4>
                 <p style={{ ...TYPE.caption, fontSize: 12, color: th.t2, marginTop: 4, lineHeight: 1.5 }}>
-                  {uz 
-                    ? "Kredit foizlari omonat foizlariga qarama-qarshi ishlaydi. Qarz olganingizda, murakkab foiz sizning foydangizga emas, sizga qarshi ishlaydi va daromadlaringizni yeb bitiradi. Har doim qimmat kreditlardan qochishga harakat qiling!" 
-                    : "Проценты по кредиту работают против вас. Когда вы берете кредит, сложный процент уничтожает ваш будущий доход. Всегда избегайте дорогих кредитов, чтобы не попасть в финансовую яму!"}
+                  {t("gam_bank_debtTrapDesc")}
                 </p>
               </div>
             </div>

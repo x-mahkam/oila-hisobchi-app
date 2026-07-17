@@ -33,6 +33,42 @@ export const mathSubject = {
     tipCombo: "Great answer streak — keep it up!",
     tipSlow: "Encourage solving accurately, without rushing.",
   },
+  kk: {
+    great: (n) => n + " қосу амалдарын өте жақсы орындап жүр.",
+    good: (n) => n + " қосуды жақсы меңгеруде.",
+    mid: (n) => n + " қосуды үйренуде — біраз жаттығу пайдалы.",
+    low: (n) => n + " екі таңбалы сандарды қосуда қиналуда.",
+    tipDaily: "Күнделікті 5 минут жаттығу ұсынылады.",
+    tipCombo: "Қатарынан дұрыс жауаптар тамаша — осылай жалғастырыңыз!",
+    tipSlow: "Асықпай, дәл шешуге бағыттаңыз.",
+  },
+  ky: {
+    great: (n) => n + " кошуу амалдарын өтө жакшы аткарууда.",
+    good: (n) => n + " кошууну жакшы өздөштүрүүдө.",
+    mid: (n) => n + " кошууну үйрөнүүдө — бир аз көнүгүү пайдалуу.",
+    low: (n) => n + " эки орундуу сандарды кошууда кыйналууда.",
+    tipDaily: "Күн сайын 5 мүнөт көнүгүү сунушталат.",
+    tipCombo: "Ырааттуу туура жооптор мыкты — ушул ыргакты сакта!",
+    tipSlow: "Шашылбай, так чечүүгө багыттаңыз.",
+  },
+  tg: {
+    great: (n) => n + " амалҳои ҷамъро хеле хуб иҷро мекунад.",
+    good: (n) => n + " ҷамъро хуб аз худ мекунад.",
+    mid: (n) => n + " ҷамъро меомӯзад — каме машқ фоида дорад.",
+    low: (n) => n + " дар ҷамъ кардани рақамҳои дуарзишнок душворӣ мекашад.",
+    tipDaily: "Ҳаррӯза 5 дақиқа машқ тавсия мешавад.",
+    tipCombo: "Силсилаи ҷавобҳои дуруст аъло — ҳамин рӯҳро нигоҳ доред!",
+    tipSlow: "Бе шитоб, бо дурустӣ ҳал карданро ҳавасманд кунед.",
+  },
+  qr: {
+    great: (n) => n + " qosıw ámellerin júdá jaqsı orınlap atır.",
+    good: (n) => n + " qosıwdı jaqsı ózlestirmekte.",
+    mid: (n) => n + " qosıwdı úyrenmekte — biraz jattığıw payda beredi.",
+    low: (n) => n + " eki tańbalı sanlardı qosıwda qıynalmaqta.",
+    tipDaily: "Kúndelikli 5 minut jattığıw usınıs etiledi.",
+    tipCombo: "Ketpe-ket durıs juwaplar ájayıp — usı kóńil-kúydi saqlań!",
+    tipSlow: "Aspay-jaspay, anıqlıq penen sheshiwge bağıtlań.",
+  },
 };
 
 /**
@@ -44,7 +80,8 @@ export const mathSubject = {
  */
 export const buildAISummary = (result, name, lg = "uz", subject = mathSubject) => {
   const S = subject[lg] || subject.uz;
-  const who = name || (lg === "uz" ? "Bola" : lg === "ru" ? "Ребёнок" : "The child");
+  const CHILD_NAME = { uz: "Bola", en: "The child", ru: "Ребёнок", kk: "Бала", ky: "Бала", tg: "Кӯдак", qr: "Bala" };
+  const who = name || CHILD_NAME[lg] || CHILD_NAME.uz;
   const pct = result.pct ?? 0;
 
   let verdict;

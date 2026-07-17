@@ -43,7 +43,7 @@ const diffColor = (tone, th) => ({ gr: th.gr, am: th.am, rd: th.rd }[tone] || th
 const grad = (g, th) => "linear-gradient(135deg," + (th[g.grad[0]] || th.ac) + "," + (th[g.grad[1]] || th.ac2) + ")";
 
 // ── O'yin kartasi ──
-const GameCard = memo(function GameCard({ th, lg, game, onOpen }) {
+const GameCard = memo(function GameCard({ th, lg, t, game, onOpen }) {
   const avail = isAvailable(game);
   const d = DIFF[game.difficulty] || DIFF.easy;
   const dc = diffColor(d.tone, th);
@@ -59,18 +59,17 @@ const GameCard = memo(function GameCard({ th, lg, game, onOpen }) {
         <span style={{ display: "block", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{game.desc[lg] || game.desc.uz}</span>
         <span style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 + 1 }}>
           <span style={{ ...TYPE.tiny, letterSpacing: 0, fontWeight: 700, color: dc }}>{d[lg] || d.uz}</span>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>· {game.minutes} {lg === "uz" ? "daq" : "min"}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>· {game.minutes} {t("bd_minutesShort")}</span>
           <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: PREMIUM.gold, fontWeight: 700 }}>· {game.maxCoin} coin</span>
         </span>
       </span>
-      {!avail && <span style={{ flexShrink: 0 }}><Badge th={th} tone={th.t3}>{lg === "uz" ? "Tez orada" : lg === "ru" ? "Скоро" : "Soon"}</Badge></span>}
+      {!avail && <span style={{ flexShrink: 0 }}><Badge th={th} tone={th.t3}>{t("bd_soon")}</Badge></span>}
     </button>
   );
 });
 
 export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onBack, initialView }) {
-  const { setBilimInitialView } = useApp();
-  const uz = lg === "uz";
+  const { setBilimInitialView, t } = useApp();
   const isKid = user?.rol === "kid";
   const [view, setView] = useState(() => (typeof initialView === "string" ? initialView : "cats"));      // cats | games | detail | play | parent | market
 
@@ -244,7 +243,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     return <OddOneOutGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
   }
   if (view === "play" && game && game.load === "finance/bank-sim") {
-    return <BankSimGame user={user} lg={lg} dark={dark} onBack={() => setView("detail")} />;
+    return <BankSimGame dark={dark} onBack={() => setView("detail")} />;
   }
   if (view === "play" && game && game.load === "memory/pairs") {
     return <PriceMemoryGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
@@ -257,7 +256,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   if (view === "profile") {
     return (
       <div>
-        <PageHeader th={th_(dark)} title={uz ? "Mening profilim" : lg === "ru" ? "Мой профиль" : "My profile"} onBack={() => setView("cats")} />
+        <PageHeader th={th_(dark)} title={t("bh_myProfile")} onBack={() => setView("cats")} />
         <LearningProfile th={th_(dark)} lg={lg} user={user} coins={coins} xp={xp} streak={streak} sessions={sessions} />
       </div>
     );
@@ -273,12 +272,12 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
     const pth = th_(dark);
     return (
       <div>
-        <PageHeader th={pth} title={uz ? "Bilim Bozori — monitoring" : lg === "ru" ? "Мониторинг" : "Learning monitor"} onBack={onBack} />
+        <PageHeader th={pth} title={t("bh_learningMonitor")} onBack={onBack} />
         <button onClick={() => setView("market")} style={{ width: "100%", background: "linear-gradient(135deg," + pth.ac + "," + pth.ac2 + ")", border: "none", borderRadius: 14, padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 16, color: "#fff", fontWeight: 800, fontSize: 15 }}>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M3.5 8.5V16a1 1 0 001 1h11a1 1 0 001-1V8.5" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/><path d="M2.5 4.5h15l-.8 3.2a2 2 0 01-3.9.1 2 2 0 01-3.9 0 2 2 0 01-3.9 0 2 2 0 01-3.9-.1L2.5 4.5z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round"/></svg>
-          {uz ? "Mukofot qo'yish (Savdo)" : lg === "ru" ? "Назначить награду" : "Set a reward (Shop)"}
+          {t("bh_setReward")}
         </button>
-        <ParentPreview th={pth} lg={lg} data={parentData} />
+        <ParentPreview th={pth} lg={lg} t={t} data={parentData} />
       </div>
     );
   }
@@ -312,21 +311,21 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
           <p style={{ ...TYPE.caption, fontSize: 12.5, color: "rgba(255,255,255,0.85)", margin: "4px 0 0 0", padding: 0, maxWidth: "280px", lineHeight: "1.3" }}>{game.desc[lg] || game.desc.uz}</p>
         </div>
         <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={d[lg] || d.uz} label={uz ? "Daraja" : lg === "ru" ? "Сложность" : "Difficulty"} tone={dc} />
-          <StatCard th={th} value={game.minutes + (uz ? " daq" : "m")} label={uz ? "Vaqt" : lg === "ru" ? "Время" : "Time"} tone={th.ac} />
-          <StatCard th={th} value={game.maxCoin} label={uz ? "Max coin" : "Max coin"} tone={PREMIUM.gold} />
+          <StatCard th={th} value={d[lg] || d.uz} label={t("bh_difficulty")} tone={dc} />
+          <StatCard th={th} value={game.minutes + " " + t("bd_minutesShort")} label={t("bh_time")} tone={th.ac} />
+          <StatCard th={th} value={game.maxCoin} label="Max coin" tone={PREMIUM.gold} />
         </div>
         {game.premium && (
           <AppCard th={th} style={{ background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, display: "flex", alignItems: "center", gap: SPACE.s2 }}>
             <Badge th={th} type="pro" />
-            <span style={{ ...TYPE.caption, color: th.t2 }}>{uz ? "Premium o'yin — obuna kerak" : lg === "ru" ? "Премиум-игра" : "Premium game"}</span>
+            <span style={{ ...TYPE.caption, color: th.t2 }}>{t("bh_premiumGame")}</span>
           </AppCard>
         )}
         {avail ? (
           game.id === "english/words" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginTop: SPACE.s2 }}>
               <div style={{ ...TYPE.subtitle, fontSize: 14, fontWeight: 800, color: th.t2, marginBottom: 2, textAlign: "center" }}>
-                {uz ? "Darajani tanlang va o'yinni boshlang:" : "Выберите уровень и начните игру:"}
+                {t("bh_selectLevelStart")}
               </div>
               {LEVELS.map(lvl => {
                 const allW = WORDS[lvl.id] || [];
@@ -335,8 +334,9 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
                 const seenCount = allW.filter(w => (statsObj[w.en] || 0) > 0).length;
                 const pct = Math.min(100, Math.round((seenCount / allW.length) * 100));
 
-                const lvlName = lvl.id === 1 ? (uz ? "Boshlang'ich" : "Начальный") : lvl.id === 2 ? (uz ? "O'rta" : "Средний") : (uz ? "Yuqori" : "Продвинутый");
-                const diffLabel = lvl.id === 1 ? (uz ? "Oson" : "Легко") : lvl.id === 2 ? (uz ? "O'rtacha" : "Средне") : (uz ? "Qiyin" : "Сложно");
+                const lvlDiffKey = lvl.id === 1 ? "easy" : lvl.id === 2 ? "medium" : "hard";
+                const lvlName = DIFF[lvlDiffKey][lg] || DIFF[lvlDiffKey].uz;
+                const diffLabel = DIFF[lvlDiffKey][lg] || DIFF[lvlDiffKey].uz;
 
                 return (
                   <button
@@ -373,8 +373,8 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
 
                     <div style={{ width: "100%" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", ...TYPE.tiny, color: th.t2, marginBottom: 4 }}>
-                        <span>{uz ? "O'rganilgan so'zlar:" : "Изучено слов:"} <b>{seenCount}/{allW.length}</b></span>
-                        {newCount > 0 && <span style={{ color: th.gr }}>+{newCount} {uz ? "yangi" : "новых"}</span>}
+                        <span>{t("bh_learnedWordsLabel")} <b>{seenCount}/{allW.length}</b></span>
+                        {newCount > 0 && <span style={{ color: th.gr }}>+{newCount} {t("bh_newWordsSuffix")}</span>}
                       </div>
                       <div style={{ height: 6, borderRadius: RADIUS.full, background: th.bor, overflow: "hidden", width: "100%" }}>
                         <div style={{ width: pct + "%", height: "100%", background: lvl.color, borderRadius: RADIUS.full, transition: "width .3s" }} />
@@ -385,12 +385,12 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
               })}
             </div>
           ) : (
-            <PrimaryButton th={th} onClick={startGame}>{uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"}</PrimaryButton>
+            <PrimaryButton th={th} onClick={startGame}>{t("bd_startLabel")}</PrimaryButton>
           )
         ) : (
           <AppCard th={th} style={{ textAlign: "center", padding: SPACE.s6 + "px " + SPACE.s4 }}>
-            <div style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s1 }}>{uz ? "Tez orada" : lg === "ru" ? "Скоро" : "Coming soon"}</div>
-            <div style={{ ...TYPE.caption, color: th.t2 }}>{uz ? "Bu o'yin keyingi yangilanishda qo'shiladi." : lg === "ru" ? "Игра появится в следующем обновлении." : "This game arrives in a future update."}</div>
+            <div style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s1 }}>{t("bh_comingSoonTitle")}</div>
+            <div style={{ ...TYPE.caption, color: th.t2 }}>{t("bh_comingSoonDesc")}</div>
           </AppCard>
         )}
       </div>
@@ -422,7 +422,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
           dark={dark}
           subject="logic"
           levels={LOGIC_LEVELS}
-          title={uz ? "Mantiq Yo'li" : lg === "ru" ? "Карта Логики" : "Logic Roadmap"}
+          title={t("bh_logicRoadmap")}
           onSelectLevel={(lvl) => {
             setActiveLevel(lvl);
             setView("play-level");
@@ -439,7 +439,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
           dark={dark}
           subject="memory"
           levels={MEMORY_LEVELS}
-          title={uz ? "Xotira Yo'li" : lg === "ru" ? "Карта Памяти" : "Memory Roadmap"}
+          title={t("bh_memoryRoadmap")}
           onSelectLevel={(lvl) => {
             setActiveLevel(lvl);
             setView("play-level");
@@ -467,10 +467,10 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
             </div>
           </div>
         </AppCard>
-        <SectionHeader th={th}>{uz ? "O'yinlar" : lg === "ru" ? "Игры" : "Games"}</SectionHeader>
+        <SectionHeader th={th}>{t("bh_gamesSectionTitle")}</SectionHeader>
         {list.length === 0
-          ? <EmptyState th={th} title={uz ? "Hali o'yin yo'q" : "No games yet"} message={uz ? "Tez orada qo'shiladi." : "Coming soon."} />
-          : list.map(g => <GameCard key={g.id} th={th} lg={lg} game={g} onOpen={openGame} />)}
+          ? <EmptyState th={th} title={t("bh_noGamesYet")} message={t("bh_gamesComingSoonDesc")} />
+          : list.map(g => <GameCard key={g.id} th={th} lg={lg} t={t} game={g} onOpen={openGame} />)}
       </div>
     );
   }
@@ -483,9 +483,9 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   const rankLabel = rankObj[lg] || rankObj.uz;
   return (
     <div>
-      <PageHeader th={th} title={uz ? "Bilim Bozori" : lg === "ru" ? "Рынок знаний" : "Knowledge Market"} onBack={onBack} />
+      <PageHeader th={th} title={t("bd_bilimBozoriTitle")} onBack={onBack} />
       <BilimDashboard
-        th={th} lg={lg} name={fullName(user)} photo={user?.photo}
+        th={th} lg={lg} t={t} name={fullName(user)} photo={user?.photo}
         coins={coins} xp={xp} streak={streak} sessions={sessions} learnedWords={learnedWords}
         level={lv.level} rankLabel={rankLabel} rankColor={rankObj.color}
         xpPct={lv.pct} xpToNext={lv.toNext} maxLevel={lv.max}
@@ -497,10 +497,9 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
 }
 
 // ── Ota-ona preview (o'yin ko'rinmaydi) ──
-const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
-  const uz = lg === "uz";
+const ParentPreview = memo(function ParentPreview({ th, lg, t, data }) {
   if (!data || data.length === 0) {
-    return <EmptyState th={th} title={uz ? "Ma'lumot yo'q" : lg === "ru" ? "Нет данных" : "No data"} message={uz ? "Bola o'ynagach natijalar shu yerda ko'rinadi." : "Kid results will appear here."} />;
+    return <EmptyState th={th} title={t("bh_noData")} message={t("bh_noDataDesc")} />;
   }
   return (
     <>
@@ -509,7 +508,7 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
         const rankObj = rankFor(lv.level);
         const analysis = analyzeLearning(k.sessions || [], lg, k.name, 30);
         const week = weeklyReport(k.sessions || [], lg, k.name);
-        const D = { easy: uz ? "Oson" : "Easy", medium: uz ? "O'rta" : "Medium", hard: uz ? "Qiyin" : "Hard" };
+        const D = { easy: DIFF.easy[lg] || DIFF.easy.uz, medium: DIFF.medium[lg] || DIFF.medium.uz, hard: DIFF.hard[lg] || DIFF.hard.uz };
         return (
           <AppCard key={k.id} th={th}>
             {/* Sarlavha: avatar + level + rank */}
@@ -527,7 +526,7 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
             <div style={{ display: "flex", gap: SPACE.s2 }}>
               <StatCard th={th} value={k.coins} label="Coin" tone={PREMIUM.gold} />
               <StatCard th={th} value={k.xp || 0} label="XP" tone={th.ac} />
-              <StatCard th={th} value={k.streak || 0} label={uz ? "Streak" : "Streak"} tone={th.rd} />
+              <StatCard th={th} value={k.streak || 0} label="Streak" tone={th.rd} />
             </div>
 
             {/* Oxirgi o'yin natijasi (o'yinning o'zi ko'rinmaydi) */}
@@ -537,7 +536,7 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
               const mm = Math.floor((last.seconds || 0) / 60), ssx = (last.seconds || 0) % 60;
               return (
                 <div style={{ marginTop: SPACE.s3, background: th.gr + ALPHA.faint, borderRadius: RADIUS.s, padding: SPACE.s3, border: "1px solid " + th.gr + ALPHA.med }}>
-                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 2 }}>{uz ? "Oxirgi o'yin" : lg === "ru" ? "Последняя игра" : "Last game"}</div>
+                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: 2 }}>{t("bh_lastGame")}</div>
                   <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700 }}>{subj ? subj.name : (last.gameId || "")} — {last.correct}/{last.total} · {last.pct}%</div>
                   <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 2 }}>{(mm ? mm + "m " : "") + ssx + "s"} · +{last.coins} coin · +{last.xp || 0} XP · {D[last.difficulty] || last.difficulty}</div>
                 </div>
@@ -547,7 +546,7 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
             {/* 30 kunlik fan kesimi */}
             {analysis.bySubject.length > 0 && (
               <div style={{ marginTop: SPACE.s3 }}>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s1 }}>{uz ? "Oxirgi 30 kun (fan bo'yicha)" : lg === "ru" ? "30 дней" : "Last 30 days"}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginBottom: SPACE.s1 }}>{t("bh_last30Days")}</div>
                 {analysis.bySubject.slice(0, 4).map(sub => (
                   <div key={sub.cat} style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s1 }}>
                     <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t1, width: SPACE.s16, flexShrink: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{sub.name}</span>
@@ -562,7 +561,7 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
             <div style={{ marginTop: SPACE.s3, display: "flex", gap: SPACE.s2 }}>
               <div style={{ flex: 1, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s2, textAlign: "center" }}>
                 <div style={{ ...TYPE.subtitle, fontWeight: 800, color: th.t1 }}>{week.games}</div>
-                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>{uz ? "Haftalik o'yin" : "Games/wk"}</div>
+                <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>{t("bh_gamesPerWeek")}</div>
               </div>
               <div style={{ flex: 1, background: th.sur, border: "1px solid " + th.bor, borderRadius: RADIUS.s, padding: SPACE.s2, textAlign: "center" }}>
                 <div style={{ ...TYPE.subtitle, fontWeight: 800, color: PREMIUM.gold }}>+{week.coins}</div>
@@ -577,7 +576,7 @@ const ParentPreview = memo(function ParentPreview({ th, lg, data }) {
             {/* AI xulosasi */}
             <div style={{ marginTop: SPACE.s3, background: th.ac + ALPHA.faint, borderRadius: RADIUS.s, padding: SPACE.s3, display: "flex", gap: SPACE.s2, alignItems: "flex-start" }}>
               <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 2a5 5 0 00-3 9c.6.5 1 1 1 2h4c0-1 .4-1.5 1-2a5 5 0 00-3-9z" stroke={th.ac} strokeWidth="1.4" fill={th.ac} fillOpacity="0.15"/><path d="M8 16h4M8.5 18h3" stroke={th.ac} strokeWidth="1.4" strokeLinecap="round"/></svg>
-              <span style={{ ...TYPE.caption, color: th.t1 }}><b style={{ color: th.ac }}>{uz ? "AI: " : "AI: "}</b>{analysis.tip}{analysis.weakTip ? " " + analysis.weakTip : ""}</span>
+              <span style={{ ...TYPE.caption, color: th.t1 }}><b style={{ color: th.ac }}>AI: </b>{analysis.tip}{analysis.weakTip ? " " + analysis.weakTip : ""}</span>
             </div>
           </AppCard>
         );
