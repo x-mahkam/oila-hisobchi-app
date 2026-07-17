@@ -59,5 +59,8 @@
   "limit": "Limit",
   "thisMonth": "This month",
   "showLess": "Show less",
-  "showMore": "Details"
+  "showMore": "Details",
+  "income": "Income",
+  "expense": "Expense",
+  "perDay": "day"
 }

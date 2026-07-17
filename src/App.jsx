@@ -767,7 +767,7 @@ export default function App() {
       {askTel && user && (
         <AskTelModal
           th={th}
-          lg={lg}
+          t={t}
           newT={newT}
           setNewT={setNewT}
           saveTel={saveTel}
@@ -915,7 +915,7 @@ export default function App() {
       {showScanner && (
         <ReceiptScannerModal
           th={th}
-          lg={lg}
+          t={t}
           scanVideoRef={scanVideoRef}
           scanMsg={scanMsg}
           stopScanner={stopScanner}

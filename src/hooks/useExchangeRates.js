@@ -2,7 +2,7 @@ import { useCallback } from "react";
 import { useApp } from "../context/AppContext.jsx";
 
 export function useExchangeRates() {
-  const { rates, setRates, ok$, lg } = useApp();
+  const { rates, setRates, ok$, t } = useApp();
   const [rateL, setRateL] = useApp().rateL !== undefined
     ? [useApp().rateL, useApp().setRateL]
     : [false, () => {}];
@@ -20,7 +20,7 @@ export function useExchangeRates() {
         const raw = await res.json();
         const ratesObj = raw.rates || {};
         const want = ["USD", "EUR", "RUB", "GBP", "CNY", "KZT"];
-        const nameMap = { USD: "AQSH dollari", EUR: "Yevropa evro", RUB: "Rossiya rubli", GBP: "Britaniya funti", CNY: "Xitoy yuani", KZT: "Qozog'iston tengesi" };
+        const nameMap = { USD: t("xr_usd"), EUR: t("xr_eur"), RUB: t("xr_rub"), GBP: t("xr_gbp"), CNY: t("xr_cny"), KZT: t("xr_kzt") };
         const filt = want.filter(c => ratesObj[c]).map(c => ({
           code: c, rate: ratesObj[c] > 0 ? (1 / ratesObj[c]).toFixed(2) : "0",
           name: nameMap[c] || c, diff: "0",
@@ -29,7 +29,7 @@ export function useExchangeRates() {
           setRates(filt);
           ok2 = true;
           try { localStorage.setItem("oilaV7Rates", JSON.stringify(filt)); localStorage.setItem("oilaV7RatesT", new Date().toISOString()); } catch {}
-          ok$(lg === "uz" ? "Kurslar yangilandi!" : "Rates updated!");
+          ok$(t("xr_ratesUpdated"));
           break;
         }
       } catch (e) {}
@@ -39,14 +39,14 @@ export function useExchangeRates() {
       try { saved = JSON.parse(localStorage.getItem("oilaV7Rates")); } catch {}
       if (saved?.length > 0) {
         setRates(saved);
-        ok$(lg === "uz" ? "Saqlangan kurslar (internet yo'q)" : "Saved rates (offline)", "warn");
+        ok$(t("xr_savedOffline"), "warn");
       } else {
-        setRates([{ code: "USD", rate: "12850", name: "AQSH dollari" }, { code: "EUR", rate: "13920", name: "Evro" }, { code: "RUB", rate: "143", name: "Rossiya rubli" }]);
-        ok$(lg === "uz" ? "Demo kurslar" : "Demo rates", "warn");
+        setRates([{ code: "USD", rate: "12850", name: t("xr_usd") }, { code: "EUR", rate: "13920", name: t("xr_eur") }, { code: "RUB", rate: "143", name: t("xr_rub") }]);
+        ok$(t("xr_demoRates"), "warn");
       }
     }
     setRateL(false);
-  }, [ok$, lg, setRates]);
+  }, [ok$, t, setRates]);
 
   return { fetchRates };
 }

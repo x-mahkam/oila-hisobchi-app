@@ -59,5 +59,8 @@
   "limit": "Лимит",
   "thisMonth": "Бұл ай",
   "showLess": "Жию",
-  "showMore": "Толығырақ"
+  "showMore": "Толығырақ",
+  "income": "Кіріс",
+  "expense": "Шығыс",
+  "perDay": "күн"
 }

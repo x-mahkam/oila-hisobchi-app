@@ -59,5 +59,8 @@
   "limit": "Limit",
   "thisMonth": "Bu oy",
   "showLess": "Yig'ish",
-  "showMore": "Batafsil"
+  "showMore": "Batafsil",
+  "income": "Daromad",
+  "expense": "Xarajat",
+  "perDay": "kun"
 }

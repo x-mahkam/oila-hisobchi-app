@@ -7,7 +7,6 @@ import { memo, useState, useRef, useEffect } from "react";
 import { SPACE, TYPE, RADIUS, ALPHA, CHART } from "../utils/tokens.js";
 import { AppCard, StatCard, CircularProgress } from "../components/ui/index.js";
 import { T } from "./i18n.js";
-import i18n from "../i18n/index.js";
 
 // ── Daraja rangi (DS: faqat th/CHART) ────────────────────────
 export function levelColor(level, th) {
@@ -83,7 +82,7 @@ export const ForecastCard = memo(function ForecastCard({ th, lg, f, forecast }) 
       {forecast.hasData && (
         <div style={{ display: "flex", gap: SPACE.s2, marginTop: SPACE.s3 }}>
           <StatCard th={th} value={f(forecast.projected)} label={T("projected", lg)} tone={tone} />
-          {forecast.hasBudget && <StatCard th={th} value={f(forecast.dailyRate)} label={T("thisMonth", lg) + "/" + i18n.t("day", { defaultValue: "kun" })} />}
+          {forecast.hasBudget && <StatCard th={th} value={f(forecast.dailyRate)} label={T("thisMonth", lg) + "/" + T("perDay", lg)} />}
         </div>
       )}
     </AppCard>
@@ -199,9 +198,9 @@ export const MonthlySummaryCard = memo(function MonthlySummaryCard({ th, lg, f, 
     <AppCard th={th}>
       <CardHead th={th} icon={AIco.spark(th.ac)} title={T("cardSummary", lg)} />
       <div style={{ display: "flex", gap: SPACE.s2 }}>
-        <StatCard th={th} value={f(ai.income)} label={i18n.t("income", { defaultValue: "Daromad" })} tone={th.gr} />
-        <StatCard th={th} value={f(ai.expense)} label={i18n.t("expense", { defaultValue: "Xarajat" })} tone={th.rd} />
-        <StatCard th={th} value={f(saved)} label={i18n.t("savings", { defaultValue: "Jamg'arma" })} tone={saved >= 0 ? th.ac : th.rd} />
+        <StatCard th={th} value={f(ai.income)} label={T("income", lg)} tone={th.gr} />
+        <StatCard th={th} value={f(ai.expense)} label={T("expense", lg)} tone={th.rd} />
+        <StatCard th={th} value={f(saved)} label={T("facSavings", lg)} tone={saved >= 0 ? th.ac : th.rd} />
       </div>
     </AppCard>
   );

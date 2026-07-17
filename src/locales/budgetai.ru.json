@@ -59,5 +59,8 @@
   "limit": "Лимит",
   "thisMonth": "Этот месяц",
   "showLess": "Свернуть",
-  "showMore": "Подробнее"
+  "showMore": "Подробнее",
+  "income": "Доход",
+  "expense": "Расход",
+  "perDay": "день"
 }
