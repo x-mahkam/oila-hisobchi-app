@@ -256,7 +256,7 @@ export default function App() {
           try { await db.s("user_" + g.id, null); } catch (e) {}
         }
       }
-      if (!removeIds.length) return ok$(t("app_noDuplicatesFound"));
+      if (!removeIds.length) return ok$(lg === "uz" ? "Dublikat topilmadi — hammasi toza ✅" : "No duplicates found ✅");
       const ids = (oila.azolarIds || oila.azolar || []).filter(id => !removeIds.includes(id));
       const o2 = { ...oila, azolarIds: ids };
       if (oila.id) await db.s("oila_" + oila.id, o2);
@@ -264,8 +264,8 @@ export default function App() {
       await db.s("kidbal_" + user.oilaId, kb);
       setOila(o2); setKidBalances(kb);
       setAzolar(azolar.filter(a => !removeIds.includes(a.id)));
-      ok$(t("app_cleanedDuplicates", { n: removeIds.length }));
-    } catch (e) { ok$(t("app_errorPrefix", { msg: e.message || "" }), "err"); }
+      ok$(lg === "uz" ? "✅ " + removeIds.length + " ta eski bola yozuvi o'chirildi, pullar jamlandi!" : "✅ Cleaned " + removeIds.length + " duplicates");
+    } catch (e) { ok$((lg === "uz" ? "Xato: " : "Error: ") + (e.message || ""), "err"); }
   };
 
   // Maqsadlar sinxronizatsiyasi: bola pul yig'ib bo'lganda ota bannerni DARHOL ko'rsin
@@ -287,7 +287,7 @@ export default function App() {
       if (Array.isArray(v)) setVazifalar(v);
       const k = await db.g("kidbal_" + user.oilaId);
       if (k && typeof k === "object") setKidBalances(k);
-      ok$(t("app_refreshed"));
+      ok$(lg === "uz" ? "Yangilandi" : "Refreshed");
     } catch (e) {}
   };
   const { markNotifRead, markAllRead, clearNotifs, unreadCount } = useNotifications();
@@ -767,7 +767,7 @@ export default function App() {
       {askTel && user && (
         <AskTelModal
           th={th}
-          t={t}
+          lg={lg}
           newT={newT}
           setNewT={setNewT}
           saveTel={saveTel}
@@ -822,7 +822,7 @@ export default function App() {
           f={f}
         />
       )}
-      {debts.partialQarz && <PartialQarzModal q={debts.partialQarz} partialSum={debts.partialSum} setPartialSum={debts.setPartialSum} th={th} STY={STY} f={f} t={t} onConfirm={debts.applyPartial} onClose={() => { debts.setPartialQarz(null); debts.setPartialSum(""); }} />}
+      {debts.partialQarz && <PartialQarzModal q={debts.partialQarz} partialSum={debts.partialSum} setPartialSum={debts.setPartialSum} th={th} STY={STY} lg={lg} f={f} t={t} onConfirm={debts.applyPartial} onClose={() => { debts.setPartialQarz(null); debts.setPartialSum(""); }} />}
       {debts.tilxatView && (
         <TilxatViewModal
           tilxatView={debts.tilxatView}
@@ -833,7 +833,7 @@ export default function App() {
           onClose={() => debts.setTilxatView(null)}
         />
       )}
-      {debts.inviteQarz && <InviteQarzModal inviteQarz={debts.inviteQarz} th={th} user={user} qarzTur={debts.qarzTur} qarzKim={debts.qarzKim} qarzSum={debts.qarzSum} qarzlar={qarzlar} setQarzlar={setQarzlar} ok$={ok$} t={t} f={f} onClose={() => debts.setInviteQarz(null)} />}
+      {debts.inviteQarz && <InviteQarzModal inviteQarz={debts.inviteQarz} th={th} lg={lg} user={user} qarzTur={debts.qarzTur} qarzKim={debts.qarzKim} qarzSum={debts.qarzSum} qarzlar={qarzlar} setQarzlar={setQarzlar} ok$={ok$} t={t} f={f} onClose={() => debts.setInviteQarz(null)} />}
       {maqsadConfirmNotif && <MaqsadConfirmModal info={maqsadConfirmNotif} th={th} lg={lg} f={f} STY={STY} onBought={confirmMaqBought} onCancel={cancelMaqReturn} maq={maq} setScr={setScr} />}
 
       {/* Header */}
@@ -850,7 +850,7 @@ export default function App() {
                 {isPremium && <span style={{ fontSize: 8, background: "linear-gradient(135deg," + th.ac + "," + th.ac2 + ")", color: "#fff", borderRadius: 20, padding: "1px 6px", fontWeight: 700 }}>PRO</span>}
               </div>
               <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: -0.2 }}>
-                <><span style={{ color: th.ac }}>{t("app_brandPart1")}</span><span style={{ color: th.gr }}>{t("app_brandPart2")}</span></>
+                {(lg === "uz" || lg === "qr") ? <><span style={{ color: th.ac }}>Oila</span><span style={{ color: th.gr }}>Hisobchi</span></> : (lg === "ru" || lg === "kk" || lg === "ky" || lg === "tg") ? <><span style={{ color: th.ac }}>Семейный</span><span style={{ color: th.gr }}>Бюджет</span></> : <><span style={{ color: th.ac }}>Family</span><span style={{ color: th.gr }}>Budget</span></>}
               </span>
             </div>
           </div>
@@ -915,7 +915,7 @@ export default function App() {
       {showScanner && (
         <ReceiptScannerModal
           th={th}
-          t={t}
+          lg={lg}
           scanVideoRef={scanVideoRef}
           scanMsg={scanMsg}
           stopScanner={stopScanner}
