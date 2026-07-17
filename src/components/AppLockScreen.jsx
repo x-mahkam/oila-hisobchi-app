@@ -3,9 +3,10 @@ import { db } from "../firebase.js";
 import { hp } from "../utils/formatters.js";
 import { SPACE, RADIUS, TYPE, ALPHA, COMP } from "../utils/tokens.js";
 import { NativeBiometric } from "capacitor-native-biometric";
+import { useApp } from "../context/AppContext.jsx";
 
-export default function AppLockScreen({ th, lg, uid, onUnlock }) {
-  const uz = lg === "uz";
+export default function AppLockScreen({ th, uid, onUnlock }) {
+  const { t } = useApp();
   const [pin, setPin] = useState("");
   const [storedPinHash, setStoredPinHash] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
@@ -38,10 +39,10 @@ export default function AppLockScreen({ th, lg, uid, onUnlock }) {
       const result = await NativeBiometric.isAvailable();
       if (result.isAvailable) {
         await NativeBiometric.verifyIdentity({
-          reason: uz ? "Ilovaga kirish" : "Access the application",
-          title: uz ? "Biometrika" : "Biometrics",
-          subtitle: uz ? "Identifikatsiyani tasdiqlang" : "Confirm identity",
-          description: uz ? "Ilovani qulfdan chiqarish uchun datchikka teging" : "Touch the sensor to unlock the app"
+          reason: t("alk_biometricReason"),
+          title: t("alk_biometricTitle"),
+          subtitle: t("alk_biometricSubtitle"),
+          description: t("alk_biometricDescription")
         });
         onUnlock();
       }
@@ -65,7 +66,7 @@ export default function AppLockScreen({ th, lg, uid, onUnlock }) {
       if (hashed === storedPinHash) {
         onUnlock();
       } else {
-        setError(uz ? "PIN kod noto'g'ri" : "Incorrect PIN");
+        setError(t("alk_pinIncorrect"));
         setPin("");
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(100);
@@ -116,10 +117,10 @@ export default function AppLockScreen({ th, lg, uid, onUnlock }) {
           </svg>
         </div>
         <h2 style={{ ...TYPE.heading, color: th.t1, margin: 0 }}>
-          {uz ? "Ilova qulflangan" : "Application Locked"}
+          {t("alk_appLocked")}
         </h2>
         <p style={{ ...TYPE.caption, color: th.t2, marginTop: SPACE.s2, marginBottom: 0 }}>
-          {uz ? "Davom etish uchun PIN kodni kiriting" : "Please enter PIN code to continue"}
+          {t("alk_enterPinToContinue")}
         </p>
       </div>
 
@@ -150,7 +151,7 @@ export default function AppLockScreen({ th, lg, uid, onUnlock }) {
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, biometricEnabled ? "bio" : "", 0, "del"].map((num, ni) => {
           if (num === "bio") {
             return (
-              <button key={ni} className="ui-press" onClick={triggerBiometrics} aria-label={uz ? "Barmoq izi" : "Biometrics"}
+              <button key={ni} className="ui-press" onClick={triggerBiometrics} aria-label={t("alk_fingerprint")}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -175,7 +176,7 @@ export default function AppLockScreen({ th, lg, uid, onUnlock }) {
             );
           }
           return (
-            <button key={ni} className={num === "" ? "" : "ui-press"} onClick={() => handleKeyPress(num)} aria-label={num === "del" ? (uz ? "O'chirish" : "Delete") : String(num)}
+            <button key={ni} className={num === "" ? "" : "ui-press"} onClick={() => handleKeyPress(num)} aria-label={num === "del" ? t("alk_delete") : String(num)}
               style={{
                 background: typeof num === "number" ? th.surH : "transparent",
                 border: typeof num === "number" ? "1px solid " + th.bor : "none",

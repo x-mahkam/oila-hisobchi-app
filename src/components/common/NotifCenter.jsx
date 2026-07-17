@@ -4,7 +4,7 @@
 //  Mavjud notif_<uid> ma'lumotini o'qiydi (sxema o'zgarmaydi).
 // ═══════════════════════════════════════════════════════════
 import { memo, useMemo, useState, useCallback } from "react";
-import { useTranslation } from "react-i18next";
+import { useApp } from "../../context/AppContext.jsx";
 import { SectionHeader, AppCard, Badge, BottomSheet, EmptyState, PrimaryButton, SecondaryButton, GhostButton } from "../ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, MOTION, PREMIUM } from "../../utils/tokens.js";
 import {
@@ -12,21 +12,19 @@ import {
   NCAT_LABEL, catAction, catActionLabel, groupNotifs,
 } from "../../utils/notify.jsx";
 
-const fmtDate = (iso, language) => {
+const fmtDate = (iso, lg) => {
   try {
-    const lg = language || "uz";
     return new Date(iso).toLocaleString(lg === "ru" ? "ru-RU" : lg === "en" ? "en-US" : "uz-UZ",
       { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   } catch (e) { return ""; }
 };
 
 // ── Bitta bildirishnoma qatori (memoizatsiya qilingan) ──
-const NotifRow = memo(function NotifRow({ th, n, onOpen, language, t }) {
+const NotifRow = memo(function NotifRow({ th, lg, n, onOpen }) {
   const cat = catOf(n);
   const c = catColor(cat, th, PREMIUM);
   const prio = prioOf(n);
   const unread = !n.read;
-  const activeLg = language || "uz";
   return (
     <button className="ui-press" onClick={() => onOpen(n)}
       style={{ width: "100%", textAlign: "left", fontFamily: "inherit", cursor: "pointer",
@@ -44,8 +42,8 @@ const NotifRow = memo(function NotifRow({ th, n, onOpen, language, t }) {
         </span>
         <span style={{ ...TYPE.caption, color: th.t2, marginTop: 2, lineHeight: 1.45, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{n.text || n.body}</span>
         <span style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginTop: SPACE.s1 + 1 }}>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: c, fontWeight: 700 }}>{NCAT_LABEL[cat] ? (NCAT_LABEL[cat][activeLg] || NCAT_LABEL[cat].uz) : cat}</span>
-          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>· {fmtDate(n.sana, activeLg)}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: c, fontWeight: 700 }}>{NCAT_LABEL[cat] ? (NCAT_LABEL[cat][lg] || NCAT_LABEL[cat].uz) : cat}</span>
+          <span style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3 }}>· {fmtDate(n.sana, lg)}</span>
         </span>
       </span>
     </button>
@@ -59,8 +57,7 @@ export default function NotifCenter({
   setBilimInitialView,
   onApproveTime, onDenyTime,
 }) {
-  const { t, i18n } = useTranslation();
-  const activeLg = i18n.language || lg || "uz";
+  const { t } = useApp();
   const [filter, setFilter] = useState("all");     // all | unread | <cat>
   const [sel, setSel] = useState(null);            // ochilgan bildirishnoma (detail)
 
@@ -74,8 +71,8 @@ export default function NotifCenter({
       if (pr !== 0) return pr;
       return (Date.parse(b.sana) || 0) - (Date.parse(a.sana) || 0);
     });
-    return groupNotifs(arr, lg);
-  }, [notifs, filter, lg]);
+    return groupNotifs(arr);
+  }, [notifs, filter]);
 
   const unreadCount = useMemo(() => notifs.filter(n => !n.read).length, [notifs]);
 
@@ -118,8 +115,8 @@ export default function NotifCenter({
   const needTimeApproval = sel && sel.type === "vaqt_sorov" && sel.status === "pending" && !isKid;
   const isBilimNotif = sel && (sel.type === "bilim_proposal" || sel.type === "bilim_approved" || sel.type === "bilim_done" || sel.type === "bilim_offer" || sel.type === "bilim_offer_accepted" || sel.type === "bilim_offer_rejected" || sel.type === "bilim_offer_countered" || sel.type.startsWith("bilim_"));
   const actLabel = isBilimNotif
-    ? t("notif_go_bilim", { defaultValue: "Bilim Bozoriga o'tish" })
-    : (sel ? catActionLabel(selCat, activeLg) : null);
+    ? t("ncnt_goToKnowledgeMarket")
+    : (sel ? catActionLabel(selCat) : null);
 
   return (
     <div style={{ position: "fixed", top: 0, right: 0, bottom: 0, left: 0, background: "rgba(0,0,0,.5)", zIndex: 998, display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
@@ -127,25 +124,25 @@ export default function NotifCenter({
         {/* Header */}
         <div style={{ position: "sticky", top: 0, background: th.sur, borderBottom: "1px solid " + th.bor, padding: SPACE.s4 + "px " + SPACE.s4 + "px " + SPACE.s2 + "px", zIndex: 2 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s3 }}>
-            <span style={{ ...TYPE.heading, color: th.t1 }}>{t("notif_center_title", { defaultValue: "Bildirishnomalar" })}{unreadCount > 0 ? " · " + unreadCount : ""}</span>
-            <button className="ui-press" onClick={onClose} aria-label={t("close", { defaultValue: "Yopish" })}
+            <span style={{ ...TYPE.heading, color: th.t1 }}>{t("ncnt_title")}{unreadCount > 0 ? " · " + unreadCount : ""}</span>
+            <button className="ui-press" onClick={onClose} aria-label={t("prem_close")}
               style={{ background: th.surH, border: "none", borderRadius: RADIUS.full, width: SPACE.s8 + 2, height: SPACE.s8 + 2, color: th.t1, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 4l10 10M14 4L4 14" stroke={th.t1} strokeWidth="1.6" strokeLinecap="round"/></svg>
             </button>
           </div>
           {/* Filter chips */}
           <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, WebkitOverflowScrolling: "touch" }}>
-            <Chip id="all" label={t("all", { defaultValue: "Hammasi" })} />
-            <Chip id="unread" label={t("unread", { defaultValue: "O'qilmagan" }) + (unreadCount ? " " + unreadCount : "")} />
-            {chips.map(c => <Chip key={c} id={c} label={NCAT_LABEL[c][activeLg] || NCAT_LABEL[c].uz} />)}
+            <Chip id="all" label={t("act_all")} />
+            <Chip id="unread" label={t("ncnt_unread") + (unreadCount ? " " + unreadCount : "")} />
+            {chips.map(c => <Chip key={c} id={c} label={NCAT_LABEL[c][lg] || NCAT_LABEL[c].uz} />)}
           </div>
         </div>
 
         {/* Amallar */}
         {notifs.length > 0 && (
           <div style={{ display: "flex", gap: SPACE.s2, padding: SPACE.s3 + "px " + SPACE.s4 }}>
-            <SecondaryButton th={th} onClick={onMarkAll} style={{ flex: 1, fontSize: TYPE.caption.fontSize }}>{t("notif_mark_all_read", { defaultValue: "Hammasini o'qilgan" })}</SecondaryButton>
-            <SecondaryButton th={th} onClick={onClear} style={{ flex: 1, fontSize: TYPE.caption.fontSize, background: th.rd + ALPHA.soft, color: th.rd, border: "1px solid " + th.rd + ALPHA.strong }}>{t("clear", { defaultValue: "Tozalash" })}</SecondaryButton>
+            <SecondaryButton th={th} onClick={onMarkAll} style={{ flex: 1, fontSize: TYPE.caption.fontSize }}>{t("ncnt_markAllRead")}</SecondaryButton>
+            <SecondaryButton th={th} onClick={onClear} style={{ flex: 1, fontSize: TYPE.caption.fontSize, background: th.rd + ALPHA.soft, color: th.rd, border: "1px solid " + th.rd + ALPHA.strong }}>{t("ncnt_clear")}</SecondaryButton>
           </div>
         )}
 
@@ -155,11 +152,11 @@ export default function NotifCenter({
             <div style={{ paddingTop: SPACE.s16 }}>
               <EmptyState th={th}
                 icon={<svg width="52" height="52" viewBox="0 0 24 24" fill="none"><path d="M12 3a6 6 0 00-6 6v3l-2 3h16l-2-3V9a6 6 0 00-6-6z" stroke={th.t3} strokeWidth="1.3" fill={th.t3} fillOpacity="0.08"/><path d="M10 19a2 2 0 004 0" stroke={th.t3} strokeWidth="1.3" strokeLinecap="round"/></svg>}
-                title={filter === "all" ? t("notif_empty_all_title", { defaultValue: "Bildirishnomalar yo'q" }) : t("notif_empty_filter_title", { defaultValue: "Bu bo'limda yo'q" })}
-                message={t("notif_empty_desc", { defaultValue: "Yangi bildirishnomalar shu yerda ko'rinadi." })} />
+                title={filter === "all" ? t("ncnt_noNotifications") : t("ncnt_nothingHere")}
+                message={t("ncnt_newWillAppear")} />
             </div>
           ) : (
-            list.map(n => <NotifRow key={n.id} th={th} n={n} onOpen={openDetail} language={activeLg} t={t} />)
+            list.map(n => <NotifRow key={n.id} th={th} lg={lg} n={n} onOpen={openDetail} />)
           )}
         </div>
       </div>
@@ -172,34 +169,34 @@ export default function NotifCenter({
               <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
                 <span style={{ width: SPACE.s12, height: SPACE.s12, borderRadius: RADIUS.m, background: selColor + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{catIcon(selCat, selColor)}</span>
                 <div style={{ minWidth: 0 }}>
-                  <Badge th={th} tone={selColor}>{NCAT_LABEL[selCat] ? (NCAT_LABEL[selCat][activeLg] || NCAT_LABEL[selCat].uz) : selCat}</Badge>
-                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginTop: SPACE.s1 }}>{fmtDate(sel.sana, activeLg)}</div>
+                  <Badge th={th} tone={selColor}>{NCAT_LABEL[selCat] ? (NCAT_LABEL[selCat][lg] || NCAT_LABEL[selCat].uz) : selCat}</Badge>
+                  <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginTop: SPACE.s1 }}>{fmtDate(sel.sana, lg)}</div>
                 </div>
               </div>
               <div style={{ ...TYPE.body, color: th.t1, lineHeight: 1.6, marginBottom: SPACE.s4 }}>{sel.text || sel.body}</div>
 
               {needParent ? (
                 <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onConfirmParent && onConfirmParent(n); }} style={{ background: "linear-gradient(135deg," + th.gr + "," + th.gr + ")" }}>
-                  {t("notif_parent_confirm", { defaultValue: "Ha, sotib berdim!" })}
+                  {t("ncnt_yesIBoughtIt")}
                 </PrimaryButton>
               ) : needKid ? (
                 <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onConfirmKid && onConfirmKid(n); }} style={{ background: PREMIUM.grad }}>
-                  {t("notif_kid_confirm", { defaultValue: "Ha, orzuim amalga oshdi!" })}
+                  {t("ncnt_dreamCameTrue")}
                 </PrimaryButton>
               ) : needTimeApproval ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s2 }}>
                   <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onApproveTime && onApproveTime(n); }} style={{ background: "linear-gradient(135deg," + th.gr + "," + th.gr + ")" }}>
-                    {t("notif_time_approve", { defaultValue: "Ha, qo'shimcha vaqt berish" })}
+                    {t("ncnt_giveExtraTime")}
                   </PrimaryButton>
                   <PrimaryButton th={th} onClick={() => { const n = sel; setSel(null); onDenyTime && onDenyTime(n); }} style={{ background: "linear-gradient(135deg," + th.rd + "," + th.rd + ")" }}>
-                    {t("no", { defaultValue: "Yo'q" })}
+                    {t("ncnt_no")}
                   </PrimaryButton>
                 </div>
               ) : actLabel ? (
                 <PrimaryButton th={th} onClick={goAction}>{actLabel}</PrimaryButton>
               ) : null}
 
-              <GhostButton th={th} onClick={() => setSel(null)}>{t("close", { defaultValue: "Yopish" })}</GhostButton>
+              <GhostButton th={th} onClick={() => setSel(null)}>{t("prem_close")}</GhostButton>
             </div>
           )}
         </BottomSheet>
