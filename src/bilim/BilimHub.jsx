@@ -135,7 +135,7 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   const openCat = useCallback((c) => { setCat(c); setView("games"); }, []);
   const openGame = useCallback((g) => {
     if (g && (g.category === "math" || g.id?.startsWith("math/"))) {
-      setCat(catById("math") || { id: "math", name: { uz: "Matematika", ru: "Математика", en: "Math" } });
+      setCat(catById("math") || { id: "math", name: { uz: "Matematika", ru: "Математика", en: "Math", kk: "Математика", ky: "Математика", tg: "Математика", qr: "Matematika" } });
       setView("games");
     } else {
       setGame(g);

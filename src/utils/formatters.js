@@ -97,33 +97,21 @@ export const fmtN = (n, val, sh) => {
   return Math.round(c) + " " + val.b;
 };
 
+// Ilova valyutasi doim so'm (UZS) — faqat "so'm" so'zi tilga tarjima qilinadi, valyuta o'zi emas.
+const MATH_CURRENCY_WORD = { uz: "so'm", ru: "сум", en: "UZS", kk: "сум", ky: "сум", tg: "сум", qr: "sum" };
+const MATH_THOUSAND_WORD = { uz: "ming", ru: "тыс.", en: "thousand", kk: "мың", ky: "миң", tg: "ҳазор", qr: "mıń" };
+
 /** Matematika o'yinlari uchun qisqa pul formati (tilga qarab) */
 export const formatMathCurrency = (value, lang = "uz") => {
   const val = Number(value) || 0;
   const isMultipleOf1000 = val % 1000 === 0 && val >= 1000;
-  
-  if (lang === "uz") {
-    if (isMultipleOf1000) {
-      return `${val / 1000} ming so'm`;
-    }
-    return `${val.toLocaleString("ru-RU")} so'm`;
-  } else if (lang === "ru") {
-    if (isMultipleOf1000) {
-      return `${val / 1000} тыс. руб.`;
-    }
-    return `${val.toLocaleString("ru-RU")} руб.`;
-  } else if (lang === "kk") {
-    if (isMultipleOf1000) {
-      return `${val / 1000} мың тг.`;
-    }
-    return `${val.toLocaleString("ru-RU")} тг.`;
-  } else {
-    // English/default
-    if (isMultipleOf1000) {
-      return `$${val / 1000}k`;
-    }
-    return `$${val.toLocaleString("en-US")}`;
+  const currency = MATH_CURRENCY_WORD[lang] || MATH_CURRENCY_WORD.uz;
+
+  if (isMultipleOf1000) {
+    const thousand = MATH_THOUSAND_WORD[lang] || MATH_THOUSAND_WORD.uz;
+    return `${val / 1000} ${thousand} ${currency}`;
   }
+  return `${val.toLocaleString("ru-RU")} ${currency}`;
 };
 
 /** Matn ichidagi "X so'm" yoki "X 000 so'm" ni tilga moslab o'zgartiradi */
