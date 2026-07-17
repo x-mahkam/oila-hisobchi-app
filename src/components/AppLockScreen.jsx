@@ -4,14 +4,16 @@ import { hp } from "../utils/formatters.js";
 import { SPACE, RADIUS, TYPE, ALPHA, COMP } from "../utils/tokens.js";
 import { NativeBiometric } from "capacitor-native-biometric";
 import { useApp } from "../context/AppContext.jsx";
+import { ConfirmDialog } from "./ui/index.js";
 
 export default function AppLockScreen({ th, uid, onUnlock }) {
-  const { t } = useApp();
+  const { t, logout } = useApp();
   const [pin, setPin] = useState("");
   const [storedPinHash, setStoredPinHash] = useState(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showForgotConfirm, setShowForgotConfirm] = useState(false);
 
   useEffect(() => {
     if (uid) {
@@ -73,6 +75,17 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
         }
       }
     }
+  };
+
+  const confirmResetPin = async () => {
+    setShowForgotConfirm(false);
+    try {
+      const cur = (await db.g("security_" + uid)) || {};
+      await db.s("security_" + uid, { ...cur, pinHash: null, biometricEnabled: false });
+    } catch (e) {
+      console.error("Failed to reset PIN", e);
+    }
+    logout();
   };
 
   if (loading) {
@@ -203,6 +216,35 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
           );
         })}
       </div>
+
+      {/* Forgot PIN */}
+      <button className="ui-press" onClick={() => setShowForgotConfirm(true)}
+        style={{
+          background: "transparent",
+          border: "none",
+          marginTop: SPACE.s6,
+          padding: SPACE.s2,
+          color: th.ac,
+          ...TYPE.caption,
+          fontWeight: 600,
+          textDecoration: "underline",
+          cursor: "pointer",
+          fontFamily: "inherit"
+        }}>
+        {t("alk_forgotPin")}
+      </button>
+
+      <ConfirmDialog
+        th={th}
+        open={showForgotConfirm}
+        onClose={() => setShowForgotConfirm(false)}
+        onConfirm={confirmResetPin}
+        title={t("alk_forgotPin")}
+        message={t("alk_resetPinConfirmBody")}
+        confirmText={t("alk_yes")}
+        cancelText={t("alk_cancel")}
+        danger={false}
+      />
     </div>
   );
 }

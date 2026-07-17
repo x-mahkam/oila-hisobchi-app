@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence } from "firebase/firestore";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { getAuth, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
@@ -14,7 +14,22 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const fbDB = getFirestore(app);
-export const fbAuth = getAuth(app);
+// MUHIM: getAuth(app) WebView'da (Capacitor/Android) persistence turini avtomatik
+// aniqlashda xato qilib, sessiyani xotirada (inMemoryPersistence) saqlashi mumkin —
+// natijada ilova har to'liq qayta ishga tushganda foydalanuvchi tizimdan chiqib
+// qoladi va login/parolni qayta kiritishga majbur bo'ladi. initializeAuth bilan
+// saqlash usulini aniq belgilab beramiz (IndexedDB → localStorage → sessionStorage).
+let _fbAuth;
+try {
+  _fbAuth = initializeAuth(app, {
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence],
+  });
+} catch (_e) {
+  // Vite HMR paytida ikkinchi marta chaqirilsa ("already initialized") yoki
+  // boshqa sabab bilan xato bo'lsa — allaqachon mavjud instance'ni olamiz.
+  _fbAuth = getAuth(app);
+}
+export const fbAuth = _fbAuth;
 
 // Enable Firestore offline persistence (IndexedDB cache)
 if (typeof window !== "undefined") {
@@ -157,50 +172,15 @@ const resolveOila = (k) => {
   if (shouldTagOila(k) && ownerCtx.oilaId) return ownerCtx.oilaId;
   return null;
 };
-export function handleFirestoreError(error, operationType, path) {
-  const errMessage = error instanceof Error ? error.message : String(error);
-  const isPermissionError = errMessage.toLowerCase().includes("permission") || 
-                            errMessage.toLowerCase().includes("insufficient") || 
-                            (error && error.code === "permission-denied");
-  if (isPermissionError) {
-    const errInfo = {
-      error: errMessage,
-      authInfo: {
-        userId: fbAuth.currentUser?.uid || null,
-        email: fbAuth.currentUser?.email || null,
-        emailVerified: fbAuth.currentUser?.emailVerified || null,
-        isAnonymous: fbAuth.currentUser?.isAnonymous || null,
-        tenantId: fbAuth.currentUser?.tenantId || null,
-        providerInfo: fbAuth.currentUser?.providerData?.map(provider => ({
-          providerId: provider.providerId,
-          email: provider.email,
-        })) || []
-      },
-      operationType,
-      path
-    };
-    const finalErrString = JSON.stringify(errInfo);
-    console.error('Firestore Error: ', finalErrString);
-    throw new Error(finalErrString);
-  }
-  throw error;
-}
-
 export const db = {
   // Keshsiz to'g'ridan-to'g'ri o'qish (mavjudligini aniq tekshirish uchun)
   async gFresh(k) {
-    const path = `appdata/${safeKey(k)}`;
-    try {
-      const ref = doc(fbDB, "appdata", safeKey(k));
-      const snap = await getDoc(ref);
-      if (snap.exists()) { const d = snap.data(); return d.v !== undefined ? d.v : null; }
-      return null;
-    } catch (e) {
-      handleFirestoreError(e, "get", path);
-    }
+    const ref = doc(fbDB, "appdata", safeKey(k));
+    const snap = await getDoc(ref);
+    if (snap.exists()) { const d = snap.data(); return d.v !== undefined ? d.v : null; }
+    return null;
   },
   async g(k) {
-    const path = `appdata/${safeKey(k)}`;
     try {
       const ref = doc(fbDB, "appdata", safeKey(k));
       const snap = await getDoc(ref);
@@ -214,11 +194,6 @@ export const db = {
       return null;
     } catch (e) {
       console.error("db.g", k, e);
-      try {
-        handleFirestoreError(e, "get", path);
-      } catch (perr) {
-        throw perr;
-      }
       // Internet yo'q bo'lsa - keshdan o'qish
       try { const c = localStorage.getItem("cache_" + k); if (c) return JSON.parse(c); } catch (e2) {}
       return null;
@@ -232,22 +207,13 @@ export const db = {
   // Rules faqat o'zingizga tegishli kanallarni (masalan "qreq_<sizning tel>")
   // o'qishga ruxsat beradi — begona kanal so'ralsa Firestore o'zi rad etadi.
   async q(chan) {
-    const path = "appdata";
     try {
       const qq = query(collection(fbDB, "appdata"), where("c", "==", chan));
       const snap = await getDocs(qq);
       const out = [];
       snap.forEach(d => { const v = d.data()?.v; if (v !== undefined && v !== null) out.push({ _id: d.id.replace(DB, ""), ...((typeof v === "object") ? v : { v }) }); });
       return out;
-    } catch (e) {
-      console.error("db.q", chan, e);
-      try {
-        handleFirestoreError(e, "list", path);
-      } catch (perr) {
-        throw perr;
-      }
-      return [];
-    }
+    } catch (e) { console.error("db.q", chan, e); return []; }
   },
   // db.all() OLIB TASHLANDI: butun bazani o'qish oddiy foydalanuvchi
   // ilovasida bo'lmasligi kerak. Admin statistikasi alohida admin-sayt
@@ -255,7 +221,6 @@ export const db = {
 
   // meta.c — hujjatni "kanal"ga bog'laydi (db.q bilan o'qish uchun)
   async s(k, v, meta) {
-    const path = `appdata/${safeKey(k)}`;
     try {
       const ref = doc(fbDB, "appdata", safeKey(k));
       const payload = { v: v, t: Date.now() };
@@ -270,22 +235,14 @@ export const db = {
       return true;
     } catch (e) {
       console.error("db.s ERROR:", k, e.code, e.message);
-      handleFirestoreError(e, "write", path);
+      throw e;
     }
   },
   // Hujjatni HAQIQATDA o'chirish (setDoc(null) {v:null} qoldiradi — bu esa yo'q qiladi)
   async del(k) {
-    const path = `appdata/${safeKey(k)}`;
     try {
       await deleteDoc(doc(fbDB, "appdata", safeKey(k)));
-    } catch (e) {
-      console.error("db.del", k, e.code, e.message);
-      try {
-        handleFirestoreError(e, "delete", path);
-      } catch (perr) {
-        throw perr;
-      }
-    }
+    } catch (e) { console.error("db.del", k, e.code, e.message); }
     try { localStorage.removeItem("cache_" + k); } catch (e) {}
     return true;
   }
