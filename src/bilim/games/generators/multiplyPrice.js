@@ -5,11 +5,11 @@
 import { f } from "../../../utils/formatters.js";
 
 const ITEMS = [
-  { uz: "shokolad", ru: "шоколад", en: "chocolate" },
-  { uz: "muzqaymoq", ru: "мороженое", en: "ice cream" },
-  { uz: "ruchka", ru: "ручка", en: "pen" },
-  { uz: "daftar", ru: "тетрадь", en: "notebook" },
-  { uz: "sharbat", ru: "сок", en: "juice" }
+  { uz: "shokolad", ru: "шоколад", en: "chocolate", kk: "шоколад", ky: "шоколад", tg: "шоколад", qr: "shokolad" },
+  { uz: "muzqaymoq", ru: "мороженое", en: "ice cream", kk: "балмұздақ", ky: "балмуздак", tg: "яхмос", qr: "balmuzlıq" },
+  { uz: "ruchka", ru: "ручка", en: "pen", kk: "қалам", ky: "калем", tg: "қалам", qr: "qalam" },
+  { uz: "daftar", ru: "тетрадь", en: "notebook", kk: "дәптер", ky: "дептер", tg: "дафтар", qr: "defter" },
+  { uz: "sharbat", ru: "сок", en: "juice", kk: "шырын", ky: "шире", tg: "шарбат", qr: "sharbat" }
 ];
 
 const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
@@ -62,7 +62,11 @@ export const multiplyPriceGenerator = (difficulty = "easy") => {
     prompt: {
       uz: `${qty} ta ${item.uz}, har biri ${f(price, true)}. Jami qancha?`,
       ru: `${qty} шт. ${item.ru}, по ${f(price, true)} за штуку. Сколько всего?`,
-      en: `${qty} ${item.en}(s), each ${f(price, true)}. What is the total?`
+      en: `${qty} ${item.en}(s), each ${f(price, true)}. What is the total?`,
+      kk: `${qty} дана ${item.kk}, әрқайсысы ${f(price, true)}. Барлығы қанша?`,
+      ky: `${qty} даана ${item.ky}, ар бири ${f(price, true)}. Баары канча?`,
+      tg: `${qty} дона ${item.tg}, ҳар кадом ${f(price, true)}. Ҳамагӣ чанд?`,
+      qr: `${qty} dana ${item.qr}, hár qaysısı ${f(price, true)}. Jámi qansha?`
     },
     answer: f(answer, true),
     options: formattedOptions,

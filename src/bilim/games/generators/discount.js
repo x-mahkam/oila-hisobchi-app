@@ -2,20 +2,20 @@
 //  DISCOUNT GENERATOR — chegirma hisoblash savollari.
 // ═══════════════════════════════════════════════════════════
 const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
-const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[j], a[i]] = [a[j], a[i]]; } return a; };
+const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 
 const ITEMS = [
-  { icon: "🍫", name: { uz: "Shokolad", ru: "Шоколад", en: "Chocolate" } },
-  { icon: "🧸", name: { uz: "O'yinchoq", ru: "Игрушка", en: "Toy" } },
-  { icon: "📚", name: { uz: "Kitob", ru: "Книга", en: "Book" } },
-  { icon: "👕", name: { uz: "Futbolka", ru: "Футболка", en: "T-shirt" } },
-  { icon: "🎒", name: { uz: "Portfel", ru: "Рюкзак", en: "Backpack" } },
-  { icon: "⌚", name: { uz: "Soat", ru: "Часы", en: "Watch" } }
+  { icon: "🍫", name: { uz: "Shokolad", ru: "Шоколад", en: "Chocolate", kk: "Шоколад", ky: "Шоколад", tg: "Шоколад", qr: "Shokolad" } },
+  { icon: "🧸", name: { uz: "O'yinchoq", ru: "Игрушка", en: "Toy", kk: "Ойыншық", ky: "Оюнчук", tg: "Бозича", qr: "Oyınshıq" } },
+  { icon: "📚", name: { uz: "Kitob", ru: "Книга", en: "Book", kk: "Кітап", ky: "Китеп", tg: "Китоб", qr: "Kitap" } },
+  { icon: "👕", name: { uz: "Futbolka", ru: "Футболка", en: "T-shirt", kk: "Футболка", ky: "Футболка", tg: "Футболка", qr: "Futbolka" } },
+  { icon: "🎒", name: { uz: "Portfel", ru: "Рюкзак", en: "Backpack", kk: "Рюкзак", ky: "Рюкзак", tg: "Рюкзак", qr: "Ryukzak" } },
+  { icon: "⌚", name: { uz: "Soat", ru: "Часы", en: "Watch", kk: "Сағат", ky: "Саат", tg: "Соат", qr: "Saǵat" } }
 ];
 
 export const discountGenerator = (difficulty = "easy") => {
   const item = ITEMS[rnd(0, ITEMS.length - 1)];
-  
+
   let origPrice = 10000;
   let discountPct = 10; // in percent
 
@@ -56,7 +56,7 @@ export const discountGenerator = (difficulty = "easy") => {
 
   // Construct standard wrong options
   const opts = new Set([answer]);
-  
+
   // Distractors
   opts.add(origPrice - (origPrice * ((discountPct + 5) / 100))); // wrong percent
   opts.add(origPrice - (origPrice * ((discountPct - 5) / 100))); // wrong percent 2
@@ -73,7 +73,11 @@ export const discountGenerator = (difficulty = "easy") => {
   const prompt = {
     uz: `${item.icon} ${item.name.uz}:\nAsl narxi: ${origPrice.toLocaleString()} so'm.\nChegirma: ${discountPct}%.\nYangi narxni toping!`,
     ru: `${item.icon} ${item.name.ru}:\nИсходная цена: ${origPrice.toLocaleString()} сум.\nСкидка: ${discountPct}%.\nНайдите новую цену!`,
-    en: `${item.icon} ${item.name.en}:\nOriginal price: ${origPrice.toLocaleString()} UZS.\nDiscount: ${discountPct}%.\nFind the new price!`
+    en: `${item.icon} ${item.name.en}:\nOriginal price: ${origPrice.toLocaleString()} UZS.\nDiscount: ${discountPct}%.\nFind the new price!`,
+    kk: `${item.icon} ${item.name.kk}:\nБастапқы бағасы: ${origPrice.toLocaleString()} сум.\nЖеңілдік: ${discountPct}%.\nЖаңа бағаны табыңыз!`,
+    ky: `${item.icon} ${item.name.ky}:\nБаштапкы баасы: ${origPrice.toLocaleString()} сум.\nАрзандатуу: ${discountPct}%.\nЖаңы баасын табыңыз!`,
+    tg: `${item.icon} ${item.name.tg}:\nНархи аслӣ: ${origPrice.toLocaleString()} сум.\nТахфиф: ${discountPct}%.\nНархи навро ёбед!`,
+    qr: `${item.icon} ${item.name.qr}:\nBaslanǵısh bahası: ${origPrice.toLocaleString()} sum.\nShegirim: ${discountPct}%.\nJańa bahanı tabıń!`
   };
 
   const options = sortedOpts.map(val => ({
@@ -81,7 +85,11 @@ export const discountGenerator = (difficulty = "easy") => {
     text: {
       uz: `${val.toLocaleString()} so'm`,
       ru: `${val.toLocaleString()} сум`,
-      en: `${val.toLocaleString()} UZS`
+      en: `${val.toLocaleString()} UZS`,
+      kk: `${val.toLocaleString()} сум`,
+      ky: `${val.toLocaleString()} сум`,
+      tg: `${val.toLocaleString()} сум`,
+      qr: `${val.toLocaleString()} sum`
     }
   }));
 

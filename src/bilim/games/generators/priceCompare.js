@@ -7,8 +7,8 @@ const shuffle = (arr) => { const a = [...arr]; for (let i = a.length - 1; i > 0;
 const SCENARIOS = [
   {
     icon: "🥛",
-    name: { uz: "Sut", ru: "Молоко", en: "Milk" },
-    unit: { uz: "litr", ru: "л", en: "L" },
+    name: { uz: "Sut", ru: "Молоко", en: "Milk", kk: "Сүт", ky: "Сүт", tg: "Шир", qr: "Süt" },
+    unit: { uz: "litr", ru: "л", en: "L", kk: "л", ky: "л", tg: "литр", qr: "litr" },
     easy: [
       { q1: 1, p1: 10000, q2: 2, p2: 18000 }, // B is cheaper: 9k vs 10k
       { q1: 1, p1: 12000, q2: 3, p2: 30000 }, // B is cheaper: 10k vs 12k
@@ -24,8 +24,8 @@ const SCENARIOS = [
   },
   {
     icon: "🌾",
-    name: { uz: "Guruch", ru: "Рис", en: "Rice" },
-    unit: { uz: "kg", ru: "кг", en: "kg" },
+    name: { uz: "Guruch", ru: "Рис", en: "Rice", kk: "Күріш", ky: "Күрүч", tg: "Биринҷ", qr: "Kúrish" },
+    unit: { uz: "kg", ru: "кг", en: "kg", kk: "кг", ky: "кг", tg: "кг", qr: "kg" },
     easy: [
       { q1: 1, p1: 15000, q2: 2, p2: 26000 }, // B is cheaper: 13k vs 15k
       { q1: 1, p1: 16000, q2: 5, p2: 70000 }, // B is cheaper: 14k vs 16k
@@ -41,8 +41,8 @@ const SCENARIOS = [
   },
   {
     icon: "🧼",
-    name: { uz: "Sovun", ru: "Мыло", en: "Soap" },
-    unit: { uz: "dona", ru: "шт", en: "pcs" },
+    name: { uz: "Sovun", ru: "Мыло", en: "Soap", kk: "Сабын", ky: "Самын", tg: "Собун", qr: "Sabın" },
+    unit: { uz: "dona", ru: "шт", en: "pcs", kk: "дана", ky: "даана", tg: "дона", qr: "dana" },
     easy: [
       { q1: 1, p1: 4000, q2: 3, p2: 9000 }, // B is cheaper: 3k vs 4k
       { q1: 1, p1: 5000, q2: 4, p2: 16000 }, // B is cheaper: 4k vs 5k
@@ -58,8 +58,8 @@ const SCENARIOS = [
   },
   {
     icon: "🧃",
-    name: { uz: "Sharbat", ru: "Сок", en: "Juice" },
-    unit: { uz: "litr", ru: "л", en: "L" },
+    name: { uz: "Sharbat", ru: "Сок", en: "Juice", kk: "Шырын", ky: "Шире", tg: "Шарбат", qr: "Sharbat" },
+    unit: { uz: "litr", ru: "л", en: "L", kk: "л", ky: "л", tg: "литр", qr: "litr" },
     easy: [
       { q1: 1, p1: 12000, q2: 2, p2: 20000 }, // B is cheaper: 10k vs 12k
       { q1: 1, p1: 15000, q2: 3, p2: 39000 }, // B is cheaper: 13k vs 15k
@@ -103,14 +103,18 @@ export const priceCompareGenerator = (difficulty = "easy") => {
   const prompt = {
     uz: `${sc.icon} ${sc.name.uz}:\n🔹 A taklif: ${itemA.q} ${sc.unit.uz} — ${itemA.p.toLocaleString()} so'm\n🔹 B taklif: ${itemB.q} ${sc.unit.uz} — ${itemB.p.toLocaleString()} so'm`,
     ru: `${sc.icon} ${sc.name.ru}:\n🔹 Опция А: ${itemA.q} ${sc.unit.ru} — ${itemA.p.toLocaleString()} сум\n🔹 Опция Б: ${itemB.q} ${sc.unit.ru} — ${itemB.p.toLocaleString()} сум`,
-    en: `${sc.icon} ${sc.name.en}:\n🔹 Offer A: ${itemA.q} ${sc.unit.en} — ${itemA.p.toLocaleString()} UZS\n🔹 Offer B: ${itemB.q} ${sc.unit.en} — ${itemB.p.toLocaleString()} UZS`
+    en: `${sc.icon} ${sc.name.en}:\n🔹 Offer A: ${itemA.q} ${sc.unit.en} — ${itemA.p.toLocaleString()} UZS\n🔹 Offer B: ${itemB.q} ${sc.unit.en} — ${itemB.p.toLocaleString()} UZS`,
+    kk: `${sc.icon} ${sc.name.kk}:\n🔹 A ұсынысы: ${itemA.q} ${sc.unit.kk} — ${itemA.p.toLocaleString()} сум\n🔹 B ұсынысы: ${itemB.q} ${sc.unit.kk} — ${itemB.p.toLocaleString()} сум`,
+    ky: `${sc.icon} ${sc.name.ky}:\n🔹 A сунушу: ${itemA.q} ${sc.unit.ky} — ${itemA.p.toLocaleString()} сум\n🔹 B сунушу: ${itemB.q} ${sc.unit.ky} — ${itemB.p.toLocaleString()} сум`,
+    tg: `${sc.icon} ${sc.name.tg}:\n🔹 Пешниҳоди A: ${itemA.q} ${sc.unit.tg} — ${itemA.p.toLocaleString()} сум\n🔹 Пешниҳоди B: ${itemB.q} ${sc.unit.tg} — ${itemB.p.toLocaleString()} сум`,
+    qr: `${sc.icon} ${sc.name.qr}:\n🔹 A usınıs: ${itemA.q} ${sc.unit.qr} — ${itemA.p.toLocaleString()} sum\n🔹 B usınıs: ${itemB.q} ${sc.unit.qr} — ${itemB.p.toLocaleString()} sum`
   };
 
   const options = [
-    { id: "A", text: { uz: "A taklif arzonroq", ru: "Опция А выгоднее", en: "Offer A is cheaper" } },
-    { id: "B", text: { uz: "B taklif arzonroq", ru: "Опция Б выгоднее", en: "Offer B is cheaper" } },
-    { id: "equal", text: { uz: "Ikkalasi bir xil", ru: "Оба одинаковы", en: "Both are the same" } },
-    { id: "none", text: { uz: "Aniqmas", ru: "Невозможно определить", en: "Cannot determine" } }
+    { id: "A", text: { uz: "A taklif arzonroq", ru: "Опция А выгоднее", en: "Offer A is cheaper", kk: "A ұсынысы тиімдірек", ky: "A сунушу пайдалуу", tg: "Пешниҳоди A арзонтар", qr: "A usınıs arzanıraq" } },
+    { id: "B", text: { uz: "B taklif arzonroq", ru: "Опция Б выгоднее", en: "Offer B is cheaper", kk: "B ұсынысы тиімдірек", ky: "B сунушу пайдалуу", tg: "Пешниҳоди B арзонтар", qr: "B usınıs arzanıraq" } },
+    { id: "equal", text: { uz: "Ikkalasi bir xil", ru: "Оба одинаковы", en: "Both are the same", kk: "Екеуі бірдей", ky: "Экөө тең", tg: "Ҳарду якхела", qr: "Ekewi birdey" } },
+    { id: "none", text: { uz: "Aniqmas", ru: "Невозможно определить", en: "Cannot determine", kk: "Анықталмайды", ky: "Аныктоо мүмкүн эмес", tg: "Муайян карда намешавад", qr: "Anıqlanbaydı" } }
   ];
 
   return {

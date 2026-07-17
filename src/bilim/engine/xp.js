@@ -17,12 +17,12 @@ export const LEVEL_THRESHOLDS = (() => {
 
 // ── Unvonlar (level oralig'i bo'yicha) ──
 export const RANKS = [
-  { max: 3,  uz: "Yangi boshlovchi", ru: "Новичок",   en: "Beginner",  color: "#94a3b8" },
-  { max: 6,  uz: "O'rganuvchi",      ru: "Ученик",     en: "Learner",   color: "#22c55e" },
-  { max: 9,  uz: "Bilimdon",         ru: "Знаток",     en: "Skilled",   color: "#3b82f6" },
-  { max: 13, uz: "Usta",            ru: "Мастер",     en: "Master",    color: "#8b5cf6" },
-  { max: 17, uz: "Ekspert",          ru: "Эксперт",    en: "Expert",    color: "#f59e0b" },
-  { max: 20, uz: "Afsona",           ru: "Легенда",    en: "Legend",    color: "#06b6d4" },
+  { max: 3,  uz: "Yangi boshlovchi", ru: "Новичок",   en: "Beginner",  kk: "Жаңадан бастаушы", ky: "Жаңы баштоочу", tg: "Навомӯз",   qr: "Jańadan baslawshı", color: "#94a3b8" },
+  { max: 6,  uz: "O'rganuvchi",      ru: "Ученик",     en: "Learner",   kk: "Үйренуші",         ky: "Үйрөнүүчү",     tg: "Омӯзанда",  qr: "Úyreniwshi",        color: "#22c55e" },
+  { max: 9,  uz: "Bilimdon",         ru: "Знаток",     en: "Skilled",   kk: "Білгір",           ky: "Билерман",      tg: "Донанда",   qr: "Bilgir",             color: "#3b82f6" },
+  { max: 13, uz: "Usta",            ru: "Мастер",     en: "Master",    kk: "Шебер",            ky: "Уста",           tg: "Уста",      qr: "Usta",               color: "#8b5cf6" },
+  { max: 17, uz: "Ekspert",          ru: "Эксперт",    en: "Expert",    kk: "Сарапшы",          ky: "Эксперт",       tg: "Коршинос",  qr: "Ekspert",            color: "#f59e0b" },
+  { max: 20, uz: "Afsona",           ru: "Легенда",    en: "Legend",    kk: "Аңыз",             ky: "Легенда",       tg: "Афсона",    qr: "Legenda",            color: "#06b6d4" },
 ];
 
 /** XP dan level + progress hisoblash. */

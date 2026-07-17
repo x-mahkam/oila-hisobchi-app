@@ -72,11 +72,11 @@ const DashSkeleton = memo(function DashSkeleton({ th }) {
 
 // ── HERO: salomlashish + oila balansi + oy daromad/xarajat + o'zgarish ──
 // Bespoke gradient karta (DS 2.8: har sahifada 1 gradient — shu).
-const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScope, delta, bugunX }) {
+const Hero = memo(function Hero({ th, t, f, ism, bal, jD, jX, myBal, famScope, delta, bugunX }) {
   const shown = useCountUp(bal);
   const neg = bal < 0;
   const h = new Date().getHours();
-  const greet = h < 6 ? (lg === "uz" ? "Xayrli tun" : "Good night") : h < 12 ? (lg === "uz" ? "Xayrli tong" : "Good morning") : h < 18 ? (lg === "uz" ? "Xayrli kun" : "Good afternoon") : (lg === "uz" ? "Xayrli kech" : "Good evening");
+  const greet = h < 6 ? t("dsh_greetNight") : h < 12 ? t("dsh_greetMorning") : h < 18 ? t("dsh_greetAfternoon") : t("dsh_greetEvening");
   const dUp = delta > 0, dZero = delta === 0;
   const heroBg = neg
     ? "linear-gradient(135deg," + th.rd + "," + th.rd + ")"
@@ -93,21 +93,21 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
         <div style={{ ...TYPE.title, color: "#fff", marginBottom: SPACE.s4 }}>{ism || ""}</div>
         {/* 2. Umumiy (oila) balansi */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: SPACE.s1 }}>
-          <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.72)" }}>{famScope ? (lg === "uz" ? "Oila balansi (bu oy)" : "Family balance (this month)") : (lg === "uz" ? "Mening balansim (bu oy)" : "My balance (this month)")}</div>
-          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px" }}>{lg === "uz" ? "Bugun" : "Today"}: -{f(bugunX, true)}</div>}
+          <div style={{ ...TYPE.caption, color: "rgba(255,255,255,0.72)" }}>{famScope ? t("dsh_familyBalanceMonth") : t("dsh_myBalanceMonth")}</div>
+          {bugunX > 0 && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 700, color: "#fff", background: "rgba(0,0,0,0.18)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px" }}>{t("dsh_today")}: -{f(bugunX, true)}</div>}
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: SPACE.s2, flexWrap: "wrap", marginBottom: neg ? SPACE.s2 : SPACE.s4 }}>
           <div style={{ ...TYPE.display, color: "#fff", fontVariantNumeric: "tabular-nums" }}>{shown < 0 ? "-" : ""}{f(Math.abs(shown), true)}</div>
           {/* 5. Balans o'zgarishi (o'tgan oyga nisbatan) */}
           {!dZero && (
             <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, fontWeight: 800, color: "#fff", background: dUp ? "rgba(34,197,94,0.35)" : "rgba(0,0,0,0.22)", borderRadius: RADIUS.s, padding: SPACE.s1 + "px " + SPACE.s2 + "px", display: "flex", alignItems: "center", gap: SPACE.s1 }}>
-              {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: OPACITY.pressed }}>{lg === "uz" ? "o'tgan oyga nisb." : "vs last month"}</span>
+              {dUp ? "\u2191" : "\u2193"} {f(Math.abs(delta), true)} <span style={{ fontWeight: 500, opacity: OPACITY.pressed }}>{t("dsh_vsLastMonth")}</span>
             </div>
           )}
         </div>
         {neg && (
           <div style={{ background: "rgba(255,255,255,0.15)", borderRadius: RADIUS.s, padding: SPACE.s2 + "px " + SPACE.s3 + "px", marginBottom: SPACE.s3, ...TYPE.caption, fontWeight: 600, color: "#fff" }}>
-            {lg === "uz" ? "Balans manfiy! Avval daromad kiriting." : "Negative balance! Add income first."}
+            {t("dsh_negativeBalanceWarn")}
           </div>
         )}
         {/* 3-4. Shu oy daromad / xarajat */}
@@ -121,7 +121,7 @@ const Hero = memo(function Hero({ th, lg, t, f, ism, bal, jD, jX, myBal, famScop
             <div style={{ ...TYPE.subtitle, fontWeight: 800, color: "#fff", fontVariantNumeric: "tabular-nums" }}>-{f(jX, true)}</div>
           </div>
         </div>
-        {famScope && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.62)", marginTop: SPACE.s2 }}>{lg === "uz" ? "Mening balansim" : "My balance"}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
+        {famScope && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.62)", marginTop: SPACE.s2 }}>{t("dsh_myBalance")}: {myBal < 0 ? "-" : ""}{f(Math.abs(myBal), true)}</div>}
       </div>
     </div>
   );
@@ -436,7 +436,7 @@ export default function DashboardPage({
             setShowBilim={setShowBilim} setScr={setScr} setPTab={setPTab}
             setShowAddVazifa={setShowAddVazifa}
           />
-          {showGames && <KidsGames user={user} lg={lg} addStar={addStar} onClose={() => setShowGames(false)} />}
+          {showGames && <KidsGames user={user} addStar={addStar} onClose={() => setShowGames(false)} />}
         </>
       )}
       {/* ===== KATTALAR BOSH SAHIFASI (yangi oqim: 1-11) ===== */}
@@ -444,7 +444,7 @@ export default function DashboardPage({
       {!isKid && oila && (
         <div>
           {/* 1-5. Hero: salomlashish, oila balansi, daromad, xarajat, o'zgarish */}
-          <Hero th={th} lg={lg} t={t} f={f} ism={user?.ism} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
+          <Hero th={th} t={t} f={f} ism={user?.ism} bal={heroBal} jD={heroD} jX={heroX} myBal={myBal} famScope={canSeeReport} delta={delta} bugunX={bugunX} />
 
           {/* In-App Alerts for parent */}
           {pct >= 80 && (
