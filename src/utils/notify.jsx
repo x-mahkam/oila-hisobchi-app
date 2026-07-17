@@ -13,14 +13,14 @@ import i18n from "../i18n/index.js";
 export const NCATS = ["goal", "budget", "debt", "family", "garden", "premium", "ai", "reminder"];
 
 export const NCAT_LABEL = {
-  goal:     { get uz() { return i18n.t("ncat_label_goal", { defaultValue: "Maqsad" }); }, get ru() { return i18n.t("ncat_label_goal", { defaultValue: "Цель" }); }, get en() { return i18n.t("ncat_label_goal", { defaultValue: "Goal" }); } },
-  budget:   { get uz() { return i18n.t("ncat_label_budget", { defaultValue: "Byudjet" }); }, get ru() { return i18n.t("ncat_label_budget", { defaultValue: "Бюджет" }); }, get en() { return i18n.t("ncat_label_budget", { defaultValue: "Budget" }); } },
-  debt:     { get uz() { return i18n.t("ncat_label_debt", { defaultValue: "Qarz" }); }, get ru() { return i18n.t("ncat_label_debt", { defaultValue: "Долг" }); }, get en() { return i18n.t("ncat_label_debt", { defaultValue: "Debt" }); } },
-  family:   { get uz() { return i18n.t("ncat_label_family", { defaultValue: "Oila" }); }, get ru() { return i18n.t("ncat_label_family", { defaultValue: "Семья" }); }, get en() { return i18n.t("ncat_label_family", { defaultValue: "Family" }); } },
-  garden:   { get uz() { return i18n.t("ncat_label_garden", { defaultValue: "Bog'" }); }, get ru() { return i18n.t("ncat_label_garden", { defaultValue: "Сад" }); }, get en() { return i18n.t("ncat_label_garden", { defaultValue: "Garden" }); } },
-  premium:  { get uz() { return i18n.t("ncat_label_premium", { defaultValue: "Premium" }); }, get ru() { return i18n.t("ncat_label_premium", { defaultValue: "Premium" }); }, get en() { return i18n.t("ncat_label_premium", { defaultValue: "Premium" }); } },
-  ai:       { get uz() { return i18n.t("ncat_label_ai", { defaultValue: "AI" }); }, get ru() { return i18n.t("ncat_label_ai", { defaultValue: "AI" }); }, get en() { return i18n.t("ncat_label_ai", { defaultValue: "AI" }); } },
-  reminder: { get uz() { return i18n.t("ncat_label_reminder", { defaultValue: "Eslatma" }); }, get ru() { return i18n.t("ncat_label_reminder", { defaultValue: "Напоминание" }); }, get en() { return i18n.t("ncat_label_reminder", { defaultValue: "Reminder" }); } },
+  goal:     { uz: "Maqsad",   ru: "Цель",       en: "Goal",     kk: "Мақсат",   ky: "Максат",   tg: "Ҳадаф",     qr: "Maqset" },
+  budget:   { uz: "Byudjet",  ru: "Бюджет",     en: "Budget",   kk: "Бюджет",   ky: "Бюджет",   tg: "Буҷет",     qr: "Byudjet" },
+  debt:     { uz: "Qarz",     ru: "Долг",       en: "Debt",     kk: "Қарыз",    ky: "Карыз",    tg: "Қарз",      qr: "Qarız" },
+  family:   { uz: "Oila",     ru: "Семья",      en: "Family",   kk: "Отбасы",   ky: "Үй-бүлө",  tg: "Оила",      qr: "Shańaraq" },
+  garden:   { uz: "Bog'",     ru: "Сад",        en: "Garden",   kk: "Бақ",      ky: "Бак",      tg: "Боғ",       qr: "Baǵ" },
+  premium:  { uz: "Premium",  ru: "Premium",    en: "Premium",  kk: "Premium",  ky: "Premium",  tg: "Premium",   qr: "Premium" },
+  ai:       { uz: "AI",       ru: "AI",         en: "AI",       kk: "AI",       ky: "AI",       tg: "AI",        qr: "AI" },
+  reminder: { uz: "Eslatma",  ru: "Напоминание",en: "Reminder", kk: "Ескерту",  ky: "Эскертүү", tg: "Ёдрасонӣ",  qr: "Eskertiw" },
 };
 
 // ── Toifa rangi — FAQAT tokenlardan (th orqali) ──────────────
@@ -82,15 +82,15 @@ export const catAction = (cat) => ({
   garden: "profil", premium: "profil", ai: "hisobot", reminder: null,
 }[cat] || null);
 
-export const catActionLabel = (cat, lg) => {
+export const catActionLabel = (cat) => {
   return {
-    goal:    i18n.t("cat_action_label_goal", { defaultValue: "Maqsadga o'tish" }),
-    budget:  i18n.t("cat_action_label_budget", { defaultValue: "Hisobotni ochish" }),
-    debt:    i18n.t("cat_action_label_debt", { defaultValue: "Qarzlar" }),
-    family:  i18n.t("cat_action_label_family", { defaultValue: "Vazifalar" }),
-    garden:  i18n.t("cat_action_label_garden", { defaultValue: "Bog'ni ochish" }),
-    premium: i18n.t("cat_action_label_premium", { defaultValue: "Premium" }),
-    ai:      i18n.t("cat_action_label_ai", { defaultValue: "Foydali tahlil" }),
+    goal:    i18n.t("ntf_goToGoal"),
+    budget:  i18n.t("ntf_openReport"),
+    debt:    i18n.t("ntf_debts"),
+    family:  i18n.t("ntf_tasks"),
+    garden:  i18n.t("ntf_openGarden"),
+    premium: "Premium",
+    ai:      i18n.t("ntf_usefulAnalysis"),
   }[cat] || null;
 };
 
@@ -115,7 +115,7 @@ export const catIcon = (cat, c) => ({
 ));
 
 // ── Smart grouping: bir xil (cat,type) ketma-ketligini yig'ish ─
-export const groupNotifs = (list, lg = "uz") => {
+export const groupNotifs = (list) => {
   const out = [];
   let i = 0;
   while (i < list.length) {
@@ -128,8 +128,8 @@ export const groupNotifs = (list, lg = "uz") => {
       if (cnt >= 3) {
         out.push({
           ...n, _group: true, _count: cnt, read: !anyUnread,
-          title: i18n.t("group_notif_title", { count: cnt, defaultValue: `${cnt} ta vazifa bajarildi` }),
-          text: i18n.t("group_notif_text", { defaultValue: "Ko'rish uchun bosing" }),
+          title: i18n.t("ntf_kidCompletedTasks", { n: cnt }),
+          text: i18n.t("ntf_tapToView"),
         });
         i = j; continue;
       }
