@@ -38,4 +38,11 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Push bildirishnomalarni ko'rsatish uchun (Android 13 / API 33+ da shart,
+         aks holda tizim ruxsatni so'rashning o'zi ishlamaydi va bildirishnomalar
+         hech qachon ko'rinmaydi). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Biometrik autentifikatsiya (barmoq izi / yuz tanish) uchun. -->
+    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 </manifest>
