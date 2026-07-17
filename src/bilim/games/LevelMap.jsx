@@ -2,6 +2,7 @@
 //  LEVEL MAP — Vertical Roadmap of Levels (Math, Logic, Memory)
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useMemo } from "react";
+import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, PREMIUM, PALETTE, MOTION } from "../../utils/tokens.js";
 import { MATH_LEVELS } from "./levels/mathLevels.js";
@@ -23,16 +24,8 @@ const lockIco = (color, s = 14) => (
 );
 
 export default function LevelMap({ user, lg = "uz", dark, levels, subject = "math", title, onSelectLevel, onBack }) {
+  const { t } = useApp();
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
-  const ru = lg === "ru";
-  const en = lg === "en";
-
-  const L = (uzVal, ruVal, enVal) => {
-    if (ru) return ruVal || uzVal;
-    if (en) return enVal || uzVal;
-    return uzVal;
-  };
 
   const [userLevels, setUserLevels] = useState({});
   const [selectedLevel, setSelectedLevel] = useState(null);
@@ -181,7 +174,7 @@ export default function LevelMap({ user, lg = "uz", dark, levels, subject = "mat
 
   return (
     <div style={{ paddingBottom: SPACE.s8 }}>
-      <PageHeader th={th} title={title || L("Matematika Yo'li", "Карта Математики", "Math Roadmap")} onBack={onBack} />
+      <PageHeader th={th} title={title || t("gam_lm_mathRoadmap")} onBack={onBack} />
 
       {/* Level Path Way Card with dynamic kid design & subject-themed background */}
       <div className={gridClass} style={{
@@ -355,7 +348,7 @@ export default function LevelMap({ user, lg = "uz", dark, levels, subject = "mat
                       whiteSpace: "nowrap",
                       border: "1px solid rgba(255,255,255,0.3)"
                     }}>
-                      {L("O'YNA", "ИГРАТЬ", "PLAY")}
+                      {t("gam_playBadge")}
                     </div>
                     <div style={{
                       width: 0,
@@ -421,10 +414,10 @@ export default function LevelMap({ user, lg = "uz", dark, levels, subject = "mat
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s3 }}>
             <div>
               <h3 style={{ ...TYPE.title, color: th.t1, margin: 0 }}>
-                {uz ? `${selectedLevel.id}-bosqich` : lg === "ru" ? `Уровень ${selectedLevel.id}` : `Level ${selectedLevel.id}`}
+                {t("gam_levelN", { n: selectedLevel.id })}
               </h3>
               <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0" }}>
-                {L("Turi", "Тип", "Type")}: <span style={{ fontWeight: 700, color: th.ac }}>{getGameName(selectedLevel.game)}</span>
+                {t("gam_lm_type")}: <span style={{ fontWeight: 700, color: th.ac }}>{getGameName(selectedLevel.game)}</span>
               </p>
             </div>
             <button className="ui-press" onClick={() => setSelectedLevel(null)} style={{ border: "none", background: "none", fontSize: 24, fontWeight: "bold", color: th.t3, cursor: "pointer" }}>×</button>
@@ -435,37 +428,37 @@ export default function LevelMap({ user, lg = "uz", dark, levels, subject = "mat
               <>
                 <div style={{ flex: 2, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{selectedLevel.pairCount}</div>
-                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Juftliklar (juft)" : lg === "ru" ? "Пар" : "Pairs"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_lm_pairs")}</div>
                 </div>
                 <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>
                     {userLevels[selectedLevel.id]?.stars || 0}/3
                   </div>
-                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Yulduzlar" : lg === "ru" ? "Звезды" : "Stars"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_stars")}</div>
                 </div>
               </>
             ) : (
               <>
                 <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{selectedLevel.questionCount}</div>
-                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Savollar" : lg === "ru" ? "Вопросы" : "Questions"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_questions")}</div>
                 </div>
                 <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{selectedLevel.passPct}%</div>
-                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "O'tish" : lg === "ru" ? "Порог" : "Pass limit"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_lm_passShort")}</div>
                 </div>
                 <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                   <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>
                     {userLevels[selectedLevel.id]?.stars || 0}/3
                   </div>
-                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Yulduzlar" : lg === "ru" ? "Звезды" : "Stars"}</div>
+                  <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_stars")}</div>
                 </div>
               </>
             )}
           </div>
 
           <PrimaryButton th={th} onClick={() => onSelectLevel(selectedLevel)}>
-            {uz ? "Bosqichni boshlash" : lg === "ru" ? "Начать уровень" : "Start Level"}
+            {t("gam_startLevel")}
           </PrimaryButton>
         </div>
       )}

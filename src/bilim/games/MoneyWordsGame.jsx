@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../../utils/tokens.js";
 import { addCoins, logGameSession } from "../engine/persist.js";
@@ -72,11 +73,11 @@ const iconMap = {
 };
 
 export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "english/money-words", name = "", onBack }) {
+  const { t } = useApp();
   useEffect(() => {
     injectCss();
   }, []);
 
-  const uz = lg === "uz";
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [phase, setPhase] = useState("intro"); // intro | countdown | play | result
@@ -230,7 +231,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
   if (phase === "intro") {
     return (
       <div>
-        <PageHeader th={th} title={uz ? "Pul lug'ati" : lg === "ru" ? "Словарь денег" : "Money Words"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_mw_title")} onBack={onBack} />
         <div style={{ padding: SPACE.s4, textAlign: "center", display: "flex", flexDirection: "column", gap: SPACE.s4 }}>
           <div style={{
             width: 80,
@@ -247,13 +248,9 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
           </div>
 
           <div>
-            <h2 style={{ ...TYPE.heading, color: th.t1 }}>{uz ? "Inglizcha Pul Lug'ati" : lg === "ru" ? "Английский словарь денег" : "English Money Words"}</h2>
+            <h2 style={{ ...TYPE.heading, color: th.t1 }}>{t("gam_mw_heading")}</h2>
             <p style={{ ...TYPE.caption, color: th.t2, marginTop: SPACE.s2, lineHeight: 1.4 }}>
-              {uz 
-                ? "Pul bilan bog'liq eng muhim inglizcha so'zlarni rasmlar va ovozli talaffuz yordamida oson o'rganing!" 
-                : lg === "ru"
-                ? "Учите самые важные английские слова о деньгах с картинками и правильным произношением!"
-                : "Learn the most important English words about money with pictures and voice pronunciation!"}
+              {t("gam_mw_intro")}
             </p>
           </div>
 
@@ -262,21 +259,17 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
               <Volume2 size={24} color={th.ac} style={{ flexShrink: 0 }} />
               <div>
                 <div style={{ ...TYPE.subtitle, fontSize: 14, color: th.t1, fontWeight: 700 }}>
-                  {uz ? "Ovozli talaffuzli ta'lim" : lg === "ru" ? "Обучение с озвучкой" : "Audio-guided learning"}
+                  {t("gam_mw_audioGuided")}
                 </div>
                 <div style={{ ...TYPE.caption, fontSize: 12, color: th.t2, marginTop: 2 }}>
-                  {uz 
-                    ? "Har bir savol ko'rsatilganda so'z avtomatik ravishda ingliz tilida talaffuz qilinadi. Eshitish tugmasi orqali istalgancha takrorlang!" 
-                    : lg === "ru"
-                    ? "При показе вопроса слово автоматически произносится на английском. Повторяйте сколько угодно кнопкой звука!"
-                    : "Words are spoken aloud in English on each question. Tap the audio button to replay anytime!"}
+                  {t("gam_mw_audioDesc")}
                 </div>
               </div>
             </div>
           </AppCard>
 
           <PrimaryButton th={th} onClick={startGame} style={{ marginTop: SPACE.s2 }}>
-            {uz ? "O'yinni boshlash" : lg === "ru" ? "Начать игру" : "Start Game"}
+            {t("gam_mw_startGame")}
           </PrimaryButton>
         </div>
       </div>
@@ -299,7 +292,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
           <span style={{ fontSize: 48, fontWeight: 800, color: "#fff" }}>{count}</span>
         </div>
         <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: SPACE.s6 }}>
-          {uz ? "Tayyor bo'ling!" : lg === "ru" ? "Приготовьтесь!" : "Get ready!"}
+          {t("gam_getReady")}
         </div>
       </div>
     );
@@ -313,7 +306,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
 
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : lg === "ru" ? "Результат" : "Result"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_result")} onBack={onBack} />
         
         <div style={{
           background: "linear-gradient(135deg," + (finalStars > 0 ? th.gr : th.rd) + "," + th.ac2 + ")",
@@ -329,17 +322,17 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
             ))}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-            {finalStars > 0 ? (uz ? "Ajoyib natija!" : lg === "ru" ? "Отличный результат!" : "Great Job!") : (uz ? "Yana bir bor urinib ko'ring!" : lg === "ru" ? "Попробуйте еще раз!" : "Try again!")}
+            {finalStars > 0 ? t("gam_mul_greatJob") : t("gam_mul_tryAgain")}
           </div>
           <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>
-            {score.correct}/10 {uz ? "to'g'ri" : lg === "ru" ? "верно" : "correct"}
+            {score.correct}/10 {t("gam_correctSuffix")}
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={score.correct} label={uz ? "To'g'ri" : lg === "ru" ? "Верно" : "Correct"} tone={th.gr} />
-          <StatCard th={th} value={score.wrong} label={uz ? "Xato" : lg === "ru" ? "Ошибки" : "Wrong"} tone={th.rd} />
-          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={uz ? "Vaqt" : lg === "ru" ? "Время" : "Time"} tone={th.ac} />
+          <StatCard th={th} value={score.correct} label={t("gam_correct")} tone={th.gr} />
+          <StatCard th={th} value={score.wrong} label={t("gam_wrong")} tone={th.rd} />
+          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={t("gam_time")} tone={th.ac} />
           <StatCard th={th} value={"x" + maxStreak} label="Combo" tone={th.am} />
         </div>
 
@@ -348,7 +341,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
             <Coins size={24} color={PREMIUM.gold} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Topilgan coinlar" : lg === "ru" ? "Получено монет" : "Coins earned"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{t("gam_sav_coinsReceived")}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{coinsEarned}</div>
           </div>
         </AppCard>
@@ -358,13 +351,13 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
             <Trophy size={24} color={th.ac2} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Tajriba (XP)" : lg === "ru" ? "Опыт (XP)" : "Experience (XP)"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{t("gam_experienceXp")}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{xpEarned}</div>
           </div>
         </AppCard>
 
         <PrimaryButton th={th} onClick={startGame} style={{ marginTop: SPACE.s2 }}>
-          {uz ? "Qayta o'ynash" : lg === "ru" ? "Играть снова" : "Play again"}
+          {t("gam_playAgain")}
         </PrimaryButton>
         <button className="ui-press" onClick={onBack} style={{
           width: "100%",
@@ -377,7 +370,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
           fontFamily: "inherit",
           fontWeight: 600
         }}>
-          {uz ? "Orqaga" : lg === "ru" ? "Назад" : "Back"}
+          {t("gam_div_back")}
         </button>
       </div>
     );
@@ -430,7 +423,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
         {/* Translation text */}
         <div>
           <span style={{ ...TYPE.caption, color: th.t3, textTransform: "uppercase", tracking: 1.5, fontSize: 11 }}>
-            {uz ? "Tarjimasi:" : lg === "ru" ? "Перевод:" : "Translation:"}
+            {t("gam_mw_translation")}
           </span>
           <div style={{ ...TYPE.heading, fontSize: 26, color: th.t1, fontWeight: 800, marginTop: 4 }}>
             {curWord[lg] || curWord.uz}
@@ -453,7 +446,7 @@ export default function MoneyWordsGame({ user, lg = "uz", dark, gameId = "englis
           marginTop: SPACE.s2
         }}>
           <Volume2 size={16} />
-          {uz ? "Talaffuzni eshitish" : lg === "ru" ? "Прослушать" : "Listen to pronunciation"}
+          {t("gam_mw_listenPronunciation")}
         </button>
       </div>
 

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../../utils/tokens.js";
 import { addCoins, logGameSession, saveLevelProgress } from "../engine/persist.js";
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 
 export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/decision", name = "", level, onBack, onNextLevel }) {
-  const uz = lg === "uz";
+  const { t } = useApp();
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [phase, setPhase] = useState("intro"); // intro | play | feedback | result
@@ -129,7 +130,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
   if (phase === "intro") {
     return (
       <div>
-        <PageHeader th={th} title={uz ? "Moliyaviy qarorlar" : lg === "ru" ? "Финансовые решения" : "Financial Decisions"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_dec_title")} onBack={onBack} />
         <div style={{ padding: SPACE.s4, textAlign: "center", display: "flex", flexDirection: "column", gap: SPACE.s4 }}>
           <div style={{
             width: 80,
@@ -147,19 +148,15 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
 
           <div>
             <h2 style={{ ...TYPE.heading, color: th.t1 }}>
-              {uz ? "Moliyaviy mantiqiy stsenariylar" : lg === "ru" ? "Финансовые сценарии" : "Financial Logic Scenarios"}
+              {t("gam_dec_subtitle")}
             </h2>
             <p style={{ ...TYPE.caption, color: th.t2, marginTop: SPACE.s2, lineHeight: 1.4 }}>
-              {uz 
-                ? "Kundalik hayotda duch keladigan turli xil moliyaviy vaziyatlarda to'g'ri qaror qabul qila olasizmi? O'zingizni sinab ko'ring va natijalarning sababini o'rganing!" 
-                : lg === "ru"
-                ? "Сможете ли вы принять правильные решения в различных жизненных ситуациях? Испытайте себя и узнайте причины последствий!"
-                : "Can you make correct choices in various life situations? Challenge yourself and learn the reasons behind financial outcomes!"}
+              {t("gam_dec_intro")}
             </p>
           </div>
 
           <PrimaryButton th={th} onClick={startGame} style={{ marginTop: SPACE.s2 }}>
-            {uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"}
+            {t("bd_startLabel")}
           </PrimaryButton>
         </div>
       </div>
@@ -176,7 +173,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
 
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : "Результат"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_result")} onBack={onBack} />
         
         <div style={{
           background: "linear-gradient(135deg," + (finalStars > 0 ? th.gr : th.rd) + "," + th.ac2 + ")",
@@ -192,16 +189,16 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
             ))}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-            {finalStars > 1 ? (uz ? "Siz mukammal moliyachisiz!" : "Вы отличный финансист!") : (uz ? "Yaxshi urinish!" : "Хорошая попытка!")}
+            {finalStars > 1 ? t("gam_dec_perfectFinancier") : t("gam_dec_goodAttempt")}
           </div>
           <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>
-            {totalCount} tadan {correctCount} ta to'g'ri moliyaviy qaror qabul qilindi
+            {t("gam_dec_summaryLine", { total: totalCount, correct: correctCount })}
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={`${correctCount}/${totalCount}`} label={uz ? "Oqilona qarorlar" : "Разумные решения"} tone={th.gr} />
-          <StatCard th={th} value={`${totalCount - correctCount}/${totalCount}`} label={uz ? "Nooqilona qarorlar" : "Нерациональные решения"} tone={th.rd} />
+          <StatCard th={th} value={`${correctCount}/${totalCount}`} label={t("gam_dec_wiseDecisions")} tone={th.gr} />
+          <StatCard th={th} value={`${totalCount - correctCount}/${totalCount}`} label={t("gam_dec_unwiseDecisions")} tone={th.rd} />
         </div>
 
         <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: PREMIUM.gold + ALPHA.faint, border: "1px solid " + PREMIUM.gold + ALPHA.med, marginBottom: SPACE.s2 }}>
@@ -209,7 +206,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
             <Coins size={24} color={PREMIUM.gold} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Topilgan jami coinlar" : "Получено монет всего"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{t("gam_dec_totalCoinsEarned")}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{finalCoins}</div>
           </div>
         </AppCard>
@@ -219,18 +216,18 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
             <Trophy size={24} color={th.ac2} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Jamg'arilgan tajriba (XP)" : "Накопленный опыт (XP)"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{t("gam_dec_xpAccumulated")}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{finalXp}</div>
           </div>
         </AppCard>
 
         {level && onNextLevel && finalStars >= 1 && (
           <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
-            {uz ? "Keyingi bosqich" : lg === "ru" ? "Следующий уровень" : "Next level"}
+            {t("gam_nextLevel")}
           </PrimaryButton>
         )}
         <PrimaryButton th={th} onClick={startGame} style={{ marginTop: SPACE.s2 }}>
-          {uz ? "Yana o'ynash" : "Играть снова"}
+          {t("gam_playAgain")}
         </PrimaryButton>
         <button className="ui-press" onClick={onBack} style={{
           width: "100%",
@@ -243,7 +240,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
           fontFamily: "inherit",
           fontWeight: 600
         }}>
-          {uz ? "Orqaga" : "Назад"}
+          {t("gam_div_back")}
         </button>
       </div>
     );
@@ -257,7 +254,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
       {/* Step progress */}
       <div style={{ display: "flex", justifySpace: "space-between", alignItems: "center" }}>
         <span style={{ ...TYPE.caption, color: th.t2, fontWeight: 700 }}>
-          {uz ? `Vaziyat ${currentIndex + 1}/${totalCount}` : `Ситуация ${currentIndex + 1}/${totalCount}`}
+          {t("gam_dec_situationOf", { n: currentIndex + 1, total: totalCount })}
         </span>
         <div style={{ width: 120, height: 6, background: th.bor, borderRadius: RADIUS.pill, overflow: "hidden" }}>
           <div style={{ width: `${((currentIndex + 1) / totalCount) * 100}%`, height: "100%", background: th.ac, borderRadius: RADIUS.pill, transition: "width .3s" }} />
@@ -353,9 +350,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
                 fontWeight: 800,
                 color: chosenOption.effect.coins >= 0 ? th.gr : th.rd
               }}>
-                {chosenOption.effect.coins >= 0 
-                  ? (uz ? "Oqilona va o'ylangan qaror!" : "Разумное решение!") 
-                  : (uz ? "Nooqilona xarajat yoki xavfli qaror" : "Нерациональное решение")}
+                {chosenOption.effect.coins >= 0 ? t("gam_dec_wiseChoice") : t("gam_dec_unwiseChoice")}
               </span>
             </div>
 
@@ -377,7 +372,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
 
           <PrimaryButton th={th} onClick={handleNext} style={{ marginTop: SPACE.s2 }}>
             <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-              {uz ? "Keyingi stsenariy" : "Следующий сценарий"}
+              {t("gam_dec_nextScenario")}
               <ArrowRight size={18} />
             </span>
           </PrimaryButton>
