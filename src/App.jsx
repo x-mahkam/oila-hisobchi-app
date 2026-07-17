@@ -62,6 +62,7 @@ import { useDailyReminder }  from "./hooks/useDailyReminder.js";
 import { usePushToken }      from "./hooks/usePushToken.js";
 import ScreenTimeLockScreen  from "./components/ScreenTimeLockScreen.jsx";
 import AppLockScreen         from "./components/AppLockScreen.jsx";
+import PinSetupModal         from "./components/modals/PinSetupModal.jsx";
 import { Capacitor }         from "@capacitor/core";
 import { App as CapApp }     from "@capacitor/app";
 
@@ -73,6 +74,7 @@ import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
 // Bank ilovalari kabi: fonda shu muddatgacha turilsa PIN qulf qayta so'ralmaydi.
 const LOCK_GRACE_MS = 30000; // 30 soniya
+const BG_SINCE_KEY = "oilaV7_bgSince";
 
 export default function App() {
   const {
@@ -91,9 +93,21 @@ export default function App() {
     syncDailyReminderRef,
   } = useApp();
 
-  const [appUnlocked, setAppUnlocked] = useState(false);
+  // MUHIM: fonga o'tgan vaqt localStorage'da saqlanadi (shunchaki JS xotirasida
+  // emas) — chunki Android ilova fonga o'tganda ko'pincha butun jarayonni
+  // o'ldiradi (xotira tejash uchun), va qayta ochilganda bu ToLIQ yangi
+  // JS ishga tushish (cold start) bo'ladi — oddiy "ref" o'zgaruvchisi bunda
+  // yo'qolib qoladi. localStorage esa diskka yozilgani uchun saqlanib qoladi.
+  const [appUnlocked, setAppUnlocked] = useState(() => {
+    try {
+      const raw = localStorage.getItem(BG_SINCE_KEY);
+      localStorage.removeItem(BG_SINCE_KEY);
+      if (raw && Date.now() - Number(raw) < LOCK_GRACE_MS) return true;
+    } catch (_e) {}
+    return false;
+  });
   const [hasPin, setHasPin] = useState(false);
-  const bgSinceRef = useRef(null); // fonga o'tgan vaqt belgisi (PIN qulf grace-period uchun)
+  const [showPinSetup, setShowPinSetup] = useState(false);
 
   // Load PIN status
   useEffect(() => {
@@ -114,20 +128,39 @@ export default function App() {
     }
   }, [user?.id]);
 
+  // Ro'yxatdan yangi o'tgan (bola emas) foydalanuvchiga PIN o'rnatishni taklif
+  // qilish — shunda keyingi safarlar to'liq login/parol o'rniga PIN yetarli.
+  useEffect(() => {
+    if (!user?.id || hasPin) return;
+    try {
+      if (localStorage.getItem("oilaV7_justRegistered") === "1") {
+        localStorage.removeItem("oilaV7_justRegistered");
+        setShowPinSetup(true);
+      }
+    } catch (_e) {}
+  }, [user?.id, hasPin]);
+
   // Background state lock listener — bank ilovalari kabi: fondan darhol
   // qaytilsa (LOCK_GRACE_MS ichida) PIN so'ralmaydi, faqat shu muddatdan
-  // uzoqroq fonda turilsa qulflanadi.
+  // uzoqroq fonda turilsa (yoki ilova jarayoni o'chib qayta ishga tushsa)
+  // qulflanadi. Vaqt belgisi localStorage'da — sabab yuqoridagi izohda.
   useEffect(() => {
     const handleStateChange = (active) => {
       if (!user?.id || !hasPin) return;
-      if (!active) {
-        bgSinceRef.current = Date.now();
-      } else {
-        if (bgSinceRef.current && Date.now() - bgSinceRef.current >= LOCK_GRACE_MS) {
-          setAppUnlocked(false);
+      try {
+        if (!active) {
+          // Faqat hozir ochiq bo'lsa fon vaqtini yozamiz — aks holda PIN
+          // ekranida turgan foydalanuvchi fon/oldinga o'tish orqali uni
+          // chetlab o'tolmasin (xavfsizlik teshigi bo'lmasligi uchun).
+          if (appUnlocked) localStorage.setItem(BG_SINCE_KEY, String(Date.now()));
+        } else {
+          const raw = localStorage.getItem(BG_SINCE_KEY);
+          if (raw) {
+            setAppUnlocked(Date.now() - Number(raw) < LOCK_GRACE_MS);
+            localStorage.removeItem(BG_SINCE_KEY);
+          }
         }
-        bgSinceRef.current = null;
-      }
+      } catch (_e) {}
     };
 
     const handleVisibilityChange = () => {
@@ -157,7 +190,7 @@ export default function App() {
         } catch (e) {}
       }
     };
-  }, [user?.id, hasPin]);
+  }, [user?.id, hasPin, appUnlocked]);
 
   // ── Hooks ────────────────────────────────────────────────
   const { loadFam } = useAuth();
@@ -732,6 +765,18 @@ export default function App() {
       setVal={setVal}
     />
   );
+
+  // Ro'yxatdan yangi o'tganda PIN o'rnatishni taklif qilish (o'tkazib yuborish mumkin)
+  if (user?.id && showPinSetup) {
+    return <PinSetupModal th={th} uid={user.id} onDone={() => {
+      setShowPinSetup(false);
+      // PIN o'rnatilgan bo'lsa hasPin'ni darhol yangilaymiz — aks holda
+      // qulf ekrani keyingi to'liq qayta yuklanguncha ishlamay qoladi.
+      db.g("security_" + user.id).then(sec => {
+        if (sec && typeof sec === "object" && sec.pinHash) setHasPin(true);
+      }).catch(() => {});
+    }} />;
+  }
 
   // Application Lock Screen Security Check
   if (user?.id && hasPin && !appUnlocked) {

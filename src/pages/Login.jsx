@@ -140,6 +140,7 @@ export default function LoginPage() {
       u = await googleJoinFamily(gUser, pendingJoin);
       if (!u) return;
       localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
+      localStorage.setItem("oilaV7_justRegistered", "1");
       setUser(u); await loadFam(u); setScr("bosh");
       ok$(t.jf2);
       return;
@@ -155,6 +156,7 @@ export default function LoginPage() {
       const gFam = { id: famId, nomi: t("log_familySuffix", { name: displayName }), boshId: uid, azolar: [uid], azolarIds: [uid], budjet: 2000000, katLimits: {}, yaratilgan: new Date().toISOString() };
       await db.s("fam_" + famId, gFam); await db.s("oila_" + famId, gFam);
       if (email) await db.s("em_" + email, uid);
+      localStorage.setItem("oilaV7_justRegistered", "1");
     }
     localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
     setUser(u); await loadFam(u); setScr("bosh");
@@ -271,7 +273,7 @@ export default function LoginPage() {
           o.azolarIds = mIds; o.azolar = mIds; if (!o.id) o.id = fid;
           await db.s("oila_" + fid, o); await db.s("fam_" + fid, o);
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
-          localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); await loadFam(nu); setScr("bosh"); ok$(t.jf2); addStar(15, t("log018"));
+          localStorage.setItem("oilaV7", JSON.stringify({ uid })); localStorage.setItem("oilaV7_justRegistered", "1"); setUser(nu); await loadFam(nu); setScr("bosh"); ok$(t.jf2); addStar(15, t("log018"));
         } else {
           const oid = "o" + Date.now();
           setOwnerCtx(uid, oid);
@@ -293,7 +295,7 @@ export default function LoginPage() {
           }
           await db.s("oila_" + oid, no_); await db.s("fam_" + oid, { ...no_, azolar: no_.azolarIds }); await db.s("x_" + oid + "_" + uid, []); await db.s("d_" + oid + "_" + uid, []);
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
-          localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); setOila(no_); setAzolar([nu]); setXar([]); setDar([]); setMaq([]); setScr("bosh"); ok$(t.fc3);
+          localStorage.setItem("oilaV7", JSON.stringify({ uid })); localStorage.setItem("oilaV7_justRegistered", "1"); setUser(nu); setOila(no_); setAzolar([nu]); setXar([]); setDar([]); setMaq([]); setScr("bosh"); ok$(t.fc3);
         }
       } else {
         const tryLogin = fTel.trim().toLowerCase();

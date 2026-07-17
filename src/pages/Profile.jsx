@@ -13,7 +13,7 @@ import { useApp } from "../context/AppContext.jsx";
 import { useFamily } from "../hooks/useFamily.js";
 import { useDailyReminder } from "../hooks/useDailyReminder.js";
 import { db, fbAuth } from "../firebase.js";
-import { EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
+import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { normTel, td, hp } from "../utils/formatters.js";
 import { fetchLanguageList } from "../i18n/translationService.js";
 import { NativeBiometric } from "capacitor-native-biometric";
@@ -181,6 +181,11 @@ export default function ProfilePage({
   const [pinCfm, setPinCfm] = useState("");
   const [finger, setFinger] = useState(false);
   const [pinHash, setPinHash] = useState(null);
+  const [showPwEdit, setShowPwEdit] = useState(false);
+  const [pwCur, setPwCur] = useState("");
+  const [pwNew, setPwNew] = useState("");
+  const [pwNewCfm, setPwNewCfm] = useState("");
+  const [pwLoading, setPwLoading] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -517,6 +522,35 @@ export default function ProfilePage({
     const okDone = await purgeData(clnAll ? "" : clnFrom, clnAll ? "" : clnTo, clnFam);
     if (okDone) { setShowClean(false); setClnFrom(""); setClnTo(""); setClnAll(true); setClnFam(false); }
   }, [purgeData, clnAll, clnFrom, clnTo, clnFam]);
+
+  const openPwEdit = useCallback(() => {
+    buzz(10);
+    setPwCur(""); setPwNew(""); setPwNewCfm("");
+    setShowPwEdit(true);
+  }, [buzz]);
+
+  const submitPwChange = useCallback(async () => {
+    if (pwNew.length < 6) { ok$(t("prof_pwTooShort"), "err"); return; }
+    if (pwNew !== pwNewCfm) { ok$(t("prof_pwMismatch"), "err"); return; }
+    setPwLoading(true);
+    try {
+      const curU = fbAuth.currentUser;
+      if (!curU || !curU.email) throw new Error(t("p021"));
+      const credential = EmailAuthProvider.credential(curU.email, pwCur);
+      await reauthenticateWithCredential(curU, credential);
+      await updatePassword(curU, pwNew);
+      setShowPwEdit(false);
+      setPwCur(""); setPwNew(""); setPwNewCfm("");
+      ok$(t("prof_pwChanged"));
+    } catch (e) {
+      const msg = e.code === "auth/wrong-password" || e.code === "auth/invalid-credential"
+        ? t("prof_pwWrongCurrent")
+        : e.code === "auth/weak-password" ? t("log015") : t("prof_pwChangeErr");
+      ok$(msg, "err");
+    } finally {
+      setPwLoading(false);
+    }
+  }, [pwCur, pwNew, pwNewCfm, ok$, t]);
 
   const openDeleteAccount = useCallback(() => {
     buzz(10);
@@ -1860,6 +1894,17 @@ export default function ProfilePage({
       {pTab === "xav" && (
         <div>
           <PageHeader th={th} title={t.xav} onBack={backToMain} />
+          {fbAuth.currentUser?.providerData?.some(p => p.providerId === "password") && (
+            <AppCard th={th} pad={0}>
+              <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t("prof_editPassword")} sub={t("prof_editPasswordSub")}
+                divider={false}
+                right={
+                  <SecondaryButton th={th} onClick={openPwEdit} style={{ width: "auto", padding: (SPACE.s1 + 3) + "px " + SPACE.s3 + "px", fontSize: TYPE.caption.fontSize, flexShrink: 0 }}>
+                    {t("p157")}
+                  </SecondaryButton>
+                } />
+            </AppCard>
+          )}
           <AppCard th={th} pad={0}>
             <ListItem th={th} icon={PIco.lock(th.ac, 18)} title={t.pin} sub={pinHash ? (t("p153")) : (t("p154"))}
               right={
@@ -2267,6 +2312,26 @@ export default function ProfilePage({
                 {t("p244")}
               </div>
             </div>
+          )}
+        </div>
+      </BottomSheet>
+
+      <BottomSheet th={th} open={showPwEdit} onClose={() => !pwLoading && setShowPwEdit(false)} title={t("prof_editPassword")}>
+        <div style={{ padding: SPACE.s2 }}>
+          {pwLoading ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, padding: SPACE.s4 + "px 0", alignItems: "center", justifyContent: "center" }}>
+              <LinearProgress th={th} />
+            </div>
+          ) : (
+            <>
+              <TextInput th={th} type="password" label={t("prof_pwCurrent")} value={pwCur} onChange={setPwCur} />
+              <TextInput th={th} type="password" label={t("prof_pwNew")} value={pwNew} onChange={setPwNew} />
+              <TextInput th={th} type="password" label={t("prof_pwNewConfirm")} value={pwNewCfm} onChange={setPwNewCfm} />
+              <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginTop: SPACE.s4 }}>
+                <PrimaryButton th={th} onClick={submitPwChange}>{t("save")}</PrimaryButton>
+                <GhostButton th={th} onClick={() => setShowPwEdit(false)}>{t("p221")}</GhostButton>
+              </div>
+            </>
           )}
         </div>
       </BottomSheet>
