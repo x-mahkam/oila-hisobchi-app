@@ -4,6 +4,7 @@
 //  Offline/qoidaviy. Fan bo'yicha % + tavsiya + haftalik hisobot.
 // ═══════════════════════════════════════════════════════════
 import { CATEGORIES, catById } from "../registry.jsx";
+import i18n from "../../i18n/index.js";
 
 const daysAgo = (n) => Date.now() - n * 86400000;
 const subjOf = (gameId) => (gameId || "").split("/")[0];
@@ -13,10 +14,9 @@ const subjOf = (gameId) => (gameId || "").split("/")[0];
  * @returns { bySubject: [{cat, name, pct, games, avgCoin}], best, weak, tip }
  */
 export function analyzeLearning(sessions = [], lg = "uz", name = "", days = 30) {
-  const uz = lg === "uz", ru = lg === "ru";
   const since = daysAgo(days);
   const recent = sessions.filter(s => (s.ts || 0) >= since);
-  const who = name || (uz ? "Bola" : ru ? "Ребёнок" : "The child");
+  const who = name || i18n.t("an_defaultChildName");
 
   // Fan bo'yicha guruhlash
   const map = {};
@@ -45,12 +45,12 @@ export function analyzeLearning(sessions = [], lg = "uz", name = "", days = 30) 
 
   // Tavsiya matni
   let tip;
-  if (bySubject.length === 0) tip = uz ? "Hali o'yin o'ynalmagan — birga boshlang." : ru ? "Игр пока нет — начните вместе." : "No games yet — start together.";
-  else if (best && best.pct >= 85) tip = uz ? who + " " + best.name.toLowerCase() + "ni juda yaxshi o'zlashtirmoqda." : ru ? who + " отлично осваивает: " + best.name : who + " is excelling at " + best.name + ".";
-  else tip = uz ? "Kunlik 5-10 daqiqa mashqni davom ettiring." : ru ? "Продолжайте 5-10 минут в день." : "Keep up 5-10 minutes daily practice.";
+  if (bySubject.length === 0) tip = i18n.t("an_noGamesYet");
+  else if (best && best.pct >= 85) tip = i18n.t("an_excelling", { who, subject: lg === "uz" ? best.name.toLowerCase() : best.name });
+  else tip = i18n.t("an_keepPracticing");
 
   let weakTip = null;
-  if (weak && weak.pct < 70) weakTip = uz ? weak.name + " mavzusini takrorlash tavsiya qilinadi." : ru ? "Повторите тему: " + weak.name : "Review " + weak.name + ".";
+  if (weak && weak.pct < 70) weakTip = i18n.t("an_reviewSubject", { subject: weak.name });
 
   return { bySubject, best, weak, tip, weakTip, totalGames: recent.length };
 }

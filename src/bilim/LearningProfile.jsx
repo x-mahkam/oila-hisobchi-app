@@ -5,6 +5,7 @@
 // ═══════════════════════════════════════════════════════════
 import { memo, useMemo, useState, useEffect } from "react";
 import { AppCard, SectionHeader, StatCard, Badge, UIAvatar, LinearProgress } from "../components/ui/index.js";
+import { useApp } from "../context/AppContext.jsx";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM } from "../utils/tokens.js";
 import { fullName } from "../utils/formatters.js";
 import { levelFor, rankFor } from "./engine/xp.js";
@@ -17,7 +18,7 @@ import { db } from "../firebase.js";
 const frameGrad = (color) => "linear-gradient(135deg," + color + "," + color + "cc)";
 
 const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0, xp = 0, streak = 0, sessions = [] }) {
-  const uz = lg === "uz";
+  const { t } = useApp();
   const name = fullName(user);
   const lv = useMemo(() => levelFor(xp), [xp]);
   const rankObj = useMemo(() => rankFor(lv.level), [lv.level]);
@@ -114,7 +115,7 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
         <div style={{ marginTop: SPACE.s3, textAlign: "left" }}>
           <div style={{ display: "flex", justifyContent: "space-between", ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: "rgba(255,255,255,0.9)", marginBottom: 3 }}>
             <span>{lv.inLevel} / {lv.max ? "MAX" : (lv.nextBase - lv.curBase >= 0 ? (lv.inLevel + lv.toNext) : "")} XP</span>
-            <span>{lv.max ? (uz ? "Maksimal daraja" : "Max level") : lv.toNext + " XP → LVL " + (lv.level + 1)}</span>
+            <span>{lv.max ? t("lp_maxLevel") : lv.toNext + " XP → LVL " + (lv.level + 1)}</span>
           </div>
           <div style={{ height: 8, borderRadius: RADIUS.full, background: "rgba(255,255,255,0.25)", overflow: "hidden" }}>
             <div style={{ width: lv.pct + "%", height: "100%", background: "#fff", borderRadius: RADIUS.full }} />
@@ -126,19 +127,19 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
       <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
         <StatCard th={th} value={coins} label="Coin" tone={PREMIUM.gold} />
         <StatCard th={th} value={xp} label="XP" tone={th.ac} />
-        <StatCard th={th} value={streak} label={uz ? "Streak" : "Streak"} tone={th.rd} />
+        <StatCard th={th} value={streak} label={t("lp_streak")} tone={th.rd} />
       </div>
 
       {/* ── Fan kesimi: eng yaxshi / eng qiyin ── */}
-      <SectionHeader th={th}>{uz ? "Fanlar" : lg === "ru" ? "Предметы" : "Subjects"}</SectionHeader>
+      <SectionHeader th={th}>{t("lp_subjects")}</SectionHeader>
       <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
         <AppCard th={th} style={{ flex: 1, background: th.gr + ALPHA.faint, border: "1px solid " + th.gr + ALPHA.med }}>
-          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Eng yaxshi fan" : lg === "ru" ? "Лучший" : "Best subject"}</div>
+          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("lp_bestSubject")}</div>
           <div style={{ ...TYPE.subtitle, color: th.gr, marginTop: 2 }}>{analysis.best ? analysis.best.name : "—"}</div>
           {analysis.best && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginTop: 1 }}>{analysis.best.pct}%</div>}
         </AppCard>
         <AppCard th={th} style={{ flex: 1, background: th.am + ALPHA.faint, border: "1px solid " + th.am + ALPHA.med }}>
-          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Eng qiyin fan" : lg === "ru" ? "Сложный" : "Hardest"}</div>
+          <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("lp_hardestSubject")}</div>
           <div style={{ ...TYPE.subtitle, color: th.am, marginTop: 2 }}>{analysis.weak ? analysis.weak.name : "—"}</div>
           {analysis.weak && <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t3, marginTop: 1 }}>{analysis.weak.pct}%</div>}
         </AppCard>
@@ -147,30 +148,30 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
       {/* ── Oxirgi o'yin ── */}
       {last && (
         <>
-          <SectionHeader th={th}>{uz ? "Oxirgi o'yin" : lg === "ru" ? "Последняя игра" : "Last game"}</SectionHeader>
+          <SectionHeader th={th}>{t("lp_lastGame")}</SectionHeader>
           <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
             <div style={{ width: COMP.touchMin, height: COMP.touchMin, borderRadius: RADIUS.m, background: th.ac + ALPHA.tint, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>{medalSvg(th.ac, 24)}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ ...TYPE.subtitle, color: th.t1 }}>{subjName((last.gameId || "").split("/")[0])} · {last.correct}/{last.total}</div>
               <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2, marginTop: 1 }}>{last.pct}% · +{last.coins} coin · +{last.xp || 0} XP</div>
             </div>
-            {last.pct >= 90 && <Badge th={th} tone={th.gr}>{uz ? "Zo'r" : "Great"}</Badge>}
+            {last.pct >= 90 && <Badge th={th} tone={th.gr}>{t("lp_great")}</Badge>}
           </AppCard>
         </>
       )}
 
       {/* ── Haftalik progress ── */}
-      <SectionHeader th={th}>{uz ? "Haftalik progress" : lg === "ru" ? "Прогресс за неделю" : "Weekly progress"}</SectionHeader>
+      <SectionHeader th={th}>{t("lp_weeklyProgress")}</SectionHeader>
       <AppCard th={th}>
         <div style={{ display: "flex", gap: SPACE.s2 }}>
-          <StatCard th={th} value={week.games} label={uz ? "O'yin" : "Games"} tone={th.ac} />
+          <StatCard th={th} value={week.games} label={t("lp_games")} tone={th.ac} />
           <StatCard th={th} value={week.coins} label="Coin" tone={PREMIUM.gold} />
           <StatCard th={th} value={week.xp} label="XP" tone={th.gr} />
         </div>
       </AppCard>
 
       {/* ── Yutuqlar ── */}
-      <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlocked.length}/{achievements.length}</Badge>}>{uz ? "Yutuqlar" : lg === "ru" ? "Достижения" : "Achievements"}</SectionHeader>
+      <SectionHeader th={th} right={<Badge th={th} type="premium" icon={null}>{unlocked.length}/{achievements.length}</Badge>}>{t("lp_achievements")}</SectionHeader>
       <div style={{ display: "flex", gap: SPACE.s2, overflowX: "auto", paddingBottom: SPACE.s2, marginBottom: SPACE.s3, WebkitOverflowScrolling: "touch" }}>
         {achievements.map(a => (
           <div key={a.id} style={{ flexShrink: 0, width: SPACE.s16 + SPACE.s6, textAlign: "center", background: a.unlocked ? a.color + ALPHA.faint : th.sur, border: a.unlocked ? "1.5px solid " + a.color + ALPHA.strong : "1px dashed " + th.bor, borderRadius: RADIUS.m, padding: SPACE.s2, opacity: a.unlocked ? 1 : 0.6 }}>
@@ -182,7 +183,7 @@ const LearningProfile = memo(function LearningProfile({ th, lg, user, coins = 0,
       </div>
 
       {/* ── AI bahosi ── */}
-      <SectionHeader th={th}>{uz ? "Foydali baholash" : lg === "ru" ? "Полезная оценка" : "Useful assessment"}</SectionHeader>
+      <SectionHeader th={th}>{t("lp_usefulAssessment")}</SectionHeader>
       <AppCard th={th} style={{ background: th.ac + ALPHA.faint, border: "1px solid " + th.ac + ALPHA.med }}>
         <div style={{ display: "flex", gap: SPACE.s2, alignItems: "flex-start" }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 2a5 5 0 00-3 9c.6.5 1 1 1 2h4c0-1 .4-1.5 1-2a5 5 0 00-3-9z" stroke={th.ac} strokeWidth="1.4" fill={th.ac} fillOpacity="0.15"/><path d="M8 16h4M8.5 18h3" stroke={th.ac} strokeWidth="1.4" strokeLinecap="round"/></svg>
