@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
+import { DIFF } from "../registry.jsx";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../../utils/tokens.js";
 import { useGameEngine } from "../engine/useGameEngine.js";
 import { savingsSequenceGenerator } from "./generators/savingsSequence.js";
@@ -28,11 +30,11 @@ const injectCss = () => {
 };
 
 export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "logic/pattern", name = "", level, onBack, onNextLevel }) {
+  const { t } = useApp();
   useEffect(() => {
     injectCss();
   }, []);
 
-  const uz = lg === "uz";
   const th = dark ? PALETTE.dark : PALETTE.light;
 
   const [difficulty, setDifficulty] = useState("easy");
@@ -143,7 +145,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
   if (eng.phase === "intro") {
     return (
       <div>
-        <PageHeader th={th} title={uz ? "Jamg'arma ketma-ketligi" : lg === "ru" ? "Последовательность накоплений" : "Savings Sequence"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_sav_title")} onBack={onBack} />
         
         <div style={{ padding: SPACE.s4, textAlign: "center", display: "flex", flexDirection: "column", gap: SPACE.s4 }}>
           <div style={{
@@ -162,25 +164,21 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
 
           <div>
             <h2 style={{ ...TYPE.heading, color: th.t1 }}>
-              {uz ? "Jamg'arma qonuniyatini top" : lg === "ru" ? "Найди закономерность" : "Find the Savings Pattern"}
+              {t("gam_sav_findPattern")}
             </h2>
             <p style={{ ...TYPE.caption, color: th.t2, marginTop: SPACE.s2, lineHeight: 1.4 }}>
-              {uz 
-                ? "Jamg'armalar o'sishi ketma-ketligini tahlil qil va keyingi qadamda qancha pul yig'ilishi kerakligini aniqla!" 
-                : lg === "ru"
-                ? "Проанализируй последовательность сбережений и определи, сколько денег нужно накопить на следующем шаге!"
-                : "Analyze the savings sequence and determine how much money should be accumulated next!"}
+              {t("gam_sav_intro")}
             </p>
           </div>
 
           {level ? (
             <PrimaryButton th={th} onClick={() => handleStart(level.difficulty)} style={{ marginTop: SPACE.s4 }}>
-              {uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"}
+              {t("bd_startLabel")}
             </PrimaryButton>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginTop: SPACE.s1 }}>
               <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t3, alignSelf: "flex-start" }}>
-                {uz ? "Qiyinchilik darajasini tanlang:" : lg === "ru" ? "Выберите сложность:" : "Select Difficulty:"}
+                {t("gam_sav_selectDifficulty")}
               </span>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: SPACE.s2 }}>
                 {["easy", "medium", "hard"].map((d) => (
@@ -200,7 +198,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
                       cursor: "pointer"
                     }}
                   >
-                    {d === "easy" ? (uz ? "Oson" : "Легко") : d === "medium" ? (uz ? "O'rtacha" : "Средне") : (uz ? "Qiyin" : "Сложно")}
+                    {DIFF[d][lg] || DIFF[d].uz}
                   </button>
                 ))}
               </div>
@@ -224,7 +222,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
           justifyContent: "center",
           boxShadow: SHADOW.e2
         }}>
-          <span style={{ fontSize: 44, fontWeight: 800, color: "#fff" }}>{uz ? "TAYYOR" : "ГОТОВ"}</span>
+          <span style={{ fontSize: 44, fontWeight: 800, color: "#fff" }}>{t("gam_sav_ready")}</span>
         </div>
       </div>
     );
@@ -238,7 +236,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
 
     return (
       <div style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : "Результат"} onBack={level ? onBack : () => eng.setPhase("intro")} />
+        <PageHeader th={th} title={t("gam_result")} onBack={level ? onBack : () => eng.setPhase("intro")} />
         
         <div style={{
           background: "linear-gradient(135deg," + (finalStars > 0 ? th.gr : th.rd) + "," + th.ac2 + ")",
@@ -254,17 +252,17 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
             ))}
           </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}>
-            {finalStars > 0 ? (uz ? "Ajoyib!" : "Отлично!") : (uz ? "Yana urinib ko'ring!" : "Попробуйте ещё раз!")}
+            {finalStars > 0 ? t("gam_sav_awesome") : t("gam_sav_tryAgainShort")}
           </div>
           <div style={{ ...TYPE.subtitle, color: "#fff", marginTop: SPACE.s1, opacity: 0.9 }}>
-            {r.correct}/{r.total} {uz ? "to'g'ri" : "верно"}
+            {r.correct}/{r.total} {t("gam_correctSuffix")}
           </div>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2, marginBottom: SPACE.s3 }}>
-          <StatCard th={th} value={r.correct} label={uz ? "To'g'ri" : "Верно"} tone={th.gr} />
-          <StatCard th={th} value={r.wrong} label={uz ? "Xato" : "Ошибки"} tone={th.rd} />
-          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={uz ? "Vaqt" : "Время"} tone={th.ac} />
+          <StatCard th={th} value={r.correct} label={t("gam_correct")} tone={th.gr} />
+          <StatCard th={th} value={r.wrong} label={t("gam_wrong")} tone={th.rd} />
+          <StatCard th={th} value={(mm ? mm + "m " : "") + ss + "s"} label={t("gam_time")} tone={th.ac} />
           <StatCard th={th} value={"x" + r.maxCombo} label="Combo" tone={th.am} />
         </div>
 
@@ -273,18 +271,18 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
             <PiggyBank size={24} color={PREMIUM.gold} />
           </div>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{uz ? "Topilgan coinlar" : "Получено монет"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", color: th.t2 }}>{t("gam_sav_coinsReceived")}</div>
             <div style={{ ...TYPE.title, color: th.t1 }}>+{r.coins}</div>
           </div>
         </AppCard>
 
         {level && onNextLevel && finalStars >= 1 && (
           <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
-            {uz ? "Keyingi bosqich" : lg === "ru" ? "Следующий уровень" : "Next level"}
+            {t("gam_nextLevel")}
           </PrimaryButton>
         )}
         <PrimaryButton th={th} onClick={() => handleStart(difficulty)} style={{ marginTop: SPACE.s2 }}>
-          {uz ? "Qayta o'ynash" : "Играть снова"}
+          {t("gam_playAgain")}
         </PrimaryButton>
         <button className="ui-press" onClick={onBack} style={{
           width: "100%",
@@ -297,7 +295,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
           fontFamily: "inherit",
           fontWeight: 600
         }}>
-          {uz ? "Orqaga" : "Назад"}
+          {t("gam_div_back")}
         </button>
       </div>
     );
@@ -316,7 +314,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
         <div style={{ flex: 1, marginRight: SPACE.s3 }}>
           <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
             <span style={{ ...TYPE.caption, color: th.t2, fontWeight: 700 }}>
-              {uz ? `Savol ${eng.qIndex + 1}/10` : `Вопрос ${eng.qIndex + 1}/10`}
+              {t("gam_sav_questionOf10", { n: eng.qIndex + 1 })}
             </span>
             <span style={{ ...TYPE.caption, color: th.ac, fontWeight: 700 }}>
               {difficulty.toUpperCase()}
@@ -361,7 +359,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
                   transition: "all 0.3s"
                 }}>
                   <div style={{ ...TYPE.tiny, textTransform: "uppercase", color: th.t3 }}>
-                    {uz ? `${i + 1}-hafta` : `${i + 1}-неделя`}
+                    {t("gam_sav_weekN", { n: i + 1 })}
                   </div>
                   <div style={{
                     fontSize: 16,
@@ -393,7 +391,7 @@ export default function SavingsSequenceGame({ user, lg = "uz", dark, gameId = "l
         }}>
           <Target size={18} color={PREMIUM.gold} />
           <span style={{ fontSize: 13, fontWeight: 800, color: PREMIUM.gold }}>
-            {uz ? `Maqsad: ${meta.goal?.toLocaleString()} so'm` : `Цель: ${meta.goal?.toLocaleString()} сум`}
+            {t("gam_sav_goalAmount", { goal: meta.goal?.toLocaleString() })}
           </span>
         </div>
       </div>

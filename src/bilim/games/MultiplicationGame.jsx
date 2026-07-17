@@ -2,6 +2,7 @@
 //  MULTIPLICATION GAME WITH MATH ROADMAP & MONEY CONTEXT
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE, MOTION } from "../../utils/tokens.js";
 import { useGameEngine } from "../engine/useGameEngine.js";
@@ -90,8 +91,8 @@ const OptButton = memo(function OptButton({ th, value, state, onPick, disabled, 
 });
 
 export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "math/multiply", name, onBack, level, onNextLevel }) {
+  const { t } = useApp();
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
   const kidName = name || (user && (user.ism || "")) || "";
 
   const [userLevels, setUserLevels] = useState({});
@@ -312,16 +313,16 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
   if (eng.phase === "intro") {
     return (
       <div style={{ textAlign: "center", padding: SPACE.s6 + "px " + SPACE.s4 }}>
-        <PageHeader th={th} title={uz ? "Ko'paytirish" : "Multiply"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_mul_title")} onBack={onBack} />
         <AppCard th={th} style={{ marginTop: SPACE.s4 }}>
           <div style={{ ...TYPE.subtitle, color: th.t1, marginBottom: SPACE.s2 }}>
-            {uz ? "Ko'paytirish O'yini" : "Multiply Game"}
+            {t("gam_mul_gameTitle")}
           </div>
           <p style={{ ...TYPE.caption, color: th.t2, marginBottom: SPACE.s4 }}>
-            {uz ? "Do'kondan mahsulotlar sotib olish orqali ko'paytirishni o'rganing!" : "Learn multiplication by purchasing shop items!"}
+            {t("gam_mul_intro")}
           </p>
           <PrimaryButton th={th} onClick={() => eng.start()}>
-            {uz ? "Boshlash" : "Start"}
+            {t("bd_startLabel")}
           </PrimaryButton>
         </AppCard>
       </div>
@@ -333,7 +334,7 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
     return (
       <div style={{ minHeight: "60vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
         <div className="bg-pulse" style={{ fontSize: 90, fontWeight: 900, color: th.ac, textShadow: SHADOW.e3 }}>{count}</div>
-        <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: SPACE.s2 }}>{uz ? "Tayyorlaning..." : lg === "ru" ? "Приготовиться..." : "Get Ready..."}</div>
+        <div style={{ ...TYPE.subtitle, color: th.t2, marginTop: SPACE.s2 }}>{t("gam_mul_getReady")}</div>
       </div>
     );
   }
@@ -347,7 +348,7 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
 
     return (
       <div className="bg-pop" style={{ paddingBottom: SPACE.s8 }}>
-        <PageHeader th={th} title={uz ? "Natija" : lg === "ru" ? "Результат" : "Result"} onBack={onBack} />
+        <PageHeader th={th} title={t("gam_result")} onBack={onBack} />
 
         {/* Header illustration with playful star or cross depending on outcome */}
         <div style={{ textAlign: "center", margin: `${SPACE.s6}px 0` }}>
@@ -366,33 +367,29 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
             )}
           </div>
           <h2 style={{ ...TYPE.heading, color: th.t1, fontSize: 26, margin: 0 }}>
-            {isWin 
-              ? (uz ? "Ajoyib Natija!" : lg === "ru" ? "Отличный результат!" : "Great Job!")
-              : (uz ? "Yana bir bor urinib ko'ring" : lg === "ru" ? "Попробуйте еще раз" : "Try Again")}
+            {isWin ? t("gam_mul_greatJob") : t("gam_mul_tryAgain")}
           </h2>
           <p style={{ ...TYPE.caption, color: th.t2, margin: "6px 0 0" }}>
-            {isWin 
-              ? (uz ? "Siz keyingi bosqichni ochdingiz!" : lg === "ru" ? "Вы открыли следующий уровень!" : "You unlocked the next level!")
-              : (uz ? "O'tish uchun kamida " + activeLevel?.passPct + "% to'plash kerak" : "Need at least " + activeLevel?.passPct + "% to pass")}
+            {isWin ? t("gam_mul_unlockedNext") : t("gam_mul_needPct", { pct: activeLevel?.passPct })}
           </p>
         </div>
 
         {/* Primary Stats Grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3, marginBottom: SPACE.s4 }}>
-          <StatCard th={th} value={`${r.correct}/${r.total}`} label={uz ? "To'g'ri javoblar" : lg === "ru" ? "Верно" : "Accuracy"} tone={th.ac} />
-          <StatCard th={th} value={`${r.pct}%`} label={uz ? "Natija foizi" : lg === "ru" ? "Процент" : "Percentage"} tone={isWin ? th.gr : th.rd} />
-          <StatCard th={th} value={`${r.seconds}s`} label={uz ? "Sarflangan vaqt" : lg === "ru" ? "Время" : "Time spent"} tone={th.t2} />
-          <StatCard th={th} value={`+${r.coins}`} label={uz ? "Ishlab topilgan coin" : "Coins earned"} tone={PREMIUM.gold} />
+          <StatCard th={th} value={`${r.correct}/${r.total}`} label={t("gam_mul_accuracy")} tone={th.ac} />
+          <StatCard th={th} value={`${r.pct}%`} label={t("gam_mul_percentage")} tone={isWin ? th.gr : th.rd} />
+          <StatCard th={th} value={`${r.seconds}s`} label={t("gam_mul_timeSpent")} tone={th.t2} />
+          <StatCard th={th} value={`+${r.coins}`} label={t("gam_coinsEarned")} tone={PREMIUM.gold} />
         </div>
 
         {/* XP Card */}
         <AppCard th={th} style={{ display: "flex", alignItems: "center", gap: SPACE.s3, background: th.ac2 + ALPHA.faint, border: "1px solid " + th.ac2 + ALPHA.med, marginBottom: SPACE.s3 }}>
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.8 6 6.2.7-4.6 4.3 1.2 6.3L12 17.8 6.4 20.3l1.2-6.3L3 9.7 9.2 9 12 3z" stroke={th.ac2} strokeWidth="1.5" strokeLinejoin="round" fill={th.ac2} fillOpacity="0.2"/></svg>
           <div style={{ flex: 1 }}>
-            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{uz ? "Tajriba (XP)" : lg === "ru" ? "Опыт (XP)" : "Experience (XP)"}</div>
+            <div style={{ ...TYPE.tiny, textTransform: "none", letterSpacing: 0, color: th.t2 }}>{t("gam_experienceXp")}</div>
             <div style={{ ...TYPE.title, color: th.t1, fontVariantNumeric: "tabular-nums" }}>+{r.xp || 0}</div>
           </div>
-          {leveledUp && newLevel && <Badge th={th} type="premium" icon={null}>{uz ? "LEVEL " : "LEVEL "}{newLevel}</Badge>}
+          {leveledUp && newLevel && <Badge th={th} type="premium" icon={null}>LEVEL {newLevel}</Badge>}
         </AppCard>
 
         {/* AI verdict */}
@@ -408,15 +405,15 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
 
         {activeLevel && onNextLevel && isWin && (
           <PrimaryButton th={th} onClick={onNextLevel} style={{ marginTop: SPACE.s2, background: th.gr }}>
-            {uz ? "Keyingi bosqich" : lg === "ru" ? "Следующий уровень" : "Next level"}
+            {t("gam_nextLevel")}
           </PrimaryButton>
         )}
         {activeLevel && (
           <PrimaryButton th={th} onClick={() => startLevel(activeLevel)} style={{ marginTop: SPACE.s2 }}>
-            {uz ? "Qayta o'ynash" : lg === "ru" ? "Ещё раз" : "Play again"}
+            {t("gam_playAgain")}
           </PrimaryButton>
         )}
-        <button className="ui-press" onClick={onBack} style={{ width: "100%", marginTop: SPACE.s2, background: "transparent", border: "none", color: th.t2, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{uz ? "Xaritaga qaytish" : lg === "ru" ? "Назад к карте" : "Back to Map"}</button>
+        <button className="ui-press" onClick={onBack} style={{ width: "100%", marginTop: SPACE.s2, background: "transparent", border: "none", color: th.t2, padding: SPACE.s3, cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}>{t("gam_backToMap")}</button>
       </div>
     );
   }
@@ -445,7 +442,7 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
         }}>
           <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8l1-5.5z" stroke="#fff" strokeWidth="1.5" strokeLinejoin="round" fill="#fff" fillOpacity=".2"/></svg>
           <span style={{ fontSize: 15, fontWeight: 800 }}>
-            {uz ? "Qiyinroq darajaga o'tdingiz!" : lg === "ru" ? "Уровень повышен!" : "Difficulty increased!"}
+            {t("gam_difficultyIncreased")}
           </span>
         </div>
       )}
@@ -505,10 +502,10 @@ export default function MultiplicationGame({ user, lg = "uz", dark, gameId = "ma
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>
-                {uz ? "Kichik yordam!" : lg === "ru" ? "Подсказка!" : "Quick Tip!"}
+                {t("gam_quickTip")}
               </div>
               <p style={{ fontSize: 14, margin: 0, opacity: 0.95, lineHeight: 1.4 }}>
-                {lg === "uz" ? "Yordam: Ko'paytirish uchun jami miqdorni har birining narxiga ko'paytiring! (Masalan: 3 ta 2 ming so'mlik shokolad jami 3 × 2 000 = 6 ming so'm bo'ladi)" : lg === "ru" ? "Подсказка: для умножения умножьте количество предметов на их цену! (Пример: 3 шоколада по 2 тыс. руб. стоят 3 × 2 000 = 6 тыс. руб.)" : lg === "kk" ? "Кеңес: көбейту үшін заттардың жалпы санын әрқайсысының бағасына көбейтіңіз! (Мысалы: 3 дана 2 мың тг. тұратын шоколад барлығы 3 × 2 000 = 6 мың тг. болады)" : "Tip: To multiply, multiply the item count by the price of each! (Example: 3 chocolates of $2k each cost 3 × 2 000 = $6k)"}
+                {t("gam_mul_hint")}
               </p>
             </div>
             <button className="ui-press" onClick={() => { setShowHintOverlay(false); setConsecutiveErrors(0); }} style={{ background: "transparent", border: "none", color: "#fff", fontSize: 20, cursor: "pointer", fontWeight: "bold" }}>×</button>

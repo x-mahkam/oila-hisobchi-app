@@ -2,6 +2,7 @@
 //  DIVISION GAME WITH DYNAMIC LEVEL MAP & AUDIO SYNTHESIS
 // ═══════════════════════════════════════════════════════════
 import { useState, useEffect, useCallback, useRef, memo } from "react";
+import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE, MOTION } from "../../utils/tokens.js";
 import { useGameEngine } from "../engine/useGameEngine.js";
@@ -104,8 +105,8 @@ const OptButton = memo(function OptButton({ th, value, state, onPick, disabled }
 });
 
 export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/division", name, onBack }) {
+  const { t } = useApp();
   const th = dark ? PALETTE.dark : PALETTE.light;
-  const uz = lg === "uz";
   const kidName = name || (user && (user.ism || "")) || "";
 
   // Level Map & Sound Settings States
@@ -334,7 +335,7 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s5 }}>
           <button className="ui-press" onClick={onBack} style={{ display: "flex", alignItems: "center", gap: 6, background: "none", border: "none", color: th.t2, fontSize: 16, fontWeight: 700, cursor: "pointer", padding: 0 }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-            {uz ? "Orqaga" : "Назад"}
+            {t("gam_div_back")}
           </button>
 
           <div style={{ display: "flex", alignItems: "center", gap: SPACE.s3 }}>
@@ -543,7 +544,7 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
                         whiteSpace: "nowrap",
                         border: "1px solid rgba(255,255,255,0.3)"
                       }}>
-                        {uz ? "O'YNA" : lg === "ru" ? "ИГРАТЬ" : "PLAY"}
+                        {t("gam_playBadge")}
                       </div>
                       <div style={{
                         width: 0,
@@ -603,10 +604,10 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s3 }}>
               <div>
                 <h3 style={{ ...TYPE.title, color: th.t1, margin: 0 }}>
-                  {uz ? `${selectedLevel.id}-bosqich` : lg === "ru" ? `Уровень ${selectedLevel.id}` : `Level ${selectedLevel.id}`}
+                  {t("gam_levelN", { n: selectedLevel.id })}
                 </h3>
                 <p style={{ ...TYPE.caption, color: th.t2, margin: "2px 0 0" }}>
-                  {uz ? "Qiyinchilik" : "Difficulty"}: <span style={{ fontWeight: 700, color: selectedLevel.difficulty === "easy" ? th.gr : selectedLevel.difficulty === "medium" ? th.am : th.rd }}>{DIFF[selectedLevel.difficulty]?.[lg] || DIFF[selectedLevel.difficulty]?.uz}</span>
+                  {t("gam_difficulty")}: <span style={{ fontWeight: 700, color: selectedLevel.difficulty === "easy" ? th.gr : selectedLevel.difficulty === "medium" ? th.am : th.rd }}>{DIFF[selectedLevel.difficulty]?.[lg] || DIFF[selectedLevel.difficulty]?.uz}</span>
                 </p>
               </div>
               <button className="ui-press" onClick={() => setSelectedLevel(null)} style={{ border: "none", background: "none", fontSize: 24, fontWeight: "bold", color: th.t3, cursor: "pointer" }}>×</button>
@@ -615,21 +616,21 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
             <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
               <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{selectedLevel.questionCount}</div>
-                <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Savollar" : "Questions"}</div>
+                <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_questions")}</div>
               </div>
               <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>{selectedLevel.passThreshold}%</div>
-                <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "O'tish chegarasi" : "Pass limit"}</div>
+                <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_passLimit")}</div>
               </div>
               <div style={{ flex: 1, background: th.bor + ALPHA.faint, padding: SPACE.s3, borderRadius: RADIUS.m, textAlign: "center" }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: th.t1 }}>
                   {userLevels[selectedLevel.id]?.stars || 0}/3
                 </div>
-                <div style={{ ...TYPE.tiny, color: th.t2 }}>{uz ? "Yulduzlar" : "Stars"}</div>
+                <div style={{ ...TYPE.tiny, color: th.t2 }}>{t("gam_stars")}</div>
               </div>
             </div>
 
-            <PrimaryButton text={uz ? "Boshlash" : lg === "ru" ? "Начать" : "Start"} onClick={() => startSelectedLevel(selectedLevel)} />
+            <PrimaryButton text={t("bd_startLabel")} onClick={() => startSelectedLevel(selectedLevel)} />
           </div>
         )}
       </div>
@@ -641,7 +642,7 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
     return (
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "80vh", background: th.bg }}>
         <div style={{ fontSize: 24, fontWeight: 900, color: th.t2, marginBottom: SPACE.s6, textTransform: "uppercase", letterSpacing: 1.5 }}>
-          {uz ? "Tayyormisiz?" : lg === "ru" ? "Готовы?" : "Are you ready?"}
+          {t("gam_div_areYouReady")}
         </div>
         <div style={{ width: 140, height: 140, borderRadius: "50%", background: th.ac2, display: "flex", alignItems: "center", justifyContent: "center", border: `6px solid ${th.ac}`, boxShadow: `0 10px 30px ${th.ac}33` }}>
           <span className="bg-pulse" style={{ fontSize: 72, fontWeight: 900, color: th.ac }}>{count}</span>
@@ -660,7 +661,7 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
         {/* Play Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: SPACE.s4 }}>
           <div style={{ ...TYPE.caption, fontWeight: 700, color: th.t2 }}>
-            {uz ? "Savol" : lg === "ru" ? "Вопрос" : "Question"} {eng.qIndex + 1} / {eng.totalQuestions}
+            {t("gam_div_question")} {eng.qIndex + 1} / {eng.totalQuestions}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Badge text={`${eng.difficulty.toUpperCase()}`} theme={eng.difficulty === "easy" ? "success" : eng.difficulty === "medium" ? "warning" : "danger"} />
@@ -690,13 +691,13 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
             <div className="bg-pop" style={{ position: "absolute", inset: 0, background: "rgba(16,185,129,0.92)", borderRadius: RADIUS.m, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", zIndex: 10 }}>
               <div style={{ fontSize: 44, marginBottom: 4 }}>🚀</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: "#fff" }}>
-                {uz ? "QIYINCHILIK OSHDI!" : lg === "ru" ? "СЛОЖНОСТЬ ВЫРОСЛА!" : "LEVEL UP!"}
+                {t("gam_div_levelUpBanner")}
               </div>
             </div>
           )}
 
           <div style={{ fontSize: 15, color: th.t3, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1, marginBottom: SPACE.s1 }}>
-            {uz ? "Misolni yeching" : lg === "ru" ? "Решите пример" : "Solve the equation"}
+            {t("gam_div_solveEquation")}
           </div>
           
           {/* Math Equation Formula Displays */}
@@ -724,7 +725,7 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
         <div style={{ textAlign: "center" }}>
           {isAnswered && (
             <PrimaryButton 
-              text={eng.qIndex + 1 < eng.totalQuestions ? (uz ? "Keyingi savol ➜" : "Дальше ➜") : (uz ? "Natijani ko'rish 🏁" : "Результаты 🏁")} 
+              text={eng.qIndex + 1 < eng.totalQuestions ? t("gam_div_nextQuestion") : t("gam_div_viewResults")} 
               onClick={eng.nextQuestion} 
               theme="primary"
             />
@@ -748,10 +749,10 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
             <div style={{ fontSize: 48 }}>👑</div>
             <div style={{ textAlign: "left" }}>
               <div style={{ fontSize: 20, fontWeight: 900 }}>
-                {uz ? "YANGI DARAXA!" : lg === "ru" ? "НОВЫЙ УРОВЕНЬ!" : "LEVEL UP!"}
+                {t("gam_div_newLevelTitle")}
               </div>
               <div style={{ fontSize: 13, opacity: 0.9 }}>
-                {uz ? `Tabriklaymiz! Siz hozir ${newLevel}-darajaga chiqdingiz.` : `Congratulations! You reached level ${newLevel}.`}
+                {t("gam_div_congratsLevel", { level: newLevel })}
               </div>
             </div>
           </div>
@@ -762,14 +763,10 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
         </div>
 
         <h2 style={{ ...TYPE.display, fontSize: 34, color: passed ? th.gr : th.rd, margin: "0 0 4px" }}>
-          {passed 
-            ? (uz ? "AJOYIB MAHORAT!" : lg === "ru" ? "ОТЛИЧНАЯ РАБОТА!" : "EXCELLENT JOB!") 
-            : (uz ? "YANA BIR BOR URINIB KO'R!" : lg === "ru" ? "ПОПРОБУЙ ЕЩЕ РАЗ!" : "TRY ONCE MORE!")}
+          {passed ? t("gam_div_excellentJob") : t("gam_div_tryOnceMore")}
         </h2>
         <p style={{ ...TYPE.body, color: th.t2, margin: `0 0 ${SPACE.s6}px` }}>
-          {passed 
-            ? (uz ? "Siz bu bosqichni muvaffaqiyatli topshirdingiz!" : lg === "ru" ? "Вы успешно прошли этот уровень!" : "You completed this level successfully!") 
-            : (uz ? `Kamida ${selectedLevel?.passThreshold}% natija kerak edi.` : `You needed at least ${selectedLevel?.passThreshold}%.`)}
+          {passed ? t("gam_div_levelCompleted") : t("gam_div_neededPct", { pct: selectedLevel?.passThreshold })}
         </p>
 
         {/* Stars Display Block */}
@@ -781,17 +778,17 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
 
         {/* Stats grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s4, marginBottom: SPACE.s8 }}>
-          <StatCard label={uz ? "To'g'ri javoblar" : "Correct solutions"} val={`${res.correct} / ${res.total}`} sub={uz ? "Yechilgan misollar" : "Solved questions"} theme="success" />
-          <StatCard label={uz ? "Yig'ilgan tangalar" : "Coins rewarded"} val={`+${res.coins}`} icon={coinIco(PREMIUM.gold, 18)} sub={uz ? "Taqdirlandi" : "Awarded"} theme="warning" />
-          <StatCard label={uz ? "To'plangan XP" : "XP gained"} val={`+${res.xp}`} sub={uz ? "Tajriba ballari" : "Experience points"} theme="accent" />
-          <StatCard label={uz ? "To'g'rilik foizi" : "Accuracy"} val={`${Math.round((res.correct/res.total)*100)}%`} sub={uz ? "Umumiy foiz" : "Total score"} theme={passed ? "success" : "danger"} />
+          <StatCard label={t("gam_div_correctSolutions")} val={`${res.correct} / ${res.total}`} sub={t("gam_div_solvedQuestions")} theme="success" />
+          <StatCard label={t("gam_div_coinsRewarded")} val={`+${res.coins}`} icon={coinIco(PREMIUM.gold, 18)} sub={t("gam_div_awarded")} theme="warning" />
+          <StatCard label={t("gam_div_xpGained")} val={`+${res.xp}`} sub={t("gam_div_experiencePoints")} theme="accent" />
+          <StatCard label={t("gam_div_accuracy")} val={`${Math.round((res.correct/res.total)*100)}%`} sub={t("gam_div_totalScore")} theme={passed ? "success" : "danger"} />
         </div>
 
         {/* Play actions triggers */}
         <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
           {passed ? (
             <PrimaryButton 
-              text={uz ? "Keyingi Bosqich ➜" : "Следующий уровень ➜"} 
+              text={t("gam_div_nextLevelBtn")} 
               onClick={() => {
                 const nextLvl = levels.find(l => l.id === (selectedLevel?.id || 0) + 1);
                 if (nextLvl) {
@@ -803,12 +800,12 @@ export default function DivisionGame({ user, lg = "uz", dark, gameId = "math/div
               }} 
             />
           ) : (
-            <PrimaryButton text={uz ? "Qayta urinish ⟳" : "Повторить ⟳"} onClick={() => startSelectedLevel(selectedLevel)} />
+            <PrimaryButton text={t("gam_div_retry")} onClick={() => startSelectedLevel(selectedLevel)} />
           )}
 
           <button className="ui-press" onClick={() => { setSelectedLevel(null); eng.backToIntro(); }}
             style={{ width: "100%", background: "none", border: `2.5px solid ${th.bor}`, borderRadius: RADIUS.l, padding: "14px", color: th.t2, fontSize: 16, fontWeight: 700, cursor: "pointer", transition: "all " + MOTION.fast }}>
-            {uz ? "Xaritaga qaytish" : "Вернуться к карте"}
+            {t("gam_backToMap")}
           </button>
         </div>
       </div>
