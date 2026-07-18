@@ -148,21 +148,35 @@ export function AppProvider({ children }) {
   }, []);
 
   // ── addStar ──────────────────────────────────────────────
+  // MUHIM: ilgari bu funksiya 3 ta KETMA-KET tarmoq o'qishini (stars,
+  // baraka_coins, starlog — har biri o'z yozuvidan oldin) bajarardi —
+  // shu sabab xarajat/daromad qo'shilgandan keyin "bog'ga tanga berish"
+  // sezilarli kech bo'lardi. Sonli maydonlar (stars, baraka_coins) endi
+  // db.inc() orqali SERVERDA ATOMIK oshiriladi — bir nechta addStar
+  // chaqiruvi bir vaqtda ishlasa (yoki boshqa kod, masalan bog'ni
+  // sug'orish, xuddi shu hujjatni parallel o'qib-yozsa) ham hech biri
+  // yo'qolib qolmaydi (avvalgi "o'qi-eskisiga qo'sh-yoz" usulida kesh
+  // eskirgan bo'lsa bitta yozuv boshqasini "yutib yuborishi" mumkin edi).
+  // UI esa keshdan darhol (taxminiy) yangilanadi — aniq qiymat keyingi
+  // db.g/gCache o'qishida serverdan tabiiy ravishda to'g'irlanadi.
   const addStar = useCallback(async (count = 1, reason = "") => {
     if (!user?.oilaId) return;
     try {
-      const cur = Math.max(0, (await db.g("stars_" + user.oilaId)) || 0);
-      const next = Math.max(0, cur + count);
-      await db.s("stars_" + user.oilaId, next);
-      setStars(next);
+      const cachedStars = db.gCache("stars_" + user.oilaId);
+      const optimisticStars = Math.max(0, (cachedStars != null ? cachedStars : 0) + count);
+      setStars(optimisticStars);
+      db.inc("stars_" + user.oilaId, count).catch(() => {});
+
       const coinMap = { "Xarajat kiritildi": 5, "Expense added": 5, "Daromad kiritildi": 10, "Income added": 10, "Vazifa bajarildi": 15, "Task completed": 15, "Maqsadga yetildi": 50, "Goal reached": 50 };
       const coinAmt = coinMap[reason] || count;
-      const curC = (await db.g("baraka_coins_" + user.oilaId)) || 0;
-      await db.s("baraka_coins_" + user.oilaId, curC + coinAmt);
-      const log = (await db.g("starlog_" + user.oilaId)) || [];
-      log.unshift({ uid: user.id, ism: user.ism, count, reason, sana: new Date().toISOString() });
-      await db.s("starlog_" + user.oilaId, log.slice(0, 50));
+      db.inc("baraka_coins_" + user.oilaId, coinAmt).catch(() => {});
+
       setCoinEarnedTrigger({ count, ts: Date.now() });
+
+      const cachedLog = db.gCache("starlog_" + user.oilaId);
+      const log = (cachedLog != null ? cachedLog : await db.g("starlog_" + user.oilaId)) || [];
+      log.unshift({ uid: user.id, ism: user.ism, count, reason, sana: new Date().toISOString() });
+      db.s("starlog_" + user.oilaId, log.slice(0, 50)).catch(() => {});
     } catch {}
   }, [user]);
 

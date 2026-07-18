@@ -1,13 +1,40 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { KATS, KN, DARS, DN } from "../utils/constants.js";
+import { Capacitor } from "@capacitor/core";
+import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
+import { Share } from "@capacitor/share";
 
 export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
   const { isPremium, setShowPremModal, lg, ok$, user, oila, azolar, t } = useApp();
   const [exportLoading, setExportLoading] = useState(false);
 
-  const downloadFile = (content, filename, mime) => {
+  // MUHIM: Android WebView'da `<a download>` + blob URL texnikasi
+  // ISHLAMAYDI — WebView'da brauzerdagidek "Yuklab olishlar" menejeri
+  // yo'q, shu sabab a.click() xatosiz bajariladi (shuning uchun ilova
+  // "Yuklab olindi!" deb ko'rsatardi), lekin fayl qurilmada HECH QAYERGA
+  // yozilmasdi. Native platformada endi fayl to'g'ridan-to'g'ri
+  // Filesystem orqali yoziladi va tizimning "Ulashish/Saqlash" oynasi
+  // ochiladi — foydalanuvchi shu yerdan "Yuklab olishlar"ga saqlashi,
+  // boshqa ilovaga (Telegram va h.k.) yuborishi mumkin.
+  const downloadFile = async (content, filename, mime) => {
     try {
+      if (Capacitor.isNativePlatform()) {
+        const { uri } = await Filesystem.writeFile({
+          path: filename,
+          data: content,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        // MUHIM: fayl yozish (yuqorida) va ulashish oynasi (pastda) ATAYIN
+        // ikki alohida bosqich — foydalanuvchi Ulashish oynasini ilova
+        // tanlamasdan yopib qo'ysa, ba'zi qurilmalarda Share.share() xato
+        // (rad javobi) qaytaradi, lekin fayl allaqachon MUVAFFAQIYATLI
+        // yozilgan bo'ladi. Shu xato tashqi try/catch'ga tushib "Xato"
+        // deb noto'g'ri ko'rsatilmasligi uchun bu yerda alohida ushlanadi.
+        try { await Share.share({ url: uri, title: filename }); } catch (_se) {}
+        return true;
+      }
       const blob = new Blob([content], { type: mime });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -18,12 +45,13 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
       return true;
-    } catch {
+    } catch (e) {
+      console.error("downloadFile error:", e);
       return false;
     }
   };
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
     if (!isPremium) {
       setShowPremModal(true);
       return;
@@ -98,7 +126,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         });
       }
       const csv = "\uFEFF" + rows.join("\n");
-      const okk = downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
+      const okk = await downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
       ok$(okk ? t("xp_downloaded") : t("xp_error"), okk ? "ok" : "err");
     } catch (e) {
       ok$(t("xp_errorMsg", { msg: e.message }), "err");
@@ -106,7 +134,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     setExportLoading(false);
   };
 
-  const exportPDF = (scopeArg) => {
+  const exportPDF = async (scopeArg) => {
     if (!isPremium) {
       setShowPremModal(true);
       return;
@@ -422,7 +450,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         doc.close();
 
         iframe.contentWindow.focus();
-        setTimeout(() => {
+        setTimeout(async () => {
           let printInitiated = false;
           try {
             iframe.contentWindow.print();
@@ -433,7 +461,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
 
           // Mobil qurilmalar va WebView cheklovlari uchun, chop etish darchasi bilan bir qatorda
           // darhol oflayn HTML hisobot faylini ham yuklab beramiz.
-          const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
+          const okk = await downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
 
           if (printInitiated) {
             ok$(t("xp_printedAndDownloaded"), "ok");
@@ -449,7 +477,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         }, 300);
       } catch (errIframe) {
         console.error("Iframe printing failed:", errIframe);
-        const okk = downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
+        const okk = await downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
         ok$(okk ? t("xp_htmlDownloaded") : t("xp_error"), okk ? "ok" : "err");
       }
     } catch (e) {

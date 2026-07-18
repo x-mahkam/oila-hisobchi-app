@@ -142,22 +142,32 @@ export default function App() {
   }, [user?.id]);
 
   // PIN o'rnatish/kiritishni taklif qilish — HAR BIR QURILMA O'RNATISHIDA
-  // bir marta (uid bo'yicha). Nafaqat yangi ro'yxatdan o'tganda, balki
-  // mavjud akkaunt bilan YANGI qurilmaga (yoki ilova o'chirilib qayta
-  // o'rnatilgach) birinchi marta kirilganda ham so'raladi — chunki
-  // localStorage o'chirilish bilan birga tozalanadi, demak bu belgi
-  // "haqiqatan ham bu qurilmada hali PIN so'ralmagan"ni bildiradi. Firestore
-  // (bulut)da eski PIN qolgan bo'lsa ham, xavfsizlik uchun har yangi
-  // qurilma o'z PIN'ini qayta o'rnatadi/tasdiqlaydi.
+  // bir marta (uid bo'yicha), lekin FAQAT chindan ham yangi qurilma/o'rnatish
+  // bo'lsa. Bolalar hisobiga bu oyna hech qachon ko'rsatilmaydi (rol==="kid").
+  //
+  // MUHIM (tuzatildi): birinchi versiyada bu "oilaV7_pinPromptShown_<uid>"
+  // belgisi HAR BIR foydalanuvchi uchun (hatto allaqachon ishlab turgan,
+  // yangilangan ilovada ham) doim "yo'q" bo'lib chiqardi — chunki bu belgi
+  // shu tuzatish bilan birga yangi qo'shilgan, eski o'rnatishlarda hech
+  // qachon yozilmagan edi. Natijada oddiy YANGILANISH (ma'lumotlar saqlanib
+  // qolgan holat) bilan haqiqiy YANGI QURILMA (localStorage tozalangan
+  // holat) farqlanmasdan, BARCHA mavjud foydalanuvchilarga PIN qayta
+  // so'ralib qolgan edi. Endi qurilma bu hisobni ILGARI ko'rganmi — shuni
+  // xavfsizlik hujjati keshi (security_<uid>) mavjudligidan bilib olamiz:
+  // agar u localStorage'da bo'lsa, demak bu qurilma bu hisob bilan avval
+  // ham muvaffaqiyatli ishlagan (oddiy yangilanish) — PIN qayta so'ralmaydi.
   useEffect(() => {
-    if (!user?.id) return;
+    // MUHIM: "isKid" hali shu yerda e'lon qilinmagan (pastroqda) — shu
+    // sabab uni ishlatmasdan, to'g'ridan-to'g'ri user.rol tekshiriladi.
+    if (!user?.id || user.rol === "kid") return;
     try {
       const promptKey = "oilaV7_pinPromptShown_" + user.id;
       if (localStorage.getItem(promptKey) === "1") return;
+      const seenBefore = db.gCache("security_" + user.id) != null;
       localStorage.setItem(promptKey, "1");
-      setShowPinSetup(true);
+      if (!seenBefore) setShowPinSetup(true);
     } catch (_e) {}
-  }, [user?.id]);
+  }, [user?.id, user?.rol]);
 
   // Background state lock listener — bank ilovalari kabi: fondan darhol
   // qaytilsa (LOCK_GRACE_MS ichida) PIN so'ralmaydi, faqat shu muddatdan

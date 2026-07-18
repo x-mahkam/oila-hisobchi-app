@@ -211,7 +211,7 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, deviceBiometricAvailable ? "bio" : "", 0, "del"].map((num, ni) => {
           if (num === "bio") {
             return (
-              <button key={ni} className="ui-press" onClick={triggerBiometrics} aria-label={t("alk_fingerprint")}
+              <button key={ni} className="ui-press" onClick={() => triggerBiometrics()} aria-label={t("alk_fingerprint")}
                 style={{
                   background: "transparent",
                   border: "none",

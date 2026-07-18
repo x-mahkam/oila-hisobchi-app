@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, increment, collection, getDocs, query, where, enableMultiTabIndexedDbPersistence, enableIndexedDbPersistence } from "firebase/firestore";
 import { getAuth, initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail, sendEmailVerification, onAuthStateChanged, signOut, signInAnonymously, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { Capacitor } from "@capacitor/core";
 import { Preferences } from "@capacitor/preferences";
@@ -274,6 +274,31 @@ export const db = {
       return true;
     } catch (e) {
       console.error("db.s ERROR:", k, e.code, e.message);
+      throw e;
+    }
+  },
+  // Sonli hujjatni ATOMIK oshirish/kamaytirish (Firestore increment()).
+  // MUHIM: db.s (o'qi-o'zgartir-yoz) bilan bir xil kalitni bir nechta
+  // joy (masalan bir nechta addStar chaqiruvi, yoki addStar va boshqa
+  // kod bir vaqtda) parallel yozsa — oxirgi yozuv avvalgisini "yutib
+  // yuboradi" (lost update), chunki har biri ESKI qiymatni o'qib, ustiga
+  // qo'shib, to'liq hujjatni almashtiradi. db.inc esa serverning o'zida
+  // atomik qo'shadi — parallel chaqiruvlar bir-birini yutib yubormaydi.
+  // Kesh (localStorage) ATAYIN yangilanmaydi — chunki bu qurilma
+  // increment'dan keyingi HAQIQIY yig'indini bilmaydi (faqat server
+  // biladi); keyingi db.g/gCache o'qishi tabiiy ravishda to'g'irlaydi.
+  async inc(k, delta) {
+    try {
+      const ref = doc(fbDB, "appdata", safeKey(k));
+      const payload = { v: increment(delta), t: Date.now() };
+      const au = (fbAuth.currentUser && fbAuth.currentUser.uid) || ownerCtx.uid || null;
+      if (au) payload._u = au;
+      const oid = resolveOila(k);
+      if (oid) payload._o = oid;
+      await setDoc(ref, payload, { merge: true });
+      return true;
+    } catch (e) {
+      console.error("db.inc ERROR:", k, e.code, e.message);
       throw e;
     }
   },
