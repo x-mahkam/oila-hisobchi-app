@@ -141,17 +141,23 @@ export default function App() {
     }
   }, [user?.id]);
 
-  // Ro'yxatdan yangi o'tgan (bola emas) foydalanuvchiga PIN o'rnatishni taklif
-  // qilish — shunda keyingi safarlar to'liq login/parol o'rniga PIN yetarli.
+  // PIN o'rnatish/kiritishni taklif qilish — HAR BIR QURILMA O'RNATISHIDA
+  // bir marta (uid bo'yicha). Nafaqat yangi ro'yxatdan o'tganda, balki
+  // mavjud akkaunt bilan YANGI qurilmaga (yoki ilova o'chirilib qayta
+  // o'rnatilgach) birinchi marta kirilganda ham so'raladi — chunki
+  // localStorage o'chirilish bilan birga tozalanadi, demak bu belgi
+  // "haqiqatan ham bu qurilmada hali PIN so'ralmagan"ni bildiradi. Firestore
+  // (bulut)da eski PIN qolgan bo'lsa ham, xavfsizlik uchun har yangi
+  // qurilma o'z PIN'ini qayta o'rnatadi/tasdiqlaydi.
   useEffect(() => {
-    if (!user?.id || hasPin) return;
+    if (!user?.id) return;
     try {
-      if (localStorage.getItem("oilaV7_justRegistered") === "1") {
-        localStorage.removeItem("oilaV7_justRegistered");
-        setShowPinSetup(true);
-      }
+      const promptKey = "oilaV7_pinPromptShown_" + user.id;
+      if (localStorage.getItem(promptKey) === "1") return;
+      localStorage.setItem(promptKey, "1");
+      setShowPinSetup(true);
     } catch (_e) {}
-  }, [user?.id, hasPin]);
+  }, [user?.id]);
 
   // Background state lock listener — bank ilovalari kabi: fondan darhol
   // qaytilsa (LOCK_GRACE_MS ichida) PIN so'ralmaydi, faqat shu muddatdan
