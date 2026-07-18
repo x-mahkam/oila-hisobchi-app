@@ -19,10 +19,6 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [showForgotConfirm, setShowForgotConfirm] = useState(false);
-  // VAQTINCHALIK DIAGNOSTIKA: App.jsx boot ketma-ketligi vaqt jurnali.
-  const [bootLog] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("oilaV7_bootLog") || "[]"); } catch (_e) { return []; }
-  });
 
   useEffect(() => {
     NativeBiometric.isAvailable()
@@ -271,15 +267,6 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
         }}>
         {t("alk_forgotPin")}
       </button>
-
-      {/* VAQTINCHALIK DIAGNOSTIKA: ilova ochilishida sessiya tiklanish
-          bosqichlari qancha vaqt olganini ko'rsatadi. Muammo topilgach
-          OLIB TASHLANADI. */}
-      {bootLog.length > 0 && (
-        <div style={{marginTop:SPACE.s4,padding:"8px 10px",borderRadius:8,background:th.surH,border:"1px solid "+th.bor,fontSize:9,fontFamily:"monospace",color:th.t3,maxWidth:320,width:"100%"}}>
-          {bootLog.map((line, i) => <div key={i}>{line}</div>)}
-        </div>
-      )}
 
       <ConfirmDialog
         th={th}

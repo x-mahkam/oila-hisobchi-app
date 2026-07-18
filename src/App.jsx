@@ -519,38 +519,16 @@ export default function App() {
     let active = true;
     let safetyTimeout = null;
 
-    // VAQTINCHALIK DIAGNOSTIKA: sessiya tiklanish jarayonidagi har bir
-    // bosqichning aniq vaqtini localStorage'ga yozib boramiz (o'tish juda
-    // tez — 5s ichida — sodir bo'lgani uchun ekranda ko'rsatilgan matnni
-    // o'qib/skrinshot qilib ulgurmaslik mumkin). PIN ekranida (odatda shu
-    // yerga "tushib qoladi") ko'rsatiladi. Muammo topilgach OLIB TASHLANADI.
-    const t0 = Date.now();
-    const bootLog = [];
-    const logBoot = (msg) => {
-      bootLog.push(`${Date.now() - t0}ms: ${msg}`);
-      try { localStorage.setItem("oilaV7_bootLog", JSON.stringify(bootLog)); } catch (_e) {}
-    };
-    logBoot("boot effect start");
-
     (async () => {
       try {
-        // MUHIM: real qurilmada o'lchangan jurnal shuni ko'rsatdi — oldingi
-        // "sessiya bloki bor-yo'qligini oldindan tekshirish" (hasStoredAuthSession)
-        // usuli xato natija berdi (sessiya aslida bor edi, lekin u "yo'q" deb
-        // aniqladi), shu sabab qisqa (2.5s) safety timeout tanlandi va u
-        // haqiqiy tiklanishdan OLDIN ishga tushib Login'ni ko'rsatib yubordi.
-        // Bundan tashqari, pastdagi db.g("user_"+uid) chaqiruvi (Firestore'dan
-        // tarmoq orqali o'qish) sekin tarmoqda 9+ soniya olganini aniqladik —
-        // bu esa hatto 15 soniyalik safety timeout'ni ham xavf ostiga qo'yardi.
-        // Shu sabab endi ikkita narsa qilinadi: (1) safety timeout doim
-        // yetarlicha uzoq (20s) — noaniq oldindan tekshiruvga tayanmaydi;
-        // (2) pastda profil avval keshdan (localStorage, tarmoqsiz, darhol)
-        // olinadi — shu bilan safety timeout deyarli hech qachon kerak
-        // bo'lmaydi, chunki foydalanuvchi ekranni Firebase Auth tiklanishi
-        // bilan bir vaqtda (~1-2s) ko'radi, Firestore tarmoq javobini kutmasdan.
+        // MUHIM: sessiya tiklanishi (Firebase Auth) va profilni o'qish
+        // (Firestore) ikkalasi ham tarmoqqa bog'liq amallar — sekin mobil
+        // tarmoqda bir necha soniya olishi mumkin. Shu sabab safety timeout
+        // doim yetarlicha uzoq (20s), va pastda profil avval keshdan
+        // (localStorage, tarmoqsiz, darhol) olinadi — shu bilan safety
+        // timeout deyarli hech qachon kerak bo'lmaydi.
         safetyTimeout = setTimeout(() => {
           if (active) {
-            logBoot("SAFETY TIMEOUT FIRED (20000ms)");
             console.warn("Safety boot trigger activated (Firebase check took longer than 20s)");
             setBoot(false);
           }
@@ -608,11 +586,9 @@ export default function App() {
         let gotFirstAuthState = false;
 
         auth.onChange(async (fbUser) => {
-          logBoot(`onChange fired, fbUser=${!!fbUser}${fbUser ? " uid=" + fbUser.uid : ""}`);
           // Ro'yxatdan o'tish/kirish jarayoni ketayotgan bo'lsa — aralashmaymiz.
           // doAuth() o'zi to'g'ri user'ni o'rnatadi va ma'lumot yuklaydi.
           if (authBusyRef.current) {
-            logBoot("authBusyRef true, skipping");
             if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
             return;
           }
@@ -624,32 +600,29 @@ export default function App() {
             // Kesh-birinchi tez yo'l: profil avvalgi kirishda localStorage'ga
             // keshlangan bo'lsa (db.g har muvaffaqiyatli o'qishdan keyin
             // avtomatik keshlaydi), uni TARMOQNI KUTMASDAN darhol ishlatamiz —
-            // sekin Firestore javobi (mobil tarmoqda 9+ soniya bo'lishi
-            // mumkinligi o'lchov bilan tasdiqlandi) endi PIN ekraniga
-            // yetishni bloklamaydi. Tarmoqdan yangilash fonda davom etadi.
+            // sekin Firestore javobi (mobil tarmoqda bir necha soniya bo'lishi
+            // mumkin) endi PIN ekraniga yetishni bloklamaydi. Tarmoqdan
+            // yangilash fonda davom etadi.
             const cachedU = db.gCache("user_" + uid);
             if (cachedU && active) {
               localStorage.setItem("oilaV7", JSON.stringify({ uid: cachedU.id }));
               setUser(cachedU); setScr("bosh"); loadFam(cachedU);
-              logBoot("cache hit — setUser + setScr(bosh) called (fast path)");
-              if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (cache fast path)"); }
+              if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
             }
 
             // Tarmoqdan yangilash — fonda, boot'ni endi bloklamaydi.
             (async () => {
               let u = await db.g("user_" + uid);
-              logBoot(`db.g("user_"+uid) resolved, u=${!!u}`);
-              if (!u && uid !== fbUser.uid) { u = await db.g("user_" + fbUser.uid); logBoot(`db.g fallback resolved, u=${!!u}`); }
-              if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); logBoot("setUser + setScr(bosh) called (network refresh)"); }
-              if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (network path)"); }
+              if (!u && uid !== fbUser.uid) u = await db.g("user_" + fbUser.uid);
+              if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); }
+              if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
             })();
             return;
           }
-          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (via onChange, no fbUser)"); }
+          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
         });
 
         await firstAuthStatePromise;
-        logBoot("await firstAuthStatePromise returned");
 
         const dl = localStorage.getItem("oilaV7L"); if (dl) setLg(dl);
         const dd = localStorage.getItem("oilaV7D"); if (dd != null) setDark(dd !== "false");
@@ -660,11 +633,9 @@ export default function App() {
           const tx = params.get("tilxat"); if (tx) { try { setVerifyTilxat(JSON.parse(tx)); } catch {} }
         } catch {}
       } catch (e) {
-        logBoot("Boot error: " + e);
         console.error("Boot error:", e);
       } finally {
         if (active) {
-          logBoot("finally: setBoot(false)");
           setBoot(false);
           clearTimeout(safetyTimeout);
         }
