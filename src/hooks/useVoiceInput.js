@@ -3,6 +3,18 @@ import { useApp } from "../context/AppContext.jsx";
 import { db } from "../firebase.js";
 import { td, nt } from "../utils/formatters.js";
 import { KATS, KN } from "../utils/constants.js";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+
+// Android WebView'da brauzerning Web Speech API'si (window.SpeechRecognition)
+// ishlamaydi — RECORD_AUDIO ruxsati berilgan bo'lsa ham "not-allowed" xatosi
+// bilan to'xtaydi. Shu sabab native platformada maxsus native plagin
+// (android/.../SpeechToTextPlugin.java, qurilmaning tizim darajasidagi
+// android.speech.SpeechRecognizer'ini ishlatadi) orqali ishlaydi; faqat
+// oddiy brauzerda (native bo'lmagan platformada) eski Web Speech API
+// zaxira sifatida qoladi.
+const SpeechToText = registerPlugin("SpeechToText");
+
+const SR_LANG = { uz: "uz-UZ", ru: "ru-RU", kk: "kk-KZ", ky: "ky-KG", tg: "tg-TJ", qr: "uz-UZ", en: "en-US" };
 
 export function useVoiceInput() {
   const {
@@ -22,6 +34,16 @@ export function useVoiceInput() {
   const [voiceText, setVoiceText] = useState("");
   const [voiceParsed, setVoiceParsed] = useState(null);
   const voiceRecRef = useRef(null);
+  const voiceListenersRef = useRef([]);
+
+  const removeVoiceListeners = () => {
+    voiceListenersRef.current.forEach((h) => {
+      try {
+        h.remove();
+      } catch (e) {}
+    });
+    voiceListenersRef.current = [];
+  };
 
   const parseVoice = (text) => {
     if (!text) return null;
@@ -61,27 +83,49 @@ export function useVoiceInput() {
     return { summa, kat, text };
   };
 
-  const startVoice = () => {
-    if (!isPremium) {
-      setShowPremModal(true);
-      return;
+  const startVoiceNative = async (lang) => {
+    try {
+      removeVoiceListeners();
+      const resultHandle = await SpeechToText.addListener("result", (data) => {
+        setVoiceText(data.transcript || "");
+        const parsed = parseVoice(data.transcript);
+        if (parsed) setVoiceParsed(parsed);
+      });
+      const errorHandle = await SpeechToText.addListener("error", (data) => {
+        if (data.error === "not-allowed") {
+          ok$(t("uvi_micDenied"), "warn");
+        } else if (data.error !== "no-speech") {
+          ok$(t("uvi_error"), "warn");
+        }
+      });
+      const endHandle = await SpeechToText.addListener("end", () => {
+        setVoiceOn(false);
+        removeVoiceListeners();
+      });
+      voiceListenersRef.current = [resultHandle, errorHandle, endHandle];
+      setVoiceOn(true);
+      await SpeechToText.start({ lang });
+    } catch (e) {
+      setVoiceOn(false);
+      removeVoiceListeners();
+      if ((e.message || "").indexOf("not-allowed") >= 0) {
+        ok$(t("uvi_micDenied"), "warn");
+      } else {
+        ok$(t("uvi_error"), "warn");
+      }
     }
+  };
+
+  const startVoiceWeb = (lang) => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
-      setShowVoice(true);
-      setVoiceText("");
-      setVoiceParsed(null);
       ok$(t("uvi_notSupported"), "warn");
       return;
     }
-    setShowVoice(true);
-    setVoiceText("");
-    setVoiceParsed(null);
     setVoiceOn(true);
     try {
       const rec = new SR();
-      const SR_LANG = { uz: "uz-UZ", ru: "ru-RU", kk: "kk-KZ", ky: "ky-KG", tg: "tg-TJ", qr: "uz-UZ", en: "en-US" };
-      rec.lang = SR_LANG[lg] || "en-US";
+      rec.lang = lang;
       rec.interimResults = true;
       rec.continuous = false;
       rec.onresult = (e) => {
@@ -110,8 +154,26 @@ export function useVoiceInput() {
     }
   };
 
+  const startVoice = () => {
+    if (!isPremium) {
+      setShowPremModal(true);
+      return;
+    }
+    setShowVoice(true);
+    setVoiceText("");
+    setVoiceParsed(null);
+    const lang = SR_LANG[lg] || "en-US";
+    if (Capacitor.isNativePlatform()) {
+      startVoiceNative(lang);
+    } else {
+      startVoiceWeb(lang);
+    }
+  };
+
   const stopVoice = () => {
-    if (voiceRecRef.current) {
+    if (Capacitor.isNativePlatform()) {
+      SpeechToText.stop().catch(() => {});
+    } else if (voiceRecRef.current) {
       try {
         voiceRecRef.current.stop();
       } catch (e) {}
