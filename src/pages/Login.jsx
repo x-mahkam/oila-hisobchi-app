@@ -5,7 +5,7 @@ import { KatIco, DarIco, MoneyInput, Tst } from "../components/common/index.jsx"
 import { Ico } from "../utils/icons.jsx";
 import { COUNTRIES, VALS, RELATIONS, TL } from "../utils/constants.js";
 import { td, nt, normTel, hp } from "../utils/formatters.js";
-import { db, auth, setOwnerCtx, fbAuth, authDebugSnapshot } from "../firebase.js";
+import { db, auth, setOwnerCtx, fbAuth } from "../firebase.js";
 import { fetchLanguageList } from "../i18n/translationService.js";
 
 const FALLBACK_LANGS = [
@@ -59,13 +59,6 @@ export default function LoginPage() {
   }, []);
   const langs = langList || FALLBACK_LANGS;
   const currentLang = langs.find((l) => l.code === lg) || langs[0];
-
-  // VAQTINCHALIK DIAGNOSTIKA: sessiya saqlash muammosini aniqlash uchun.
-  // Muammo topilgach bu blok OLIB TASHLANADI.
-  const [authDiag, setAuthDiag] = useState(null);
-  useEffect(() => {
-    authDebugSnapshot().then(setAuthDiag).catch((e) => setAuthDiag({ err: String(e) }));
-  }, []);
 
   useEffect(() => {
     try {
@@ -510,11 +503,6 @@ export default function LoginPage() {
             {t("log066")}
           </a>
         </div>
-        {authDiag && (
-          <div style={{marginTop:14,padding:"8px 10px",borderRadius:8,background:th.sur,border:"1px solid "+th.bor,fontSize:10,fontFamily:"monospace",color:th.t3,wordBreak:"break-all"}}>
-            DEBUG: native={String(authDiag.native)} fbUser={String(authDiag.fbUser)} prefsBlob={String(authDiag.prefsHasBlob)} ls_oilaV7={String(authDiag.ls_oilaV7)}{authDiag.prefsErr ? " prefsErr=" + authDiag.prefsErr : ""}{authDiag.err ? " err=" + authDiag.err : ""}
-          </div>
-        )}
       </div>
       {showResetScreen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetScreen(false)}>
         <div style={{background:th.bg,borderRadius:20,maxWidth:400,width:"100%",padding:"26px 22px"}} onClick={e=>e.stopPropagation()}>

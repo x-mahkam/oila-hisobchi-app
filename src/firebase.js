@@ -69,22 +69,21 @@ try {
 }
 export const fbAuth = _fbAuth;
 
-// VAQTINCHALIK DIAGNOSTIKA: sessiya saqlanish muammosini real qurilmada
-// aniqlash uchun. Login ekranida kichik matn sifatida ko'rsatiladi — qaysi
-// bosqichda aynan nima saqlanmayotganini bilish uchun (native platforma
-// aniqlanyaptimi, Preferences'da blob bormi, fbAuth.currentUser tiklandimi).
-// Muammo topilgach OLIB TASHLANADI.
-export async function authDebugSnapshot() {
-  const out = { native: null, fbUser: null, prefsHasBlob: null, prefsErr: null, ls_oilaV7: null };
-  try { out.native = Capacitor.isNativePlatform(); } catch (e) { out.native = "err:" + e; }
-  try { out.fbUser = !!fbAuth.currentUser; } catch (e) { out.fbUser = "err:" + e; }
+// Qurilma xotirasida (Capacitor Preferences) Firebase sessiyasi bloki
+// saqlanib qolganmi — tekshiradi. App.jsx boot bosqichida ishlatiladi:
+// agar blok mavjud bo'lsa, sessiyani tiklash (server bilan token
+// tekshiruvi — tarmoqqa bog'liq, sovuq ishga tushishda bir necha soniya
+// olishi mumkin) tugashini ancha uzoqroq kutamiz; aks holda (haqiqatan
+// chiqib ketilgan) darhol Login ko'rsatish uchun qisqa muddat yetarli.
+export async function hasStoredAuthSession() {
   try {
+    if (!Capacitor.isNativePlatform()) return null; // faqat native uchun ishonchli
     const persistKey = `firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`;
     const { value } = await Preferences.get({ key: persistKey });
-    out.prefsHasBlob = !!value;
-  } catch (e) { out.prefsErr = String((e && e.message) || e); }
-  try { out.ls_oilaV7 = !!localStorage.getItem("oilaV7"); } catch (e) { out.ls_oilaV7 = "err:" + e; }
-  return out;
+    return !!value;
+  } catch (_e) {
+    return null;
+  }
 }
 
 // Enable Firestore offline persistence (IndexedDB cache)

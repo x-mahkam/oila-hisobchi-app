@@ -69,7 +69,7 @@ import { App as CapApp }     from "@capacitor/app";
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
-import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
+import { db, auth, setOwnerCtx, fbAuth, hasStoredAuthSession } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
 // Bank ilovalari kabi: fonda shu muddatgacha turilsa PIN qulf qayta so'ralmaydi.
@@ -516,23 +516,35 @@ export default function App() {
   // ── Boot / Auth ──────────────────────────────────────────
   useEffect(() => {
     let active = true;
-    // MUHIM: 1.5s juda qisqa edi — Firebase sessiyani IndexedDB'dan tiklashi
-    // ba'zan shundan ko'proq vaqt oladi (ayniqsa birinchi ochilishda). Vaqt
-    // tugashidan oldin "boot tugadi" deyilsa, ilova sessiya tiklanishini
-    // kutmasdan Login ekranini ko'rsatib ulguradi — foydalanuvchi PIN o'rniga
-    // login/parolni qayta kiritishga majbur bo'lgandek ko'rinadigan asosiy
-    // sabab shu edi. Endi pastda auth holati birinchi marta aniqlanishini
-    // (onAuthStateChanged birinchi chaqiruvi) kutib turamiz, bu safety
-    // timeout esa faqat chindan ham "osilib qolgan" holatlar uchun zaxira.
-    const safetyTimeout = setTimeout(() => {
-      if (active) {
-        console.warn("Safety boot trigger activated (Firebase check took longer than 4s)");
-        setBoot(false);
-      }
-    }, 4000);
+    let safetyTimeout = null;
 
     (async () => {
       try {
+        // MUHIM: Firebase sessiyani tiklashda HAR DOIM serverga so'rov
+        // yuboradi (tokenni tekshirish/yangilash — reload) — bu sof
+        // IndexedDB o'qish emas, tarmoqqa bog'liq amal, sovuq ishga
+        // tushishda (ayniqsa mobil tarmoqda, radio/DNS hali "isinmagan"
+        // paytda) bir necha soniya olishi mumkin. Agar safety timeout juda
+        // qisqa bo'lsa (avval 4s edi), u chindan ham tiklanayotgan
+        // sessiyadan OLDIN ishga tushib, Login ekranini bir lahzaga
+        // ko'rsatib ulguradi — keyin haqiqiy onAuthStateChanged kelganda
+        // ekran o'zi tuzalib PIN'ga o'tadi, lekin foydalanuvchi bu
+        // "yalt etib o'tishni" chalkash/xato deb qabul qiladi. Shu sabab:
+        // qurilma xotirasida sessiya bloki bor-yo'qligini oldindan
+        // tekshiramiz — bor bo'lsa, tiklanish tugashini ancha uzoqroq
+        // kutamiz (server javobi kechiksa ham); yo'q bo'lsa (haqiqatan
+        // chiqib ketilgan), qisqa muddat yetarli.
+        let storedSession = null;
+        try { storedSession = await hasStoredAuthSession(); } catch (_e) {}
+        const safetyMs = storedSession === false ? 2500 : 15000;
+        safetyTimeout = setTimeout(() => {
+          if (active) {
+            console.warn(`Safety boot trigger activated (Firebase check took longer than ${safetyMs}ms)`);
+            setBoot(false);
+          }
+        }, safetyMs);
+
+
         // Google redirect tekshirish
         try {
           const { getRedirectResult } = await import("firebase/auth");
