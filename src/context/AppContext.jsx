@@ -6,7 +6,6 @@ import { td, nt, hp, fmtN } from "../utils/formatters.js";
 import { MK, VALS, TL } from "../utils/constants.js";
 import { useTranslation } from "react-i18next";
 import i18n from "../i18n/index.js";
-import { translationService } from "../i18n/translationService.js";
 
 const AppCtx = createContext(null);
 export const useApp = () => useContext(AppCtx);
@@ -40,12 +39,11 @@ export function AppProvider({ children }) {
 
   const setLg = useCallback((newLang) => {
     if (newLang) {
-      translationService.changeLanguage(newLang);
+      i18n.changeLanguage(newLang);
       setLgState(newLang);
       try {
         localStorage.setItem("oilaV7L", newLang);
         localStorage.setItem("oilaV7_lg", newLang);
-        localStorage.setItem("oilaV7_lg_active", newLang);
         localStorage.setItem("i18nextLng", newLang);
       } catch (e) {
         console.error("Error setting language:", e);
@@ -106,6 +104,14 @@ export function AppProvider({ children }) {
   // ── Maqsad confirm modal ─────────────────────────────────
   const [maqsadConfirmNotif, setMaqsadConfirmNotif] = useState(null);
   const syncDailyReminderRef = useRef(null);
+
+  // Ro'yxatdan o'tish/kirish davomida App.jsx'ning fon rejimidagi
+  // onAuthStateChanged tinglovchisi aralashmasligi uchun. App.jsx va
+  // Login.jsx BITTA shu ref'ni ishlatishi kerak (context orqali) — ilgari
+  // ikkalasi o'zining alohida useRef'ini yaratgan edi, shu sabab bu himoya
+  // hech qachon ishlamagan (Login.jsx'da true qilingan bo'lsa ham, App.jsx
+  // buni hech qachon ko'rmagan).
+  const authBusyRef = useRef(false);
 
   // ── Computed ─────────────────────────────────────────────
   const th = useMemo(() => MK(dark), [dark]);
@@ -173,7 +179,7 @@ export function AppProvider({ children }) {
 
   // ── Premium ──────────────────────────────────────────────
   const activatePremium = useCallback(async (purchaseToken, productId) => {
-    if (!user?.oilaId) return { success: false, message: i18n.t("oila_id_not_found") || "Oila ID topilmadi" };
+    if (!user?.oilaId) return { success: false, message: "Oila ID topilmadi" };
     
     try {
       const functionsInstance = getFunctions();
@@ -183,18 +189,37 @@ export function AppProvider({ children }) {
         productId
       });
       
+      const L = (uz, ru, en, kk, ky, tg, qr) => {
+        return lg === "uz" ? uz :
+               lg === "ru" ? ru :
+               lg === "kk" ? kk :
+               lg === "ky" ? ky :
+               lg === "tg" ? tg :
+               lg === "qr" ? qr :
+               en;
+      };
+
       if (res.data?.success) {
-        ok$(i18n.t("payment_success") || "Xarid muvaffaqiyatli tasdiqlandi!");
+        ok$(L("Xarid muvaffaqiyatli tasdiqlandi!", "Покупка успешно подтверждена!", "Purchase verified successfully!", "Сатып алу сәтті расталды!", "Сатып алуу ийгиликтүү тастыкталды!", "Харид бомуваффақият тасдиқ шуд!", "Satıp alıw tabıslı tastıyıqlandı!"));
         return { success: true, data: res.data };
       } else {
-        throw new Error(res.data?.message || i18n.t("payment_error") || "Xaridni tasdiqlashda xatolik yuz berdi");
+        throw new Error(res.data?.message || "Xaridni tasdiqlashda xatolik yuz berdi");
       }
     } catch (e) {
       console.error("activatePremium Error:", e);
-      ok$(i18n.t("payment_error") || "To'lovni tasdiqlashda xato yuz berdi", "err");
+      const L = (uz, ru, en, kk, ky, tg, qr) => {
+        return lg === "uz" ? uz :
+               lg === "ru" ? ru :
+               lg === "kk" ? kk :
+               lg === "ky" ? ky :
+               lg === "tg" ? tg :
+               lg === "qr" ? qr :
+               en;
+      };
+      ok$(L("To'lovni tasdiqlashda xato yuz berdi", "Произошла ошибка при подтверждении платежа", "Error verifying payment", "Төлемді растау кезінде қате кетті", "Төлөмдү тастыктоодо ката кетти", "Ҳангоми тасдиқи пардохт хатогӣ рӯй дод", "To'lemdi tastıyıqlawda qa'telik ju'z berdi"), "err");
       return { success: false, error: e };
     }
-  }, [user, ok$]);
+  }, [user, lg, ok$]);
 
   // ── Logout ───────────────────────────────────────────────
   const logout = useCallback(() => {
@@ -222,7 +247,7 @@ export function AppProvider({ children }) {
     maqsadConfirmNotif, setMaqsadConfirmNotif,
     coinEarnedTrigger,
     showPremModal, setShowPremModal,
-    syncDailyReminderRef,
+    syncDailyReminderRef, authBusyRef,
     // Functions
     ok$, buzz, addStar, addNotif, logout, fireConfetti, activatePremium,
   };

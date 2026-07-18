@@ -32,15 +32,28 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
 
   useEffect(() => {
     if (uid) {
-      db.g("security_" + uid).then(sec => {
+      // Kesh-birinchi: bu hujjatni App.jsx boot bosqichida ham o'qiydi —
+      // ikkalasi tarmoqni kutib sekin javob bersa, PIN ekrani (va
+      // biometrik so'rov) bir necha soniya kechikadi (o'lchov bilan
+      // tasdiqlangan muammo). biometricTriggered — kesh va tarmoq
+      // javoblari ikkalasi ham biometricEnabled=true qaytarsa, so'rov
+      // ikki marta chiqib ketmasligi uchun.
+      let biometricTriggered = false;
+      const applySec = (sec) => {
         if (sec && typeof sec === "object") {
           setStoredPinHash(sec.pinHash || null);
           setBiometricEnabled(!!sec.biometricEnabled);
-          if (sec.biometricEnabled) {
+          if (sec.biometricEnabled && !biometricTriggered) {
+            biometricTriggered = true;
             // Foydalanuvchi avval yoqqan bo'lsa — avtomatik so'raladi.
             triggerBiometrics();
           }
         }
+      };
+      const cachedSec = db.gCache("security_" + uid);
+      if (cachedSec) { applySec(cachedSec); setLoading(false); }
+      db.g("security_" + uid).then(sec => {
+        applySec(sec);
         setLoading(false);
       }).catch(err => {
         console.error("Failed to load security settings", err);

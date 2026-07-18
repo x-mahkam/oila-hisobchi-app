@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { KatIco, DarIco, MoneyInput, Tst } from "../components/common/index.jsx";
@@ -19,11 +19,10 @@ export default function LoginPage() {
     user, setUser, oila, setOila, azolar, setAzolar,
     setXar, setDar, setMaq, setScr, setBoot, val, setVal,
     dark, setDark, lg, setLg, th, t, ok$, buzz, addStar,
-    tst,
+    tst, authBusyRef,
   } = useApp();
 
   const { loadFam } = useAuth();
-  const authBusyRef = useRef(false);
 
   // ── Local states ──
   const [reg,          setReg]          = useState(false);

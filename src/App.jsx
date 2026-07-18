@@ -90,7 +90,7 @@ export default function App() {
     th, t, confetti, fireConfetti,
     maqsadConfirmNotif, setMaqsadConfirmNotif,
     ok$, buzz, addStar, addNotif, logout,
-    syncDailyReminderRef,
+    syncDailyReminderRef, authBusyRef,
   } = useApp();
 
   // MUHIM: fonga o'tgan vaqt localStorage'da saqlanadi (shunchaki JS xotirasida
@@ -119,15 +119,18 @@ export default function App() {
   useEffect(() => {
     if (user?.id) {
       setHasPinLoaded(false);
+      const applySec = (sec) => setHasPin(!!(sec && typeof sec === "object" && sec.pinHash));
+      // Kesh-birinchi: xavfsizlik sozlamalari (PIN xeshi bor-yo'qligi)
+      // avval saqlangan bo'lsa tarmoqni kutmasdan darhol qo'llanadi — splash
+      // ekrani sekin tarmoqda bir necha soniya osilib qolmasin (o'lchov
+      // bilan tasdiqlangan muammo). Tarmoqdan yangilash fonda davom etadi.
+      const cachedSec = db.gCache("security_" + user.id);
+      if (cachedSec) { applySec(cachedSec); setHasPinLoaded(true); }
       db.g("security_" + user.id).then(sec => {
-        if (sec && typeof sec === "object" && sec.pinHash) {
-          setHasPin(true);
-        } else {
-          setHasPin(false);
-        }
+        applySec(sec);
       }).catch(err => {
         console.error("Failed to load security settings", err);
-        setHasPin(false);
+        if (!cachedSec) setHasPin(false);
       }).finally(() => {
         setHasPinLoaded(true);
       });
@@ -378,8 +381,6 @@ export default function App() {
   const [showS,        setShowS]        = useState(false);
   const [showHelp,     setShowHelp]     = useState(false);
   const [showTour,     setShowTour]     = useState(false);
-  // ── Ovoz bilan kiritish ──
-  const authBusyRef = useRef(false);  // ro'yxatdan o'tish/kirish davomida onChange'ni to'xtatadi
   // Boshqa sahifaga o'tilganda qidiruv yopiladi
   useEffect(() => { setShowS(false); setSrch(""); /* eslint-disable-next-line */ }, [scr]);
   const [srch,         setSrch]         = useState("");
