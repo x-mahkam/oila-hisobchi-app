@@ -45,4 +45,14 @@
     <!-- Biometrik autentifikatsiya (barmoq izi / yuz tanish) uchun. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
+    <!-- QR-kod skaner (kamera) va ovoz bilan kiritish (mikrofon) uchun —
+         WebView'dagi getUserMedia()/SpeechRecognition so'rovlari ushbu
+         manifest ruxsatlari bo'lmasa tizim darajasida rad etiladi (ruxsat
+         so'rash oynasi umuman chiqmaydi). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Hisobot/tilxat fayllarini "Yuklab olishlar" papkasiga saqlash uchun —
+         faqat Android 9 va pastda (API<=28) kerak; Android 10+ da MediaStore
+         orqali maxsus ruxsatsiz ishlaydi (SaveToDownloadsPlugin.java'ga q.). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28" />
 </manifest>
