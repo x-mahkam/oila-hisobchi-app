@@ -69,22 +69,6 @@ try {
 }
 export const fbAuth = _fbAuth;
 
-// Qurilma xotirasida (Capacitor Preferences) Firebase sessiyasi bloki
-// saqlanib qolganmi — tekshiradi. App.jsx boot bosqichida ishlatiladi:
-// agar blok mavjud bo'lsa, sessiyani tiklash (server bilan token
-// tekshiruvi — tarmoqqa bog'liq, sovuq ishga tushishda bir necha soniya
-// olishi mumkin) tugashini ancha uzoqroq kutamiz; aks holda (haqiqatan
-// chiqib ketilgan) darhol Login ko'rsatish uchun qisqa muddat yetarli.
-export async function hasStoredAuthSession() {
-  try {
-    if (!Capacitor.isNativePlatform()) return null; // faqat native uchun ishonchli
-    const persistKey = `firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`;
-    const { value } = await Preferences.get({ key: persistKey });
-    return !!value;
-  } catch (_e) {
-    return null;
-  }
-}
 
 // Enable Firestore offline persistence (IndexedDB cache)
 if (typeof window !== "undefined") {

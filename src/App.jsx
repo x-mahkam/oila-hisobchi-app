@@ -69,7 +69,7 @@ import { App as CapApp }     from "@capacitor/app";
 // Utils
 import { td, nt, tm, fmtN, normTel, hp, sonSoz, fullName } from "./utils/formatters.js";
 import { MK, KATS, KN, DARS, DN, VALS, COUNTRIES, ONB_SLIDES, TL } from "./utils/constants.js";
-import { db, auth, setOwnerCtx, fbAuth, hasStoredAuthSession } from "./firebase.js";
+import { db, auth, setOwnerCtx, fbAuth } from "./firebase.js";
 import { canAssignTask, canDeleteTask } from "./utils/permissions.js";
 
 // Bank ilovalari kabi: fonda shu muddatgacha turilsa PIN qulf qayta so'ralmaydi.
@@ -533,31 +533,27 @@ export default function App() {
 
     (async () => {
       try {
-        // MUHIM: Firebase sessiyani tiklashda HAR DOIM serverga so'rov
-        // yuboradi (tokenni tekshirish/yangilash — reload) — bu sof
-        // IndexedDB o'qish emas, tarmoqqa bog'liq amal, sovuq ishga
-        // tushishda (ayniqsa mobil tarmoqda, radio/DNS hali "isinmagan"
-        // paytda) bir necha soniya olishi mumkin. Agar safety timeout juda
-        // qisqa bo'lsa (avval 4s edi), u chindan ham tiklanayotgan
-        // sessiyadan OLDIN ishga tushib, Login ekranini bir lahzaga
-        // ko'rsatib ulguradi — keyin haqiqiy onAuthStateChanged kelganda
-        // ekran o'zi tuzalib PIN'ga o'tadi, lekin foydalanuvchi bu
-        // "yalt etib o'tishni" chalkash/xato deb qabul qiladi. Shu sabab:
-        // qurilma xotirasida sessiya bloki bor-yo'qligini oldindan
-        // tekshiramiz — bor bo'lsa, tiklanish tugashini ancha uzoqroq
-        // kutamiz (server javobi kechiksa ham); yo'q bo'lsa (haqiqatan
-        // chiqib ketilgan), qisqa muddat yetarli.
-        let storedSession = null;
-        try { storedSession = await hasStoredAuthSession(); } catch (_e) {}
-        logBoot(`hasStoredAuthSession=${storedSession}`);
-        const safetyMs = storedSession === false ? 2500 : 15000;
+        // MUHIM: real qurilmada o'lchangan jurnal shuni ko'rsatdi — oldingi
+        // "sessiya bloki bor-yo'qligini oldindan tekshirish" (hasStoredAuthSession)
+        // usuli xato natija berdi (sessiya aslida bor edi, lekin u "yo'q" deb
+        // aniqladi), shu sabab qisqa (2.5s) safety timeout tanlandi va u
+        // haqiqiy tiklanishdan OLDIN ishga tushib Login'ni ko'rsatib yubordi.
+        // Bundan tashqari, pastdagi db.g("user_"+uid) chaqiruvi (Firestore'dan
+        // tarmoq orqali o'qish) sekin tarmoqda 9+ soniya olganini aniqladik —
+        // bu esa hatto 15 soniyalik safety timeout'ni ham xavf ostiga qo'yardi.
+        // Shu sabab endi ikkita narsa qilinadi: (1) safety timeout doim
+        // yetarlicha uzoq (20s) — noaniq oldindan tekshiruvga tayanmaydi;
+        // (2) pastda profil avval keshdan (localStorage, tarmoqsiz, darhol)
+        // olinadi — shu bilan safety timeout deyarli hech qachon kerak
+        // bo'lmaydi, chunki foydalanuvchi ekranni Firebase Auth tiklanishi
+        // bilan bir vaqtda (~1-2s) ko'radi, Firestore tarmoq javobini kutmasdan.
         safetyTimeout = setTimeout(() => {
           if (active) {
-            logBoot(`SAFETY TIMEOUT FIRED (${safetyMs}ms)`);
-            console.warn(`Safety boot trigger activated (Firebase check took longer than ${safetyMs}ms)`);
+            logBoot("SAFETY TIMEOUT FIRED (20000ms)");
+            console.warn("Safety boot trigger activated (Firebase check took longer than 20s)");
             setBoot(false);
           }
-        }, safetyMs);
+        }, 20000);
 
 
         // Google redirect tekshirish
@@ -623,12 +619,32 @@ export default function App() {
             let uid = null;
             try { const s = localStorage.getItem("oilaV7"); if (s) uid = JSON.parse(s).uid; } catch {}
             if (!uid) uid = fbUser.uid;
-            let u = await db.g("user_" + uid);
-            logBoot(`db.g("user_"+uid) resolved, u=${!!u}`);
-            if (!u && uid !== fbUser.uid) { u = await db.g("user_" + fbUser.uid); logBoot(`db.g fallback resolved, u=${!!u}`); }
-            if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); logBoot("setUser + setScr(bosh) called"); }
+
+            // Kesh-birinchi tez yo'l: profil avvalgi kirishda localStorage'ga
+            // keshlangan bo'lsa (db.g har muvaffaqiyatli o'qishdan keyin
+            // avtomatik keshlaydi), uni TARMOQNI KUTMASDAN darhol ishlatamiz —
+            // sekin Firestore javobi (mobil tarmoqda 9+ soniya bo'lishi
+            // mumkinligi o'lchov bilan tasdiqlandi) endi PIN ekraniga
+            // yetishni bloklamaydi. Tarmoqdan yangilash fonda davom etadi.
+            const cachedU = db.gCache("user_" + uid);
+            if (cachedU && active) {
+              localStorage.setItem("oilaV7", JSON.stringify({ uid: cachedU.id }));
+              setUser(cachedU); setScr("bosh"); loadFam(cachedU);
+              logBoot("cache hit — setUser + setScr(bosh) called (fast path)");
+              if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (cache fast path)"); }
+            }
+
+            // Tarmoqdan yangilash — fonda, boot'ni endi bloklamaydi.
+            (async () => {
+              let u = await db.g("user_" + uid);
+              logBoot(`db.g("user_"+uid) resolved, u=${!!u}`);
+              if (!u && uid !== fbUser.uid) { u = await db.g("user_" + fbUser.uid); logBoot(`db.g fallback resolved, u=${!!u}`); }
+              if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); logBoot("setUser + setScr(bosh) called (network refresh)"); }
+              if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (network path)"); }
+            })();
+            return;
           }
-          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (via onChange)"); }
+          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (via onChange, no fbUser)"); }
         });
 
         await firstAuthStatePromise;
