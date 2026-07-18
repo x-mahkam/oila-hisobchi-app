@@ -60,6 +60,11 @@ export default function LoginPage() {
   const langs = langList || FALLBACK_LANGS;
   const currentLang = langs.find((l) => l.code === lg) || langs[0];
 
+  // VAQTINCHALIK DIAGNOSTIKA: App.jsx boot ketma-ketligi vaqt jurnali.
+  const [bootLog] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("oilaV7_bootLog") || "[]"); } catch (_e) { return []; }
+  });
+
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -503,6 +508,11 @@ export default function LoginPage() {
             {t("log066")}
           </a>
         </div>
+        {bootLog.length > 0 && (
+          <div style={{marginTop:14,padding:"8px 10px",borderRadius:8,background:th.sur,border:"1px solid "+th.bor,fontSize:9,fontFamily:"monospace",color:th.t3}}>
+            {bootLog.map((line, i) => <div key={i}>{line}</div>)}
+          </div>
+        )}
       </div>
       {showResetScreen&&<div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:2000,display:"flex",alignItems:"center",justifyContent:"center",padding:20}} onClick={()=>setShowResetScreen(false)}>
         <div style={{background:th.bg,borderRadius:20,maxWidth:400,width:"100%",padding:"26px 22px"}} onClick={e=>e.stopPropagation()}>

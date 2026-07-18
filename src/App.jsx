@@ -518,6 +518,19 @@ export default function App() {
     let active = true;
     let safetyTimeout = null;
 
+    // VAQTINCHALIK DIAGNOSTIKA: sessiya tiklanish jarayonidagi har bir
+    // bosqichning aniq vaqtini localStorage'ga yozib boramiz (o'tish juda
+    // tez — 5s ichida — sodir bo'lgani uchun ekranda ko'rsatilgan matnni
+    // o'qib/skrinshot qilib ulgurmaslik mumkin). PIN ekranida (odatda shu
+    // yerga "tushib qoladi") ko'rsatiladi. Muammo topilgach OLIB TASHLANADI.
+    const t0 = Date.now();
+    const bootLog = [];
+    const logBoot = (msg) => {
+      bootLog.push(`${Date.now() - t0}ms: ${msg}`);
+      try { localStorage.setItem("oilaV7_bootLog", JSON.stringify(bootLog)); } catch (_e) {}
+    };
+    logBoot("boot effect start");
+
     (async () => {
       try {
         // MUHIM: Firebase sessiyani tiklashda HAR DOIM serverga so'rov
@@ -536,9 +549,11 @@ export default function App() {
         // chiqib ketilgan), qisqa muddat yetarli.
         let storedSession = null;
         try { storedSession = await hasStoredAuthSession(); } catch (_e) {}
+        logBoot(`hasStoredAuthSession=${storedSession}`);
         const safetyMs = storedSession === false ? 2500 : 15000;
         safetyTimeout = setTimeout(() => {
           if (active) {
+            logBoot(`SAFETY TIMEOUT FIRED (${safetyMs}ms)`);
             console.warn(`Safety boot trigger activated (Firebase check took longer than ${safetyMs}ms)`);
             setBoot(false);
           }
@@ -596,9 +611,11 @@ export default function App() {
         let gotFirstAuthState = false;
 
         auth.onChange(async (fbUser) => {
+          logBoot(`onChange fired, fbUser=${!!fbUser}${fbUser ? " uid=" + fbUser.uid : ""}`);
           // Ro'yxatdan o'tish/kirish jarayoni ketayotgan bo'lsa — aralashmaymiz.
           // doAuth() o'zi to'g'ri user'ni o'rnatadi va ma'lumot yuklaydi.
           if (authBusyRef.current) {
+            logBoot("authBusyRef true, skipping");
             if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
             return;
           }
@@ -607,13 +624,15 @@ export default function App() {
             try { const s = localStorage.getItem("oilaV7"); if (s) uid = JSON.parse(s).uid; } catch {}
             if (!uid) uid = fbUser.uid;
             let u = await db.g("user_" + uid);
-            if (!u && uid !== fbUser.uid) u = await db.g("user_" + fbUser.uid);
-            if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); }
+            logBoot(`db.g("user_"+uid) resolved, u=${!!u}`);
+            if (!u && uid !== fbUser.uid) { u = await db.g("user_" + fbUser.uid); logBoot(`db.g fallback resolved, u=${!!u}`); }
+            if (u && active) { localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); logBoot("setUser + setScr(bosh) called"); }
           }
-          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); }
+          if (!gotFirstAuthState) { gotFirstAuthState = true; resolveFirstAuthState(); logBoot("firstAuthStatePromise resolved (via onChange)"); }
         });
 
         await firstAuthStatePromise;
+        logBoot("await firstAuthStatePromise returned");
 
         const dl = localStorage.getItem("oilaV7L"); if (dl) setLg(dl);
         const dd = localStorage.getItem("oilaV7D"); if (dd != null) setDark(dd !== "false");
@@ -624,9 +643,11 @@ export default function App() {
           const tx = params.get("tilxat"); if (tx) { try { setVerifyTilxat(JSON.parse(tx)); } catch {} }
         } catch {}
       } catch (e) {
+        logBoot("Boot error: " + e);
         console.error("Boot error:", e);
       } finally {
         if (active) {
+          logBoot("finally: setBoot(false)");
           setBoot(false);
           clearTimeout(safetyTimeout);
         }
