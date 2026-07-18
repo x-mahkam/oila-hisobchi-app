@@ -10,7 +10,56 @@ export function useAuth() {
           setQarzReqs, setXReqs, setStars, setGardenData,
           setScr, setBoot, ok$, lg } = useApp();
 
+  // Kesh-birinchi tez o'tish: PIN/biometrik bilan qulfdan chiqilgach
+  // dashboard darhol (tarmoqni kutmasdan) ko'rinishi uchun, avval mahalliy
+  // keshda (oldingi kirishdan saqlangan) nima bo'lsa — shuni darhol
+  // qo'llaymiz. Pastdagi asosiy loadFam esa tarmoqdan HAQIQIY (yangi)
+  // ma'lumotni fonda yuklab, keyin qayta yangilaydi — foydalanuvchi buni
+  // kutib turmaydi (o'lchov bilan tasdiqlangan muammo: bir oilaning barcha
+  // hujjatlarini tarmoqdan ketma-ket o'qish 5-15+ soniya olishi mumkin edi).
+  const applyFamFromCache = useCallback((u) => {
+    try {
+      const oilaId = u.oilaId;
+      const ms = db.gCache("fam_" + oilaId) || db.gCache("oila_" + oilaId);
+      const memberIds = ms?.azolarIds || ms?.azolar || [u.id];
+      const members = memberIds.map(id => db.gCache("user_" + id)).filter(Boolean);
+      if (members.length) setAzolar(members);
+      if (ms) setOila(ms);
+
+      const cacheMembers = members.length ? members : [u];
+      const allXar = [];
+      const allDar = [];
+      cacheMembers.forEach(member => {
+        const xArr = db.gCache("x_" + oilaId + "_" + member.id);
+        const dArr = db.gCache("d_" + oilaId + "_" + member.id);
+        if (xArr?.length) allXar.push(...xArr.map(x => ({ ...x, uid: member.id })));
+        if (dArr?.length) allDar.push(...dArr.map(d => ({ ...d, uid: member.id })));
+      });
+      if (allXar.length) setXar(allXar);
+      if (allDar.length) setDar(allDar);
+
+      const maqR = db.gCache("maq_" + oilaId);
+      const qarzR = db.gCache("qarz_" + oilaId);
+      const xreqR = db.gCache("xreq_" + u.id);
+      const notifR = db.gCache("notif_" + u.id);
+      const vazR = db.gCache("vazifa_" + oilaId);
+      const kidbR = db.gCache("kidbal_" + oilaId);
+      if (maqR) setMaq(maqR);
+      if (qarzR) setQarzlar(qarzR);
+      if (xreqR) setXReqs(xreqR);
+      if (notifR) setNotifs(notifR);
+      if (vazR) setVazifalar(vazR);
+      if (kidbR) setKidBalances(kidbR);
+
+      const g = db.gCache("baraka_garden_" + oilaId) || db.gCache("garden_" + oilaId);
+      const s = db.gCache("stars_" + oilaId);
+      if (g) setGardenData(g);
+      if (s != null && s >= 0) setStars(s);
+    } catch (_e) {}
+  }, [setAzolar, setOila, setXar, setDar, setMaq, setQarzlar, setXReqs, setNotifs, setVazifalar, setKidBalances, setGardenData, setStars]);
+
   const loadFam = useCallback(async (u) => {
+    applyFamFromCache(u);
     try {
       const oilaId = u.oilaId;
 
@@ -85,7 +134,7 @@ export function useAuth() {
     } catch (e) {
       console.error("loadFam:", e);
     }
-  }, []);
+  }, [applyFamFromCache]);
 
   return { loadFam };
 }
