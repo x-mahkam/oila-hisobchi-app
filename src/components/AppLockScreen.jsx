@@ -42,7 +42,8 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
           if (sec.biometricEnabled && !biometricTriggered) {
             biometricTriggered = true;
             // Foydalanuvchi avval yoqqan bo'lsa — avtomatik so'raladi.
-            triggerBiometrics();
+            // knownEnabled=true: keraksiz db.g/db.s yozuvini oldini olish.
+            triggerBiometrics(true);
           }
         }
       };
@@ -61,7 +62,18 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
-  const triggerBiometrics = async () => {
+  // knownEnabled: chaqiruvchi biometrikning ALLAQACHON yoqilganini bilsa
+  // (masalan yuklash effekti keshdan/tarmoqdan sec.biometricEnabled=true
+  // o'qib, shu asosda avtomatik chaqirganda), buni aniq uzatadi — aks
+  // holda funksiya component state'dagi `biometricEnabled`ga tayanadi.
+  // MUHIM: bu ikkalasini FARQLASH SHART, chunki avtomatik chaqiruv
+  // `setBiometricEnabled(true)` bilan BIR XIL sinxron bosqichda sodir
+  // bo'ladi — React hali qayta render qilmagani uchun `biometricEnabled`
+  // yopilmasi (closure) ESKI (false) qiymatni ko'radi, va shu sabab har
+  // safar keraksiz tarmoq o'qish+yozish (db.g+db.s) ishga tushib, biometrik
+  // orqali kirish PIN orqali kirishdan bir necha soniya sekinroq bo'lib
+  // qolgan edi (o'lchov bilan tasdiqlangan muammo).
+  const triggerBiometrics = async (knownEnabled = biometricEnabled) => {
     try {
       const result = await NativeBiometric.isAvailable();
       if (result.isAvailable) {
@@ -72,8 +84,9 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
           description: t("alk_biometricDescription")
         });
         // Muvaffaqiyatli tasdiqlangach, keyingi safarlar avtomatik
-        // so'ralishi uchun sozlamani ham yoqib qo'yamiz.
-        if (uid && !biometricEnabled) {
+        // so'ralishi uchun sozlamani ham yoqib qo'yamiz — FAQAT hali
+        // yoqilmagan bo'lsa (birinchi marta yoqishda).
+        if (uid && !knownEnabled) {
           try {
             const cur = (await db.g("security_" + uid)) || {};
             await db.s("security_" + uid, { ...cur, biometricEnabled: true });

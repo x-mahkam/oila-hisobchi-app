@@ -139,7 +139,7 @@ export default function LoginPage() {
       u = await googleJoinFamily(gUser, pendingJoin);
       if (!u) return;
       localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
-      setUser(u); await loadFam(u); setScr("bosh");
+      setUser(u); setScr("bosh"); loadFam(u);
       ok$(t.jf2);
       return;
     }
@@ -156,7 +156,7 @@ export default function LoginPage() {
       if (email) await db.s("em_" + email, uid);
     }
     localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id }));
-    setUser(u); await loadFam(u); setScr("bosh");
+    setUser(u); setScr("bosh"); loadFam(u);
     ok$(t("log_welcome", { name: u.ism }));
   };
 
@@ -218,7 +218,7 @@ export default function LoginPage() {
           }
         } catch (e2) {}
         localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
-        setUser(ku); await loadFam(ku); setScr("bosh");
+        setUser(ku); setScr("bosh"); loadFam(ku);
         ok$(t("log_welcome", { name: ku.ism }));
         return;
       }
@@ -270,7 +270,7 @@ export default function LoginPage() {
           o.azolarIds = mIds; o.azolar = mIds; if (!o.id) o.id = fid;
           await db.s("oila_" + fid, o); await db.s("fam_" + fid, o);
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
-          localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); await loadFam(nu); setScr("bosh"); ok$(t.jf2); addStar(15, t("log018"));
+          localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); setScr("bosh"); loadFam(nu); ok$(t.jf2); addStar(15, t("log018"));
         } else {
           const oid = "o" + Date.now();
           setOwnerCtx(uid, oid);
@@ -325,7 +325,7 @@ export default function LoginPage() {
                 }
               } catch (e2) {}
               localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
-              setUser(ku); await loadFam(ku); setScr("bosh");
+              setUser(ku); setScr("bosh"); loadFam(ku);
               ok$(t("log_welcome", { name: ku.ism }));
               return;
             }
@@ -353,7 +353,7 @@ export default function LoginPage() {
         let u = await db.g("user_" + authUser.uid);
         if (!u) { const oldUid = await db.g("em_" + email); if (oldUid) u = await db.g("user_" + oldUid); }
         if (!u) return ok$(t("log025"), "err");
-        localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); await loadFam(u); setScr("bosh"); ok$(t.wc + ", " + u.ism + " 👋");
+        localStorage.setItem("oilaV7", JSON.stringify({ uid: u.id })); setUser(u); setScr("bosh"); loadFam(u); ok$(t.wc + ", " + u.ism + " 👋");
       }
     } catch (err) {
       console.error("AUTH ERROR:", err);
