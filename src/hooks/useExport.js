@@ -14,6 +14,18 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
   const { isPremium, setShowPremModal, lg, ok$, user, oila, azolar, t } = useApp();
   const [exportLoading, setExportLoading] = useState(false);
 
+  // Saqlangan faylni "qaysi ilovada ochasiz" tizim so'rovi bilan darhol
+  // ochadi — foydalanuvchi "yuklab olindi" xabaridan keyin natijani darhol
+  // ko'radi, qo'lda "Fayllar" ilovasiga kirib qidirishi shart emas.
+  const openFile = async (uri, mimeType) => {
+    if (!uri || !Capacitor.isNativePlatform()) return;
+    try {
+      await SaveToDownloads.open({ uri, mimeType });
+    } catch (e) {
+      console.warn("openFile failed:", e);
+    }
+  };
+
   // MUHIM: Android WebView'da `<a download>` + blob URL texnikasi
   // ISHLAMAYDI — WebView'da brauzerdagidek "Yuklab olishlar" menejeri
   // yo'q, shu sabab a.click() xatosiz bajariladi (shuning uchun ilova
@@ -29,8 +41,8 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
           // kabi parametrli qiymatni emas, faqat toza MIME turini
           // ("text/csv") kutadi — aks holda yozuv rad etilishi mumkin.
           const cleanMime = (mime || "text/plain").split(";")[0].trim();
-          await SaveToDownloads.save({ filename, content, mimeType: cleanMime });
-          return true;
+          const { uri } = await SaveToDownloads.save({ filename, content, mimeType: cleanMime });
+          return { ok: true, uri, mime: cleanMime };
         } catch (e1) {
           console.warn("SaveToDownloads failed, falling back to share:", e1);
         }
@@ -49,7 +61,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         // yozilgan bo'ladi. Shu xato tashqi try/catch'ga tushib "Xato"
         // deb noto'g'ri ko'rsatilmasligi uchun bu yerda alohida ushlanadi.
         try { await Share.share({ url: uri, title: filename }); } catch (_se) {}
-        return true;
+        return { ok: true, uri: null, mime: null };
       }
       const blob = new Blob([content], { type: mime });
       const url = URL.createObjectURL(blob);
@@ -60,11 +72,33 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      return true;
+      return { ok: true, uri: null, mime: null };
     } catch (e) {
       console.error("downloadFile error:", e);
-      return false;
+      return { ok: false, uri: null, mime: null };
     }
+  };
+
+  // HTML hisobotni HAQIQIY PDF fayliga aylantirib saqlaydi (native
+  // platformada SpeechToTextPlugin kabi maxsus plagin — SaveToDownloadsPlugin
+  // ichidagi saveHtmlAsPdf — orqali) va darhol "qaysi ilovada ochasiz"
+  // so'rovi bilan ochadi. Plagin mavjud bo'lmasa (masalan APK hali qayta
+  // qurilmagan bo'lsa) yoki xato bersa, HTML fayl sifatida zaxira yo'lga
+  // o'tadi.
+  const savePdf = async (html, filename) => {
+    if (Capacitor.isNativePlatform()) {
+      try {
+        const { uri } = await SaveToDownloads.saveHtmlAsPdf({ html, filename });
+        await openFile(uri, "application/pdf");
+        return true;
+      } catch (e) {
+        console.warn("saveHtmlAsPdf failed, falling back to HTML download:", e);
+      }
+    }
+    const htmlFilename = filename.replace(/\.pdf$/i, "") + ".html";
+    const res = await downloadFile(html, htmlFilename, "text/html;charset=utf-8;");
+    if (res.ok) await openFile(res.uri, "text/html");
+    return res.ok;
   };
 
   const exportExcel = async () => {
@@ -142,8 +176,9 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         });
       }
       const csv = "\uFEFF" + rows.join("\n");
-      const okk = await downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
-      ok$(okk ? t("xp_downloaded") : t("xp_error"), okk ? "ok" : "err");
+      const res = await downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
+      if (res.ok) await openFile(res.uri, "text/csv");
+      ok$(res.ok ? t("xp_downloaded") : t("xp_error"), res.ok ? "ok" : "err");
     } catch (e) {
       ok$(t("xp_errorMsg", { msg: e.message }), "err");
     }
@@ -448,52 +483,8 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         t("xp_savePrintBtn") +
         "</button></body></html>";
 
-      // Use a hidden iframe to bypass popup blockers and WebView constraints
-      try {
-        const iframe = document.createElement("iframe");
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "0";
-        iframe.style.zIndex = "-1000";
-        document.body.appendChild(iframe);
-
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(H);
-        doc.close();
-
-        iframe.contentWindow.focus();
-        setTimeout(async () => {
-          // MUHIM: Android WebView'da iframe.contentWindow.print() odatda
-          // HECH QANDAY XATO TASHLAMAYDI, lekin haqiqatda hech narsa ham
-          // qilmaydi (chop etish darchasi ochilmaydi) — shu sabab avvalgi
-          // "printInitiated" tekshiruvi doim "muvaffaqiyatli" xabar
-          // ko'rsatib, HAQIQIY yuklab olish natijasini (okk) butunlay
-          // e'tiborsiz qoldirar edi. Endi xabar FAQAT haqiqiy natijaga
-          // (okk) asoslanadi.
-          try {
-            iframe.contentWindow.print();
-          } catch (pe) {
-            console.error("Iframe print failed:", pe);
-          }
-
-          const okk = await downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
-          ok$(okk ? t("xp_htmlDownloadedHint") : t("xp_downloadError"), okk ? "ok" : "err");
-
-          setTimeout(() => {
-            try {
-              document.body.removeChild(iframe);
-            } catch (errClean) {}
-          }, 1500);
-        }, 300);
-      } catch (errIframe) {
-        console.error("Iframe printing failed:", errIframe);
-        const okk = await downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
-        ok$(okk ? t("xp_htmlDownloaded") : t("xp_error"), okk ? "ok" : "err");
-      }
+      const okk = await savePdf(H, "OilaHisobot_" + month + ".pdf");
+      ok$(okk ? t("xp_downloaded") : t("xp_error"), okk ? "ok" : "err");
     } catch (e) {
       ok$(t("xp_errorMsg", { msg: e.message }), "err");
     }
@@ -504,5 +495,6 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     exportExcel,
     exportPDF,
     downloadFile,
+    savePdf,
   };
 }
