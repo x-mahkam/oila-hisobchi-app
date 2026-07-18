@@ -883,7 +883,7 @@ export default function App() {
     showPremModal, setShowPremModal, activatePremium,
     gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng,
     canSeeReport, srchR, lineD, barD, pieD,
-    acceptXReq, rejectXReq, delTx, editTx,
+    acceptXReq, rejectXReq, delTx, editTx, addX,
   };
 
   return (

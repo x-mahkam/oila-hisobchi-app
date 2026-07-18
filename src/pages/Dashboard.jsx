@@ -10,7 +10,7 @@ import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, MOTION, OPACITY, COMP } from "../ut
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, QUICK_ADD } from "../utils/constants.js";
-import { tm } from "../utils/formatters.js";
+import { td } from "../utils/formatters.js";
 import { db } from "../firebase.js";
 import KidsGames from "../components/KidsGames.jsx";
 import KidHome from "./KidHome.jsx";
@@ -216,7 +216,7 @@ export default function DashboardPage({
   th, t, f, ok$, buzz, addStar, fireConfetti,
   gN, gP, bX, bD, jX, jD, myX, myD, myBal, bal, bdj, pct, bRng, canSeeReport,
   srch, srchR, showS,
-  acceptXReq, rejectXReq, delTx, editTx,
+  acceptXReq, rejectXReq, delTx, editTx, addX,
   vazifaDone, vazifaApprove,
   fetchRates, rateL,
   setShowGift, setShowBilim, setShowAddVazifa, setPTab,
@@ -358,18 +358,16 @@ export default function DashboardPage({
     });
   }, [xar, dar, qarzlar, maq, aiCats, bdj, canSeeReport, user?.id, weddings, isKid, oila]);
 
+  // MUHIM: bu yerda avval o'zining alohida db.s() yozuvi va addStar()
+  // chaqiruvi bor edi — asosiy qo'shish oynasi (AddTransactionModal)
+  // ishlatadigan addX() (useTransactions.js) dan butunlay mustaqil.
+  // Bu ikki xil natijaga olib kelardi: balans tekshiruvisiz yozish va
+  // (agar kimdir addX'ga tuzatish kiritsa-yu, bu yerga kiritmasa)
+  // muvofiqlikning yo'qolishi. Endi tez qo'shish ham xuddi shu addX()
+  // orqali ishlaydi — bitta manba, bitta xulq-atvor.
   const quickAdd = async () => {
     if (!quickItem || !quickSum || Number(quickSum) <= 0) return ok$(t.ea, "err");
-    const { td, nt } = await import("../utils/formatters.js");
-    const item = { id: Date.now(), kategoriya: quickItem.kat, summa: Number(quickSum), izoh: quickItem[lg] || quickItem.uz, sana: td(), vaqt: nt(), repeat: false };
-    const key = "x_" + user.oilaId + "_" + user.id;
-    await db.s(key, [item, ...((await db.g(key)) || [])]);
-    const na = [{ ...item, uid: user.id }, ...xar];
-    setXar(na);
-    const bt = na.filter(x => x.sana && x.sana.indexOf(tm()) === 0).reduce((s, x) => s + Number(x.summa || 0), 0);
-    if (bt > bdj) { ok$(t.be, "err"); }
-    else if (bt > bdj * .9) { ok$(t.bw, "warn"); }
-    else { ok$(t.xa); addStar(1, i18n.t("expense_added")); }
+    await addX({ kategoriya: quickItem.kat, summa: Number(quickSum), izoh: quickItem[lg] || quickItem.uz, sana: td(), repeat: false });
     setQuickItem(null); setQuickSum("");
   };
 
