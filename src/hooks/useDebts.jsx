@@ -4,6 +4,7 @@ import { qmail } from "../utils/qmail.js";
 import { td, nt, f, normTel, fmtN, sonSoz } from "../utils/formatters.js";
 import { useApp } from "../context/AppContext.jsx";
 import i18n from "../i18n/index.js";
+import QRCode from "qrcode";
 
 export function useDebts() {
   const {
@@ -29,7 +30,7 @@ export function useDebts() {
   const [tilxatView, setTilxatView] = useState(null);
 
   // ── TILXAT (RASPISKA) PDF — faqat ikki tomon tasdiqlagan qarzlar uchun ──
-  const generateTilxat = (q) => {
+  const generateTilxat = async (q) => {
     if (!q.linked || q.linkStatus !== "accepted") {
       ok$(i18n.t("debt_receipt_only_linked"), "err");
       return;
@@ -52,7 +53,10 @@ export function useDebts() {
       // QR → ilovaning tekshiruv havolasi (skanerlaganda tasdiq sahifasi ochiladi)
       const tilxatJson = JSON.stringify({ id: q.id, q: qarzdor, k: kreditor, s: summaSom, d: sanaStr, r: qaytStr, n: hujjatRaqami });
       const verifyUrl = window.location.origin + "/?tilxat=" + encodeURIComponent(tilxatJson);
-      const verifyQR = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&ecc=L&data=" + encodeURIComponent(verifyUrl);
+      // Mahalliy generatsiya (tarmoqsiz) — tashqi QR xizmati PDF suratga
+      // olishda canvas'ni CORS sababli "tainted" qilib, QR kod yo'qolib
+      // qolishiga sabab bo'lardi.
+      const verifyQR = await QRCode.toDataURL(verifyUrl, { width: 150, margin: 1 });
 
       const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Tilxat ${hujjatRaqami}</title><style>
         @page{size:A4;margin:2cm}

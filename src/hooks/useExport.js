@@ -6,6 +6,7 @@ import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import QRCode from "qrcode";
 
 // Maxsus native plagin (android/.../SaveToDownloadsPlugin.java) — faylni
 // bevosita qurilmaning ommaviy "Yuklab olishlar" papkasiga saqlaydi,
@@ -89,11 +90,14 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
   // shu suratni sahifalarga bo'lib haqiqiy PDF fayl quradi) generatsiya
   // qilinadi. Natija (base64) so'ng mavjud, allaqachon ishlayotgan native
   // SaveToDownloads.save() metodiga beriladi.
-  const stripRemoteImages = (html) =>
-    // Uzoq (masalan QR-kod) rasmlar CORS sababli canvas'ni "tainted" qilib,
-    // butun suratga olishni buzishi mumkin — PDF uchun ularni olib tashlaymiz.
-    html.replace(/<img[^>]*src=["']https?:\/\/[^"']*["'][^>]*>/gi, "");
-
+  //
+  // MUHIM (QR kod): hisobot/tilxat HTML'ida QR kod tashqi xizmatdan
+  // (api.qrserver.com) <img> sifatida keladi — bu esa canvas'ni CORS
+  // sababli "tainted" qilib, butun suratga olishni buzardi. Shu sabab
+  // H/tilxat html generatorlarining o'zida (useExport.js va
+  // useDebts.jsx) QR kod endi mahalliy "qrcode" kutubxonasi bilan
+  // (tarmoqsiz, to'g'ridan-to'g'ri data: URI) generatsiya qilinadi —
+  // canvas hech qachon "tainted" bo'lmaydi.
   const renderHtmlToCanvas = async (html) => {
     const iframe = document.createElement("iframe");
     iframe.style.position = "fixed";
@@ -109,22 +113,35 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         iframe.srcdoc = html;
       });
       const doc = iframe.contentDocument;
+      // "Chop etish/saqlash" tugmasi faqat ekranda ko'rsatiladigan UI
+      // elementi — PDF suratiga kirib qolmasligi uchun olib tashlanadi
+      // (CSS'dagi @media print qoidasi html2canvas'da ishlamaydi).
+      doc.querySelectorAll(".btn").forEach((el) => el.remove());
       const fullHeight = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
       iframe.style.height = fullHeight + "px";
       await new Promise((r) => setTimeout(r, 60));
-      return await html2canvas(doc.body, {
+      const scale = 2;
+      // Diagrammalar/summalar qatori kabi "bo'linmasligi kerak" bloklarning
+      // canvas'dagi (scale bilan) chegaralarini saqlab qolamiz — sahifa
+      // bo'lish shu bloklar o'rtasidan o'tib ketmasligi uchun.
+      const keepTogether = Array.from(doc.querySelectorAll(".charts, .sum")).map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { top: rect.top * scale, bottom: rect.bottom * scale };
+      });
+      const canvas = await html2canvas(doc.body, {
         width: 800,
         windowWidth: 800,
         height: fullHeight,
         backgroundColor: "#ffffff",
-        scale: 2,
+        scale,
       });
+      return { canvas, keepTogether };
     } finally {
       document.body.removeChild(iframe);
     }
   };
 
-  const canvasToPdfBase64 = (canvas) => {
+  const canvasToPdfBase64 = (canvas, keepTogether = []) => {
     const pageWidthMM = 210, pageHeightMM = 297; // A4
     const pxPerMM = canvas.width / pageWidthMM;
     const pageHeightPx = Math.floor(pageHeightMM * pxPerMM);
@@ -132,7 +149,16 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     let renderedPx = 0;
     let firstPage = true;
     while (renderedPx < canvas.height) {
-      const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+      let sliceEnd = Math.min(renderedPx + pageHeightPx, canvas.height);
+      // Agar chegara "bo'linmasligi kerak" blokning o'rtasidan o'tsa,
+      // chegarani o'sha blokning boshigacha qisqartiramiz — u to'liq
+      // holda keyingi sahifada chiqadi.
+      for (const block of keepTogether) {
+        if (block.top > renderedPx && block.top < sliceEnd && block.bottom > sliceEnd) {
+          sliceEnd = block.top;
+        }
+      }
+      const sliceHeightPx = Math.max(1, sliceEnd - renderedPx);
       const pageCanvas = document.createElement("canvas");
       pageCanvas.width = canvas.width;
       pageCanvas.height = sliceHeightPx;
@@ -152,8 +178,8 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
   // canvas cheklovi), HTML fayl sifatida zaxira yo'lga o'tadi.
   const savePdf = async (html, filename) => {
     try {
-      const canvas = await renderHtmlToCanvas(stripRemoteImages(html));
-      const base64 = canvasToPdfBase64(canvas);
+      const { canvas, keepTogether } = await renderHtmlToCanvas(html);
+      const base64 = canvasToPdfBase64(canvas, keepTogether);
       if (Capacitor.isNativePlatform()) {
         const { uri } = await SaveToDownloads.save({ filename, content: base64, mimeType: "application/pdf", isBase64: true });
         await openFile(uri, "application/pdf");
@@ -439,7 +465,9 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
 
       // QR - referal link
       const refLink = window.location.origin + "/?ref=" + (user?.id || "");
-      const refQR = "https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=" + encodeURIComponent(refLink);
+      // Mahalliy generatsiya (tarmoqsiz) — tashqi QR xizmati canvas'ni
+      // CORS sababli "tainted" qilib, PDF suratga olishni buzardi.
+      const refQR = await QRCode.toDataURL(refLink, { width: 160, margin: 1 });
 
       const H =
         "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Hisobot " +
