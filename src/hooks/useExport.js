@@ -4,6 +4,8 @@ import { KATS, KN, DARS, DN } from "../utils/constants.js";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 // Maxsus native plagin (android/.../SaveToDownloadsPlugin.java) — faylni
 // bevosita qurilmaning ommaviy "Yuklab olishlar" papkasiga saqlaydi,
@@ -79,26 +81,98 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     }
   };
 
-  // HTML hisobotni HAQIQIY PDF fayliga aylantirib saqlaydi (native
-  // platformada SpeechToTextPlugin kabi maxsus plagin — SaveToDownloadsPlugin
-  // ichidagi saveHtmlAsPdf — orqali) va darhol "qaysi ilovada ochasiz"
-  // so'rovi bilan ochadi. Plagin mavjud bo'lmasa (masalan APK hali qayta
-  // qurilmagan bo'lsa) yoki xato bersa, HTML fayl sifatida zaxira yo'lga
-  // o'tadi.
+  // MUHIM: android.print.PrintDocumentAdapter orqali "WebView'ni PDF'ga
+  // aylantirish" (avval sinalgan usul) build vaqtida xato berdi —
+  // LayoutResultCallback/WriteResultCallback konstruktorlari package-private,
+  // ilova kodi ulardan meros ololmaydi. Shu sabab PDF endi TO'LIQ JS
+  // tomonida (html2canvas — HTML'ni canvas'ga "suratga oladi" — va jsPDF —
+  // shu suratni sahifalarga bo'lib haqiqiy PDF fayl quradi) generatsiya
+  // qilinadi. Natija (base64) so'ng mavjud, allaqachon ishlayotgan native
+  // SaveToDownloads.save() metodiga beriladi.
+  const stripRemoteImages = (html) =>
+    // Uzoq (masalan QR-kod) rasmlar CORS sababli canvas'ni "tainted" qilib,
+    // butun suratga olishni buzishi mumkin — PDF uchun ularni olib tashlaymiz.
+    html.replace(/<img[^>]*src=["']https?:\/\/[^"']*["'][^>]*>/gi, "");
+
+  const renderHtmlToCanvas = async (html) => {
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.top = "-99999px";
+    iframe.style.left = "0";
+    iframe.style.width = "800px";
+    iframe.style.height = "600px";
+    iframe.style.border = "0";
+    document.body.appendChild(iframe);
+    try {
+      await new Promise((resolve) => {
+        iframe.onload = resolve;
+        iframe.srcdoc = html;
+      });
+      const doc = iframe.contentDocument;
+      const fullHeight = Math.max(doc.documentElement.scrollHeight, doc.body.scrollHeight);
+      iframe.style.height = fullHeight + "px";
+      await new Promise((r) => setTimeout(r, 60));
+      return await html2canvas(doc.body, {
+        width: 800,
+        windowWidth: 800,
+        height: fullHeight,
+        backgroundColor: "#ffffff",
+        scale: 2,
+      });
+    } finally {
+      document.body.removeChild(iframe);
+    }
+  };
+
+  const canvasToPdfBase64 = (canvas) => {
+    const pageWidthMM = 210, pageHeightMM = 297; // A4
+    const pxPerMM = canvas.width / pageWidthMM;
+    const pageHeightPx = Math.floor(pageHeightMM * pxPerMM);
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    let renderedPx = 0;
+    let firstPage = true;
+    while (renderedPx < canvas.height) {
+      const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeightPx;
+      pageCanvas.getContext("2d").drawImage(canvas, 0, renderedPx, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
+      const imgData = pageCanvas.toDataURL("image/jpeg", 0.92);
+      if (!firstPage) doc.addPage();
+      doc.addImage(imgData, "JPEG", 0, 0, pageWidthMM, sliceHeightPx / pxPerMM);
+      renderedPx += sliceHeightPx;
+      firstPage = false;
+    }
+    return doc.output("datauristring").split(",")[1];
+  };
+
+  // HTML hisobotni HAQIQIY PDF fayliga aylantirib saqlaydi va native
+  // platformada darhol "qaysi ilovada ochasiz" so'rovi bilan ochadi.
+  // PDF generatsiyasi muvaffaqiyatsiz bo'lsa (masalan eski qurilmada
+  // canvas cheklovi), HTML fayl sifatida zaxira yo'lga o'tadi.
   const savePdf = async (html, filename) => {
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const { uri } = await SaveToDownloads.saveHtmlAsPdf({ html, filename });
+    try {
+      const canvas = await renderHtmlToCanvas(stripRemoteImages(html));
+      const base64 = canvasToPdfBase64(canvas);
+      if (Capacitor.isNativePlatform()) {
+        const { uri } = await SaveToDownloads.save({ filename, content: base64, mimeType: "application/pdf", isBase64: true });
         await openFile(uri, "application/pdf");
         return true;
-      } catch (e) {
-        console.warn("saveHtmlAsPdf failed, falling back to HTML download:", e);
       }
+      const link = document.createElement("a");
+      link.href = "data:application/pdf;base64," + base64;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return true;
+    } catch (e) {
+      console.warn("PDF generation failed, falling back to HTML download:", e);
+      const htmlFilename = filename.replace(/\.pdf$/i, "") + ".html";
+      const res = await downloadFile(html, htmlFilename, "text/html;charset=utf-8;");
+      if (res.ok) await openFile(res.uri, "text/html");
+      return res.ok;
     }
-    const htmlFilename = filename.replace(/\.pdf$/i, "") + ".html";
-    const res = await downloadFile(html, htmlFilename, "text/html;charset=utf-8;");
-    if (res.ok) await openFile(res.uri, "text/html");
-    return res.ok;
   };
 
   const exportExcel = async () => {
