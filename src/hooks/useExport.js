@@ -1,9 +1,14 @@
 import { useState } from "react";
 import { useApp } from "../context/AppContext.jsx";
 import { KATS, KN, DARS, DN } from "../utils/constants.js";
-import { Capacitor } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { Filesystem, Directory, Encoding } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
+
+// Maxsus native plagin (android/.../SaveToDownloadsPlugin.java) — faylni
+// bevosita qurilmaning ommaviy "Yuklab olishlar" papkasiga saqlaydi,
+// foydalanuvchi "Ulashish" oynasidan biror ilova tanlashi shart emas.
+const SaveToDownloads = registerPlugin("SaveToDownloads");
 
 export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
   const { isPremium, setShowPremModal, lg, ok$, user, oila, azolar, t } = useApp();
@@ -14,12 +19,19 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
   // yo'q, shu sabab a.click() xatosiz bajariladi (shuning uchun ilova
   // "Yuklab olindi!" deb ko'rsatardi), lekin fayl qurilmada HECH QAYERGA
   // yozilmasdi. Native platformada endi fayl to'g'ridan-to'g'ri
-  // Filesystem orqali yoziladi va tizimning "Ulashish/Saqlash" oynasi
-  // ochiladi — foydalanuvchi shu yerdan "Yuklab olishlar"ga saqlashi,
-  // boshqa ilovaga (Telegram va h.k.) yuborishi mumkin.
+  // SaveToDownloads plagini orqali qurilmaning "Yuklab olishlar"
+  // papkasiga yoziladi — hech qanday "ulashish/yuborish" bosqichisiz.
   const downloadFile = async (content, filename, mime) => {
     try {
       if (Capacitor.isNativePlatform()) {
+        try {
+          await SaveToDownloads.save({ filename, content, mimeType: mime || "text/plain" });
+          return true;
+        } catch (e1) {
+          console.warn("SaveToDownloads failed, falling back to share:", e1);
+        }
+        // Zaxira yo'l (masalan APK hali yangi plagin bilan qayta
+        // qurilmagan bo'lsa): fayl keshga yoziladi, Ulashish oynasi ochiladi.
         const { uri } = await Filesystem.writeFile({
           path: filename,
           data: content,
