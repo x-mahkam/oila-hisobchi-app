@@ -25,7 +25,11 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     try {
       if (Capacitor.isNativePlatform()) {
         try {
-          await SaveToDownloads.save({ filename, content, mimeType: mime || "text/plain" });
+          // MUHIM: MediaStore.MIME_TYPE ustuni "text/csv;charset=utf-8;"
+          // kabi parametrli qiymatni emas, faqat toza MIME turini
+          // ("text/csv") kutadi — aks holda yozuv rad etilishi mumkin.
+          const cleanMime = (mime || "text/plain").split(";")[0].trim();
+          await SaveToDownloads.save({ filename, content, mimeType: cleanMime });
           return true;
         } catch (e1) {
           console.warn("SaveToDownloads failed, falling back to share:", e1);
@@ -463,23 +467,21 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
 
         iframe.contentWindow.focus();
         setTimeout(async () => {
-          let printInitiated = false;
+          // MUHIM: Android WebView'da iframe.contentWindow.print() odatda
+          // HECH QANDAY XATO TASHLAMAYDI, lekin haqiqatda hech narsa ham
+          // qilmaydi (chop etish darchasi ochilmaydi) — shu sabab avvalgi
+          // "printInitiated" tekshiruvi doim "muvaffaqiyatli" xabar
+          // ko'rsatib, HAQIQIY yuklab olish natijasini (okk) butunlay
+          // e'tiborsiz qoldirar edi. Endi xabar FAQAT haqiqiy natijaga
+          // (okk) asoslanadi.
           try {
             iframe.contentWindow.print();
-            printInitiated = true;
           } catch (pe) {
             console.error("Iframe print failed:", pe);
           }
 
-          // Mobil qurilmalar va WebView cheklovlari uchun, chop etish darchasi bilan bir qatorda
-          // darhol oflayn HTML hisobot faylini ham yuklab beramiz.
           const okk = await downloadFile(H, "OilaHisobot_" + month + ".html", "text/html;charset=utf-8;");
-
-          if (printInitiated) {
-            ok$(t("xp_printedAndDownloaded"), "ok");
-          } else {
-            ok$(okk ? t("xp_htmlDownloadedHint") : t("xp_downloadError"), okk ? "ok" : "err");
-          }
+          ok$(okk ? t("xp_htmlDownloadedHint") : t("xp_downloadError"), okk ? "ok" : "err");
 
           setTimeout(() => {
             try {
