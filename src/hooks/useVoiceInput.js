@@ -1,8 +1,6 @@
 import { useState, useRef } from "react";
 import { useApp } from "../context/AppContext.jsx";
-import { db } from "../firebase.js";
-import { td, nt } from "../utils/formatters.js";
-import { KATS, KN } from "../utils/constants.js";
+import { td } from "../utils/formatters.js";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 
 // Android WebView'da brauzerning Web Speech API'si (window.SpeechRecognition)
@@ -16,16 +14,12 @@ const SpeechToText = registerPlugin("SpeechToText");
 
 const SR_LANG = { uz: "uz-UZ", ru: "ru-RU", kk: "kk-KZ", ky: "ky-KG", tg: "tg-TJ", qr: "uz-UZ", en: "en-US" };
 
-export function useVoiceInput() {
+export function useVoiceInput({ addX }) {
   const {
-    user,
-    xar,
-    setXar,
     isPremium,
     setShowPremModal,
     lg,
     ok$,
-    f,
     t,
   } = useApp();
 
@@ -181,27 +175,20 @@ export function useVoiceInput() {
     setVoiceOn(false);
   };
 
+  // MUHIM: bu yerda to'g'ridan-to'g'ri Firestore'ga yozish O'RNIGA xuddi
+  // qo'lda kiritishda ishlatiladigan addX (useTransactions.js) chaqiriladi
+  // — aks holda ovoz bilan kiritilgan xarajatlar balans/byudjet
+  // tekshiruvisiz saqlanardi VA ENG MUHIMI addStar() chaqirilmagani uchun
+  // foydalanuvchiga tanga berilmasdi.
   const applyVoice = async () => {
     const parsed = voiceParsed || parseVoice(voiceText);
     if (!parsed) {
       return ok$(t("uvi_noAmountFound"), "err");
     }
-    const item = {
-      id: Date.now(),
-      kategoriya: parsed.kat,
-      summa: parsed.summa,
-      izoh: parsed.text.slice(0, 50),
-      sana: td(),
-      vaqt: nt(),
-      repeat: false,
-    };
-    const key = "x_" + user.oilaId + "_" + user.id;
-    await db.s(key, [item, ...((await db.g(key)) || [])]);
-    setXar([{ ...item, uid: user.id }, ...xar]);
+    await addX({ kategoriya: parsed.kat, summa: parsed.summa, izoh: parsed.text.slice(0, 50), sana: td(), repeat: false });
     setShowVoice(false);
     setVoiceText("");
     setVoiceParsed(null);
-    ok$(t("uvi_added", { amount: f(parsed.summa, true), category: (KN[lg] || KN.uz)[KATS.findIndex(k => k.id === parsed.kat)] }));
   };
 
   return {

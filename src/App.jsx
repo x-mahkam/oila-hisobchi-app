@@ -514,7 +514,7 @@ export default function App() {
     voiceText, setVoiceText,
     voiceParsed, setVoiceParsed,
     startVoice, stopVoice, applyVoice
-  } = useVoiceInput();
+  } = useVoiceInput({ addX });
 
   const {
     showScanner, setShowScanner,
@@ -525,7 +525,7 @@ export default function App() {
   } = useQRScanner({ setShowAddModal, setAddModalTab, setAddStep, setAddKat });
 
   const {
-    exportLoading, exportExcel, exportPDF, downloadFile
+    exportLoading, exportExcel, exportPDF, savePdf
   } = useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar });
 
 
@@ -971,7 +971,7 @@ export default function App() {
           th={th}
           lg={lg}
           ok$={ok$}
-          downloadFile={downloadFile}
+          savePdf={savePdf}
           onClose={() => debts.setTilxatView(null)}
         />
       )}
