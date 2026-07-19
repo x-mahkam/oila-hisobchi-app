@@ -352,28 +352,49 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
       const jD2 = pD.reduce((s, d) => s + Number(d.summa || 0), 0);
 
       // SVG donut generator
-      const arcPath = (cx, cy, r, rIn, a0, a1) => {
-        const lg2 = a1 - a0 > Math.PI ? 1 : 0;
-        const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
-        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-        const x2 = cx + rIn * Math.cos(a1), y2 = cy + rIn * Math.sin(a1);
-        const x3 = cx + rIn * Math.cos(a0), y3 = cy + rIn * Math.sin(a0);
-        return "M" + x0.toFixed(1) + " " + y0.toFixed(1) + " A" + r + " " + r + " 0 " + lg2 + " 1 " + x1.toFixed(1) + " " + y1.toFixed(1) + " L" + x2.toFixed(1) + " " + y2.toFixed(1) + " A" + rIn + " " + rIn + " 0 " + lg2 + " 0 " + x3.toFixed(1) + " " + y3.toFixed(1) + " Z";
-      };
-
+      // MUHIM: bu diagramma ilgari inline SVG (<path> yoylar) bilan
+      // chizilgan edi — Playwright orqali haqiqiy Chromium'da vizual
+      // tekshirilganda (rasm sifatida saqlanib ko'zdan kechirilganda)
+      // aniqlandiki, html2canvas donut diagrammaning O'NG YARMINI qattiq
+      // vertikal chiziq bilan kesib tashlar edi (SVG <path> ellips yoy
+      // buyruqlarini (A) surating olishdagi html2canvas'ning nozik xatosi).
+      // CSS conic-gradient() bilan almashtirish HAM ishlamadi — html2canvas
+      // 1.4.1 uni umuman qo'llamaydi (diagramma butunlay ko'rinmay qoldi).
+      // Shu sabab diagramma endi Canvas 2D API (ctx.arc()) bilan
+      // OLDINDAN alohida <canvas>'da chizilib, tayyor PNG rasm (<img>)
+      // sifatida joylashtiriladi — xuddi allaqachon ishonchli ishlayotgan
+      // QR kod rasmlari kabi, html2canvas'ning CSS/SVG talqin qilishiga
+      // umuman bog'liq emas (bu ham Playwright'da vizual tasdiqlangan).
       const donutSVG = (data, centerLabel) => {
         const total = data.reduce((s, d) => s + d.sum, 0);
         if (total <= 0) return "<div style='height:130px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:11px'>" + t("xp_noData") + "</div>";
-        let a = -Math.PI / 2;
-        const segs = data
-          .slice(0, 6)
-          .map((d) => {
-            const ang = Math.min((d.sum / total) * 2 * Math.PI, 2 * Math.PI - 0.002);
-            const p = arcPath(65, 65, 58, 36, a + 0.015, a + ang - 0.015 > a + 0.015 ? a + ang - 0.015 : a + ang);
-            a += ang;
-            return "<path d='" + p + "' fill='" + d.color + "'/>";
-          })
-          .join("");
+        const size = 260; // 130 * 2 — aniqroq (retina) rasm uchun
+        const dCanvas = document.createElement("canvas");
+        dCanvas.width = size;
+        dCanvas.height = size;
+        const ctx = dCanvas.getContext("2d");
+        const cx = size / 2, cy = size / 2;
+        const rOuter = 116, rInner = 72; // asl SVG'dagi r=58/rIn=36 nisbatiga mos (x2)
+        let angle = -Math.PI / 2;
+        data.slice(0, 6).forEach((d) => {
+          const sweep = Math.min((d.sum / total) * 2 * Math.PI, 2 * Math.PI - 0.002);
+          ctx.beginPath();
+          ctx.moveTo(cx + rInner * Math.cos(angle), cy + rInner * Math.sin(angle));
+          ctx.arc(cx, cy, rOuter, angle, angle + sweep);
+          ctx.arc(cx, cy, rInner, angle + sweep, angle, true);
+          ctx.closePath();
+          ctx.fillStyle = d.color;
+          ctx.fill();
+          angle += sweep;
+        });
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "18px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(centerLabel, cx, cy - 6);
+        ctx.fillStyle = "#1f2937";
+        ctx.font = "bold 20px Arial";
+        ctx.fillText(total >= 1e6 ? (total / 1e6).toFixed(1) + " mln" : total.toLocaleString(), cx, cy + 20);
+        const imgSrc = dCanvas.toDataURL("image/png");
         const legend = data
           .slice(0, 6)
           .map(
@@ -388,14 +409,7 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
           )
           .join("");
         return (
-          "<svg width='130' height='130' viewBox='0 0 130 130' style='display:block;margin:0 auto'>" +
-          segs +
-          "<text x='65' y='62' text-anchor='middle' font-size='9' fill='#6b7280'>" +
-          centerLabel +
-          "</text>" +
-          "<text x='65' y='75' text-anchor='middle' font-size='10' font-weight='800' fill='#1f2937'>" +
-          (total >= 1e6 ? (total / 1e6).toFixed(1) + " mln" : total.toLocaleString()) +
-          "</text></svg>" +
+          "<img src='" + imgSrc + "' width='130' height='130' style='display:block;margin:0 auto'/>" +
           "<div style='margin-top:8px'>" +
           legend +
           "</div>"
