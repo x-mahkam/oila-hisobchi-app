@@ -526,7 +526,7 @@ export default function App() {
 
   const {
     exportLoading, exportExcel, exportPDF, savePdf
-  } = useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar });
+  } = useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar });
 
 
 

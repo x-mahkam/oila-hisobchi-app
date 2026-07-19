@@ -8,7 +8,7 @@ import { SPACE, TYPE, RADIUS, ALPHA, SHADOW, Z, CHART, OPACITY, MOTION } from ".
 import { Ico } from "../utils/icons.jsx";
 import { makeS } from "../utils/styles.js";
 import { KATS, KN, DARS, DN, RELATIONS } from "../utils/constants.js";
-import { tm } from "../utils/formatters.js";
+import { tm, td } from "../utils/formatters.js";
 import { db } from "../firebase.js";
 // ── Sprint 3B: Smart Budget AI (Reports integratsiyasi) ──
 import { computeBudgetAI } from "../ai/budgetEngine.js";
@@ -44,6 +44,11 @@ export default function ReportsPage({
 }) {
   // PDF hisobot doirasi: o'zimning / oilamning
   const [pdfScope, setPdfScope] = useState(canSeeReport ? "family" : "mine");
+  // Hisobot davri: joriy oy (standart) yoki maxsus sana oralig'i
+  const [rangeMode, setRangeMode] = useState("month");
+  const [rangeFrom, setRangeFrom] = useState("");
+  const [rangeTo, setRangeTo] = useState("");
+  const exportRange = rangeMode === "custom" && (rangeFrom || rangeTo) ? { from: rangeFrom || null, to: rangeTo || null } : null;
   const STY = useMemo(() => makeS(th), [th]);
 
   // ═══ Sprint 3B: SMART BUDGET AI — Reports uchun trend/summary ═══
@@ -313,13 +318,35 @@ export default function ReportsPage({
             ))}
           </div>
         )}
+        <div style={{ display: "flex", background: th.surH, borderRadius: RADIUS.s + 2, padding: 3, gap: 3, border: "1.5px solid " + th.bor, marginBottom: SPACE.s2 + 2 }}>
+          {[["month", t("rp_thisMonth")], ["custom", t("rp_customRange")]].map(([key, label]) => (
+            <button key={key} className="ui-press" onClick={() => setRangeMode(key)} style={{
+              flex: 1, padding: (SPACE.s2 + 1) + "px 0", border: "none", borderRadius: RADIUS.s - 1, cursor: "pointer", fontFamily: "inherit",
+              fontWeight: 700, fontSize: TYPE.caption.fontSize + 1, transition: MOTION.tr("background"),
+              background: rangeMode === key ? th.ac : "transparent",
+              color: rangeMode === key ? "#fff" : th.t2,
+            }}>{label}</button>
+          ))}
+        </div>
+        {rangeMode === "custom" && (
+          <div style={{ display: "flex", gap: SPACE.s2, marginBottom: SPACE.s2 + 2 }}>
+            <div style={{ flex: 1 }}>
+              <label style={STY.lb}>{t("rp_fromDate")}</label>
+              <input type="date" style={STY.ip} value={rangeFrom} max={rangeTo || td()} onChange={(e) => setRangeFrom(e.target.value)} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={STY.lb}>{t("rp_toDate")}</label>
+              <input type="date" style={STY.ip} value={rangeTo} min={rangeFrom} max={td()} onChange={(e) => setRangeTo(e.target.value)} />
+            </div>
+          </div>
+        )}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s2 + 2 }}>
-        <button className="ui-press" onClick={exportExcel} disabled={exportLoading} style={{ ...STY.bt(th.gr, th.gr), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2, opacity: exportLoading ? OPACITY.disabled : 1, position: "relative" }}>
+        <button className="ui-press" onClick={() => exportExcel(exportRange)} disabled={exportLoading} style={{ ...STY.bt(th.gr, th.gr), marginBottom: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2, opacity: exportLoading ? OPACITY.disabled : 1, position: "relative" }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 6l2.5 3L5 12M9 12h4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           {exportLoading ? "..." : "Excel"}{!isPremium && <Badge th={th} type="pro" style={{ position: "absolute", top: -SPACE.s1 - 2, right: -SPACE.s1 - 2 }} />}
         </button>
-        <button className="ui-press" onClick={() => exportPDF(pdfScope)} style={{ ...STY.bt(th.rd, th.rd), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2 }}>
+        <button className="ui-press" onClick={() => exportPDF(pdfScope, exportRange)} style={{ ...STY.bt(th.rd, th.rd), marginBottom: 0, position: "relative", display: "flex", alignItems: "center", justifyContent: "center", gap: SPACE.s1 + 2 }}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" fill="white" opacity=".2" /><path d="M5 4h5l3 3v7H5V4z" stroke="white" strokeWidth="1.3" strokeLinejoin="round" /><line x1="7" y1="10" x2="11" y2="10" stroke="white" strokeWidth="1.2" strokeLinecap="round" /></svg>
           PDF{!isPremium && <Badge th={th} type="pro" style={{ position: "absolute", top: -SPACE.s1 - 2, right: -SPACE.s1 - 2 }} />}
         </button>

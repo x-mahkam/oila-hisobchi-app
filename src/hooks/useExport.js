@@ -13,9 +13,54 @@ import QRCode from "qrcode";
 // foydalanuvchi "Ulashish" oynasidan biror ilova tanlashi shart emas.
 const SaveToDownloads = registerPlugin("SaveToDownloads");
 
-export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
+export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
   const { isPremium, setShowPremModal, lg, ok$, user, oila, azolar, t } = useApp();
   const [exportLoading, setExportLoading] = useState(false);
+
+  // `range` = { from, to } (YYYY-MM-DD, ISO satr taqqoslash orqali) — berilmasa
+  // yoki bo'sh bo'lsa, standart xulq-atvor (joriy oy) saqlanadi.
+  const filterByRange = (list, range) => {
+    if (!range || (!range.from && !range.to)) {
+      const month = tm();
+      return list.filter((x) => x.sana?.startsWith(month));
+    }
+    const { from, to } = range;
+    return list.filter((x) => x.sana && (!from || x.sana >= from) && (!to || x.sana <= to));
+  };
+
+  const rangeLabel = (range) => {
+    if (!range || (!range.from && !range.to)) return tm();
+    return (range.from || "…") + " — " + (range.to || "…");
+  };
+
+  const rangeFileTag = (range) => {
+    if (!range || (!range.from && !range.to)) return tm();
+    return (range.from || "boshi") + "_" + (range.to || "oxiri");
+  };
+
+  // Kunlik trend diagrammasi uchun kun ro'yxati — standart holatda joriy
+  // oyning barcha kunlari, maxsus oraliqda esa "from"dan "to"gacha bo'lgan
+  // har bir kun (juda uzun oraliqda cheksiz tsiklni oldini olish uchun
+  // taxminan 2 yilgacha chegaralangan).
+  const dailySeries = (range, month) => {
+    if (range && (range.from || range.to)) {
+      const start = range.from || range.to || month + "-01";
+      const end = range.to || range.from || month + "-28";
+      const dayList = [];
+      let d = new Date(start + "T00:00:00");
+      const endD = new Date(end + "T00:00:00");
+      let guard = 0;
+      while (d <= endD && guard < 731) {
+        dayList.push(d.toISOString().slice(0, 10));
+        d.setDate(d.getDate() + 1);
+        guard++;
+      }
+      return dayList.length ? dayList : [start];
+    }
+    const [yy, mm] = month.split("-").map(Number);
+    const dim = new Date(yy, mm, 0).getDate();
+    return Array.from({ length: dim }, (_, i) => month + "-" + String(i + 1).padStart(2, "0"));
+  };
 
   // Saqlangan faylni "qaysi ilovada ochasiz" tizim so'rovi bilan darhol
   // ochadi — foydalanuvchi "yuklab olindi" xabaridan keyin natijani darhol
@@ -201,14 +246,14 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     }
   };
 
-  const exportExcel = async () => {
+  const exportExcel = async (range) => {
     if (!isPremium) {
       setShowPremModal(true);
       return;
     }
     setExportLoading(true);
     try {
-      const month = tm();
+      const label = rangeLabel(range);
       const esc = (s) => {
         const v = String(s == null ? "" : s);
         if (v.indexOf('"') >= 0 || v.indexOf(";") >= 0) {
@@ -217,12 +262,14 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         return v;
       };
       const exFil = canSeeReport ? "all" : user?.id; // canSeeReport checks
-      const exX = exFil === "all" ? bX : bX.filter((x) => x.uid === exFil);
-      const exD = exFil === "all" ? bD : bD.filter((d) => d.uid === exFil);
+      const scopedX = filterByRange(xar, range);
+      const scopedD = filterByRange(dar, range);
+      const exX = exFil === "all" ? scopedX : scopedX.filter((x) => x.uid === exFil);
+      const exD = exFil === "all" ? scopedD : scopedD.filter((d) => d.uid === exFil);
       const exjX = exX.reduce((s, x) => s + Number(x.summa || 0), 0);
       const exjD = exD.reduce((s, d) => s + Number(d.summa || 0), 0);
       const rows = [];
-      rows.push([t("xp_familyReportTitle"), month].join(";"));
+      rows.push([t("xp_familyReportTitle"), label].join(";"));
       rows.push("");
       rows.push([t("xp_totalIncome"), exjD].join(";"));
       rows.push([t("xp_totalExpense"), exjX].join(";"));
@@ -276,7 +323,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         });
       }
       const csv = "\uFEFF" + rows.join("\n");
-      const res = await downloadFile(csv, "OilaHisobot_" + month + ".csv", "text/csv;charset=utf-8;");
+      const res = await downloadFile(csv, "OilaHisobot_" + rangeFileTag(range) + ".csv", "text/csv;charset=utf-8;");
       if (res.ok) await openFile(res.uri, "text/csv");
       ok$(res.ok ? t("xp_downloaded") : t("xp_error"), res.ok ? "ok" : "err");
     } catch (e) {
@@ -285,16 +332,19 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
     setExportLoading(false);
   };
 
-  const exportPDF = async (scopeArg) => {
+  const exportPDF = async (scopeArg, range) => {
     if (!isPremium) {
       setShowPremModal(true);
       return;
     }
     try {
       const month = tm();
+      const label = rangeLabel(range);
       const sc = scopeArg === "mine" || scopeArg === "family" ? scopeArg : canSeeReport ? "family" : "mine";
-      const pX = sc === "family" && canSeeReport ? bX : bX.filter((x) => x.uid === user?.id || !x.uid);
-      const pD = sc === "family" && canSeeReport ? bD : bD.filter((d) => d.uid === user?.id || !d.uid);
+      const scopedX = filterByRange(xar, range);
+      const scopedD = filterByRange(dar, range);
+      const pX = sc === "family" && canSeeReport ? scopedX : scopedX.filter((x) => x.uid === user?.id || !x.uid);
+      const pD = sc === "family" && canSeeReport ? scopedD : scopedD.filter((d) => d.uid === user?.id || !d.uid);
       const pdfWho = sc === "family" ? t("xp_familyReport") : t("xp_personalReport", { name: user?.ism || "" });
       const jX2 = pX.reduce((s, x) => s + Number(x.summa || 0), 0);
       const jD2 = pD.reduce((s, d) => s + Number(d.summa || 0), 0);
@@ -351,12 +401,9 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
       };
 
       const barSVG = (() => {
-        const [yy, mm] = month.split("-").map(Number);
-        const dim = new Date(yy, mm, 0).getDate();
-        const days = Array.from({ length: dim }, (_, i) => {
-          const sana = month + "-" + String(i + 1).padStart(2, "0");
-          return pX.filter((x) => x.sana === sana).reduce((s, x) => s + Number(x.summa || 0), 0);
-        });
+        const dayList = dailySeries(range, month);
+        const dim = dayList.length;
+        const days = dayList.map((sana) => pX.filter((x) => x.sana === sana).reduce((s, x) => s + Number(x.summa || 0), 0));
         const mx = Math.max(...days, 1);
         const W = 190,
           H = 108,
@@ -471,7 +518,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
 
       const H =
         "<!DOCTYPE html><html><head><meta charset='UTF-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Hisobot " +
-        month +
+        label +
         "</title><style>" +
         "*{box-sizing:border-box}body{font-family:Arial,sans-serif;padding:24px;color:#1f2937;max-width:760px;margin:0 auto;font-size:13px}" +
         "h2{color:#374151;margin-top:26px;font-size:16px}" +
@@ -488,7 +535,7 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         " \u00b7 " +
         pdfWho +
         " \u00b7 " +
-        month +
+        label +
         "</div></div></div>" +
         "<div style='border-bottom:3px solid #6366f1;margin-bottom:14px'></div>" +
         "<p style='color:#6b7280;font-size:12px'>" +
@@ -579,13 +626,13 @@ export function useExport({ bX, bD, bdj, gN, canSeeReport, tm, qarzlar }) {
         "<div class='foot'>" +
         t("xp_footerGenerated") +
         " \u00b7 " +
-        month +
+        label +
         "</div>" +
         "<button class='btn' onclick='window.print()'>" +
         t("xp_savePrintBtn") +
         "</button></body></html>";
 
-      const okk = await savePdf(H, "OilaHisobot_" + month + ".pdf");
+      const okk = await savePdf(H, "OilaHisobot_" + rangeFileTag(range) + ".pdf");
       ok$(okk ? t("xp_downloaded") : t("xp_error"), okk ? "ok" : "err");
     } catch (e) {
       ok$(t("xp_errorMsg", { msg: e.message }), "err");
