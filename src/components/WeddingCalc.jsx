@@ -10,6 +10,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { db } from "../firebase.js";
+import { td } from "../utils/formatters.js";
+import { Capacitor } from "@capacitor/core";
+import { Clipboard } from "@capacitor/clipboard";
 import { AppCard, PrimaryButton, Badge, TextInput } from "./ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, CHART } from "../utils/tokens.js";
 
@@ -86,7 +89,7 @@ const NumIn = ({ value, onChange, th, placeholder, suffix }) => (
   </div>
 );
 
-export default function WeddingCalc({ user, th, onClose, addMq, ok$ }) {
+export default function WeddingCalc({ user, th, onClose, addMq, ok$, savePdf }) {
   const { t } = useTranslation("wedding");
   const oilaId = user?.oilaId;
 
@@ -246,8 +249,13 @@ export default function WeddingCalc({ user, th, onClose, addMq, ok$ }) {
     db.s("toy_" + oilaId, { saved: savedRef.current, upd: Date.now() }).catch(() => {});
   };
 
-  // ── PDF smeta (chop etish oynasi — "Save as PDF") ──
-  const printSmeta = () => {
+  // ── PDF smeta ──
+  // MUHIM: avval bu yerda iframe.contentWindow.print() ishlatilgan edi —
+  // Android WebView'da bu HECH NARSA qilmaydi (xatosiz, lekin natijasiz),
+  // shu sabab tugma bosilganda umuman hech narsa yuklanmasdi. Endi hisobot/
+  // tilxat eksportida ishlatilayotgan xuddi shu savePdf() (useExport.js)
+  // orqali — HAQIQIY PDF fayl yaratib, "Yuklab olishlar"ga saqlanadi.
+  const printSmeta = async () => {
     if (!data || !calc) return;
     const rows1 = EVENTS.filter(ev => data.events[ev.id]?.on).map(ev => {
       const e = data.events[ev.id];
@@ -283,14 +291,9 @@ export default function WeddingCalc({ user, th, onClose, addMq, ok$ }) {
       <div style="margin-top:22px;font-size:10px;color:#9ca3af">Oila Hisobchi · ${t("w021")}</div>
       </body></html>`;
     try {
-      const fr = document.createElement("iframe");
-      fr.style.cssText = "position:fixed;width:0;height:0;border:0;visibility:hidden";
-      document.body.appendChild(fr);
-      fr.srcdoc = html;
-      fr.onload = () => {
-        try { fr.contentWindow.focus(); fr.contentWindow.print(); } catch {}
-        setTimeout(() => document.body.removeChild(fr), 4000);
-      };
+      const okk = savePdf ? await savePdf(html, "ToySmetasi_" + td() + ".pdf") : false;
+      if (okk) ok$ && ok$(t("w069"));
+      else ok$ && ok$(t("w022"), "err");
     } catch { ok$ && ok$(t("w022"), "err"); }
   };
 
@@ -311,7 +314,19 @@ export default function WeddingCalc({ user, th, onClose, addMq, ok$ }) {
       lines.push(`${c.e} ${t("cat_" + c.id)}: ${fmt(fc(it))} ${t("w017")}${it.dep ? ` (${t("w025")}: ${fmt(it.dep)})` : ""}`);
     });
     lines.push("", `${t("w076")}: ${fmt(calc.forecast)} ${t("w017")}`, `${t("w078")}: ${fmt(calc.dep)}`, `${t("w080")}: ${fmt(calc.remain)}`);
-    try { await navigator.clipboard.writeText(lines.join("\n")); ok$ && ok$(t("w026")); } catch { ok$ && ok$(t("w027"), "err"); }
+    const text = lines.join("\n");
+    try {
+      // MUHIM: navigator.clipboard.writeText() Android WebView'da ishonchsiz
+      // (ba'zi versiyalarda sekin, ba'zilarida rad javobi bermasdan shunchaki
+      // hech narsa nusxalamaydi) — native platformada Capacitor'ning o'z
+      // Clipboard plagini (tizim ClipboardManager'idan foydalanadi) ishlatiladi.
+      if (Capacitor.isNativePlatform()) {
+        await Clipboard.write({ string: text });
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
+      ok$ && ok$(t("w026"));
+    } catch { ok$ && ok$(t("w027"), "err"); }
   };
 
   const P = { pink: "#ec4899", vio: "#a855f7" };

@@ -45,7 +45,7 @@ export function useGoals() {
     }];
     await db.s("maq_" + user.oilaId, u);
     setMaq(u);
-    addStar(20, t("ug_goalCreated"));
+    addStar(20, t("ug_goalCreated"), "mqnew_" + u[u.length - 1].id);
     ok$(t("ug_goalAdded"));
   }, [maq, user, ok$, addStar, isPremium, t]);
 
@@ -98,7 +98,7 @@ export function useGoals() {
 
     if (wasComplete) {
       fireConfetti(); buzz(20);
-      addStar(10, t("ug_goalReachedStar", { name: tgtGoal?.ism || "" }));
+      addStar(10, t("ug_goalReachedStar", { name: tgtGoal?.ism || "" }), "mqreach_" + tupId);
       if (isKid) {
         const boshId = oila?.boshId || azolar.find(a=>a.rol==="bosh")?.id;
         if (boshId && boshId !== user.id) {

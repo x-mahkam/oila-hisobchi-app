@@ -430,13 +430,20 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
           .map((d) => "<text x='" + ((d - 0.5) * bw).toFixed(1) + "' y='" + (H - 3) + "' text-anchor='middle' font-size='8' fill='#9ca3af'>" + d + "</text>")
           .join("");
         return (
-          "<svg width='100%' height='" +
+          // MUHIM: width='100%' (nisbiy) html2canvas'da SVG balandligini
+          // noto'g'ri hisoblab, diagrammaning yuqori qismini "kesib"
+          // qo'yardi (ishlab turgan donut diagrammalari esa aniq piksel
+          // o'lchamlarida — width='130' — shu sabab to'g'ri chiqadi).
+          // Shu sabab bu yerda ham aniq piksel kengligi ishlatiladi.
+          "<svg width='" +
+          W +
+          "' height='" +
           H +
           "' viewBox='0 0 " +
           W +
           " " +
           H +
-          "' preserveAspectRatio='none' style='display:block'>" +
+          "' preserveAspectRatio='xMidYMid meet' style='display:block;margin:0 auto;max-width:100%'>" +
           bars +
           labels +
           "</svg>" +
@@ -501,13 +508,13 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
 
       const xRows = pX
         .slice(0, 40)
-        .map((x) => "<tr><td>" + x.sana + "</td><td>" + KN[lg][KATS.findIndex((k) => k.id === x.kategoriya)] + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right'>" + Number(x.summa).toLocaleString() + "</td><td>" + gN(x.uid) + "</td></tr>")
+        .map((x) => "<tr><td style='white-space:nowrap'>" + x.sana + "</td><td style='white-space:nowrap'>" + KN[lg][KATS.findIndex((k) => k.id === x.kategoriya)] + "</td><td>" + (x.izoh || "") + "</td><td style='text-align:right;white-space:nowrap'>" + Number(x.summa).toLocaleString() + "</td><td style='white-space:nowrap'>" + gN(x.uid) + "</td></tr>")
         .join("");
 
       const qActive = qarzlar.filter((q) => !q.paid && (sc === "family" && canSeeReport ? true : q.uid === user?.id || !q.uid));
       const qRows = qActive
         .slice(0, 15)
-        .map((q) => "<tr><td>" + q.kim + "</td><td>" + (q.tur === "bergan" ? t("xp_lentPassive") : t("xp_borrowedPassive")) + "</td><td style='text-align:right'>" + Number(q.summa).toLocaleString() + "</td><td>" + (q.qaytSana || "-") + "</td></tr>")
+        .map((q) => "<tr><td>" + q.kim + "</td><td style='white-space:nowrap'>" + (q.tur === "bergan" ? t("xp_lentPassive") : t("xp_borrowedPassive")) + "</td><td style='text-align:right;white-space:nowrap'>" + Number(q.summa).toLocaleString() + "</td><td style='white-space:nowrap'>" + (q.qaytSana || "-") + "</td></tr>")
         .join("");
 
       // QR - referal link

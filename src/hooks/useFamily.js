@@ -141,7 +141,7 @@ export function useFamily() {
       }, ...kn]);
     } catch {}
 
-    addStar(3, t("uf_taskCompletedStar", { title: v.title || "" }));
+    addStar(3, t("uf_taskCompletedStar", { title: v.title || "" }), "vaz_" + v.id);
     ok$(t("uf_approvedKidGot", { amt: f(v.reward, true) }));
   }, [vazifalar, kidBalances, user, xar, dar, ok$, buzz, addStar, t, azolar, setAzolar, setXar, setKidBalances, f]);
 

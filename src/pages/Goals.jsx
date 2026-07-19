@@ -219,7 +219,7 @@ export default function GoalsPage({
   editMq, setEditMq, editMqN, setEditMqN, editMqS, setEditMqS,
   addMq, tupMq, delMq, saveEditMq,
   parentBoughtMaqsad, parentLaterMaqsad, kidAcceptMaqsad, kidRejectMaqsad,
-  ok$,
+  ok$, savePdf,
   kidBalances,
 }) {
   const [addM, setAddM] = useState(() => {
@@ -278,7 +278,7 @@ export default function GoalsPage({
 
   return (
     <div>
-      {showToy && <WeddingCalc user={user} lg={lg} th={th} addMq={addMq} ok$={ok$} onClose={() => setShowToy(false)} />}
+      {showToy && <WeddingCalc user={user} lg={lg} th={th} addMq={addMq} ok$={ok$} savePdf={savePdf} onClose={() => setShowToy(false)} />}
 
       {/* ── To'y kalkulyatori kirish kartasi (ekranning yagona gradienti, CHART palitradan) ── */}
       {!isKid && (

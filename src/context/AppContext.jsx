@@ -159,9 +159,30 @@ export function AppProvider({ children }) {
   // eskirgan bo'lsa bitta yozuv boshqasini "yutib yuborishi" mumkin edi).
   // UI esa keshdan darhol (taxminiy) yangilanadi — aniq qiymat keyingi
   // db.g/gCache o'qishida serverdan tabiiy ravishda to'g'irlanadi.
-  const addStar = useCallback(async (count = 1, reason = "") => {
+  // MUHIM (dedupKey): xarajat/daromad qo'shilganda "bir marta kiritilgan
+  // xarajat uchun ilova fondan qaytarilganda ham, qayta kirilganda ham
+  // tanga qayta-qayta berilaveradi" degan shikoyat aniqlandi. Buni chaqirgan
+  // aniq joyni ko'plab tekshiruvlar bilan ham topib bo'lmadi (barcha
+  // addStar chaqiruvlari faqat foydalanuvchi harakati bilan bog'liq va
+  // qayta-qayta ishga tushirilmaydi ko'rinadi) — shu sabab HIMOYA to'g'ridan-to'g'ri
+  // shu yerga, markazlashtirilgan holda qo'yildi: agar chaqiruvchi o'ziga xos
+  // dedupKey (masalan, xarajat hujjatining id'si) uzatsa, o'sha ID uchun
+  // tanga FAQAT BIR MARTA beriladi — necha marta addStar shu ID bilan
+  // chaqirilmasin (qayta render, qayta kirish, noma'lum sabab bo'lsa ham).
+  // localStorage'da saqlanadi — ilova process o'chib qayta ishga tushsa ham
+  // (Android fondan qaytarganda ko'pincha shunday bo'ladi) saqlanib qoladi.
+  const addStar = useCallback(async (count = 1, reason = "", dedupKey = null) => {
     if (!user?.oilaId) return;
     try {
+      if (dedupKey) {
+        const seenLsKey = "oilaV7_starDedup_" + user.oilaId;
+        let seen = [];
+        try { seen = JSON.parse(localStorage.getItem(seenLsKey) || "[]"); } catch {}
+        if (seen.includes(String(dedupKey))) return;
+        seen.push(String(dedupKey));
+        if (seen.length > 500) seen = seen.slice(-500);
+        try { localStorage.setItem(seenLsKey, JSON.stringify(seen)); } catch {}
+      }
       const cachedStars = db.gCache("stars_" + user.oilaId);
       const optimisticStars = Math.max(0, (cachedStars != null ? cachedStars : 0) + count);
       setStars(optimisticStars);

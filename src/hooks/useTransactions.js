@@ -89,7 +89,7 @@ export function useTransactions() {
         return;
       }
     }
-    addStar(1, t("ut_expenseAddedStar"));
+    addStar(1, t("ut_expenseAddedStar"), "x_" + item.id);
     ok$(t("ut_expenseAdded"));
     syncDailyReminderRef.current?.();
   }, [user, oila, xar, ok$, buzz, addStar, lg, syncDailyReminderRef]);
@@ -107,7 +107,7 @@ export function useTransactions() {
     const key = "d_" + user.oilaId + "_" + user.id;
     await db.s(key, [item, ...dar.filter(d => d.uid === user.id)]);
     setDar(prev => [item, ...prev]);
-    addStar(1, t("ut_incomeAddedStar"));
+    addStar(1, t("ut_incomeAddedStar"), "d_" + item.id);
     ok$(t("ut_incomeAdded"));
     syncDailyReminderRef.current?.();
   }, [user, dar, ok$, buzz, addStar, t, syncDailyReminderRef]);
