@@ -402,53 +402,48 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
         );
       };
 
+      // MUHIM: bu diagramma ilgari inline SVG (<rect>/<text>) bilan
+      // chizilgan edi — donut diagrammalar ham SVG bo'lsa-da to'g'ri
+      // chiqardi, lekin AYNAN shu bar-diagramma html2canvas'da ikki marta
+      // (turli sozlamalar bilan) qayta urinishdan keyin ham yuqori qismi
+      // "siqilib"/kesilib chiqishda davom etdi — html2canvas'ning ko'p
+      // <rect> elementli SVG'larni piksel-aniq surating olishidagi ma'lum
+      // nozik muammosi. Shu sabab endi oddiy HTML/CSS (flexbox+div)
+      // ustunlar bilan chizilgan — bu yondashuv .sum/.charts kabi allaqachon
+      // ishonchli ishlayotgan div-asosli bloklar bilan bir xil, SVG
+      // scaling noaniqligiga umuman bog'liq emas.
       const barSVG = (() => {
         const dayList = dailySeries(range, month);
         const dim = dayList.length;
         const days = dayList.map((sana) => pX.filter((x) => x.sana === sana).reduce((s, x) => s + Number(x.summa || 0), 0));
         const mx = Math.max(...days, 1);
-        const W = 190,
-          H = 108,
-          bw = W / dim;
+        const chartH = 84; // px
         const bars = days
-          .map((v, i) => {
-            const h = Math.max(v > 0 ? 3 : 1, (v / mx) * (H - 24));
+          .map((v) => {
+            const hPct = Math.max(v > 0 ? 4 : 2, Math.round((v / mx) * 100));
+            const color = v > 0 ? "#6366f1" : "#e5e7eb";
             return (
-              "<rect x='" +
-              (i * bw + 0.5).toFixed(1) +
-              "' y='" +
-              (H - 14 - h).toFixed(1) +
-              "' width='" +
-              Math.max(bw - 1.2, 1.5).toFixed(1) +
-              "' height='" +
-              h.toFixed(1) +
-              "' rx='1.2' fill='" +
-              (v > 0 ? "#6366f1" : "#e5e7eb") +
-              "'/>"
+              "<div style='flex:1;display:flex;align-items:flex-end;height:" +
+              chartH +
+              "px;min-width:1px'><div style='width:100%;height:" +
+              hPct +
+              "%;background:" +
+              color +
+              ";border-radius:1px 1px 0 0'></div></div>"
             );
           })
           .join("");
-        const labels = [1, Math.round(dim / 2), dim]
-          .map((d) => "<text x='" + ((d - 0.5) * bw).toFixed(1) + "' y='" + (H - 3) + "' text-anchor='middle' font-size='8' fill='#9ca3af'>" + d + "</text>")
-          .join("");
         return (
-          // MUHIM: width='100%' (nisbiy) html2canvas'da SVG balandligini
-          // noto'g'ri hisoblab, diagrammaning yuqori qismini "kesib"
-          // qo'yardi (ishlab turgan donut diagrammalari esa aniq piksel
-          // o'lchamlarida — width='130' — shu sabab to'g'ri chiqadi).
-          // Shu sabab bu yerda ham aniq piksel kengligi ishlatiladi.
-          "<svg width='" +
-          W +
-          "' height='" +
-          H +
-          "' viewBox='0 0 " +
-          W +
-          " " +
-          H +
-          "' preserveAspectRatio='xMidYMid meet' style='display:block;margin:0 auto;max-width:100%'>" +
+          "<div style='display:flex;align-items:flex-end;gap:1px;height:" +
+          chartH +
+          "px;width:100%;box-sizing:border-box'>" +
           bars +
-          labels +
-          "</svg>" +
+          "</div>" +
+          "<div style='display:flex;justify-content:space-between;font-size:8px;color:#9ca3af;margin-top:4px'><span>1</span><span>" +
+          Math.round(dim / 2) +
+          "</span><span>" +
+          dim +
+          "</span></div>" +
           "<div style='font-size:9px;color:#6b7280;text-align:center;margin-top:4px'>" +
           t("xp_dailyMax", { max: mx.toLocaleString() }) +
           "</div>"
