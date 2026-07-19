@@ -223,6 +223,7 @@ export default function DashboardPage({
 }) {
   const STY = useMemo(() => makeS(th), [th]);
   const [quickItem, setQuickItem] = useState(null);
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
   const [showGames, setShowGames] = useState(false);
 
   // Sana bo'yicha filtrlar (Date filtering)
@@ -367,8 +368,14 @@ export default function DashboardPage({
   // orqali ishlaydi — bitta manba, bitta xulq-atvor.
   const quickAdd = async () => {
     if (!quickItem || !quickSum || Number(quickSum) <= 0) return ok$(t.ea, "err");
-    await addX({ kategoriya: quickItem.kat, summa: Number(quickSum), izoh: quickItem[lg] || quickItem.uz, sana: td(), repeat: false });
-    setQuickItem(null); setQuickSum("");
+    if (quickSubmitting) return;
+    setQuickSubmitting(true);
+    try {
+      await addX({ kategoriya: quickItem.kat, summa: Number(quickSum), izoh: quickItem[lg] || quickItem.uz, sana: td(), repeat: false });
+      setQuickItem(null); setQuickSum("");
+    } finally {
+      setQuickSubmitting(false);
+    }
   };
 
   // ── Qidiruv natijalari ──────────────────────────────────
@@ -578,7 +585,7 @@ export default function DashboardPage({
                 <MoneyInput style={{ ...STY.ip, ...TYPE.title, textAlign: "center" }} value={quickSum} onChange={setQuickSum} placeholder="0" th={th} autoFocus />
                 <div style={{ display: "flex", gap: SPACE.s2 }}>
                   <GhostButton th={th} onClick={() => setQuickItem(null)} style={{ flex: 1 }}>{i18n.t("cancel")}</GhostButton>
-                  <PrimaryButton th={th} onClick={quickAdd} style={{ flex: 2, marginBottom: 0 }}>{i18n.t("save")}</PrimaryButton>
+                  <PrimaryButton th={th} onClick={quickAdd} disabled={quickSubmitting} style={{ flex: 2, marginBottom: 0 }}>{i18n.t("save")}</PrimaryButton>
                 </div>
               </AppCard>
             </div>

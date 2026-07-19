@@ -32,13 +32,31 @@ export default function AddTransactionModal({
   const [fDS, setFDS] = useState("");
   const [fDI, setFDI] = useState("");
 
+  // MUHIM: tugma bosilgandan onClose() chaqirilgunga qadar (addX/addD'ning
+  // Firestore yozuvi tugaguncha) bir necha yuz millisoniya o'tishi mumkin —
+  // shu oraliqda tez ikki marta bosilsa (sekin tarmoqda ehtimoli yuqori),
+  // xarajat/daromad IKKI MARTA qo'shilib, tanga ham ikki marta berilardi.
+  const [submitting, setSubmitting] = useState(false);
+
   const saveX = async () => {
-    await addX({ kategoriya: kat, summa: fS, izoh: fIz, sana: fSn, repeat: fRp, forMember: xForMember || null });
-    onClose();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await addX({ kategoriya: kat, summa: fS, izoh: fIz, sana: fSn, repeat: fRp, forMember: xForMember || null });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
   const saveD = async () => {
-    await addD({ tur: kat, summa: fDS, izoh: fDI, sana: td() });
-    onClose();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await addD({ tur: kat, summa: fDS, izoh: fDI, sana: td() });
+      onClose();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -155,7 +173,7 @@ export default function AddTransactionModal({
               <input type="checkbox" id="rep2" checked={fRp} onChange={e => setFRp(e.target.checked)} style={{ width: 18, height: 18, cursor: "pointer", accentColor: th.ac }} />
               <label htmlFor="rep2" style={{ fontSize: 13, color: th.t1, cursor: "pointer" }}>{t("at_recurringMonthly")}</label>
             </div>
-            <button onClick={saveX} style={{ ...STY.bt(th.rd, "#dc2626"), marginBottom: 8 }}>
+            <button onClick={saveX} disabled={submitting} style={{ ...STY.bt(th.rd, "#dc2626"), marginBottom: 8, opacity: submitting ? 0.6 : 1 }}>
               {Ico.check("#fff")}{t("at_saveExpense")}
             </button>
           </div>
@@ -176,7 +194,7 @@ export default function AddTransactionModal({
             <MoneyInput style={{ ...STY.ip, fontSize: 28, fontWeight: 800, textAlign: "center" }} value={fDS} onChange={setFDS} placeholder="0" autoFocus th={th} />
             <label style={STY.lb}>{t("at_noteOptional")}</label>
             <input style={STY.ip} value={fDI} onChange={e => setFDI(e.target.value)} placeholder={t("at_egMaySalary")} />
-            <button onClick={saveD} style={{ ...STY.bt(), marginBottom: 8 }}>
+            <button onClick={saveD} disabled={submitting} style={{ ...STY.bt(), marginBottom: 8, opacity: submitting ? 0.6 : 1 }}>
               {Ico.check("#fff")}{t("at_saveIncome")}
             </button>
           </div>
