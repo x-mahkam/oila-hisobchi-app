@@ -57,6 +57,18 @@ export const BarakaLeafFloating = memo(function BarakaLeafFloating({ pTab, setPT
   
   const hideTimerRef = useRef(null);
   const timeoutsRef = useRef([]);
+  // MUHIM: App.jsx PIN qulf ekranini ko'rsatish uchun butun daraxtni
+  // (shu jumladan bu komponentni) UNMOUNT qiladi (early return) — ochish
+  // (unlock) esa uni QAYTA MOUNT qiladi. AppProvider (va uning
+  // coinEarnedTrigger holati) esa hech qachon unmount bo'lmaydi — shu
+  // sabab yangi mount bo'lganda bu komponent ESKI (allaqachon ko'rsatilgan)
+  // coinEarnedTrigger'ni "yangi voqea" deb qabul qilib, tanga animatsiyasini
+  // qayta-qayta o'ynatardi (garchi haqiqiy bog' balansi o'zgarmasa ham —
+  // chunki bu FAQAT vizual animatsiya, addStar() qayta chaqirilmaydi).
+  // Shu sabab mount vaqtidagi ts qiymati "allaqachon ko'rilgan" deb
+  // belgilanadi — faqat mount'DAN KEYIN kelgan haqiqiy YANGI ts animatsiya
+  // qilinadi.
+  const seenTsRef = useRef(coinEarnedTrigger?.ts || 0);
 
   // 1. Initial 5 seconds full visibility on mount
   useEffect(() => {
@@ -69,7 +81,9 @@ export const BarakaLeafFloating = memo(function BarakaLeafFloating({ pTab, setPT
   // 2. Listen to coin earned trigger (carrying count and ts)
   useEffect(() => {
     if (!coinEarnedTrigger || !coinEarnedTrigger.ts) return;
-    
+    if (coinEarnedTrigger.ts === seenTsRef.current) return;
+    seenTsRef.current = coinEarnedTrigger.ts;
+
     // Make the leaf fully visible immediately so it can catch the stream
     setIsVisible(true);
 

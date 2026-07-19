@@ -79,6 +79,8 @@
   "w078": "Tólendi",
   "w079": "Tólewge qaldı",
   "w080": "Qaldı",
+  "w_inviteText": "{{name}} sizdi shaqıradı",
+  "w_qrScanText": "Ilovaǵa qosılıw ushın QR kodtı skaner etiń",
   "w_savingsReminder": "Toyǵa {{months}} ay qaldı. Ayına {{amount}} sum jıynaw kerek.",
   "status_reja": "Rejalastırılǵan",
   "status_jarayon": "Barısında",

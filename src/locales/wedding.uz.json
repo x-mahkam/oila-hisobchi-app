@@ -79,6 +79,8 @@
   "w078": "To'langan zaklad",
   "w079": "To'lanishi qolgan",
   "w080": "To'lanishi qolgan",
+  "w_inviteText": "{{name}} sizni taklif qiladi",
+  "w_qrScanText": "QR kodni skanerlab Oila Hisobchi ilovasiga qo'shiling",
   "w_savingsReminder": "To'ygacha {{months}} oy qoldi. Oyiga {{amount}} so'm yig'ish kerak.",
   "status_reja": "Rejalashtirilgan",
   "status_jarayon": "Jarayonda",

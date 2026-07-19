@@ -13,6 +13,7 @@ import { db } from "../firebase.js";
 import { td } from "../utils/formatters.js";
 import { Capacitor } from "@capacitor/core";
 import { Clipboard } from "@capacitor/clipboard";
+import QRCode from "qrcode";
 import { AppCard, PrimaryButton, Badge, TextInput } from "./ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, CHART } from "../utils/tokens.js";
 
@@ -266,6 +267,10 @@ export default function WeddingCalc({ user, th, onClose, addMq, ok$, savePdf }) 
       const it = data.cats[c.id];
       return `<tr><td>${c.e} ${t("cat_" + c.id)}</td><td class="r">${fmt(it.plan||0)}</td><td class="r"><b>${fmt(fc(it))}</b></td><td class="r">${fmt(it.dep||0)}</td></tr>`;
     }).join("");
+    // Hisobot PDF'idagi bilan bir xil brend: yuqorida ilova logosi, oxirida
+    // taklif havolasi QR kodi (mahalliy generatsiya — tarmoqsiz, CORS xavfisiz).
+    const refLink = window.location.origin + "/?ref=" + (user?.id || "");
+    const refQR = await QRCode.toDataURL(refLink, { width: 160, margin: 1 });
     const html = `<!doctype html><html><head><meta charset="utf-8"><title>${t("w006")}</title>
       <style>
         body{font-family:'Segoe UI',Arial,sans-serif;color:#1f2430;padding:26px;max-width:720px;margin:0 auto}
@@ -275,7 +280,11 @@ export default function WeddingCalc({ user, th, onClose, addMq, ok$, savePdf }) 
         th,td{border:1px solid #e5e7eb;padding:7px 9px;text-align:left} th{background:#fdf2f8;font-size:11px}
         .r{text-align:right} .tot{margin-top:18px;border-top:2px solid #be185d;padding-top:10px;font-size:13.5px;line-height:2}
         .tot b{float:right}
+        .hdr{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+        .qr{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:22px;padding:14px;background:#fdf2f8;border:1.5px solid #be185d33;border-radius:12px}.qr img{width:88px;height:88px;border-radius:8px}
       </style></head><body>
+      <div class="hdr"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:48px;height:48px;border-radius:12px;margin-right:12px;"><rect width="120" height="120" rx="28" fill="#5D5CFF" /><path d="M12 46 L60 12 L108 46" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" /><rect x="18" y="47" width="84" height="58" rx="14" stroke="#FFFFFF" stroke-width="7" fill="none" /><path d="M18 58 L102 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" /><path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" /></svg><div><div style="font-size:18px;font-weight:800;color:#6366f1">Oila Hisobchi</div><div style="font-size:11px;color:#6b7280">${t("w021")}</div></div></div>
+      <div style="border-bottom:2px solid #be185d22;margin-bottom:14px"></div>
       <h1>💒 ${t("w007")}</h1>
       <div class="sub">${t(data.side === "qiz" ? "w043" : "w041")}${data.date ? " · " + t("w073") + ": " + data.date : ""} · ${new Date().toLocaleDateString("ru-RU")}</div>
       <h2>🎪 ${t("w008")}</h2>
@@ -288,6 +297,7 @@ export default function WeddingCalc({ user, th, onClose, addMq, ok$, savePdf }) 
         ${t("w079")}: <b>${fmt(calc.remain)} ${t("w017")}</b>
         ${data.date && calc.months > 0 ? `<br/>${t("w018")}: <b>${fmt(calc.perMonth)} ${t("w019")} × ${calc.months} ${t("w020")}</b>` : ""}
       </div>
+      <div class="qr"><img src="${refQR}" alt="QR"/><div style="text-align:left"><div style="font-size:13px;font-weight:700;color:#374151">${t("w_inviteText", { name: user?.ism || "" })}</div><div style="font-size:11px;color:#6b7280;margin-top:3px">${t("w_qrScanText")}</div></div></div>
       <div style="margin-top:22px;font-size:10px;color:#9ca3af">Oila Hisobchi · ${t("w021")}</div>
       </body></html>`;
     try {

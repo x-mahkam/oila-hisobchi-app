@@ -166,10 +166,12 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
       iframe.style.height = fullHeight + "px";
       await new Promise((r) => setTimeout(r, 60));
       const scale = 2;
-      // Diagrammalar/summalar qatori kabi "bo'linmasligi kerak" bloklarning
-      // canvas'dagi (scale bilan) chegaralarini saqlab qolamiz — sahifa
-      // bo'lish shu bloklar o'rtasidan o'tib ketmasligi uchun.
-      const keepTogether = Array.from(doc.querySelectorAll(".charts, .sum")).map((el) => {
+      // Diagrammalar/summalar/QR-kod qatori kabi "bo'linmasligi kerak"
+      // bloklarning canvas'dagi (scale bilan) chegaralarini saqlab
+      // qolamiz — sahifa bo'lish shu bloklar o'rtasidan (masalan QR
+      // kodning yarmi bir varaqda, yarmi keyingisida qolib, uni skanerlab
+      // bo'lmay qolishi mumkin edi) o'tib ketmasligi uchun.
+      const keepTogether = Array.from(doc.querySelectorAll(".charts, .sum, .qr, .verify-box")).map((el) => {
         const rect = el.getBoundingClientRect();
         return { top: rect.top * scale, bottom: rect.bottom * scale };
       });
@@ -532,7 +534,7 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
         "table{width:100%;border-collapse:collapse;margin:10px 0}th{background:#6366f1;color:#fff;padding:9px 12px;text-align:left;font-size:12px}td{padding:8px 12px;border-bottom:1px solid #e5e7eb;font-size:12px}" +
         ".sum{display:flex;gap:12px;margin:18px 0}.box{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px;text-align:center}.box .lbl{font-size:11px;color:#6b7280}.box .val{font-size:18px;font-weight:800;margin-top:5px}.g{color:#10b981}.r{color:#ef4444}" +
         ".hdr{display:flex;align-items:center;gap:12px;margin-bottom:6px}" +
-        ".charts{display:flex;gap:10px;margin:18px 0}.chart{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px 10px;min-width:0}.chart .ct{font-size:11px;font-weight:800;color:#6366f1;text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}" +
+        ".charts{display:flex;align-items:stretch;gap:10px;margin:18px 0}.chart{flex:1;background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:12px 10px;min-width:0;min-height:270px;box-sizing:border-box;overflow:visible}.chart .ct{font-size:11px;font-weight:800;color:#6366f1;text-align:center;margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}" +
         ".qr{display:flex;align-items:center;gap:14px;justify-content:center;margin-top:22px;padding:14px;background:#f9fafb;border:1.5px solid #6366f133;border-radius:12px}.qr img{width:88px;height:88px;border-radius:8px}" +
         ".foot{margin-top:30px;padding-top:16px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center}" +
         ".btn{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#6366f1;color:#fff;border:none;padding:14px 32px;border-radius:30px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(99,102,241,.4);z-index:99}" +

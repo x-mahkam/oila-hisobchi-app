@@ -79,6 +79,8 @@
   "w078": "Paid",
   "w079": "Remaining to pay",
   "w080": "Remaining",
+  "w_inviteText": "{{name}} invites you",
+  "w_qrScanText": "Scan QR to join the app",
   "w_savingsReminder": "{{months}} months left until the wedding. You need to save {{amount}} UZS per month.",
   "status_reja": "Planned",
   "status_jarayon": "In progress",
