@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { db } from "../firebase.js";
 import { hp } from "../utils/formatters.js";
-import { SPACE, RADIUS, TYPE, ALPHA, COMP } from "../utils/tokens.js";
+import { SPACE, RADIUS, TYPE, ALPHA } from "../utils/tokens.js";
 import { NativeBiometric } from "capacitor-native-biometric";
 import { useApp } from "../context/AppContext.jsx";
 import { ConfirmDialog } from "./ui/index.js";
@@ -207,7 +207,7 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
       </div>
 
       {/* Numeric Keyboard */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: SPACE.s2, width: "100%", maxWidth: 300 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 78px)", gridAutoRows: "78px", gap: 22, justifyContent: "center", width: "100%", marginTop: SPACE.s8 }}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, deviceBiometricAvailable ? "bio" : "", 0, "del"].map((num, ni) => {
           if (num === "bio") {
             return (
@@ -215,22 +215,23 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
                 style={{
                   background: "transparent",
                   border: "none",
-                  borderRadius: RADIUS.s + 2,
-                  padding: SPACE.s3 + "px",
+                  borderRadius: RADIUS.full,
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  minHeight: COMP.touchMin,
+                  width: "100%",
+                  height: "100%",
                   outline: "none"
                 }}>
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={th.gr} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2a10 10 0 0 0-10 10c0 1.25.23 2.45.65 3.56" />
-                  <path d="M2.35 15.65A11 11 0 0 1 12 10a11 11 0 0 1 9.65 5.65" />
-                  <path d="M21.35 15.65a10 10 0 0 0 .65-3.65A10 10 0 0 0 12 2" />
-                  <path d="M8 12a4 4 0 0 1 8 0" />
-                  <path d="M12 12v3" />
-                  <path d="M12 18.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z" />
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke={th.gr} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 8V6a2 2 0 0 1 2-2h2" />
+                  <path d="M16 4h2a2 2 0 0 1 2 2v2" />
+                  <path d="M20 16v2a2 2 0 0 1-2 2h-2" />
+                  <path d="M8 20H6a2 2 0 0 1-2-2v-2" />
+                  <circle cx="9" cy="10" r="0.6" fill={th.gr} stroke="none" />
+                  <circle cx="15" cy="10" r="0.6" fill={th.gr} stroke="none" />
+                  <path d="M9 14.5c1 1 5 1 6 0" />
                 </svg>
               </button>
             );
@@ -240,9 +241,8 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
               style={{
                 background: typeof num === "number" ? th.surH : "transparent",
                 border: typeof num === "number" ? "1px solid " + th.bor : "none",
-                borderRadius: RADIUS.s + 2,
-                padding: (SPACE.s3 + 2) + "px",
-                fontSize: TYPE.heading.fontSize + 1,
+                borderRadius: RADIUS.full,
+                fontSize: TYPE.heading.fontSize + 4,
                 fontWeight: 700,
                 color: th.t1,
                 cursor: num === "" ? "default" : "pointer",
@@ -250,11 +250,12 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                minHeight: COMP.touchMin,
+                width: "100%",
+                height: "100%",
                 outline: "none"
               }}>
               {num === "del" ? (
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <svg width="22" height="22" viewBox="0 0 20 20" fill="none">
                   <path d="M7 4h9a2 2 0 012 2v8a2 2 0 01-2 2H7l-5-6 5-6z" stroke={th.rd} strokeWidth="1.4" strokeLinejoin="round"/>
                   <path d="M10.5 8l4 4M14.5 8l-4 4" stroke={th.rd} strokeWidth="1.4" strokeLinecap="round"/>
                 </svg>

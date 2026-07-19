@@ -170,8 +170,11 @@ export function useExport({ xar, dar, bdj, gN, canSeeReport, tm, qarzlar }) {
       // bloklarning canvas'dagi (scale bilan) chegaralarini saqlab
       // qolamiz — sahifa bo'lish shu bloklar o'rtasidan (masalan QR
       // kodning yarmi bir varaqda, yarmi keyingisida qolib, uni skanerlab
-      // bo'lmay qolishi mumkin edi) o'tib ketmasligi uchun.
-      const keepTogether = Array.from(doc.querySelectorAll(".charts, .sum, .qr, .verify-box")).map((el) => {
+      // bo'lmay qolishi mumkin edi) o'tib ketmasligi uchun. Jadval
+      // qatorlari (tr) ham shu ro'yxatga kiritilgan — aks holda bitta
+      // qator (hatto matn) ikki varaq orasida yarmiga bo'linib qolishi
+      // mumkin edi.
+      const keepTogether = Array.from(doc.querySelectorAll(".charts, .sum, .qr, .verify-box, tr")).map((el) => {
         const rect = el.getBoundingClientRect();
         return { top: rect.top * scale, bottom: rect.bottom * scale };
       });
