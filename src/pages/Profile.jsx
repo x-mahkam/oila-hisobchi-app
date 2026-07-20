@@ -17,6 +17,7 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 import { normTel, td, hp } from "../utils/formatters.js";
 import { fetchLanguageList } from "../i18n/translationService.js";
 import { NativeBiometric } from "capacitor-native-biometric";
+import { Capacitor } from "@capacitor/core";
 import KidCreatedModal from "../components/modals/KidCreatedModal.jsx";
 import {
   PageHeader, SectionHeader, SubHeader,
@@ -1991,6 +1992,10 @@ export default function ProfilePage({
                     ok$(t("p164"), "err");
                     return;
                   }
+                  if (!Capacitor.isNativePlatform()) {
+                    ok$(t("p165"), "err");
+                    return;
+                  }
                   try {
                     const result = await NativeBiometric.isAvailable();
                     if (!result.isAvailable) {
@@ -2008,8 +2013,12 @@ export default function ProfilePage({
                     setFinger(true);
                     ok$(t("p170"));
                   } catch (e) {
-                    console.error("Biometrics activation failed", e);
-                    ok$(t("p171"), "err");
+                    if (e instanceof Error && e.message?.includes("Method not implemented")) {
+                      ok$(t("p165"), "err");
+                    } else {
+                      console.error("Biometrics activation failed", e);
+                      ok$(t("p171"), "err");
+                    }
                   }
                 } else {
                   // Turning OFF

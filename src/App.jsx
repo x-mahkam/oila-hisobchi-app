@@ -411,6 +411,25 @@ export default function App() {
   const [pTab,         setPTab]         = useState("main");
   const [askTel,       setAskTel]       = useState(false);
   const [newT,         setNewT]         = useState("");
+
+  const saveTel = useCallback(async (rawTel) => {
+    const raw = (rawTel || "").trim();
+    if (!raw) return ok$(t("p245"), "err");
+    const tel = raw.replace(/[^0-9+]/g, "");
+    const n9 = normTel(raw);
+    if (!n9 || n9.length < 7) return ok$(t("p246"), "err");
+    try {
+      const owner = await db.gFresh("tel9_" + n9);
+      if (owner && owner !== user.id) return ok$(t("p247"), "err");
+    } catch (e) {}
+    const u2 = { ...user, tel };
+    await db.s("user_" + user.id, u2);
+    await db.s("tel9_" + n9, user.id); await db.s("tel_" + tel, user.id);
+    if (user.email) await db.s("tphone_" + n9, user.email);
+    setUser(u2); setAzolar(azolar.map(a => a.id === user.id ? { ...a, tel } : a));
+    setAskTel(false); setNewT("");
+    ok$(t("p248"));
+  }, [user, setUser, azolar, setAzolar, ok$, t]);
   const [notifEnabled, setNotifEnabled] = useState(() => { try { return localStorage.getItem("oilaV7Notif") === "1"; } catch { return false; } });
   const [notifTime,    setNotifTime]    = useState(() => { try { return localStorage.getItem("oilaV7NotifT") || "20:00"; } catch { return "20:00"; } });
   const [verifyTilxat, setVerifyTilxat] = useState(null);
@@ -551,13 +570,36 @@ export default function App() {
         }, 20000);
 
 
+        const googleJoinFamily = async (gUser, code) => {
+          const uid = gUser.uid;
+          const displayName = gUser.displayName || gUser.email?.split("@")[0] || t("log_userFallback");
+          const email = (gUser.email || "").toLowerCase();
+          setOwnerCtx(uid, code);
+          let o = await db.g("oila_" + code);
+          if (!o) o = await db.g("fam_" + code);
+          if (!o) {
+            setOwnerCtx(null, null); try { await auth.logout(); } catch (e) {}
+            ok$(t("log_familyNotFound", { code }), "err");
+            return null;
+          }
+          if ((o.azolarIds || o.azolar || []).length >= 2 && !o.premium) {
+            setOwnerCtx(null, null); try { await auth.logout(); } catch (e) {}
+            ok$(t("log004"), "err");
+            return null;
+          }
+          const nu = { id: uid, ism: displayName, email, tel: "", ph: null, photo: gUser.photoURL || null, oilaId: code, rol: "azo", rel: "boshqa", registeredAt: new Date().toISOString(), loginMethod: "google" };
+          await db.s("user_" + uid, nu); if (email) await db.s("em_" + email, uid);
+          await db.s("x_" + code + "_" + uid, []); await db.s("d_" + code + "_" + uid, []);
+          const mIds = [...new Set([...(o.azolarIds || o.azolar || []), uid])];
+          o.azolarIds = mIds; o.azolar = mIds; if (!o.id) o.id = code;
+          await db.s("oila_" + code, o); await db.s("fam_" + code, o);
+          return nu;
+        };
+
         // Google redirect tekshirish
         try {
-          const { getRedirectResult } = await import("firebase/auth");
-          const { fbAuth: _fbAuth } = await import("./firebase.js");
-          const result = await getRedirectResult(_fbAuth);
-          if (result?.user) {
-            const gUser = result.user;
+          const gUser = await auth.getGoogleResult();
+          if (gUser) {
             localStorage.removeItem("oilaV7GooglePending");
             let u = await db.g("user_" + gUser.uid);
             const pendingJoinR = (localStorage.getItem("oilaV7GoogleJoin") || "").trim();
@@ -776,29 +818,8 @@ export default function App() {
     return salom + "\n\n" + t("ai_analysisHeader", { month: tm() }) + "\n\n" + tips.join("\n\n");
   };
 
-  // Masofaviy maslahat o'chirildi (faqat offline va tezkor lokal tizim ishlaydi)
-  const fetchRemoteAdvice = async () => {
-    return null;
-  };
-
   const aiAdv = async () => {
     return aiAdvice.aiAdv();
-  };
-  const _old_aiAdv = async () => {
-    if (!isPremium) { setShowPremModal(true); return; }        // Premium logikasi saqlanadi
-    setAdvL(true); setAdv(""); setAdvErr(""); setScr("maslahat");
-    try {
-      let text = null;
-      try { text = await fetchRemoteAdvice(); }                // 1) masofaviy AI (sozlangan bo'lsa)
-      catch (e) { text = null; }                               //    xato/oflayn → lokalga tushamiz
-      if (!text) text = buildLocalAdvice();                    // 2) lokal tahlil — oflaynda ham ishlaydi
-      setAdv(text);
-    } catch (e) {
-      // Kutilmagan runtime xato — tushunarli xabar + Retry tugmasi (Reports sahifasida)
-      setAdvErr(t("ai_errorGeneric"));
-    } finally {
-      setTimeout(() => setAdvL(false), 400);
-    }
   };
 
 

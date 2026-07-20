@@ -156,7 +156,7 @@ export const auth = {
 // Ma'lumotlar qatlami (db.g / db.s) - Firestore bilan
 const DB = "oilaV7_";
 // Firestore document ID xavfsizligi: maxsus belgilarni tozalash
-const safeKey = (k) => (DB + k).replace(/[+\/\\#?]/g, "_").replace(/\s/g, "_");
+const safeKey = (k) => (DB + k).replace(/[+\\#?]/g, "_").replace(/\//g, "_").replace(/\s/g, "_");
 
 // ─────────────────────────────────────────────────────────────
 //  XAVFSIZLIK METADATASI (_o = oilaId, _u = yozuvchi auth uid)
