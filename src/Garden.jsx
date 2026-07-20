@@ -154,6 +154,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const [coins, setCoins]           = useState(0);
   const [energy, setEnergy]         = useState(0);
   const [crystals, setCrystals]     = useState(0);
+  const [season, setSeason]         = useState("spring");
+  const [showSeasonModal, setShowSeasonModal] = useState(false);
   const [plots, setPlots]           = useState(PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" })));
   const [selected, setSelected]     = useState(0);
   const [waterTimer, setWaterTimer] = useState(0);
@@ -173,6 +175,25 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const [waterDrops, setWaterDrops] = useState(20);
   const [goldenSeeds, setGoldenSeeds] = useState(0);
   const [rainbowSeeds, setRainbowSeeds] = useState(0);
+
+  const getPlotWaterNeeded = (plot) => {
+    if (!plot || plot.stage < 0) return 3;
+    let base = STAGES[plot.stage]?.waterNeeded || 3;
+    if (season === "spring") {
+      base = Math.max(2, Math.round(base * 0.8)); // 20% less water needed in Spring!
+    }
+    const pType = plot.plantType || "normal";
+    if (pType === "tulip") return Math.max(1, Math.round(base * 0.5));
+    if (pType === "normal") return Math.max(2, Math.round(base * 0.8));
+    if (pType === "golden") return Math.round(base * 1.3);
+    if (pType === "rainbow") return Math.round(base * 2.0);
+    return base;
+  };
+
+  const currentSunCycle = useMemo(() => {
+    if (season === "summer") return SUN_CYCLE * 0.7; // 30% faster ripening in Summer!
+    return SUN_CYCLE;
+  }, [season]);
   const [familySuns, setFamilySuns] = useState(0);
   const [familyBonusClaimed, setFamilyBonusClaimed] = useState(false);
   const [barakaStarsCount, setBarakaStarsCount] = useState(0);
@@ -208,6 +229,91 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
   // Ob-havo (Rain Control) tizimi
   const [rainActive, setRainActive] = useState(false);
+
+  // Real vaqtdagi ob-havo holati
+  const [weather, setWeather] = useState({
+    temp: null,
+    code: null,
+    windSpeed: 0,
+    isRaining: false,
+    isSnowing: false,
+    isCloudy: false,
+    isSunny: true,
+    locationName: null,
+    loading: false,
+    error: null,
+  });
+
+  const detectLocationAndWeather = () => {
+    if (!navigator.geolocation) {
+      setWeather(prev => ({ ...prev, error: "not_supported", loading: false }));
+      return;
+    }
+    setWeather(prev => ({ ...prev, loading: true, error: null }));
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,wind_speed_10m&timezone=auto`;
+          const weatherRes = await fetch(weatherUrl);
+          const weatherData = await weatherRes.json();
+
+          let locationName = "Bog'";
+          try {
+            const geoUrl = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=${lg || "uz"}`;
+            const geoRes = await fetch(geoUrl);
+            const geoData = await geoRes.json();
+            locationName = geoData.city || geoData.locality || geoData.principalSubdivision || "Bog'";
+          } catch (err) {
+            console.error("Geocoding error", err);
+          }
+
+          if (weatherData && weatherData.current) {
+            const current = weatherData.current;
+            const temp = current.temperature_2m;
+            const code = current.weather_code;
+            const windSpeed = current.wind_speed_10m;
+
+            const isRaining = [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code);
+            const isSnowing = [71, 73, 75, 77, 85, 86].includes(code);
+            const isCloudy = [2, 3, 45, 48].includes(code);
+            const isSunny = [0, 1].includes(code);
+
+            setWeather({
+              temp,
+              code,
+              windSpeed,
+              isRaining,
+              isSnowing,
+              isCloudy,
+              isSunny,
+              locationName,
+              loading: false,
+              error: null,
+            });
+          } else {
+            setWeather(prev => ({ ...prev, error: "fetch_failed", loading: false }));
+          }
+        } catch (error) {
+          console.error("Weather fetch failed", error);
+          setWeather(prev => ({ ...prev, error: "fetch_failed", loading: false }));
+        }
+      },
+      (error) => {
+        console.warn("Geolocation error", error);
+        setWeather(prev => ({
+          ...prev,
+          error: error.code === 1 ? "not_allowed" : "position_failed",
+          loading: false,
+        }));
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+    );
+  };
+
+  useEffect(() => {
+    detectLocationAndWeather();
+  }, [lg]);
 
   // AI maslahatchisi o'tish oynasi
   const [showAiAdvisorModal, setShowAiAdvisorModal] = useState(false);
@@ -316,6 +422,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       if (g?.warehouse !== undefined) setWarehouse(g.warehouse);
       if (g?.pests !== undefined) setPests(g.pests);
       if (g?.grassBlades !== undefined) setGrassBlades(g.grassBlades);
+      if (g?.season !== undefined) setSeason(g.season);
       
       if (c != null) setCoins(c);
       if (e != null) setEnergy(e);
@@ -351,6 +458,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         warehouse: extraFields.warehouse !== undefined ? extraFields.warehouse : warehouse,
         pests: extraFields.pests !== undefined ? extraFields.pests : pests,
         grassBlades: extraFields.grassBlades !== undefined ? extraFields.grassBlades : grassBlades,
+        season: extraFields.season !== undefined ? extraFields.season : season,
       };
       payload.decorations = newDecorations !== undefined ? newDecorations : decorations;
       payload.purchasedDecorations = newPurchased !== undefined ? newPurchased : purchasedDecorations;
@@ -671,7 +779,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     const plot = plots.find(p => p.id === plotId);
     if (!plot || plot.stage < 0) { showMsg(t("g008"), "seed"); return; }
 
-    const usesDrop = !waterReady;
+    const usesDrop = !waterReady && season !== "winter";
     if (usesDrop && !bypassCooldownConfirm) {
       setShowConfirmUseDropModal(plotId);
       return;
@@ -695,7 +803,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     const nowT = Date.now();
     const newWaterCount = (plot.waterCount || 0) + 1;
     const stage = plot.stage;
-    const needed = STAGES[stage]?.waterNeeded || 3;
+    const needed = getPlotWaterNeeded(plot);
     let newStage = stage;
     let harvestReady = plot.harvestReady || false;
     let resetWater = false;
@@ -734,7 +842,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     if (usesDrop) {
       nextDrops = waterDrops - 1;
       setWaterDrops(nextDrops);
-    } else {
+    } else if (season !== "winter") {
       setWaterReady(false);
       setWaterTimer(WATER_COOLDOWN);
     }
@@ -754,32 +862,68 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     
     const isGolden = plot.plantType === "golden";
     const isRainbow = plot.plantType === "rainbow";
+    const isTulip = plot.plantType === "tulip";
     
-    let multiplier = 1;
-    if (isGolden) multiplier = 2;
-    if (isRainbow) multiplier = 5;
+    let earned = 0;
+    let crystalBonus = 0;
+    let energyBonus = 0;
 
-    const earned = HARVEST_COINS[Math.min(plot.stage, HARVEST_COINS.length - 1)] * multiplier;
-    const crystalBonus = isRainbow ? 5 : (isGolden ? 2 : 1);
+    if (isTulip) {
+      energyBonus = 250;
+    } else {
+      let multiplier = 1;
+      if (isGolden) multiplier = 2.5;
+      if (isRainbow) multiplier = 6;
+      if (season === "autumn") multiplier *= 1.15;
+      earned = Math.round(HARVEST_COINS[Math.min(plot.stage, HARVEST_COINS.length - 1)] * multiplier);
+      crystalBonus = isRainbow ? 5 : (isGolden ? 2 : 1);
+    }
     
     const newCoins = coins + earned;
     const newCrystals = crystals + crystalBonus;
+    const nextEnergy = energy + energyBonus;
+    
+    // Daraxtni to'liq o'chirib yubormasdan, katta daraxt (stage: 3) bosqichiga qaytaramiz
+    // Lola guli esa butunlay o'rilgandan keyin qaytadan ekilishi kerak (stage: -1)
     const newPlots = plots.map(p => p.id === plotId
-      ? { ...p, stage: 0, waterCount: 0, harvestReady: false, lastSunAt: Date.now(), plantType: plot.plantType || "normal" }
+      ? (isTulip 
+          ? { ...p, stage: -1, waterCount: 0, harvestReady: false, lastSunAt: 0, plantType: "normal" }
+          : { ...p, stage: 3, waterCount: 0, harvestReady: false, lastSunAt: Date.now(), plantType: p.plantType || "normal" }
+        )
       : p);
       
+    // Hosilni omborga (warehouse) qo'shamiz
+    const pType = plot.plantType || "normal";
+    const nextWarehouse = {
+      ...warehouse,
+      [pType]: (warehouse[pType] || 0) + 1
+    };
+    
     setCoins(newCoins);
     setCrystals(newCrystals);
+    setEnergy(nextEnergy);
     setPlots(newPlots);
-    spawnCoin(earned, 50, 50, "coin");
+    setWarehouse(nextWarehouse);
     
-    showMsg(isRainbow
-      ? t("g_harvestRainbow", { earned, crystalBonus })
-      : isGolden
-        ? t("g_harvestGolden", { earned, crystalBonus })
-        : t("g_harvestNormal", { earned, crystalBonus }), "gift");
+    if (earned > 0) {
+      spawnCoin(earned, 50, 50, "coin");
+    } else if (energyBonus > 0) {
+      spawnCoin(energyBonus, 50, 50, "sun");
+    }
+    
+    showMsg(isTulip
+      ? t("g_harvestTulip", { energyBonus })
+      : isRainbow
+        ? t("g_harvestRainbow", { earned, crystalBonus })
+        : isGolden
+          ? t("g_harvestGolden", { earned, crystalBonus })
+          : t("g_harvestNormal", { earned, crystalBonus }),
+      isTulip ? "sun" : (isRainbow ? "gift" : (isGolden ? "gold" : "leaf"))
+    );
         
-    await saveGarden(newPlots, newCoins, undefined, newCrystals);
+    await saveGarden(newPlots, newCoins, nextEnergy, newCrystals, undefined, undefined, undefined, undefined, {
+      warehouse: nextWarehouse
+    });
   };
 
   // ── Uchastka ochish ──
@@ -877,6 +1021,30 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       await saveGarden(newPlots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
         rainbowSeeds: nextSeeds
       });
+    } else if (plantType === "tulip") {
+      if (coins < 50) {
+        showMsg(t("g013"), "coin");
+        setShowAdModal(true);
+        return;
+      }
+      const nextCoins = coins - 50;
+      setCoins(nextCoins);
+      if (addCoin) {
+        await addCoin(-50, t("g_tulip") + " " + t("g014")).catch(() => {});
+      }
+      setShowPlant(null);
+      for (let step = 1; step <= 4; step++) {
+        setDigAnim({ plotId, step });
+        await new Promise(r => setTimeout(r, 380));
+      }
+      setDigAnim(null);
+      const newPlots = plots.map(p => p.id === plotId
+        ? { ...p, stage: 0, waterCount: 0, harvestReady: false, lastSunAt: Date.now(), plantType: "tulip" }
+        : p);
+      setPlots(newPlots);
+      setSelected(plotId);
+      showMsg(t("g015"), "seed");
+      await saveGarden(newPlots, nextCoins, undefined, undefined);
     }
   };
 
@@ -902,7 +1070,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const collectSun = async (plotId) => {
     const plot = plots.find(p => p.id === plotId);
     if (!plot || plot.stage < 0) return;
-    if (Date.now() - (plot.lastSunAt || 0) < SUN_CYCLE) return;
+    if (Date.now() - (plot.lastSunAt || 0) < currentSunCycle) return;
 
     const isGolden = plot.plantType === "golden";
     const isRainbow = plot.plantType === "rainbow";
@@ -979,7 +1147,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       if (plot.stage >= 0 && !plot.harvestReady) {
         const newWaterCount = (plot.waterCount || 0) + 1;
         const stage = plot.stage;
-        const needed = STAGES[stage]?.waterNeeded || 3;
+        const needed = getPlotWaterNeeded(plot);
         let newStage = stage;
         let harvestReady = plot.harvestReady || false;
         if (newWaterCount >= needed && stage < STAGES.length - 1) {
@@ -1190,9 +1358,9 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const bestPlot = anyPlanted ? planted.find(p => p.stage === maxStage) : null;
   const levelProgress = !bestPlot ? 0
     : maxStage >= STAGES.length - 1 ? 100
-    : Math.min(100, ((bestPlot.waterCount || 0) / (STAGES[maxStage].waterNeeded || 1)) * 100);
+    : Math.min(100, ((bestPlot.waterCount || 0) / getPlotWaterNeeded(bestPlot)) * 100);
   const unlockedCount = plots.filter(p => p.id === 0 || p.unlocked || p.stage >= 0).length;
-  const sunsReady = planted.filter(p => now - (p.lastSunAt || 0) >= SUN_CYCLE).length;
+  const sunsReady = planted.filter(p => now - (p.lastSunAt || 0) >= currentSunCycle).length;
 
   const achievements = useMemo(() => ([
     { icon: <SeedSVG size={22} />,  title: t("g032"),        desc: t("g033"),              reward: t("g034"), ok: anyPlanted },
@@ -1253,7 +1421,9 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         now={now} fTime={fTime}
         waterReady={waterReady} waterTimer={waterTimer}
         digAnim={digAnim} growAnim={growAnim} waterAnim={waterAnim}
-        sunNote={sunNote} flyRewards={flyCoins} sunCycle={SUN_CYCLE}
+        sunNote={sunNote} flyRewards={flyCoins} sunCycle={currentSunCycle}
+        season={season}
+        weather={weather}
         onPlotTap={onPlotTap} onSunTap={onSunTap}
         onSpeedUp={handleSpeedUp}
         decorations={decorations}
@@ -1322,6 +1492,15 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           title={t("g074")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.2s ease-in-out infinite 0.6s" }}>👑</span>
         </button>
+
+        {/* Fasllar (Seasons) */}
+        <button className="ui-press" onClick={() => setShowSeasonModal(true)} 
+          style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(21, 128, 61, 0.22))", border: "1.5px solid #22c55e", boxShadow: "0 0 12px rgba(34, 197, 94, 0.55)", cursor: "pointer" }} 
+          title={t("g_seasons")}>
+          <span style={{ fontSize: 22, animation: "gdBounce 2.4s ease-in-out infinite 0.8s" }}>
+            {season === "spring" ? "🌸" : season === "summer" ? "☀️" : season === "autumn" ? "🍁" : "❄️"}
+          </span>
+        </button>
       </div>
 
       {/* ── HUD: resurslar (yig'ilgan quyosh energiyasi, tomchilar, yulduzlar va kristallar) ── */}
@@ -1341,6 +1520,52 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         <div key={"c" + crystals} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
           <GemSVG size={15} />
           <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{crystals.toLocaleString()}</span>
+        </div>
+
+        {/* Real vaqtdagi Ob-havo ko'rsatkichi (HUD) */}
+        <div 
+          className="ui-press"
+          onClick={detectLocationAndWeather}
+          title={t("weather_btn_tooltip")}
+          style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: 2, 
+            background: gt.skyScrim, 
+            border: "1px solid " + gt.glassBorder, 
+            borderRadius: RADIUS.m, 
+            padding: "5px 9px", 
+            marginTop: 4,
+            maxWidth: 105,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
+            cursor: "pointer",
+            outline: "none",
+            WebkitTapHighlightColor: "transparent"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <span style={{ fontSize: 15, animation: weather.loading ? "gdSway 1s linear infinite" : "none" }}>
+              {weather.loading ? "🔄" : (weather.isRaining ? "🌧️" : weather.isSnowing ? "❄️" : weather.isCloudy ? "☁️" : "☀️")}
+            </span>
+            <span style={{ ...TYPE.tiny, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>
+              {weather.loading ? t("weather_loading").slice(0, 5) + ".." : (weather.temp !== null ? `${weather.temp.toFixed(1)}°C` : "--°C")}
+            </span>
+          </div>
+          {weather.locationName && (
+            <div style={{ fontSize: 8, color: gt.onSky, opacity: 0.82, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", fontWeight: 500, textAlign: "left" }}>
+              📍 {weather.locationName}
+            </div>
+          )}
+          {weather.windSpeed > 0 && (
+            <div style={{ fontSize: 8, color: gt.onSky, opacity: 0.72, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%", fontWeight: 500, textAlign: "left" }}>
+              💨 {weather.windSpeed.toFixed(0)} km/soat
+            </div>
+          )}
+          {weather.error && (
+            <div style={{ fontSize: 7, color: "#fda4af", fontWeight: 700 }}>
+              ⚠️ {weather.error === "not_allowed" ? t("weather_not_allowed").slice(0, 10) + ".." : "Xato"}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1809,6 +2034,18 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
                 {rainbowSeeds > 0 ? t("g153") : "0 🌈"}
               </button>
             </div>
+
+            {/* 4. Lola Guli */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid #ec4899", borderRadius: RADIUS.m, background: "rgba(236, 72, 153, 0.04)" }}>
+              <div style={{ textAlign: "left" }}>
+                <span style={{ ...TYPE.body, fontWeight: 800, color: "#db2777" }}>🌷 {t("g_tulip")}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{t("g_tulip_desc")}</p>
+              </div>
+              <button className="ui-press" onClick={() => handlePlant(showPlant, "tulip")}
+                style={{ padding: "6px 12px", borderRadius: RADIUS.pill, border: "none", background: coins >= 50 ? "linear-gradient(135deg, #f472b6, #db2777)" : gt.surH, color: coins >= 50 ? gt.sur : gt.ink3, ...TYPE.caption, fontWeight: 800, cursor: coins >= 50 ? "pointer" : "not-allowed" }}>
+                50 🪙
+              </button>
+            </div>
           </div>
 
           <button className="ui-press" onClick={() => setShowPlant(null)}
@@ -2118,6 +2355,63 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
               {t("g180")}
             </button>
           </div>
+        </GModal>
+      )}
+
+      {/* ── Fasllar Tanlash Modali ── */}
+      {showSeasonModal && (
+        <GModal gt={gt} onClose={() => setShowSeasonModal(false)}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}><span style={{ fontSize: 48 }}>🌸☀️🍁❄️</span></div>
+          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>{t("g_seasons")}</div>
+          <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
+            {t("g_select_season")}
+          </p>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s4 }}>
+            {[
+              { id: "spring", icon: "🌸", color: "#ec4899", textKey: "season_spring", descKey: "season_spring_desc" },
+              { id: "summer", icon: "☀️", color: "#eab308", textKey: "season_summer", descKey: "season_summer_desc" },
+              { id: "autumn", icon: "🍁", color: "#f97316", textKey: "season_autumn", descKey: "season_autumn_desc" },
+              { id: "winter", icon: "❄️", color: "#3b82f6", textKey: "season_winter", descKey: "season_winter_desc" },
+            ].map((s) => {
+              const active = season === s.id;
+              return (
+                <div key={s.id} onClick={async () => {
+                  setSeason(s.id);
+                  showMsg(t(s.textKey) + " fasli faollashtirildi! 🎉", "bloom");
+                  await saveGarden(plots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
+                    season: s.id
+                  });
+                }}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: SPACE.s3,
+                    padding: SPACE.s3,
+                    border: active ? "2px solid " + s.color : "1px solid " + gt.bor,
+                    borderRadius: RADIUS.m,
+                    background: active ? `${s.color}07` : gt.sur,
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    boxShadow: active ? `0 4px 12px ${s.color}15` : "none"
+                  }}>
+                  <span style={{ fontSize: 32, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}>{s.icon}</span>
+                  <div style={{ flex: 1, textAlign: "left" }}>
+                    <div style={{ ...TYPE.body, fontWeight: 800, color: active ? s.color : gt.ink1, display: "flex", alignItems: "center", gap: 6 }}>
+                      {t(s.textKey)}
+                      {active && <span style={{ background: s.color, color: "#fff", fontSize: 9, padding: "1px 5px", borderRadius: RADIUS.pill }}>{t("g112")}</span>}
+                    </div>
+                    <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11, lineHeight: 1.35 }}>{t(s.descKey)}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <button className="ui-press" onClick={() => setShowSeasonModal(false)}
+            style={{ width: "100%", padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: gt.ink1, color: gt.sur, ...TYPE.subtitle, fontWeight: 800, cursor: "pointer" }}>
+            {t("g030")}
+          </button>
         </GModal>
       )}
 

@@ -25,6 +25,22 @@ export const GardenDefs = memo(function GardenDefs() {
           <stop offset="0%" stopColor={ART.leaf} />
           <stop offset="100%" stopColor={ART.leafLo} />
         </linearGradient>
+        <linearGradient id="gdLeafAnor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#f59e0b" />
+          <stop offset="100%" stopColor="#b91c1c" />
+        </linearGradient>
+        <linearGradient id="gdLeafDarkAnor" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#b91c1c" />
+          <stop offset="100%" stopColor="#450a0a" />
+        </linearGradient>
+        <linearGradient id="gdLeafWalnut" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a855f7" />
+          <stop offset="100%" stopColor="#6d28d9" />
+        </linearGradient>
+        <linearGradient id="gdLeafDarkWalnut" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#6d28d9" />
+          <stop offset="100%" stopColor="#311042" />
+        </linearGradient>
         <linearGradient id="gdTrunk" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor={ART.trunkHi} />
           <stop offset="50%" stopColor={ART.trunk} />
@@ -405,92 +421,242 @@ export const MapSVG = memo(function MapSVG({ size = 20 }) {
 });
 
 // ── Daraxt shox-barg bo'lagi ────────────────────────────────
-export const Lobe = memo(function Lobe({ cx, cy, rx, ry }) {
+export const Lobe = memo(function Lobe({ cx, cy, rx, ry, fill = "url(#gdLeaf)", fillLo = ART.leafLo }) {
   return (
     <g>
-      <ellipse cx={cx} cy={cy + 2.6} rx={rx} ry={ry} fill={ART.leafLo} />
-      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill="url(#gdLeaf)" stroke={ART.leaf} strokeWidth="1.3" />
+      <ellipse cx={cx} cy={cy + 2.6} rx={rx} ry={ry} fill={fillLo} />
+      <ellipse cx={cx} cy={cy} rx={rx} ry={ry} fill={fill} stroke={ART.leaf} strokeWidth="1.3" />
       <ellipse cx={cx - rx * 0.34} cy={cy - ry * 0.42} rx={rx * 0.3} ry={ry * 0.24} fill={ART.leafGlint} opacity="0.8" />
     </g>
   );
 });
 
 // ── O'simlik bosqichlari (0..6) ─────────────────────────────
-export const PlantSVG = memo(function PlantSVG({ stage, size = 120, animated = true }) {
+export const PlantSVG = memo(function PlantSVG({ stage, size = 120, animated = true, plantType = "normal" }) {
   const style = animated
     ? { animation: "gdSway 5s ease-in-out infinite", transformOrigin: "50% 100%", display: "block" }
     : { display: "block" };
-  const leaf = "url(#gdLeaf)", leafD = "url(#gdLeafDark)", trunk = "url(#gdTrunk)";
+
+  // Handle Tulip plant types separately because they are flowers, not trees
+  if (plantType === "tulip") {
+    const tStages = [
+      // Stage 0: Bulb
+      <svg key="t0" style={style} width={size * 0.7} height={size * 0.5} viewBox="0 0 60 50">
+        <ellipse cx="30" cy="38" rx="18" ry="6" fill="#5c4033" opacity="0.6" />
+        <ellipse cx="30" cy="35" rx="14" ry="4" fill="#4a2e1b" opacity="0.8" />
+        <path d="M26 35 C24 25, 30 18, 30 18 C30 18, 36 25, 34 35 Z" fill="#b45309" />
+        <path d="M28 35 C27 28, 30 22, 30 22 C30 22, 33 28, 32 35 Z" fill="#d97706" />
+        <path d="M29 20 C31 16, 33 16, 34 14" stroke="#4ade80" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+      </svg>,
+      // Stage 1: Sprout
+      <svg key="t1" style={style} width={size * 0.8} height={size * 0.8} viewBox="0 0 80 80">
+        <ellipse cx="40" cy="74" rx="18" ry="4" fill="#4a2e1b" opacity="0.5" />
+        <path d="M40 74 Q 38 48 40 32" stroke="#22c55e" strokeWidth="5" fill="none" strokeLinecap="round" />
+        <path d="M40 50 C 25 45, 18 30, 24 22 C 34 25, 38 38, 40 50 Z" fill="#4ade80" />
+        <path d="M40 45 C 55 40, 62 25, 56 18 C 46 20, 42 34, 40 45 Z" fill="#15803d" />
+      </svg>,
+      // Stage 2: Growth with small bud
+      <svg key="t2" style={style} width={size * 0.9} height={size * 0.9} viewBox="0 0 90 90">
+        <ellipse cx="45" cy="84" rx="20" ry="5" fill="#4a2e1b" opacity="0.4" />
+        <path d="M45 84 Q 43 50 45 28" stroke="#16a34a" strokeWidth="6" fill="none" strokeLinecap="round" />
+        <path d="M45 60 C 20 54, 15 36, 22 24 C 32 28, 40 44, 45 60 Z" fill="#22c55e" />
+        <path d="M45 52 C 70 46, 75 28, 68 18 C 58 22, 50 38, 45 52 Z" fill="#15803d" />
+        <ellipse cx="45" cy="22" rx="6" ry="10" fill="#f43f5e" />
+        <path d="M43 22 Q 45 12 47 22" fill="#e11d48" />
+        <path d="M45 28 L 45 22" stroke="#15803d" strokeWidth="4" />
+      </svg>,
+      // Stage 3: Tall green stem with large bud
+      <svg key="t3" style={style} width={size} height={size} viewBox="0 0 100 100">
+        <ellipse cx="50" cy="94" rx="24" ry="5" fill="#4a2e1b" opacity="0.4" />
+        <path d="M50 94 Q 48 52 50 24" stroke="#16a34a" strokeWidth="7" fill="none" strokeLinecap="round" />
+        <path d="M50 64 C 18 58, 12 36, 20 22 C 32 28, 44 48, 50 64 Z" fill="#22c55e" />
+        <path d="M50 54 C 82 48, 88 28, 80 16 C 68 22, 56 40, 50 54 Z" fill="#15803d" />
+        <path d="M44 24 Q 50 4 56 24 Z" fill="#f43f5e" />
+        <path d="M46 24 C44 14, 50 8, 50 8 C50 8, 56 14, 54 24 Z" fill="#f59e0b" />
+        <path d="M48 24 Q 50 10 52 24" fill="#fbbf24" />
+      </svg>,
+      // Stage 4: Blooming Tulip
+      <svg key="t4" style={style} width={size * 1.1} height={size * 1.1} viewBox="0 0 100 100">
+        <ellipse cx="50" cy="94" rx="24" ry="5" fill="#4a2e1b" opacity="0.4" />
+        <path d="M50 94 Q 48 56 50 30" stroke="#16a34a" strokeWidth="7" fill="none" strokeLinecap="round" />
+        <path d="M50 68 C 18 60, 12 38, 20 24 C 32 30, 44 52, 50 68 Z" fill="#22c55e" />
+        <path d="M50 58 C 82 52, 88 32, 80 20 C 68 26, 56 44, 50 58 Z" fill="#15803d" />
+        <g transform="translate(0, 4)">
+          <path d="M36 28 C 30 14, 44 4, 48 24 Z" fill="#be123c" />
+          <path d="M64 28 C 70 14, 56 4, 52 24 Z" fill="#be123c" />
+          <path d="M38 28 C 34 16, 50 8, 50 28 Z" fill="#fbbf24" />
+          <path d="M62 28 C 66 16, 50 8, 50 28 Z" fill="#fbbf24" />
+          <path d="M42 28 C 40 18, 60 18, 58 28 Z" fill="#e11d48" />
+        </g>
+      </svg>,
+      // Stage 5: Fully Opened Tulip
+      <svg key="t5" style={style} width={size * 1.2} height={size * 1.2} viewBox="0 0 100 100">
+        <ellipse cx="50" cy="94" rx="26" ry="5" fill="#4a2e1b" opacity="0.4" />
+        <path d="M50 94 Q 48 58 50 34" stroke="#16a34a" strokeWidth="7" fill="none" strokeLinecap="round" />
+        <path d="M50 70 C 18 62, 10 38, 18 24 C 32 30, 44 54, 50 70 Z" fill="#22c55e" />
+        <path d="M50 60 C 82 54, 90 32, 82 18 C 68 24, 56 44, 50 60 Z" fill="#15803d" />
+        <g transform="translate(0, 10)">
+          <circle cx="50" cy="22" r="5" fill="#eab308" />
+          <path d="M34 26 Q 20 6, 45 18 Z" fill="#e11d48" />
+          <path d="M66 26 Q 80 6, 55 18 Z" fill="#e11d48" />
+          <path d="M38 28 C 30 10, 50 4, 50 24 Z" fill="#f43f5e" />
+          <path d="M62 28 C 70 10, 50 4, 50 24 Z" fill="#f43f5e" />
+          <path d="M44 28 C 40 14, 60 14, 56 28 Z" fill="#fbbf24" />
+        </g>
+      </svg>,
+      // Stage 6: Cosmic Glowing Tulip
+      <svg key="t6" style={style} width={size * 1.25} height={size * 1.25} viewBox="0 0 100 100">
+        <ellipse cx="50" cy="94" rx="28" ry="6" fill="#4a2e1b" opacity="0.4" />
+        <path d="M50 94 Q 48 58 50 34" stroke="#7e22ce" strokeWidth="7" fill="none" strokeLinecap="round" />
+        <path d="M50 70 C 18 62, 10 38, 18 24 C 32 30, 44 54, 50 70 Z" fill="#a855f7" />
+        <path d="M50 60 C 82 54, 90 32, 82 18 C 68 24, 56 44, 50 60 Z" fill="#6b21a8" />
+        <g transform="translate(0, 10)" filter="drop-shadow(0 0 6px #c084fc)">
+          <circle cx="50" cy="22" r="6" fill="#fff" />
+          <path d="M34 26 Q 20 6, 45 18 Z" fill="#ec4899" />
+          <path d="M66 26 Q 80 6, 55 18 Z" fill="#ec4899" />
+          <path d="M38 28 C 30 10, 50 4, 50 24 Z" fill="#f472b6" />
+          <path d="M62 28 C 70 10, 50 4, 50 24 Z" fill="#f472b6" />
+          <path d="M44 28 C 40 14, 60 14, 56 28 Z" fill="#c084fc" />
+        </g>
+        <g opacity="0.9">
+          <path d="M15 25 L17 27 L15 29 L13 27 Z" fill="#c084fc" />
+          <path d="M85 22 L87 24 L85 26 L83 24 Z" fill="#f472b6" />
+          <path d="M50 45 L52 47 L50 49 L48 47 Z" fill="#fff" />
+        </g>
+      </svg>
+    ];
+    return tStages[Math.min(Math.max(stage, 0), tStages.length - 1)];
+  }
+
+  // Trees: Normal (Apple), Golden (Pomegranate), Rainbow (Walnut)
+  let leafFill = "url(#gdLeaf)";
+  let leafDarkFill = "url(#gdLeafDark)";
+  let leafLoColor = ART.leafLo;
+  let trunkFill = "url(#gdTrunk)";
+  let fruitFill = ART.fruit;
+  let fruitAltFill = ART.fruitAlt;
+  let fruitHiFill = ART.fruitHi;
+
+  if (plantType === "golden") {
+    // Pomegranate (Anor): Reddish-golden foliage, pink/red fruits
+    leafFill = "url(#gdLeafAnor)";
+    leafDarkFill = "url(#gdLeafDarkAnor)";
+    leafLoColor = "#7f1d1d";
+    fruitFill = "#be123c";
+    fruitAltFill = "#fda4af";
+    fruitHiFill = "#ffe4e6";
+  } else if (plantType === "rainbow") {
+    // Walnut (Yong'oq): Purplish foliage, golden walnuts
+    leafFill = "url(#gdLeafWalnut)";
+    leafDarkFill = "url(#gdLeafDarkWalnut)";
+    leafLoColor = "#3b0764";
+    fruitFill = "#eab308";
+    fruitAltFill = "#fbbf24";
+    fruitHiFill = "#fef08a";
+  }
+
   const s = [
-    // 0: urug'
-    <svg key="s0" style={style} width={size * 0.6} height={size * 0.42} viewBox="0 0 60 42">
-      <ellipse cx="30" cy="30" rx="13" ry="10" fill={ART.trunkLo} />
-      <ellipse cx="30" cy="27" rx="11" ry="9" fill={ART.trunk} />
-      <ellipse cx="26" cy="23" rx="4" ry="3" fill={ART.trunkHi} opacity="0.9" />
-      <path d="M30 20 Q27 12 30 6 Q33 12 30 20Z" fill={leaf} />
+    // 0: urug' - A seed in the ground with a tiny little green sprout popping up!
+    <svg key="s0" style={style} width={size * 0.7} height={size * 0.5} viewBox="0 0 60 50">
+      <ellipse cx="30" cy="38" rx="20" ry="8" fill="#5c4033" opacity="0.6" />
+      <ellipse cx="30" cy="35" rx="16" ry="6" fill="#4a2e1b" opacity="0.8" />
+      <ellipse cx="27" cy="33" rx="10" ry="7" fill={ART.trunkLo} transform="rotate(-15 27 33)" />
+      <ellipse cx="27" cy="31" rx="8" ry="6" fill={ART.trunk} transform="rotate(-15 27 31)" />
+      <path d="M29 27 C28 18, 33 12, 36 8 C38 14, 34 22, 31 27 Z" fill={ART.leafGlint} />
+      <path d="M26 29 C21 24, 20 18, 22 13 C26 15, 27 22, 27 29 Z" fill={ART.leaf} opacity="0.9" />
     </svg>,
-    // 1: nihol
-    <svg key="s1" style={style} width={size * 0.85} height={size * 0.8} viewBox="0 0 85 80">
-      <path d="M42 78 Q 41 58 42 44" stroke={ART.leaf} strokeWidth="6" fill="none" strokeLinecap="round" />
-      <path d="M42 50 C 20 46 12 28 18 20 C 34 18 44 32 42 50 Z" fill={leaf} />
-      <path d="M42 50 C 30 42 26 32 26 26" stroke={ART.leafLo} strokeWidth="2" fill="none" opacity="0.6" />
-      <path d="M42 46 C 62 40 72 24 66 15 C 50 13 40 28 42 46 Z" fill={leafD} />
-      <path d="M42 46 C 52 38 58 28 60 22" stroke={ART.leafLo} strokeWidth="2" fill="none" opacity="0.6" />
-      <ellipse cx="24" cy="26" rx="4" ry="2.6" fill={ART.leafGlint} opacity="0.85" transform="rotate(-30 24 26)" />
+    // 1: nihol - A robust sprout, slightly taller, with 2 beautiful shiny green leaves and a delicate main stem.
+    <svg key="s1" style={style} width={size * 0.9} height={size * 0.85} viewBox="0 0 85 80">
+      <ellipse cx="42" cy="74" rx="22" ry="6" fill="#4a2e1b" opacity="0.5" />
+      <path d="M42 74 Q 40 50 42 36" stroke={ART.leaf} strokeWidth="6" fill="none" strokeLinecap="round" />
+      <path d="M41 74 Q 39 50 41 36" stroke={ART.leafGlint} strokeWidth="2.4" fill="none" strokeLinecap="round" opacity="0.4" />
+      <path d="M42 45 C 18 41 10 23 16 15 C 32 13 42 27 42 45 Z" fill={leafFill} />
+      <path d="M42 45 C 30 37 26 27 26 21" stroke={leafLoColor} strokeWidth="2.5" fill="none" opacity="0.7" />
+      <path d="M42 41 C 64 35 74 19 68 10 C 52 8 41 23 42 41 Z" fill={leafDarkFill} />
+      <path d="M42 41 C 52 33 58 23 60 17" stroke={leafLoColor} strokeWidth="2.5" fill="none" opacity="0.7" />
+      <ellipse cx="22" cy="21" rx="5" ry="3" fill="#fff" opacity="0.3" transform="rotate(-30 22 21)" />
     </svg>,
-    // 2: yosh daraxt
-    <svg key="s2" style={style} width={size} height={size} viewBox="0 0 100 100">
-      <path d="M47 98 L47 52 Q47 46 53 46 L53 98 Z" fill={trunk} />
-      <Lobe cx={50} cy={40} rx={27} ry={16} />
-      <Lobe cx={50} cy={22} rx={18} ry={13} />
+    // 2: yosh daraxt - Beautiful sapling with curved branches and multiple layered leafy lobes
+    <svg key="s2" style={style} width={size * 1.05} height={size * 1.05} viewBox="0 0 100 100">
+      <ellipse cx="50" cy="94" rx="24" ry="6" fill="#4a2e1b" opacity="0.4" />
+      <path d="M46 95 L46 54 Q 44 48 38 45 L41 40 Q48 44 50 50 Q52 44 58 40 L61 45 Q55 48 53 54 L53 95 Z" fill={trunkFill} />
+      <Lobe cx={34} cy={45} rx={16} ry={11} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={66} cy={45} rx={15} ry={10} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={50} cy={28} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
     </svg>,
-    // 3: katta daraxt
-    <svg key="s3" style={style} width={size} height={size * 1.18} viewBox="0 0 100 118">
-      <path d="M45 116 L45 60 Q 40 50 30 46 L34 42 Q44 48 47 54 Q48 44 44 34 L50 32 Q53 44 52 54 Q56 47 66 43 L69 48 Q58 52 55 60 L55 116 Z" fill={trunk} />
-      <Lobe cx={31} cy={41} rx={22} ry={15} />
-      <Lobe cx={69} cy={41} rx={20} ry={14} />
-      <Lobe cx={50} cy={22} rx={23} ry={16} />
+    // 3: katta daraxt - Majestic mature tree, thicker branched wooden trunk with full, gorgeous layered canopy of 5 lush lobes
+    <svg key="s3" style={style} width={size * 1.25} height={size * 1.3} viewBox="0 0 100 118">
+      <ellipse cx="50" cy="112" rx="32" ry="6" fill="#4a2e1b" opacity="0.4" />
+      <path d="M42 114 L42 66 Q 32 54 22 50 L27 44 Q38 50 42 56 Q45 44 38 32 L44 30 Q50 42 49 52 Q53 45 64 41 L67 47 Q56 51 53 60 L53 114 Z" fill={trunkFill} />
+      <g opacity="0.9">
+        <Lobe cx={30} cy={52} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+        <Lobe cx={70} cy={52} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      </g>
+      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
     </svg>,
-    // 4: gullagan
-    <svg key="s4" style={style} width={size} height={size * 1.18} viewBox="0 0 100 118">
-      <path d="M45 116 L45 60 Q 40 50 30 46 L34 42 Q44 48 47 54 Q48 44 44 34 L50 32 Q53 44 52 54 Q56 47 66 43 L69 48 Q58 52 55 60 L55 116 Z" fill={trunk} />
-      <Lobe cx={31} cy={41} rx={22} ry={15} />
-      <Lobe cx={69} cy={41} rx={20} ry={14} />
-      <Lobe cx={50} cy={22} rx={23} ry={16} />
-      {[[28, 34], [44, 20], [62, 16], [74, 32], [64, 48], [36, 50], [50, 10]].map(([x, y], i) => (
+    // 4: gullagan - Lush mature tree beautifully covered with pink/red blooming flowers
+    <svg key="s4" style={style} width={size * 1.25} height={size * 1.3} viewBox="0 0 100 118">
+      <ellipse cx="50" cy="112" rx="32" ry="6" fill="#4a2e1b" opacity="0.4" />
+      <path d="M42 114 L42 66 Q 32 54 22 50 L27 44 Q38 50 42 56 Q45 44 38 32 L44 30 Q50 42 49 52 Q53 45 64 41 L67 47 Q56 51 53 60 L53 114 Z" fill={trunkFill} />
+      <g opacity="0.9">
+        <Lobe cx={30} cy={52} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+        <Lobe cx={70} cy={52} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      </g>
+      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
+      {[[24, 32], [42, 20], [62, 16], [76, 28], [66, 46], [32, 48], [50, 10], [48, 30], [28, 54], [72, 50]].map(([x, y], i) => (
         <g key={i}>
-          {[0, 72, 144, 216, 288].map(a => <ellipse key={a} cx={x} cy={y - 3.2} rx="2.6" ry="3.6" fill={i % 2 ? ART.bloomHi : ART.bloom} transform={"rotate(" + a + " " + x + " " + y + ")"} />)}
-          <circle cx={x} cy={y} r="2" fill={ART.petalCore} />
+          {[0, 72, 144, 216, 288].map(a => (
+            <ellipse key={a} cx={x} cy={y - 3.4} rx="3" ry="4.2" fill={i % 2 ? ART.bloomHi : ART.bloom} transform={"rotate(" + a + " " + x + " " + y + ")"} />
+          ))}
+          <circle cx={x} cy={y} r="2.2" fill={ART.petalCore} />
         </g>
       ))}
     </svg>,
-    // 5: mevali
-    <svg key="s5" style={style} width={size} height={size * 1.18} viewBox="0 0 100 118">
-      <path d="M45 116 L45 60 Q 40 50 30 46 L34 42 Q44 48 47 54 Q48 44 44 34 L50 32 Q53 44 52 54 Q56 47 66 43 L69 48 Q58 52 55 60 L55 116 Z" fill={trunk} />
-      <Lobe cx={31} cy={41} rx={22} ry={15} />
-      <Lobe cx={69} cy={41} rx={20} ry={14} />
-      <Lobe cx={50} cy={22} rx={23} ry={16} />
-      {[[30, 36], [48, 22], [66, 20], [74, 36], [62, 50], [38, 52], [50, 10]].map(([x, y], i) => (
+    // 5: mevali - Lush mature tree laden with shiny, glossy ripe fruits
+    <svg key="s5" style={style} width={size * 1.25} height={size * 1.3} viewBox="0 0 100 118">
+      <ellipse cx="50" cy="112" rx="32" ry="6" fill="#4a2e1b" opacity="0.4" />
+      <path d="M42 114 L42 66 Q 32 54 22 50 L27 44 Q38 50 42 56 Q45 44 38 32 L44 30 Q50 42 49 52 Q53 45 64 41 L67 47 Q56 51 53 60 L53 114 Z" fill={trunkFill} />
+      <g opacity="0.9">
+        <Lobe cx={30} cy={52} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+        <Lobe cx={70} cy={52} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      </g>
+      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
+      {[[26, 34], [46, 22], [66, 18], [76, 32], [64, 48], [36, 50], [50, 10], [48, 34], [30, 54], [70, 50]].map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="5.4" fill={i % 2 ? ART.fruitAlt : ART.fruit} />
-          <ellipse cx={x - 1.8} cy={y - 1.8} rx="1.8" ry="1.2" fill={ART.fruitHi} opacity="0.85" />
-          <path d={"M" + x + " " + (y - 5) + " q1 -3 3 -4"} stroke={ART.fruitStem} strokeWidth="1.4" fill="none" />
+          <circle cx={x} cy={y} r="5.8" fill={i % 2 ? fruitAltFill : fruitFill} />
+          <ellipse cx={x - 2} cy={y - 2} rx="2" ry="1.4" fill={fruitHiFill} opacity="0.9" />
+          <path d={"M" + x + " " + (y - 5.4) + " q1 -3 3.5 -4.5"} stroke={ART.fruitStem} strokeWidth="1.6" fill="none" />
         </g>
       ))}
     </svg>,
-    // 6: baraka daraxti (oltin)
-    <svg key="s6" style={style} width={size} height={size * 1.26} viewBox="0 0 100 126">
-      <path d="M44 124 L44 64 Q 38 52 27 48 L31 43 Q43 50 46 57 Q47 46 43 35 L50 33 Q53 46 52 57 Q57 49 68 45 L71 50 Q59 55 56 64 L56 124 Z" fill={trunk} />
-      <Lobe cx={29} cy={43} rx={24} ry={17} />
-      <Lobe cx={71} cy={43} rx={22} ry={16} />
-      <Lobe cx={50} cy={19} rx={25} ry={17} />
-      {[[28, 38], [46, 22], [64, 18], [75, 34], [65, 52], [34, 54], [50, 8]].map(([x, y], i) => (
+    // 6: baraka daraxti (oltin yaltiroq) - Breathtaking legendary golden tree with glittering coins and gold sparkles
+    <svg key="s6" style={style} width={size * 1.3} height={size * 1.35} viewBox="0 0 100 126">
+      <ellipse cx="50" cy="120" rx="34" ry="6" fill="#4a2e1b" opacity="0.4" />
+      <path d="M41 122 L41 70 Q 31 56 21 52 L26 46 Q37 52 41 58 Q44 46 37 34 L43 32 Q49 44 48 54 Q52 46 63 42 L66 48 Q55 52 52 61 L52 122 Z" fill={trunkFill} />
+      <g opacity="0.9">
+        <Lobe cx={30} cy={54} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+        <Lobe cx={70} cy={54} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      </g>
+      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
+      {[[24, 36], [44, 20], [64, 18], [76, 32], [64, 50], [34, 52], [50, 8], [46, 32], [28, 54], [70, 48]].map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="5.6" fill="url(#gdCoin)" stroke={ART.coinLo} strokeWidth="1" />
-          <path d={"M" + x + " " + (y - 2.6) + " l1 2 2.2.2 -1.7 1.5 .5 2.2 -2-1.2 -2 1.2 .5-2.2 -1.7-1.5 2.2-.2 Z"} fill={ART.coinLo} />
+          <circle cx={x} cy={y} r="6.2" fill="url(#gdCoin)" stroke={ART.coinLo} strokeWidth="1.2" />
+          <path d={"M" + x + " " + (y - 2.8) + " l1 2.2 2.4.2 -1.8 1.6 .5 2.4 -2.1-1.3 -2.1 1.3 .5-2.4 -1.8-1.6 2.4-.2 Z"} fill={ART.coinLo} />
         </g>
       ))}
-      <ellipse cx="26" cy="24" rx="6" ry="4" fill={ART.sunHi} opacity="0.85" />
+      <g opacity="0.9">
+        <path d="M15 25 L17 27 L15 29 L13 27 Z" fill="#ffd700" />
+        <path d="M85 22 L87 24 L85 26 L83 24 Z" fill="#ffd700" />
+        <path d="M50 45 L52 47 L50 49 L48 47 Z" fill="#ffd700" />
+      </g>
     </svg>,
   ];
   return s[Math.min(Math.max(stage, 0), s.length - 1)];

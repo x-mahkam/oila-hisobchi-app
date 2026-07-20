@@ -4,7 +4,7 @@
 //  pishuvchi quyoshlar · sug'orish/hosil/ekish boshqaruvi.
 //  Faqat SVG + CSS (transform/opacity) — 60fps WebView.
 // ═══════════════════════════════════════════════════════════
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { RADIUS, SPACE, TYPE, SHADOW } from "../utils/tokens.js";
 import { ART, SKY_GRAD } from "./gardenTokens.js";
 import { SUN_POS, PLOT_POS, PLOT_SCALE, PLOTS, SPEEDUP_COST } from "./constants.js";
@@ -443,12 +443,79 @@ export const GardenScene = memo(function GardenScene({
   onSquashPest = null,
   grassBlades = [],
   onGoalClick = null,
+  season = "spring",
+  weather = null,
 }) {
   const selPlot = plots.find(p => p.id === selected) || plots[0];
   const selStage = selPlot?.stage ?? -1;
   const showSpeedUp = !waterReady && selStage >= 0 && !selPlot?.harvestReady;
+
+  const windSpeed = weather?.windSpeed || 0;
+  const windSwayMult = useMemo(() => {
+    if (windSpeed <= 2) return 1.0;
+    if (windSpeed <= 10) return 0.75;
+    if (windSpeed <= 20) return 0.5;
+    if (windSpeed <= 35) return 0.32;
+    return 0.18;
+  }, [windSpeed]);
+
+  const windSwayIntensity = useMemo(() => {
+    if (windSpeed <= 2) return 1.0;
+    if (windSpeed <= 10) return 1.5;
+    if (windSpeed <= 20) return 2.4;
+    if (windSpeed <= 35) return 3.6;
+    return 5.2;
+  }, [windSpeed]);
+
+  const isRainyWeather = rainActive || !!(weather && weather.isRaining);
   const actionReady = waterReady || selStage < 0 || selPlot?.harvestReady;
 
+  const seasonalColors = useMemo(() => {
+    switch (season) {
+      case "spring":
+        return {
+          grassHi: "#9be8a3",
+          grass: "#76c482",
+          grassLo: "#489e55",
+          skyOverlay: "rgba(244, 114, 182, 0.08)", // Soft cherry blossom tint
+          meadowOverlay: "rgba(244, 114, 182, 0.04)"
+        };
+      case "summer":
+        return {
+          grassHi: ART.grassHi,
+          grass: ART.grass,
+          grassLo: ART.grassLo,
+          skyOverlay: "rgba(253, 224, 71, 0.06)", // Warm sunny tint
+          meadowOverlay: "rgba(253, 224, 71, 0.02)"
+        };
+      case "autumn":
+        return {
+          grassHi: "#eab308", // Golden yellow-brown
+          grass: "#ca8a04",
+          grassLo: "#854d0e",
+          skyOverlay: "rgba(249, 115, 22, 0.1)", // Autumn warm amber tint
+          meadowOverlay: "rgba(249, 115, 22, 0.05)"
+        };
+      case "winter":
+        return {
+          grassHi: "#ffffff", // Snowy white
+          grass: "#e2e8f0",
+          grassLo: "#cbd5e1",
+          skyOverlay: "rgba(186, 230, 253, 0.12)", // Frosty light-blue tint
+          meadowOverlay: "rgba(255, 255, 255, 0.25)"
+        };
+      default:
+        return {
+          grassHi: ART.grassHi,
+          grass: ART.grass,
+          grassLo: ART.grassLo,
+          skyOverlay: "none",
+          meadowOverlay: "none"
+        };
+    }
+  }, [season]);
+
+  // Make sure useMemo is imported
   // ── Flying Watering Can local state ──
   const [flyingCan, setFlyingCan] = useState(null);
 
@@ -567,9 +634,13 @@ export const GardenScene = memo(function GardenScene({
   }, [waterAnim, plots, selected]);
 
   return (
-    <div className={full ? "gd-scene-full" : undefined} style={full
-      ? { background: SKY_GRAD[mode], userSelect: "none" }
-      : { position: "relative", borderRadius: RADIUS.l, overflow: "hidden", background: SKY_GRAD[mode], boxShadow: SHADOW.e2, userSelect: "none", border: "1px solid " + gt.bor }}>
+    <div className={full ? "gd-scene-full" : undefined} style={{
+      ...(full
+        ? { background: SKY_GRAD[mode], userSelect: "none" }
+        : { position: "relative", borderRadius: RADIUS.l, overflow: "hidden", background: SKY_GRAD[mode], boxShadow: SHADOW.e2, userSelect: "none", border: "1px solid " + gt.bor }),
+      "--wind-sway-mult": windSwayMult,
+      "--wind-sway-intensity": windSwayIntensity
+    }}>
       
       {/* ── Custom keyframes for rain and sakura petals ── */}
       <style>{`
@@ -593,6 +664,17 @@ export const GardenScene = memo(function GardenScene({
           85% { opacity: 0.85; }
           100% { transform: translate(25px, 48px) rotate(240deg); opacity: 0; }
         }
+        @keyframes gdShimmer {
+          0%, 100% { opacity: 0.25; transform: scale(0.9); }
+          50% { opacity: 0.95; transform: scale(1.1); }
+        }
+        @keyframes gdSway {
+          0% { transform: rotate(calc(-3deg * var(--wind-sway-intensity, 1))); }
+          100% { transform: rotate(calc(3deg * var(--wind-sway-intensity, 1))); }
+        }
+        [style*="gdSway"] {
+          animation-duration: calc(var(--sway-dur, 4.4s) * var(--wind-sway-mult, 1)) !important;
+        }
         @keyframes gdCanBounce {
           0%, 100% { transform: translateY(0) rotate(0deg); }
           50% { transform: translateY(-4px) rotate(-6deg); }
@@ -600,7 +682,7 @@ export const GardenScene = memo(function GardenScene({
       `}</style>
 
       {/* ── Ambient Darken during rain ── */}
-      {rainActive && (
+      {isRainyWeather && (
         <div style={{
           position: "absolute",
           inset: 0,
@@ -613,7 +695,7 @@ export const GardenScene = memo(function GardenScene({
       )}
 
       {/* ── Immersive Storm Clouds ── */}
-      {rainActive && (
+      {isRainyWeather && (
         <div style={{ position: "absolute", inset: 0, zIndex: 15, pointerEvents: "none" }}>
           <div style={{
             position: "absolute",
@@ -643,7 +725,7 @@ export const GardenScene = memo(function GardenScene({
       )}
 
       {/* ── Screen-wide Rain Drops ── */}
-      {rainActive && (
+      {isRainyWeather && (
         <div style={{ position: "absolute", inset: 0, zIndex: 14, pointerEvents: "none", overflow: "hidden" }}>
           {Array.from({ length: 32 }).map((_, i) => {
             const left = (i * 3.1) + (Math.random() * 2);
@@ -673,17 +755,112 @@ export const GardenScene = memo(function GardenScene({
       )}
       {mode === "night" && <NightStars />}
 
+      {/* ── Seasonal Atmospheric Tint Overlay ── */}
+      {seasonalColors.skyOverlay !== "none" && (
+        <div style={{ position: "absolute", inset: 0, background: seasonalColors.skyOverlay, zIndex: 12, pointerEvents: "none" }} />
+      )}
+
+      {/* ── Seasonal Screen-wide Particle Effects ── */}
+      <div style={{ position: "absolute", inset: 0, zIndex: 13, pointerEvents: "none", overflow: "hidden" }}>
+        {season === "spring" && Array.from({ length: 16 }).map((_, i) => {
+          const left = (i * 6.5) + (Math.random() * 4);
+          const delay = Math.random() * 6;
+          const duration = 6 + Math.random() * 4;
+          const size = 6 + Math.random() * 6;
+          return (
+            <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill="#fbcfe8" style={{
+              position: "absolute",
+              left: `${left}%`,
+              top: "-20px",
+              opacity: 0.8,
+              transformOrigin: "center",
+              animation: `gdRainFall ${duration}s linear infinite, gdSway ${3 + Math.random()*2}s ease-in-out infinite alternate`,
+              animationDelay: `${delay}s`,
+            }}>
+              <path d="M12 21C12 21 4 14 4 9C4 5 7 2 12 6C17 2 20 5 20 9C20 14 12 21 12 21Z" />
+            </svg>
+          );
+        })}
+
+        {season === "summer" && Array.from({ length: 12 }).map((_, i) => {
+          const left = (i * 8.5) + (Math.random() * 5);
+          const top = 10 + Math.random() * 60;
+          const delay = Math.random() * 4;
+          const duration = 3 + Math.random() * 3;
+          const size = 3 + Math.random() * 3;
+          return (
+            <div key={i} style={{
+              position: "absolute",
+              left: `${left}%`,
+              top: `${top}%`,
+              width: `${size}px`,
+              height: `${size}px`,
+              borderRadius: "50%",
+              background: "#fef08a",
+              boxShadow: "0 0 8px #facc15",
+              opacity: 0,
+              animation: `gdShimmer ${duration}s ease-in-out infinite alternate`,
+              animationDelay: `${delay}s`,
+            }} />
+          );
+        })}
+
+        {season === "autumn" && Array.from({ length: 15 }).map((_, i) => {
+          const left = (i * 7) + (Math.random() * 4);
+          const delay = Math.random() * 8;
+          const duration = 7 + Math.random() * 5;
+          const size = 10 + Math.random() * 8;
+          const colors = ["#fb923c", "#f97316", "#ea580c", "#d97706"];
+          const col = colors[i % colors.length];
+          return (
+            <svg key={i} width={size} height={size} viewBox="0 0 24 24" fill={col} style={{
+              position: "absolute",
+              left: `${left}%`,
+              top: "-20px",
+              opacity: 0.85,
+              transformOrigin: "center",
+              animation: `gdRainFall ${duration}s linear infinite, gdSway ${4 + Math.random()*3}s ease-in-out infinite alternate`,
+              animationDelay: `${delay}s`,
+            }}>
+              <path d="M12 2C12 2 3 10 3 15C3 19 6 22 12 20C18 22 21 19 21 15C21 10 12 2 12 2Z" />
+            </svg>
+          );
+        })}
+
+        {(season === "winter" || !!(weather && weather.isSnowing)) && Array.from({ length: 24 }).map((_, i) => {
+          const left = (i * 4.2) + (Math.random() * 3);
+          const delay = Math.random() * 5;
+          const duration = 5 + Math.random() * 4;
+          const size = 4 + Math.random() * 5;
+          return (
+            <div key={i} style={{
+              position: "absolute",
+              left: `${left}%`,
+              top: "-15px",
+              width: `${size}px`,
+              height: `${size}px`,
+              borderRadius: "50%",
+              background: "#ffffff",
+              opacity: 0.9,
+              filter: "blur(0.3px)",
+              animation: `gdRainFall ${duration}s linear infinite, gdSway ${2 + Math.random()*2}s ease-in-out infinite alternate`,
+              animationDelay: `${delay}s`,
+            }} />
+          );
+        })}
+      </div>
+
       {/* ── Dekorativ quyosh/oy ── */}
-      <div style={{ position: "absolute", left: "6%", top: full ? "calc(4% + env(safe-area-inset-top))" : "4%", pointerEvents: "none", animation: mode === "night" ? "none" : "gdSunGlow 4s ease-in-out infinite" }}>
+      <div style={{ position: "absolute", left: "6%", top: full ? "calc(4% + env(safe-area-inset-top))" : "4%", pointerEvents: "none", animation: mode === "night" ? "none" : (weather && (weather.isSunny || (weather.temp && weather.temp > 25)) ? "gdSunPulse 2.5s ease-in-out infinite, gdSunGlow 2s ease-in-out infinite" : "gdSunGlow 4s ease-in-out infinite") }}>
         {mode === "night" ? (
           <MoonSprite size={44} />
         ) : decorations?.includes("quyosh") ? (
           <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <SunSprite size={58} />
+            <SunSprite size={weather && (weather.isSunny || (weather.temp && weather.temp > 25)) ? 72 : 58} />
             <div style={{ position: "absolute", inset: -10, borderRadius: "50%", border: "2px dashed " + ART.sunRay, animation: "gdSway 6s linear infinite" }} />
           </div>
         ) : (
-          <SunSprite size={50} />
+          <SunSprite size={weather && (weather.isSunny || (weather.temp && weather.temp > 25)) ? 64 : 50} />
         )}
       </div>
 
@@ -694,6 +871,13 @@ export const GardenScene = memo(function GardenScene({
         <div style={{ position: "absolute", left: "16%", top: "30%", animation: "gdDrift 70s ease-in-out infinite" }}><Cloud w={70} o={0.9} /></div>
         <div style={{ position: "absolute", right: "8%", top: "8%", animation: "gdDrift 90s ease-in-out infinite reverse" }}><Cloud w={100} /></div>
         <div style={{ position: "absolute", right: "34%", top: "52%", animation: "gdDrift 60s ease-in-out infinite" }}><Cloud w={52} o={0.85} /></div>
+        {!!(weather && weather.isCloudy) && (
+          <>
+            <div style={{ position: "absolute", left: "5%", top: "15%", animation: "gdDrift 50s ease-in-out infinite" }}><Cloud w={120} o={0.95} /></div>
+            <div style={{ position: "absolute", right: "25%", top: "40%", animation: "gdDrift 80s ease-in-out infinite reverse" }}><Cloud w={85} o={0.9} /></div>
+            <div style={{ position: "absolute", left: "40%", top: "10%", animation: "gdDrift 65s ease-in-out infinite" }}><Cloud w={110} o={0.92} /></div>
+          </>
+        )}
         <div style={{ position: "absolute", top: "22%", left: 0, animation: "gdBird 34s linear infinite", opacity: 0 }}><Bird size={20} /></div>
         <div style={{ position: "absolute", top: "40%", left: 0, animation: "gdBird 46s linear 12s infinite", opacity: 0 }}><Bird size={14} /></div>
 
@@ -725,11 +909,11 @@ export const GardenScene = memo(function GardenScene({
         ? undefined
         : { position: "relative", height: "clamp(300px, 68vw, 420px)", zIndex: 11 }}>
         <svg viewBox="0 0 480 80" preserveAspectRatio="none" style={{ position: "absolute", top: -46, left: 0, width: "100%", height: 60 }}>
-          <path d="M0 80 Q 90 6 230 34 Q 260 40 300 28 Q 390 4 480 42 L480 80 Z" fill={ART.grassHi} />
-          <ellipse cx="415" cy="34" rx="14" ry="9" fill={ART.leafLo} />
-          <ellipse cx="368" cy="44" rx="9" ry="6" fill={ART.leafLo} />
+          <path d="M0 80 Q 90 6 230 34 Q 260 40 300 28 Q 390 4 480 42 L480 80 Z" fill={seasonalColors.grassHi} />
+          <ellipse cx="415" cy="34" rx="14" ry="9" fill={seasonalColors.grass === "#e2e8f0" ? "#94a3b8" : ART.leafLo} />
+          <ellipse cx="368" cy="44" rx="9" ry="6" fill={seasonalColors.grass === "#e2e8f0" ? "#64748b" : ART.leafLo} />
         </svg>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg," + ART.grassHi + " 0%," + ART.grass + " 45%," + ART.grassLo + " 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg," + seasonalColors.grassHi + " 0%," + seasonalColors.grass + " 45%," + seasonalColors.grassLo + " 100%)" }} />
 
         <div style={{ position: "absolute", top: -8, left: "4%" }}><Fence w={150} /></div>
         <div style={{ position: "absolute", top: "24%", right: "-2%" }}><Fence w={120} flip /></div>
@@ -853,7 +1037,22 @@ export const GardenScene = memo(function GardenScene({
                 onClick={() => onPlotTap(plot)}>
                 {isUnlocked && plot.stage >= 0 && !isDigging && (
                   <div style={{ position: "absolute", left: "50%", bottom: "42%", transform: "translateX(-50%)", animation: growAnim === plot.id ? "gdGrowPop .8s ease" : "none", pointerEvents: "none" }}>
-                    <PlantSVG stage={plot.stage} size={110 * PLOT_SCALE[plot.id]} animated={plot.stage >= 1} />
+                    <PlantSVG stage={plot.stage} size={150 * PLOT_SCALE[plot.id]} animated={plot.stage >= 1} plantType={plot.plantType} />
+                    {season === "winter" && plot.stage >= 2 && plot.plantType !== "tulip" && (
+                      <svg width={150 * PLOT_SCALE[plot.id] * 0.9} height={40} viewBox="0 0 100 40" style={{
+                        position: "absolute",
+                        left: "50%",
+                        top: plot.stage === 2 ? "12%" : "5%",
+                        transform: "translateX(-50%)",
+                        pointerEvents: "none",
+                        opacity: 0.95,
+                        filter: "drop-shadow(0 2px 4px rgba(15,23,42,0.1))"
+                      }}>
+                        <path d="M 30 30 C 35 20, 45 20, 50 30" fill="none" stroke="#ffffff" strokeWidth="8" strokeLinecap="round" />
+                        <path d="M 50 25 C 55 12, 65 12, 70 25" fill="none" stroke="#ffffff" strokeWidth="9" strokeLinecap="round" />
+                        <path d="M 40 18 C 45 5, 55 5, 60 18" fill="none" stroke="#ffffff" strokeWidth="10" strokeLinecap="round" />
+                      </svg>
+                    )}
                   </div>
                 )}
                 {growAnim === plot.id && (
