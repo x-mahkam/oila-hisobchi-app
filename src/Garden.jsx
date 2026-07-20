@@ -143,7 +143,7 @@ const GModal = memo(function GModal({ gt, onClose, children }) {
 
 // ════════════════════════════════════════════════════════════
 export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }) {
-  const { maq, setGardenData } = useApp() || { maq: [], setGardenData: null };
+  const { xar, dar, maq, qarzlar, vazifalar, azolar, oila, setGardenData } = useApp() || { xar: [], dar: [], maq: [], qarzlar: [], vazifalar: [], azolar: [], oila: {}, setGardenData: null };
   const oilaId = user?.oilaId;
   const { t } = useTranslation("garden");
   const gt = gardenTheme(dark);
@@ -155,7 +155,6 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const [energy, setEnergy]         = useState(0);
   const [crystals, setCrystals]     = useState(0);
   const [season, setSeason]         = useState("spring");
-  const [showSeasonModal, setShowSeasonModal] = useState(false);
   const [plots, setPlots]           = useState(PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" })));
   const [selected, setSelected]     = useState(0);
   const [waterTimer, setWaterTimer] = useState(0);
@@ -220,6 +219,145 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const [pests, setPests] = useState([]);
   const [grassBlades, setGrassBlades] = useState([]);
   const [selectedGoalForTree, setSelectedGoalForTree] = useState(null);
+
+  // ── MOLIYAVIY INTEGRATSIYA & AUDIO SINEZATOR (Phase 2 & 5) ──
+  const [freeFertilizers, setFreeFertilizers] = useState(0);
+  const [syncState, setSyncState] = useState({
+    lastStreakBonusDate: "",
+    lastBudgetBonusMonth: "",
+    completedGoals: [],
+    repaidDebts: []
+  });
+  const [ambientActive, setAmbientActive] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const ambientIntervalRef = useRef(null);
+  const ambientCtxRef = useRef(null);
+
+  const playGardenSound = (type) => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+
+      if (type === "water") {
+        for (let i = 0; i < 5; i++) {
+          setTimeout(() => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(150 + Math.random() * 300, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(800 + Math.random() * 200, ctx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.2);
+          }, i * 70);
+        }
+      } else if (type === "coin") {
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(ctx.destination);
+        osc1.type = "sine";
+        osc1.frequency.setValueAtTime(987.77, ctx.currentTime);
+        osc2.type = "sine";
+        osc2.frequency.setValueAtTime(1318.51, ctx.currentTime);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+        osc1.start();
+        osc2.start();
+        osc1.stop(ctx.currentTime + 0.7);
+        osc2.stop(ctx.currentTime + 0.7);
+      } else if (type === "click") {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(180, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      } else if (type === "bird") {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(1500, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(3200, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(0.04, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.16);
+      }
+    } catch (e) {
+      console.warn("Audio Context init blocked or failed:", e);
+    }
+  };
+
+  const startAmbientMusic = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      ambientCtxRef.current = ctx;
+      const notes = [261.63, 293.66, 329.63, 392.00, 440.00];
+
+      ambientIntervalRef.current = setInterval(() => {
+        if (ctx.state === "suspended") ctx.resume();
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = "sine";
+        const note = notes[Math.floor(Math.random() * notes.length)];
+        osc.frequency.setValueAtTime(note, ctx.currentTime);
+        filter.type = "lowpass";
+        filter.frequency.setValueAtTime(400, ctx.currentTime);
+        gain.gain.setValueAtTime(0.025, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.8);
+        osc.start();
+        osc.stop(ctx.currentTime + 3.0);
+
+        if (Math.random() < 0.4) {
+          setTimeout(() => {
+            playGardenSound("bird");
+          }, 1000 + Math.random() * 1000);
+        }
+      }, 3000);
+    } catch (err) {
+      console.warn("Ambient music init failed:", err);
+    }
+  };
+
+  const stopAmbientMusic = () => {
+    if (ambientIntervalRef.current) {
+      clearInterval(ambientIntervalRef.current);
+      ambientIntervalRef.current = null;
+    }
+    if (ambientCtxRef.current) {
+      try { ambientCtxRef.current.close(); } catch {}
+      ambientCtxRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    if (ambientActive) {
+      startAmbientMusic();
+    } else {
+      stopAmbientMusic();
+    }
+    return () => stopAmbientMusic();
+  }, [ambientActive]);
 
   // Omad g'ildiragi (Lucky Spin) holati
   const [showSpinModal, setShowSpinModal] = useState(false);
@@ -315,6 +453,36 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     detectLocationAndWeather();
   }, [lg]);
 
+  // Avtomatik ravishda faslni aniqlash va real vaqtdagi ob-havoga moslashtirish
+  useEffect(() => {
+    const month = new Date().getMonth();
+    let autoSeason = "spring";
+    
+    // 1. Kalendar bo'yicha faslni belgilash
+    if ([11, 0, 1].includes(month)) {
+      autoSeason = "winter";
+    } else if ([2, 3, 4].includes(month)) {
+      autoSeason = "spring";
+    } else if ([5, 6, 7].includes(month)) {
+      autoSeason = "summer";
+    } else if ([8, 9, 10].includes(month)) {
+      autoSeason = "autumn";
+    }
+
+    // 2. Real vaqtdagi ob-havo holatiga qarab o'zgartirish (masalan: qor yog'sa yoki sovuq bo'lsa)
+    if (weather && !weather.loading) {
+      if (weather.isSnowing || (weather.temp !== null && weather.temp <= 0)) {
+        autoSeason = "winter";
+      } else if (weather.temp !== null && weather.temp >= 30) {
+        autoSeason = "summer";
+      }
+    }
+
+    if (autoSeason !== season) {
+      setSeason(autoSeason);
+    }
+  }, [weather.isSnowing, weather.temp, weather.loading, season]);
+
   // AI maslahatchisi o'tish oynasi
   const [showAiAdvisorModal, setShowAiAdvisorModal] = useState(false);
   const [aiAdvice, setAiAdvice] = useState("");
@@ -337,6 +505,29 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const [showDecorModal, setShowDecorModal] = useState(false);
   const [showFertilizerModal, setShowFertilizerModal] = useState(null);
   const [showConfirmUseDropModal, setShowConfirmUseDropModal] = useState(null);
+
+  // ── MULTI-GARDEN SYSTEM STATES ──
+  const [activeGardenId, setActiveGardenId] = useState(0);
+  const [unlockedGardens, setUnlockedGardens] = useState([0]);
+  const [gardensPlots, setGardensPlots] = useState({
+    0: PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" })),
+    1: PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" }))
+  });
+  const [gardensPlacedDecorations, setGardensPlacedDecorations] = useState({
+    0: [],
+    1: []
+  });
+
+  // Keep gardensPlots and gardensPlacedDecorations in sync with active states
+  useEffect(() => {
+    if (!isLoaded) return;
+    setGardensPlots(prev => ({ ...prev, [activeGardenId]: plots }));
+  }, [plots, activeGardenId, isLoaded]);
+
+  useEffect(() => {
+    if (!isLoaded) return;
+    setGardensPlacedDecorations(prev => ({ ...prev, [activeGardenId]: placedDecorations }));
+  }, [placedDecorations, activeGardenId, isLoaded]);
 
   // Reklama ko'rish (Ad) simulyatori holati
   const [showAdModal, setShowAdModal] = useState(false);
@@ -375,39 +566,82 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         db.g("baraka_crystals_" + oilaId),
         db.g("baraka_daily_" + oilaId),
       ]);
-      if (g?.plots) {
-        const fixed = g.plots.map(p => (p.stage >= 0 && !p.lastSunAt) ? { ...p, lastSunAt: Date.now() } : p);
-        setPlots(fixed);
-        if (fixed.some((p, i) => p.lastSunAt !== g.plots[i].lastSunAt)) {
-          db.s("baraka_garden_" + oilaId, { plots: fixed, lastWatered: g.lastWatered ?? null, updatedAt: Date.now() }).catch(() => {});
+      let loadedActiveGardenId = g?.activeGardenId !== undefined ? g.activeGardenId : 0;
+      let loadedUnlockedGardens = g?.unlockedGardens || [0];
+
+      // Convert or construct gardensPlots
+      let loadedGardensPlots = g?.gardensPlots || {};
+      if (!g?.gardensPlots) {
+        if (g?.plots) {
+          loadedGardensPlots = {
+            0: g.plots,
+            1: PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" }))
+          };
+        } else {
+          loadedGardensPlots = {
+            0: PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" })),
+            1: PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" }))
+          };
         }
       }
+
+      // Convert or construct gardensPlacedDecorations
+      let loadedGardensPlacedDecorations = g?.gardensPlacedDecorations || {};
+      if (!g?.gardensPlacedDecorations) {
+        let defaultPlaced = [];
+        if (g?.placedDecorations) {
+          defaultPlaced = g.placedDecorations;
+        } else if (g?.decorations && g.decorations.length > 0) {
+          defaultPlaced = g.decorations.map((id, index) => {
+            const defaults = {
+              lola: { x: 18 + index * 12, y: 55 },
+              atorgul: { x: 82 - index * 10, y: 62 },
+              moychechak: { x: 48 + (index - 1) * 15, y: 48 },
+              uycha: { x: 38, y: 15 },
+            };
+            const def = defaults[id] || { x: 20 + index * 14, y: 50 };
+            return {
+              instanceId: `${id}_default_${index}_${Math.random().toString(36).substr(2, 4)}`,
+              itemId: id,
+              ...def
+            };
+          });
+        }
+        loadedGardensPlacedDecorations = {
+          0: defaultPlaced,
+          1: []
+        };
+      }
+
+      // Set multi-garden states
+      setActiveGardenId(loadedActiveGardenId);
+      setUnlockedGardens(loadedUnlockedGardens);
+      setGardensPlots(loadedGardensPlots);
+      setGardensPlacedDecorations(loadedGardensPlacedDecorations);
+
+      // Now set current active states
+      const activePlots = loadedGardensPlots[loadedActiveGardenId] || loadedGardensPlots[0];
+      const fixed = activePlots.map(p => (p.stage >= 0 && !p.lastSunAt) ? { ...p, lastSunAt: Date.now() } : p);
+      setPlots(fixed);
+
+      const activePlaced = loadedGardensPlacedDecorations[loadedActiveGardenId] || [];
+      setPlacedDecorations(activePlaced);
+
+      if (fixed.some((p, i) => p.lastSunAt !== activePlots[i].lastSunAt)) {
+        const updatedPlots = { ...loadedGardensPlots, [loadedActiveGardenId]: fixed };
+        setGardensPlots(updatedPlots);
+        db.s("baraka_garden_" + oilaId, { 
+          plots: fixed, 
+          gardensPlots: updatedPlots,
+          activeGardenId: loadedActiveGardenId,
+          unlockedGardens: loadedUnlockedGardens,
+          lastWatered: g.lastWatered ?? null, 
+          updatedAt: Date.now() 
+        }).catch(() => {});
+      }
+
       if (g?.decorations) setDecorations(g.decorations);
       if (g?.purchasedDecorations) setPurchasedDecorations(g.purchasedDecorations);
-      
-      // Joylashtirilgan dekoratsiyalar yuklanadi va eski massiv backward-compatible qilinadi
-      if (g?.placedDecorations) {
-        setPlacedDecorations(g.placedDecorations);
-      } else if (g?.decorations && g.decorations.length > 0) {
-        // Eski massiv bo'lsa maysazorda chiroyli qilib joylab chiqamiz
-        const converted = g.decorations.map((id, index) => {
-          const defaults = {
-            lola: { x: 18 + index * 12, y: 55 },
-            atorgul: { x: 82 - index * 10, y: 62 },
-            moychechak: { x: 48 + (index - 1) * 15, y: 48 },
-            uycha: { x: 38, y: 15 },
-          };
-          const def = defaults[id] || { x: 20 + index * 14, y: 50 };
-          return {
-            instanceId: `${id}_default_${index}_${Math.random().toString(36).substr(2, 4)}`,
-            itemId: id,
-            ...def
-          };
-        });
-        setPlacedDecorations(converted);
-      } else {
-        setPlacedDecorations([]);
-      }
       
       // Yangi iqtisodiy ma'lumotlar yuklanadi
       if (g?.waterDrops !== undefined) setWaterDrops(g.waterDrops);
@@ -423,6 +657,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       if (g?.pests !== undefined) setPests(g.pests);
       if (g?.grassBlades !== undefined) setGrassBlades(g.grassBlades);
       if (g?.season !== undefined) setSeason(g.season);
+      if (g?.freeFertilizers !== undefined) setFreeFertilizers(g.freeFertilizers);
+      if (g?.syncState !== undefined) setSyncState(g.syncState);
       
       if (c != null) setCoins(c);
       if (e != null) setEnergy(e);
@@ -436,17 +672,31 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       }
       const today = new Date().toISOString().slice(0, 10);
       if (daily?.date === today) setDailyDone(true);
-    } catch (e) { console.error("Garden load:", e); }
+    } catch (e) { console.error("Garden load:", e); } finally {
+      setIsLoaded(true);
+    }
   };
 
   const saveGarden = async (newPlots, newCoins, newEnergy, newCrystals, lastWatered, newDecorations, newPurchased, newPlaced, extraFields = {}) => {
-    if (!oilaId) return;
+    if (!oilaId || !isLoaded) return;
     if (lastWatered !== undefined) lastWateredRef.current = lastWatered;
     try {
+      const currentActiveId = extraFields.activeGardenId !== undefined ? extraFields.activeGardenId : activeGardenId;
+      const currentUnlocked = extraFields.unlockedGardens !== undefined ? extraFields.unlockedGardens : unlockedGardens;
+      const currentGardensPlots = extraFields.gardensPlots !== undefined ? extraFields.gardensPlots : { ...gardensPlots, [activeGardenId]: newPlots };
+      
+      const currentPlaced = newPlaced !== undefined ? newPlaced : placedDecorations;
+      const currentGardensPlacedDecorations = extraFields.gardensPlacedDecorations !== undefined ? extraFields.gardensPlacedDecorations : { ...gardensPlacedDecorations, [activeGardenId]: currentPlaced };
+
       const payload = {
         plots: newPlots,
         lastWatered: lastWateredRef.current || null,
         updatedAt: Date.now(),
+        activeGardenId: currentActiveId,
+        unlockedGardens: currentUnlocked,
+        gardensPlots: currentGardensPlots,
+        gardensPlacedDecorations: currentGardensPlacedDecorations,
+
         wateredBy: extraFields.wateredBy !== undefined ? extraFields.wateredBy : wateredBy,
         waterDrops: extraFields.waterDrops !== undefined ? extraFields.waterDrops : waterDrops,
         goldenSeeds: extraFields.goldenSeeds !== undefined ? extraFields.goldenSeeds : goldenSeeds,
@@ -459,10 +709,12 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         pests: extraFields.pests !== undefined ? extraFields.pests : pests,
         grassBlades: extraFields.grassBlades !== undefined ? extraFields.grassBlades : grassBlades,
         season: extraFields.season !== undefined ? extraFields.season : season,
+        freeFertilizers: extraFields.freeFertilizers !== undefined ? extraFields.freeFertilizers : freeFertilizers,
+        syncState: extraFields.syncState !== undefined ? extraFields.syncState : syncState,
       };
       payload.decorations = newDecorations !== undefined ? newDecorations : decorations;
       payload.purchasedDecorations = newPurchased !== undefined ? newPurchased : purchasedDecorations;
-      payload.placedDecorations = newPlaced !== undefined ? newPlaced : placedDecorations;
+      payload.placedDecorations = currentPlaced;
 
       await db.s("baraka_garden_" + oilaId, payload);
       if (setGardenData) setGardenData(payload);
@@ -470,6 +722,84 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       if (newEnergy   !== undefined) await db.s("baraka_energy_" + oilaId, newEnergy);
       if (newCrystals !== undefined) await db.s("baraka_crystals_" + oilaId, newCrystals);
     } catch (e) { console.error("Garden save:", e); }
+  };
+
+  const changeGarden = async (targetId) => {
+    if (targetId === activeGardenId) return;
+    
+    const updatedGardensPlots = { ...gardensPlots, [activeGardenId]: plots };
+    const updatedGardensPlacedDecorations = { ...gardensPlacedDecorations, [activeGardenId]: placedDecorations };
+    
+    setGardensPlots(updatedGardensPlots);
+    setGardensPlacedDecorations(updatedGardensPlacedDecorations);
+    
+    const targetPlots = updatedGardensPlots[targetId] || PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" }));
+    const targetPlacedDec = updatedGardensPlacedDecorations[targetId] || [];
+    
+    setActiveGardenId(targetId);
+    setPlots(targetPlots);
+    setPlacedDecorations(targetPlacedDec);
+    
+    await saveGarden(
+      targetPlots,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      targetPlacedDec,
+      {
+        gardensPlots: updatedGardensPlots,
+        gardensPlacedDecorations: updatedGardensPlacedDecorations,
+        activeGardenId: targetId,
+        unlockedGardens: unlockedGardens
+      }
+    );
+  };
+
+  const unlockNewGarden = async () => {
+    const cost = 5000;
+    if (coins < cost) {
+      alert("Yangi bog' barpo qilish uchun 5,000 tanga kerak!");
+      return;
+    }
+    
+    const confirmUnlock = window.confirm("5,000 tanga evaziga yangi hududda 2-Bog'ni barpo qilmoqchimisiz?");
+    if (!confirmUnlock) return;
+    
+    const nextCoins = coins - cost;
+    const newUnlocked = [...unlockedGardens, 1];
+    const newGardenPlots = PLOTS.map(p => ({ ...p, stage: -1, waterCount: 0, lastWateredAt: 0, lastSunAt: 0, harvestReady: false, plantType: "normal" }));
+    
+    const updatedGardensPlots = { ...gardensPlots, 1: newGardenPlots };
+    const updatedGardensPlacedDecorations = { ...gardensPlacedDecorations, 1: [] };
+    
+    setUnlockedGardens(newUnlocked);
+    setGardensPlots(updatedGardensPlots);
+    setGardensPlacedDecorations(updatedGardensPlacedDecorations);
+    
+    setActiveGardenId(1);
+    setPlots(newGardenPlots);
+    setPlacedDecorations([]);
+    setCoins(nextCoins);
+    
+    await saveGarden(
+      newGardenPlots,
+      nextCoins,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      [],
+      {
+        gardensPlots: updatedGardensPlots,
+        gardensPlacedDecorations: updatedGardensPlacedDecorations,
+        activeGardenId: 1,
+        unlockedGardens: newUnlocked
+      }
+    );
   };
 
   // ── Sekundlik taymer (o'zgarmagan) ──
@@ -484,9 +814,137 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     return () => clearInterval(timerRef.current);
   }, []);
 
+  const calculateExpenseStreak = (expenses) => {
+    if (!expenses || expenses.length === 0) return 0;
+    const dates = [...new Set(expenses.map(e => {
+      if (!e.sana) return "";
+      return e.sana.split("T")[0];
+    }).filter(Boolean))].sort();
+    
+    if (dates.length === 0) return 0;
+    
+    let streak = 0;
+    let todayStr = new Date().toISOString().split("T")[0];
+    let checkDate = new Date(todayStr);
+    
+    while (true) {
+      const checkStr = checkDate.toISOString().split("T")[0];
+      if (dates.includes(checkStr)) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        // also check yesterday in case today has no transactions yet
+        if (streak === 0) {
+          checkDate.setDate(checkDate.getDate() - 1);
+          const checkStrYesterday = checkDate.toISOString().split("T")[0];
+          if (dates.includes(checkStrYesterday)) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+            continue;
+          }
+        }
+        break;
+      }
+    }
+    return streak;
+  };
+
+  // ── MOLIYAVIY HABITLAR SINXRONIZATSIYASI ──
+  useEffect(() => {
+    if (!oilaId || !isLoaded) return;
+
+    let changes = {};
+    let triggered = false;
+
+    // 1. 7-Day Expense Logging Streak -> Free Fertilizer
+    const streak = calculateExpenseStreak(xar);
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (streak >= 7 && syncState.lastStreakBonusDate !== todayStr) {
+      changes.lastStreakBonusDate = todayStr;
+      changes.freeFertilizers = freeFertilizers + 1;
+      triggered = true;
+      setFreeFertilizers(f => f + 1);
+      setSyncState(prev => ({ ...prev, lastStreakBonusDate: todayStr }));
+      showMsg("Streak! 7 kun xarajat kiritganingiz uchun 1 ta bepul o'g'it berildi! 🌱", "leaf");
+      playGardenSound("bird");
+    }
+
+    // 2. Budget adherence (10 days) -> Special Seeds
+    const today = new Date();
+    const currentMonthStr = today.getFullYear() + "-" + (today.getMonth() + 1);
+    if (today.getDate() >= 10 && syncState.lastBudgetBonusMonth !== currentMonthStr) {
+      const monthlyBudget = oila?.budjet || 5000000;
+      const currentMonthExpenses = xar.filter(e => {
+        if (!e.sana) return false;
+        const d = new Date(e.sana);
+        return d.getFullYear() === today.getFullYear() && d.getMonth() === today.getMonth();
+      }).reduce((acc, e) => acc + (e.miqdor || 0), 0);
+
+      if (currentMonthExpenses <= monthlyBudget) {
+        changes.lastBudgetBonusMonth = currentMonthStr;
+        changes.goldenSeeds = goldenSeeds + 1;
+        changes.rainbowSeeds = rainbowSeeds + 1;
+        triggered = true;
+        setGoldenSeeds(s => s + 1);
+        setRainbowSeeds(r => r + 1);
+        setSyncState(prev => ({ ...prev, lastBudgetBonusMonth: currentMonthStr }));
+        showMsg("Budjet himoyachisi! 10 kun davomida budjet buzilmagani uchun Oltin va Kamalak urug'lari berildi! 🌸", "leaf");
+        playGardenSound("bird");
+      }
+    }
+
+    // 3. Goal Completion -> +50 Water Drops
+    if (maq && maq.length > 0) {
+      const completedIds = maq.filter(m => m.progress >= 100 || m.bajarilgan).map(m => m.id);
+      const newlyCompleted = completedIds.filter(id => !syncState.completedGoals.includes(id));
+      if (newlyCompleted.length > 0) {
+        const nextCompleted = [...syncState.completedGoals, ...newlyCompleted];
+        changes.completedGoals = nextCompleted;
+        changes.waterDrops = waterDrops + 50 * newlyCompleted.length;
+        triggered = true;
+        setWaterDrops(w => w + 50 * newlyCompleted.length);
+        setSyncState(prev => ({ ...prev, completedGoals: nextCompleted }));
+        showMsg(`Tabriklaymiz! Moliyaviy maqsadga erishilgani uchun +${50 * newlyCompleted.length} ta suv tomchilari berildi! 💧`, "drop");
+        playGardenSound("coin");
+      }
+    }
+
+    // 4. Debt Repayment -> Rainbow Seed
+    if (qarzlar && qarzlar.length > 0) {
+      const repaidIds = qarzlar.filter(q => q.status === "yopilgan" || q.qoldiq <= 0).map(q => q.id);
+      const newlyRepaid = repaidIds.filter(id => !syncState.repaidDebts.includes(id));
+      if (newlyRepaid.length > 0) {
+        const nextRepaid = [...syncState.repaidDebts, ...newlyRepaid];
+        changes.repaidDebts = nextRepaid;
+        changes.rainbowSeeds = rainbowSeeds + newlyRepaid.length;
+        triggered = true;
+        setRainbowSeeds(r => r + newlyRepaid.length);
+        setSyncState(prev => ({ ...prev, repaidDebts: nextRepaid }));
+        showMsg(`Qarz yopildi! Qarzni to'liq so'ndirganingiz uchun ${newlyRepaid.length} ta Noyob Kamalak urug'i sovg'a qilindi! 🌳`, "leaf");
+        playGardenSound("coin");
+      }
+    }
+
+    if (triggered) {
+      const updatedSync = {
+        lastStreakBonusDate: changes.lastStreakBonusDate !== undefined ? changes.lastStreakBonusDate : syncState.lastStreakBonusDate,
+        lastBudgetBonusMonth: changes.lastBudgetBonusMonth !== undefined ? changes.lastBudgetBonusMonth : syncState.lastBudgetBonusMonth,
+        completedGoals: changes.completedGoals !== undefined ? changes.completedGoals : syncState.completedGoals,
+        repaidDebts: changes.repaidDebts !== undefined ? changes.repaidDebts : syncState.repaidDebts,
+      };
+      saveGarden(plots, coins, energy, crystals, undefined, undefined, undefined, undefined, {
+        syncState: updatedSync,
+        freeFertilizers: changes.freeFertilizers !== undefined ? changes.freeFertilizers : freeFertilizers,
+        goldenSeeds: changes.goldenSeeds !== undefined ? changes.goldenSeeds : goldenSeeds,
+        rainbowSeeds: changes.rainbowSeeds !== undefined ? changes.rainbowSeeds : rainbowSeeds,
+        waterDrops: changes.waterDrops !== undefined ? changes.waterDrops : waterDrops,
+      }).catch(() => {});
+    }
+  }, [xar, maq, qarzlar, oilaId]);
+
   // ── ZARARKUNANDALAR SIMULYATSIYASI ──
   useEffect(() => {
-    if (!oilaId) return;
+    if (!oilaId || !isLoaded) return;
     const interval = setInterval(() => {
       const growingPlots = plots.filter(p => p.stage >= 0 && !p.harvestReady);
       if (growingPlots.length === 0) return;
@@ -729,6 +1187,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
   // ── O'simlik o'sishini tezlashtirish (50 quyosh = 3h, 100 quyosh = darhol pishadi) ──
   const handleGrowSpeedup = async (plotId, amount) => {
+    playGardenSound("click");
     if (energy < amount) {
       showMsg(t("g_needSunAmount", { amount }), "sun");
       setShowFertilizerModal(null);
@@ -766,12 +1225,50 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     showMsg(amount === 100 
       ? t("g006")
       : t("g007"), "bloom");
+    playGardenSound("bird");
     await saveGarden(nextPlots, undefined, nextEnergy, undefined);
+  };
+
+  const handleUseFreeFertilizer = async (plotId) => {
+    playGardenSound("click");
+    if (freeFertilizers <= 0) {
+      showMsg("Sizda bepul o'g'itlar qolmagan!", "leaf");
+      return;
+    }
+    const plot = plots.find(p => p.id === plotId);
+    if (!plot || plot.stage < 0 || plot.harvestReady) {
+      setShowFertilizerModal(null);
+      return;
+    }
+
+    const nextStage = Math.min(STAGES.length - 1, plot.stage + 1);
+    const harvestReady = nextStage === STAGES.length - 1;
+
+    const nextFertilizers = freeFertilizers - 1;
+    const nextPlots = plots.map(p => p.id === plotId
+      ? { ...p, stage: nextStage, waterCount: 0, harvestReady }
+      : p);
+
+    setPlots(nextPlots);
+    setFreeFertilizers(nextFertilizers);
+    setShowFertilizerModal(null);
+    setGrowAnim(plotId);
+    setTimeout(() => setGrowAnim(null), 2000);
+
+    playGardenSound("bird");
+    showMsg("Bepul o'g'it muvaffaqiyatli sepildi! 🌱", "leaf");
+    await saveGarden(nextPlots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
+      freeFertilizers: nextFertilizers
+    });
   };
 
   // Birlashtirilgan eski o'g'it sepgich (eski versiyalar uchun qisqacha qo'llab-quvvatlash)
   const handleApplyFertilizer = (plotId) => {
-    handleGrowSpeedup(plotId, 50);
+    if (freeFertilizers > 0) {
+      handleUseFreeFertilizer(plotId);
+    } else {
+      handleGrowSpeedup(plotId, 50);
+    }
   };
 
   // ── Sug'orish (Fast watering with water drops allowed!) ──
@@ -798,6 +1295,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     const animDuration = 2100 + targetsCount * 3700;
 
     setWaterAnim(true);
+    playGardenSound("water");
     setTimeout(() => setWaterAnim(false), animDuration);
 
     const nowT = Date.now();
@@ -859,6 +1357,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const handleHarvest = async (plotId) => {
     const plot = plots.find(p => p.id === plotId);
     if (!plot || !plot.harvestReady) return;
+    playGardenSound("coin");
     
     const isGolden = plot.plantType === "golden";
     const isRainbow = plot.plantType === "rainbow";
@@ -1445,10 +1944,145 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
         <button className="ui-press" onClick={onBack} aria-label={t("g067")} style={glassBtn}>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M11 4L6 9l5 5" stroke={gt.onSky} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
-        <div style={{ ...TYPE.heading, color: gt.onSky, textShadow: "0 2px 10px " + gt.skyScrim, letterSpacing: 0.3 }}>
-          {t("g068")}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {unlockedGardens.includes(1) && (
+              <button 
+                onClick={() => changeGarden(activeGardenId === 0 ? 1 : 0)} 
+                style={{ 
+                  background: "rgba(255,255,255,0.15)", 
+                  border: "1px solid rgba(255,255,255,0.3)", 
+                  borderRadius: "50%",
+                  width: 28,
+                  height: 28,
+                  color: gt.onSky, 
+                  cursor: "pointer", 
+                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+                className="ui-press"
+              >
+                ◀
+              </button>
+            )}
+            
+            <div style={{ 
+              ...TYPE.heading, 
+              color: gt.onSky, 
+              textShadow: "0 2px 10px " + gt.skyScrim, 
+              letterSpacing: 0.3,
+              display: "flex",
+              alignItems: "center",
+              gap: 4
+            }}>
+              {activeGardenId === 0 ? "Asosiy Bog'" : "Yangi Bog' (Oazis)"}
+            </div>
+
+            {unlockedGardens.includes(1) && (
+              <button 
+                onClick={() => changeGarden(activeGardenId === 0 ? 1 : 0)} 
+                style={{ 
+                  background: "rgba(255,255,255,0.15)", 
+                  border: "1px solid rgba(255,255,255,0.3)", 
+                  borderRadius: "50%",
+                  width: 28,
+                  height: 28,
+                  color: gt.onSky, 
+                  cursor: "pointer", 
+                  fontSize: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}
+                className="ui-press"
+              >
+                ▶
+              </button>
+            )}
+          </div>
+          
+          {!unlockedGardens.includes(1) && (
+            <button 
+              onClick={unlockNewGarden}
+              className="ui-press"
+              style={{
+                background: "linear-gradient(135deg, #10b981, #059669)",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: RADIUS.pill,
+                padding: "3px 12px",
+                fontSize: "11px",
+                fontWeight: "bold",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+                cursor: "pointer",
+                marginTop: 2
+              }}
+            >
+              {"🌱 Yangi bog' barpo qilish (5k 🪙)"}
+            </button>
+          )}
         </div>
         <div style={{ display: "flex", gap: SPACE.s2, alignItems: "center" }}>
+          {/* Cheat / Admin Mode */}
+          <button 
+            className="ui-press" 
+            onClick={async () => {
+              playGardenSound("click");
+              const targetCoins = coins > 500000 ? 50 : 9999999;
+              const targetCrystals = crystals > 5000 ? 5 : 99999;
+              const targetDrops = waterDrops > 5000 ? 20 : 99999;
+              const targetGolden = goldenSeeds > 500 ? 0 : 999;
+              const targetRainbow = rainbowSeeds > 500 ? 0 : 999;
+              
+              setCoins(targetCoins);
+              setCrystals(targetCrystals);
+              setWaterDrops(targetDrops);
+              setGoldenSeeds(targetGolden);
+              setRainbowSeeds(targetRainbow);
+              setEnergy(99999);
+              
+              await saveGarden(
+                plots,
+                targetCoins,
+                99999,
+                targetCrystals,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                {
+                  waterDrops: targetDrops,
+                  goldenSeeds: targetGolden,
+                  rainbowSeeds: targetRainbow,
+                }
+              );
+              alert("🛠️ Sinov rejimi faollashdi! Sizga cheksiz tanga va barcha resurslar taqdim etildi. Bog'ning barcha imkoniyatlarini bemalol tekshirib ko'rishingiz mumkin!");
+            }} 
+            title="Cheksiz tangalar / Cheat" 
+            style={{ 
+              ...glassBtn, 
+              background: "linear-gradient(135deg, #22c55e, #16a34a)", 
+              border: "1px solid rgba(34, 197, 94, 0.4)",
+              color: "#fff",
+              padding: "0 10px",
+              display: "flex",
+              alignItems: "center",
+              gap: 4
+            }}
+          >
+            <span style={{ fontSize: 11, fontWeight: "bold" }}>👑 CHEAT</span>
+          </button>
+
+          {/* Musiqa sozlamasi */}
+          <button className="ui-press" onClick={() => {
+            playGardenSound("click");
+            setAmbientActive(a => !a);
+          }} title="Musiqa" style={glassBtn}>
+            <span style={{ fontSize: 15 }}>{ambientActive ? "🎵" : "🔇"}</span>
+          </button>
+          
           {/* Bezash (Decorate) Button using Stars */}
           <button className="ui-press" onClick={() => setShowDecorModal(true)} aria-label={t("g069")} style={glassBtn}>
             <span style={{ fontSize: 16 }}>🎪</span>
@@ -1491,15 +2125,6 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(234, 179, 8, 0.22), rgba(202, 138, 4, 0.22))", border: "1.5px solid #facc15", boxShadow: "0 0 12px rgba(234, 179, 8, 0.65)", cursor: "pointer" }} 
           title={t("g074")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.2s ease-in-out infinite 0.6s" }}>👑</span>
-        </button>
-
-        {/* Fasllar (Seasons) */}
-        <button className="ui-press" onClick={() => setShowSeasonModal(true)} 
-          style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(21, 128, 61, 0.22))", border: "1.5px solid #22c55e", boxShadow: "0 0 12px rgba(34, 197, 94, 0.55)", cursor: "pointer" }} 
-          title={t("g_seasons")}>
-          <span style={{ fontSize: 22, animation: "gdBounce 2.4s ease-in-out infinite 0.8s" }}>
-            {season === "spring" ? "🌸" : season === "summer" ? "☀️" : season === "autumn" ? "🍁" : "❄️"}
-          </span>
         </button>
       </div>
 
@@ -1807,6 +2432,16 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           </p>
 
           <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s2, marginBottom: SPACE.s4 }}>
+            {/* Option C: Bepul O'g'it! */}
+            <button className="ui-press" onClick={() => handleUseFreeFertilizer(showFertilizerModal)} disabled={freeFertilizers <= 0}
+              style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid #a855f7", borderRadius: RADIUS.m, background: freeFertilizers > 0 ? "rgba(168, 85, 247, 0.04)" : gt.surH, width: "100%", cursor: freeFertilizers > 0 ? "pointer" : "not-allowed", opacity: freeFertilizers > 0 ? 1 : 0.6 }}>
+              <div style={{ textAlign: "left" }}>
+                <span style={{ ...TYPE.body, fontWeight: 750, color: "#9333ea" }}>{"🌱 Bepul O'g'it (Streak)"}</span>
+                <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11 }}>{"Sizda " + freeFertilizers + " ta bepul o'g'it bor"}</p>
+              </div>
+              <span style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)", color: gt.sur, padding: "4px 10px", borderRadius: RADIUS.pill, ...TYPE.caption, fontWeight: 800 }}>{freeFertilizers} dona</span>
+            </button>
+
             {/* Option A: 50 Suns = Keyingi bosqich (3 soat tezlashadi) */}
             <button className="ui-press" onClick={() => handleGrowSpeedup(showFertilizerModal, 50)} disabled={energy < 50}
               style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: SPACE.s3, border: "1px solid " + gt.bor, borderRadius: RADIUS.m, background: energy >= 50 ? gt.sur : gt.surH, width: "100%", cursor: energy >= 50 ? "pointer" : "not-allowed", opacity: energy >= 50 ? 1 : 0.6 }}>
@@ -2355,63 +2990,6 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
               {t("g180")}
             </button>
           </div>
-        </GModal>
-      )}
-
-      {/* ── Fasllar Tanlash Modali ── */}
-      {showSeasonModal && (
-        <GModal gt={gt} onClose={() => setShowSeasonModal(false)}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: SPACE.s2 }}><span style={{ fontSize: 48 }}>🌸☀️🍁❄️</span></div>
-          <div style={{ ...TYPE.heading, color: gt.ink1, marginBottom: SPACE.s1 }}>{t("g_seasons")}</div>
-          <p style={{ ...TYPE.caption, color: gt.ink3, marginBottom: SPACE.s4, textAlign: "center" }}>
-            {t("g_select_season")}
-          </p>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: SPACE.s3, marginBottom: SPACE.s4 }}>
-            {[
-              { id: "spring", icon: "🌸", color: "#ec4899", textKey: "season_spring", descKey: "season_spring_desc" },
-              { id: "summer", icon: "☀️", color: "#eab308", textKey: "season_summer", descKey: "season_summer_desc" },
-              { id: "autumn", icon: "🍁", color: "#f97316", textKey: "season_autumn", descKey: "season_autumn_desc" },
-              { id: "winter", icon: "❄️", color: "#3b82f6", textKey: "season_winter", descKey: "season_winter_desc" },
-            ].map((s) => {
-              const active = season === s.id;
-              return (
-                <div key={s.id} onClick={async () => {
-                  setSeason(s.id);
-                  showMsg(t(s.textKey) + " fasli faollashtirildi! 🎉", "bloom");
-                  await saveGarden(plots, undefined, undefined, undefined, undefined, undefined, undefined, undefined, {
-                    season: s.id
-                  });
-                }}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: SPACE.s3,
-                    padding: SPACE.s3,
-                    border: active ? "2px solid " + s.color : "1px solid " + gt.bor,
-                    borderRadius: RADIUS.m,
-                    background: active ? `${s.color}07` : gt.sur,
-                    cursor: "pointer",
-                    transition: "all 0.2s ease",
-                    boxShadow: active ? `0 4px 12px ${s.color}15` : "none"
-                  }}>
-                  <span style={{ fontSize: 32, filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}>{s.icon}</span>
-                  <div style={{ flex: 1, textAlign: "left" }}>
-                    <div style={{ ...TYPE.body, fontWeight: 800, color: active ? s.color : gt.ink1, display: "flex", alignItems: "center", gap: 6 }}>
-                      {t(s.textKey)}
-                      {active && <span style={{ background: s.color, color: "#fff", fontSize: 9, padding: "1px 5px", borderRadius: RADIUS.pill }}>{t("g112")}</span>}
-                    </div>
-                    <p style={{ ...TYPE.caption, color: gt.ink3, margin: "2px 0 0", fontSize: 11, lineHeight: 1.35 }}>{t(s.descKey)}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <button className="ui-press" onClick={() => setShowSeasonModal(false)}
-            style={{ width: "100%", padding: SPACE.s3, borderRadius: RADIUS.m, border: "none", background: gt.ink1, color: gt.sur, ...TYPE.subtitle, fontWeight: 800, cursor: "pointer" }}>
-            {t("g030")}
-          </button>
         </GModal>
       )}
 

@@ -58,10 +58,13 @@ export const fbDB = getFirestore(app);
 // saqlash usulini aniq belgilab beramiz (IndexedDB → localStorage → sessionStorage).
 let _fbAuth;
 try {
-  const persistenceList = Capacitor.isNativePlatform()
-    ? [capacitorPreferencesPersistence, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
-    : [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence];
-  _fbAuth = initializeAuth(app, { persistence: persistenceList });
+  if (Capacitor.isNativePlatform()) {
+    _fbAuth = initializeAuth(app, {
+      persistence: [capacitorPreferencesPersistence, indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
+    });
+  } else {
+    _fbAuth = getAuth(app);
+  }
 } catch (_e) {
   // Vite HMR paytida ikkinchi marta chaqirilsa ("already initialized") yoki
   // boshqa sabab bilan xato bo'lsa — allaqachon mavjud instance'ni olamiz.
