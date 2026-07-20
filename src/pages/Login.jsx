@@ -272,7 +272,10 @@ export default function LoginPage() {
           const cV = COUNTRIES.find(c => c.code === fCountry); if (cV) { const vv = VALS.find(x => x.id === cV.val); if (vv) { setVal(vv); localStorage.setItem("oilaV7V", vv.id); } }
           localStorage.setItem("oilaV7", JSON.stringify({ uid })); setUser(nu); setScr("bosh"); loadFam(nu); ok$(t.jf2); addStar(15, t("log018"));
         } else {
-          const oid = "o" + Date.now();
+          // XAVFSIZLIK: oila kodi = qo'shilish paroli. Ilgari "o"+Date.now() edi —
+          // vaqt tamg'asi taxmin qilinardi, begona kod topib oilaga kira olardi.
+          // Endi kriptografik tasodifiy (~96 bit) — amalda taxmin qilib bo'lmaydi.
+          const oid = "o" + Array.from(crypto.getRandomValues(new Uint32Array(3)), n => n.toString(36)).join("");
           setOwnerCtx(uid, oid);
           const dialC = (COUNTRIES.find(c => c.code === fCountry) || {}).dial || ""; const tel = (dialC + fTel.trim()).replace(/[^0-9+]/g, ""); const n9 = normTel(fTel);
           const nu = { id: uid, ism: fIsm.trim(), email: fEm.trim().toLowerCase(), tel, ph, oilaId: oid, rol: "bosh", rel: "bosh", photo: null };
