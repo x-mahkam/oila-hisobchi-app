@@ -60,6 +60,9 @@
          so'rash oynasi umuman chiqmaydi). -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Real vaqtdagi ob-havo uchun geolokatsiya (GPS va tarmoq orqali joylashuvni aniqlash) ruxsatlari -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <!-- Hisobot/tilxat fayllarini "Yuklab olishlar" papkasiga saqlash uchun —
          faqat Android 9 va pastda (API<=28) kerak; Android 10+ da MediaStore
          orqali maxsus ruxsatsiz ishlaydi (SaveToDownloadsPlugin.java'ga q.). -->
