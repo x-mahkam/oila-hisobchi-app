@@ -1,6 +1,7 @@
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const { google } = require("googleapis");
+const crypto = require("crypto");
 
 admin.initializeApp();
 
@@ -164,6 +165,28 @@ exports.revenuecatWebhook = functions.https.onRequest(async (req, res) => {
     res.status(405).send("Faqat POST so'rovi qabul qilinadi.");
     return;
   }
+
+  // ─── XAVFSIZLIK: Authorization sarlavhasini tekshirish ───────────────
+  // Ilgari bu webhook HECH QANDAY tekshiruvsiz edi — istalgan odam POST
+  // yuborib, istalgan app_user_id (oila) uchun premiumni bepul yoqa olardi.
+  // Endi RevenueCat panelida sozlangan maxfiy kalitni (Authorization header)
+  // talab qilamiz. Kalit sozlanmagan bo'lsa — YOPIQ (fail-closed), chunki
+  // tekshiruvsiz premium berish to'lovsiz obunaga teng.
+  const expectedAuth = process.env.REVENUECAT_WEBHOOK_SECRET;
+  if (!expectedAuth) {
+    console.error("revenuecatWebhook: REVENUECAT_WEBHOOK_SECRET sozlanmagan — so'rov rad etildi.");
+    res.status(503).send("Webhook hali sozlanmagan.");
+    return;
+  }
+  const gotAuth = req.get("authorization") || "";
+  const a = Buffer.from(gotAuth);
+  const b = Buffer.from(expectedAuth);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    console.warn("revenuecatWebhook: Authorization mos kelmadi — so'rov rad etildi.");
+    res.status(401).send("Ruxsat berilmadi.");
+    return;
+  }
+  // ────────────────────────────────────────────────────────────────────
 
   const payload = req.body;
   if (!payload || !payload.event) {

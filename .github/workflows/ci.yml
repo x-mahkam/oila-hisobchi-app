@@ -21,6 +21,5 @@ jobs:
       - name: Testlarni ishga tushirish (npm test)
         run: npm test
 
-      - name: Lint (hozircha faqat ogohlantirish — hali qizil qilib to'xtatmaydi)
+      - name: Lint (xatolar CI'ni to'xtatadi; ogohlantirishlar o'tadi)
         run: npm run lint
-        continue-on-error: true
