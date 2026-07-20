@@ -78,7 +78,7 @@ export function AppProvider({ children }) {
       return;
     }
 
-    const safeKey = (k) => ("oilaV7_" + k).replace(/[+\/\\#?]/g, "_").replace(/\s/g, "_");
+    const safeKey = (k) => ("oilaV7_" + k).replace(/[+\\#?]/g, "_").replace(/\//g, "_").replace(/\s/g, "_");
     const docRef = doc(fbDB, "appdata", safeKey("oila_" + user.oilaId));
 
     const unsub = onSnapshot(docRef, (snap) => {

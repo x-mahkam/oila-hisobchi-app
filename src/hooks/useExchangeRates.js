@@ -2,9 +2,10 @@ import { useCallback } from "react";
 import { useApp } from "../context/AppContext.jsx";
 
 export function useExchangeRates() {
-  const { rates, setRates, ok$, t } = useApp();
-  const [rateL, setRateL] = useApp().rateL !== undefined
-    ? [useApp().rateL, useApp().setRateL]
+  const appState = useApp();
+  const { rates, setRates, ok$, t } = appState;
+  const [rateL, setRateL] = appState.rateL !== undefined
+    ? [appState.rateL, appState.setRateL]
     : [false, () => {}];
 
   const fetchRates = useCallback(async () => {
