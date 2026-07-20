@@ -4,7 +4,7 @@
 //  pishuvchi quyoshlar · sug'orish/hosil/ekish boshqaruvi.
 //  Faqat SVG + CSS (transform/opacity) — 60fps WebView.
 // ═══════════════════════════════════════════════════════════
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo, useState, useEffect, useMemo, useRef } from "react";
 import { RADIUS, SPACE, TYPE, SHADOW } from "../utils/tokens.js";
 import { ART, SKY_GRAD } from "./gardenTokens.js";
 import { SUN_POS, PLOT_POS, PLOT_SCALE, PLOTS, SPEEDUP_COST } from "./constants.js";
@@ -446,6 +446,71 @@ export const GardenScene = memo(function GardenScene({
   season = "spring",
   weather = null,
 }) {
+  const [zoom, setZoom] = useState(1.0);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isPanning, setIsPanning] = useState(false);
+  const panStart = useRef({ x: 0, y: 0 });
+  const containerRef = useRef(null);
+
+  const handleMouseDown = (e) => {
+    if (isPlacing) return;
+    setIsPanning(true);
+    panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y };
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isPanning) return;
+    setPan({
+      x: e.clientX - panStart.current.x,
+      y: e.clientY - panStart.current.y
+    });
+  };
+
+  const handleMouseUpOrLeave = () => {
+    setIsPanning(false);
+  };
+
+  const handleTouchStart = (e) => {
+    if (isPlacing) return;
+    if (e.touches.length === 1) {
+      setIsPanning(true);
+      panStart.current = { x: e.touches[0].clientX - pan.x, y: e.touches[0].clientY - pan.y };
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      if (containerRef.current) {
+        containerRef.current.touchStartDist = dist;
+        containerRef.current.touchStartZoom = zoom;
+      }
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (isPlacing) return;
+    if (e.touches.length === 1 && isPanning) {
+      setPan({
+        x: e.touches[0].clientX - panStart.current.x,
+        y: e.touches[0].clientY - panStart.current.y
+      });
+    } else if (e.touches.length === 2 && containerRef.current && containerRef.current.touchStartDist) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const factor = dist / containerRef.current.touchStartDist;
+      setZoom(Math.max(0.75, Math.min(2.5, containerRef.current.touchStartZoom * factor)));
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPanning(false);
+    if (containerRef.current) {
+      containerRef.current.touchStartDist = null;
+    }
+  };
+
   const selPlot = plots.find(p => p.id === selected) || plots[0];
   const selStage = selPlot?.stage ?? -1;
   const showSpeedUp = !waterReady && selStage >= 0 && !selPlot?.harvestReady;
@@ -470,8 +535,20 @@ export const GardenScene = memo(function GardenScene({
   const isRainyWeather = rainActive || !!(weather && weather.isRaining);
   const actionReady = waterReady || selStage < 0 || selPlot?.harvestReady;
 
+  const computedSeason = useMemo(() => {
+    if (weather?.isSnowing) return "winter";
+    if (weather?.isRaining) return "spring";
+    if (weather?.temp !== null && weather?.temp !== undefined) {
+      if (weather.temp < 10) return "winter";
+      if (weather.temp < 18) return "autumn";
+      if (weather.temp < 25) return "spring";
+      return "summer";
+    }
+    return season;
+  }, [weather, season]);
+
   const seasonalColors = useMemo(() => {
-    switch (season) {
+    switch (computedSeason) {
       case "spring":
         return {
           grassHi: "#9be8a3",
@@ -513,7 +590,7 @@ export const GardenScene = memo(function GardenScene({
           meadowOverlay: "none"
         };
     }
-  }, [season]);
+  }, [computedSeason]);
 
   // Make sure useMemo is imported
   // ── Flying Watering Can local state ──
@@ -537,9 +614,9 @@ export const GardenScene = memo(function GardenScene({
       let isCurrent = true;
 
       const runSequence = async () => {
-        // Start near the action button at the bottom-right
+        // Start near the action button at the bottom-right (x: 90, y: 90)
         if (!isCurrent) return;
-        setFlyingCan({ x: 88, y: 80, tilt: 0, opacity: 0, pouring: false, activePlotId: null });
+        setFlyingCan({ x: 90, y: 90, tilt: 0, opacity: 0, pouring: false, activePlotId: null });
         
         await new Promise(r => setTimeout(r, 100));
         if (!isCurrent) return;
@@ -555,12 +632,26 @@ export const GardenScene = memo(function GardenScene({
           4: { x: 65, y: 64 }
         };
 
+        // Stage-based height offsets in percent (approximate tree top height above plot base)
+        const STAGE_OFFSETS = {
+          0: -18,  // urug' (very low, right on the soil/mud level)
+          1: 2,    // nihol / sprout (small, sits very low)
+          2: 12,   // yosh daraxt / young tree (medium)
+          3: 22,   // katta daraxt / mature tree (lower Crown top)
+          4: 22,   // gullagan / blooming
+          5: 22,   // mevali / fruiting
+          6: 24    // baraka daraxti / legendary
+        };
+
         for (let i = 0; i < targets.length; i++) {
           if (!isCurrent) return;
           const t = targets[i];
           const c = PLOT_COORDS[t.id] || { x: 50, y: 50 };
+          const scale = PLOT_SCALE[t.id] || 1;
+          const offset = (STAGE_OFFSETS[t.stage] !== undefined ? STAGE_OFFSETS[t.stage] : 13) * scale;
+          
           const destX = c.x + 8; // offset to look like pouring on center
-          const destY = c.y - 12; // above the tree stage
+          const destY = c.y - offset; // dynamically adjusted top height of the plant
 
           // 1. Fly to target
           setFlyingCan(prev => prev ? {
@@ -607,8 +698,8 @@ export const GardenScene = memo(function GardenScene({
         // 5. Fly back home
         setFlyingCan(prev => prev ? {
           ...prev,
-          x: 88,
-          y: 80,
+          x: 90,
+          y: 90,
           tilt: 0,
           pouring: false,
           activePlotId: null
@@ -634,13 +725,14 @@ export const GardenScene = memo(function GardenScene({
   }, [waterAnim, plots, selected]);
 
   return (
-    <div className={full ? "gd-scene-full" : undefined} style={{
-      ...(full
-        ? { background: SKY_GRAD[mode], userSelect: "none" }
-        : { position: "relative", borderRadius: RADIUS.l, overflow: "hidden", background: SKY_GRAD[mode], boxShadow: SHADOW.e2, userSelect: "none", border: "1px solid " + gt.bor }),
-      "--wind-sway-mult": windSwayMult,
-      "--wind-sway-intensity": windSwayIntensity
-    }}>
+    <div ref={containerRef} className={full ? "gd-scene-full" : undefined}
+      style={{
+        ...(full
+          ? { background: SKY_GRAD[mode], userSelect: "none", touchAction: "none" }
+          : { position: "relative", borderRadius: RADIUS.l, overflow: "hidden", background: SKY_GRAD[mode], boxShadow: SHADOW.e2, userSelect: "none", border: "1px solid " + gt.bor, touchAction: "none" }),
+        "--wind-sway-mult": windSwayMult,
+        "--wind-sway-intensity": windSwayIntensity
+      }}>
       
       {/* ── Custom keyframes for rain and sakura petals ── */}
       <style>{`
@@ -762,7 +854,7 @@ export const GardenScene = memo(function GardenScene({
 
       {/* ── Seasonal Screen-wide Particle Effects ── */}
       <div style={{ position: "absolute", inset: 0, zIndex: 13, pointerEvents: "none", overflow: "hidden" }}>
-        {season === "spring" && Array.from({ length: 16 }).map((_, i) => {
+        {computedSeason === "spring" && Array.from({ length: 16 }).map((_, i) => {
           const left = (i * 6.5) + (Math.random() * 4);
           const delay = Math.random() * 6;
           const duration = 6 + Math.random() * 4;
@@ -782,7 +874,7 @@ export const GardenScene = memo(function GardenScene({
           );
         })}
 
-        {season === "summer" && Array.from({ length: 12 }).map((_, i) => {
+        {computedSeason === "summer" && Array.from({ length: 12 }).map((_, i) => {
           const left = (i * 8.5) + (Math.random() * 5);
           const top = 10 + Math.random() * 60;
           const delay = Math.random() * 4;
@@ -805,7 +897,7 @@ export const GardenScene = memo(function GardenScene({
           );
         })}
 
-        {season === "autumn" && Array.from({ length: 15 }).map((_, i) => {
+        {computedSeason === "autumn" && Array.from({ length: 15 }).map((_, i) => {
           const left = (i * 7) + (Math.random() * 4);
           const delay = Math.random() * 8;
           const duration = 7 + Math.random() * 5;
@@ -827,7 +919,7 @@ export const GardenScene = memo(function GardenScene({
           );
         })}
 
-        {(season === "winter" || !!(weather && weather.isSnowing)) && Array.from({ length: 24 }).map((_, i) => {
+        {(computedSeason === "winter" || !!(weather && weather.isSnowing)) && Array.from({ length: 24 }).map((_, i) => {
           const left = (i * 4.2) + (Math.random() * 3);
           const delay = Math.random() * 5;
           const duration = 5 + Math.random() * 4;
@@ -849,6 +941,20 @@ export const GardenScene = memo(function GardenScene({
           );
         })}
       </div>
+
+      {/* ── Zoomable Inner Container wrapper (Phase 5 Zoom/Drag) ── */}
+      <div style={{
+        width: "100%",
+        height: "100%",
+        flex: full ? "1 1 auto" : undefined,
+        position: "relative",
+        display: full ? "flex" : "block",
+        flexDirection: full ? "column" : undefined,
+        transform: `translate3d(${pan.x}px, ${pan.y}px, 0) scale(${zoom})`,
+        transformOrigin: "center center",
+        transition: isPanning ? "none" : "transform 0.15s ease-out",
+        pointerEvents: "auto"
+      }}>
 
       {/* ── Dekorativ quyosh/oy ── */}
       <div style={{ position: "absolute", left: "6%", top: full ? "calc(4% + env(safe-area-inset-top))" : "4%", pointerEvents: "none", animation: mode === "night" ? "none" : (weather && (weather.isSunny || (weather.temp && weather.temp > 25)) ? "gdSunPulse 2.5s ease-in-out infinite, gdSunGlow 2s ease-in-out infinite" : "gdSunGlow 4s ease-in-out infinite") }}>
@@ -1038,7 +1144,7 @@ export const GardenScene = memo(function GardenScene({
                 {isUnlocked && plot.stage >= 0 && !isDigging && (
                   <div style={{ position: "absolute", left: "50%", bottom: "42%", transform: "translateX(-50%)", animation: growAnim === plot.id ? "gdGrowPop .8s ease" : "none", pointerEvents: "none" }}>
                     <PlantSVG stage={plot.stage} size={150 * PLOT_SCALE[plot.id]} animated={plot.stage >= 1} plantType={plot.plantType} />
-                    {season === "winter" && plot.stage >= 2 && plot.plantType !== "tulip" && (
+                    {computedSeason === "winter" && plot.stage >= 2 && plot.plantType !== "tulip" && (
                       <svg width={150 * PLOT_SCALE[plot.id] * 0.9} height={40} viewBox="0 0 100 40" style={{
                         position: "absolute",
                         left: "50%",
@@ -1080,7 +1186,27 @@ export const GardenScene = memo(function GardenScene({
           );
         })}
 
-        {/* ── Tanga hisoblagichi (chap past) ── */}
+        {/* Animated Flying Watering Can overlay inside Meadow */}
+        {flyingCan && (
+          <div style={{
+            position: "absolute",
+            left: flyingCan.x + "%",
+            top: flyingCan.y + "%",
+            transform: "translate(-50%, -50%) rotate(" + flyingCan.tilt + "deg)",
+            zIndex: 99,
+            pointerEvents: "none",
+            opacity: flyingCan.opacity,
+            transition: "left 0.8s cubic-bezier(0.16, 1, 0.3, 1), top 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s ease-out, opacity 0.3s ease-out"
+          }}>
+            <CanSVG size={60} />
+          </div>
+        )}
+
+      </div>
+
+
+
+      {/* ── Tanga hisoblagichi (chap past) ── */}
         <div style={{ position: "absolute", left: SPACE.s4, bottom: full ? "max(" + SPACE.s4 + "px, env(safe-area-inset-bottom))" : SPACE.s4, zIndex: 30, display: "flex", flexDirection: "column", alignItems: "center", gap: SPACE.s1 }}>
           <CoinSVG size={54} />
           <div style={{ background: gt.sceneScrim, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 2) + "px " + SPACE.s4 + "px", ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{coins.toLocaleString()}</div>
@@ -1148,22 +1274,6 @@ export const GardenScene = memo(function GardenScene({
               : fTime(waterTimer)}
           </div>
         </div>
-
-        {/* Animated Flying Watering Can overlay */}
-        {flyingCan && (
-          <div style={{
-            position: "absolute",
-            left: flyingCan.x + "%",
-            top: flyingCan.y + "%",
-            transform: "translate(-50%, -50%) rotate(" + flyingCan.tilt + "deg)",
-            zIndex: 99,
-            pointerEvents: "none",
-            opacity: flyingCan.opacity,
-            transition: "left 0.8s cubic-bezier(0.16, 1, 0.3, 1), top 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s ease-out, opacity 0.3s ease-out"
-          }}>
-            <CanSVG size={60} />
-          </div>
-        )}
 
         <ForegroundLeaves />
       </div>
