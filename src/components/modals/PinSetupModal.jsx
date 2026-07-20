@@ -3,6 +3,7 @@ import { db } from "../../firebase.js";
 import { hp } from "../../utils/formatters.js";
 import { SPACE, RADIUS, TYPE, ALPHA, COMP } from "../../utils/tokens.js";
 import { NativeBiometric } from "capacitor-native-biometric";
+import { Capacitor } from "@capacitor/core";
 import { useApp } from "../../context/AppContext.jsx";
 
 // Ro'yxatdan o'tgach birinchi marta ko'rsatiladigan PIN o'rnatish oynasi.
@@ -50,6 +51,10 @@ export default function PinSetupModal({ th, uid, onDone }) {
     }
     setBusy(false);
 
+    if (!Capacitor.isNativePlatform()) {
+      finish();
+      return;
+    }
     try {
       const result = await NativeBiometric.isAvailable();
       if (result.isAvailable) { setStep("biometric"); return; }
@@ -58,6 +63,10 @@ export default function PinSetupModal({ th, uid, onDone }) {
   };
 
   const enableBiometric = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      finish();
+      return;
+    }
     setBusy(true);
     try {
       await NativeBiometric.verifyIdentity({
@@ -69,7 +78,11 @@ export default function PinSetupModal({ th, uid, onDone }) {
       const cur2 = (await db.g("security_" + uid)) || {};
       await db.s("security_" + uid, { ...cur2, biometricEnabled: true });
     } catch (e) {
-      console.error("Biometric enable failed", e);
+      if (e instanceof Error && e.message?.includes("Method not implemented")) {
+        // web platform bypass
+      } else {
+        console.error("Biometric enable failed", e);
+      }
     }
     setBusy(false);
     finish();

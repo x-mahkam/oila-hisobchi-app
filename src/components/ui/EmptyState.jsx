@@ -17,7 +17,11 @@ import { EmptyCard } from "./Card.jsx";
 import { SecondaryButton } from "./Button.jsx";
 import { injectUiCss } from "./motion.js";
 
-const I = (path, extra) => c => <svg width="56" height="56" viewBox="0 0 56 56" fill="none">{path(c)}{extra ? extra(c) : null}</svg>;
+const I = (path, extra) => {
+  const IconComp = c => <svg width="56" height="56" viewBox="0 0 56 56" fill="none">{path(c)}{extra ? extra(c) : null}</svg>;
+  IconComp.displayName = "EmptyIcon";
+  return IconComp;
+};
 
 /** Preset ikonkalar — 56px, t3 rang, 1.5px outline. */
 export const EMPTY_ICONS = {

@@ -3,6 +3,7 @@ import { db } from "../firebase.js";
 import { hp } from "../utils/formatters.js";
 import { SPACE, RADIUS, TYPE, ALPHA } from "../utils/tokens.js";
 import { NativeBiometric } from "capacitor-native-biometric";
+import { Capacitor } from "@capacitor/core";
 import { useApp } from "../context/AppContext.jsx";
 import { ConfirmDialog } from "./ui/index.js";
 
@@ -21,6 +22,10 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
   const [showForgotConfirm, setShowForgotConfirm] = useState(false);
 
   useEffect(() => {
+    if (!Capacitor.isNativePlatform()) {
+      setDeviceBiometricAvailable(false);
+      return;
+    }
     NativeBiometric.isAvailable()
       .then(result => setDeviceBiometricAvailable(!!result.isAvailable))
       .catch(() => setDeviceBiometricAvailable(false));
@@ -74,6 +79,7 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
   // orqali kirish PIN orqali kirishdan bir necha soniya sekinroq bo'lib
   // qolgan edi (o'lchov bilan tasdiqlangan muammo).
   const triggerBiometrics = async (knownEnabled = biometricEnabled) => {
+    if (!Capacitor.isNativePlatform()) return;
     try {
       const result = await NativeBiometric.isAvailable();
       if (result.isAvailable) {
@@ -96,6 +102,9 @@ export default function AppLockScreen({ th, uid, onUnlock }) {
         onUnlock();
       }
     } catch (e) {
+      if (e instanceof Error && e.message?.includes("Method not implemented")) {
+        return;
+      }
       console.error("Biometric authentication failed", e);
     }
   };

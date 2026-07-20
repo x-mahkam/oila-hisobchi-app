@@ -282,7 +282,6 @@ function injectAiCss() {
 //  ORCHESTRATOR — Dashboard'ga bitta joydan barcha AI kartalar
 // ══════════════════════════════════════════════════════════════
 export const SmartBudgetSection = memo(function SmartBudgetSection({ th, lg, f, ai }) {
-  if (!ai) return null;
   const [activeIdx, setActiveIdx] = useState(0);
   const containerRef = useRef(null);
 
@@ -290,15 +289,16 @@ export const SmartBudgetSection = memo(function SmartBudgetSection({ th, lg, f, 
     injectAiCss();
   }, []);
 
-  const cards = [
+  const cards = ai ? [
     { key: "health", comp: <BudgetHealthCard th={th} lg={lg} health={ai.health} /> },
     { key: "forecast", comp: <ForecastCard th={th} lg={lg} f={f} forecast={ai.forecast} /> },
     { key: "trends", comp: <TrendCard th={th} lg={lg} f={f} trends={ai.trends} /> },
     { key: "savings", comp: <SavingsCoachCard th={th} lg={lg} f={f} savings={ai.savings} wedding={ai.wedding} family={ai.family} /> },
     { key: "risks", comp: <RiskCard th={th} lg={lg} f={f} risks={ai.risks} /> }
-  ];
+  ] : [];
 
   useEffect(() => {
+    if (!ai) return;
     const timer = setTimeout(() => {
       const nextIdx = (activeIdx + 1) % cards.length;
       if (containerRef.current) {
@@ -310,16 +310,18 @@ export const SmartBudgetSection = memo(function SmartBudgetSection({ th, lg, f, 
       }
     }, 5000);
     return () => clearTimeout(timer);
-  }, [activeIdx, cards.length]);
+  }, [activeIdx, cards.length, ai]);
 
   const handleScroll = () => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !ai) return;
     const { scrollLeft, clientWidth } = containerRef.current;
     const index = Math.round(scrollLeft / clientWidth);
     if (index >= 0 && index < cards.length) {
       setActiveIdx(index);
     }
   };
+
+  if (!ai) return null;
 
   return (
     <div className="anim-fadeUp">

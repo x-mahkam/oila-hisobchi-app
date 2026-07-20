@@ -230,7 +230,7 @@ export default function MaqsadConfirmModal({ info, th, lg, f, STY, onBought, onC
                 {t.gReached}
               </div>
               <div style={{ fontSize: 14, color: th.t2, lineHeight: 1.6, padding: "0 10px" }}>
-                <b style={{ color: th.t1 }}>"{info.maqsadIsm}"</b> — {f(info.summa, true)}<br />
+                <b style={{ color: th.t1 }}>&quot;{info.maqsadIsm}&quot;</b> — {f(info.summa, true)}<br />
                 <span style={{ color: th.t3 }}>{t.didBuy}</span>
               </div>
             </div>

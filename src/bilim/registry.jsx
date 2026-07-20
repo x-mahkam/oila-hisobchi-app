@@ -7,12 +7,16 @@
 // ═══════════════════════════════════════════════════════════
 
 // ── Kichik outline SVG'lar (emoji o'rniga) ──
-const S = (paths, extra) => (c, s = 26) => (
-  <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
-    {paths.map((d, i) => <path key={i} d={d} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={c} fillOpacity={i === 0 ? 0.14 : 0} />)}
-    {extra}
-  </svg>
-);
+const S = (paths, extra) => {
+  const SvgComp = (c, s = 26) => (
+    <svg width={s} height={s} viewBox="0 0 32 32" fill="none">
+      {paths.map((d, i) => <path key={i} d={d} stroke={c} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill={c} fillOpacity={i === 0 ? 0.14 : 0} />)}
+      {extra}
+    </svg>
+  );
+  SvgComp.displayName = "CategoryIcon";
+  return SvgComp;
+};
 export const BIco = {
   finance: S(["M10 16a6 6 0 1012 0 6 6 0 00-12 0z", "M16 8V6M16 26v-2M12 11a4 4 0 018 0c0 2-4 2-4 4v1"]),
   math:    S(["M6 6h20v20H6z", "M11 11h10M11 16h10M11 21h6"]),
