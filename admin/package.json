@@ -1,0 +1,21 @@
+{
+  "name": "oila-hisobchi-admin",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Oila Hisobchi — admin boshqaruv paneli (web)",
+  "scripts": {
+    "dev": "vite --port 5174",
+    "build": "vite build",
+    "preview": "vite preview --port 5174"
+  },
+  "dependencies": {
+    "firebase": "^11.0.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.0"
+  }
+}

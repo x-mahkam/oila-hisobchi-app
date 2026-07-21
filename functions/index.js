@@ -360,3 +360,199 @@ exports.sendNotificationPush = functions.firestore
     return null;
   });
 
+// ═══════════════════════════════════════════════════════════════════
+//  ADMIN PANEL uchun callable funksiyalar.
+//  Barcha admin amallari SHU YERDA — Firestore Rules ochilmaydi.
+//  Admin UID'lar ADMIN_UIDS muhit o'zgaruvchisida (vergul bilan ajratilgan).
+//  Sozlash: firebase functions:config yoki .env — ADMIN_UIDS="uid1,uid2"
+// ═══════════════════════════════════════════════════════════════════
+const DBP = "oilaV7_";
+
+// Faqat admin — aks holda rad. context.auth.uid ADMIN_UIDS ichida bo'lishi shart.
+function assertAdmin(context) {
+  const admins = (process.env.ADMIN_UIDS || "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
+  }
+  if (admins.length === 0) {
+    throw new functions.https.HttpsError(
+      "failed-precondition",
+      "ADMIN_UIDS sozlanmagan. Administratorga murojaat qiling."
+    );
+  }
+  if (!admins.includes(context.auth.uid)) {
+    throw new functions.https.HttpsError("permission-denied", "Ruxsat yo'q (admin emas).");
+  }
+}
+
+// docId prefiksi bo'yicha oraliq (masalan "oilaV7_user_" bilan boshlanadigan hammasi).
+function prefixRange(coll, prefix) {
+  return coll
+    .orderBy(admin.firestore.FieldPath.documentId())
+    .startAt(prefix)
+    .endAt(prefix + "");
+}
+
+/**
+ * ADMIN 1: Umumiy statistika (foydalanuvchi/oila/premium/bola sonlari + oxirgi ro'yxatdan o'tganlar).
+ */
+exports.adminStats = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const appdata = db.collection("appdata");
+
+  // Foydalanuvchilar
+  let totalUsers = 0, kids = 0, adults = 0;
+  const recent = [];
+  const usersSnap = await prefixRange(appdata, DBP + "user_").get();
+  usersSnap.forEach((docSnap) => {
+    totalUsers++;
+    const v = docSnap.data().v || {};
+    if (v.rol === "kid") kids++; else adults++;
+    if (v.registeredAt) {
+      recent.push({
+        ism: v.ism || "", email: v.email || "", oilaId: v.oilaId || "",
+        rol: v.rol || "", registeredAt: v.registeredAt,
+      });
+    }
+  });
+
+  // Oilalar (bir skan bilan premium va a'zolar sonini ham hisoblaymiz)
+  let totalFamilies = 0, premiumFamilies = 0, totalMembers = 0;
+  const famSnap = await prefixRange(appdata, DBP + "oila_").get();
+  famSnap.forEach((docSnap) => {
+    totalFamilies++;
+    const v = docSnap.data().v || {};
+    if (v.premium === true) premiumFamilies++;
+    const ids = v.azolarIds || v.azolar || [];
+    if (Array.isArray(ids)) totalMembers += ids.length;
+  });
+
+  recent.sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)));
+
+  return {
+    totalUsers, adults, kids,
+    totalFamilies, premiumFamilies, totalMembers,
+    recent: recent.slice(0, 15),
+    generatedAt: Date.now(),
+  };
+});
+
+/**
+ * ADMIN 2: Oilalar ro'yxati (ixtiyoriy qidiruv bilan). Har biri qisqa xulosa.
+ */
+exports.adminListFamilies = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const search = (data && data.search ? String(data.search) : "").toLowerCase().trim();
+  const limit = Math.min(Math.max(parseInt((data && data.limit) || 200, 10), 1), 1000);
+
+  const famSnap = await prefixRange(db.collection("appdata"), DBP + "oila_").get();
+  const out = [];
+  famSnap.forEach((docSnap) => {
+    const v = docSnap.data().v || {};
+    const oilaId = (v.id || docSnap.id.replace(DBP + "oila_", "")) || "";
+    const nomi = v.nomi || "";
+    if (search && !(nomi.toLowerCase().includes(search) || oilaId.toLowerCase().includes(search))) return;
+    const ids = v.azolarIds || v.azolar || [];
+    out.push({
+      oilaId, nomi,
+      boshId: v.boshId || "",
+      members: Array.isArray(ids) ? ids.length : 0,
+      premium: v.premium === true,
+      premiumExpiresAt: v.premiumExpiresAt || null,
+      premiumProductId: v.premiumProductId || null,
+    });
+  });
+  out.sort((a, b) => Number(b.premium) - Number(a.premium) || b.members - a.members);
+  return { families: out.slice(0, limit), total: out.length };
+});
+
+/**
+ * ADMIN 3: Oilaga qo'lda premium berish / olib qo'yish.
+ */
+exports.adminSetPremium = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const oilaId = data && data.oilaId ? String(data.oilaId) : "";
+  const enable = !!(data && data.enable);
+  if (!oilaId) {
+    throw new functions.https.HttpsError("invalid-argument", "oilaId talab qilinadi.");
+  }
+  if (enable) {
+    const days = Math.min(Math.max(parseInt((data && data.days) || 365, 10), 1), 36500);
+    const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
+    await enablePremiumForOila(oilaId, "admin_manual", "admin_grant", expiresAt);
+    return { success: true, premium: true, expiresAt };
+  } else {
+    await disablePremiumForOila(oilaId);
+    return { success: true, premium: false };
+  }
+});
+
+/**
+ * ADMIN 4: Til tarjimalarini o'qish (translations/{lang}/sections/* birlashtirilgan).
+ */
+exports.adminGetTranslations = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const lang = data && data.lang ? String(data.lang) : "";
+  if (!lang) throw new functions.https.HttpsError("invalid-argument", "lang talab qilinadi.");
+
+  const merged = {};
+  const sectionsSnap = await db.collection("translations").doc(lang).collection("sections").get();
+  sectionsSnap.forEach((s) => {
+    Object.entries(s.data() || {}).forEach(([k, v]) => { merged[k] = v; });
+  });
+  // Yassi hujjat (fallback tuzilma) ni ham qo'shamiz
+  const flatSnap = await db.collection("translations").doc(lang).get();
+  if (flatSnap.exists) {
+    Object.entries(flatSnap.data() || {}).forEach(([k, v]) => {
+      if (typeof v !== "object") merged[k] = v;
+    });
+  }
+
+  const metaSnap = await db.collection("translations").doc("metadata").get();
+  const meta = metaSnap.exists ? (metaSnap.data() || {}) : {};
+  return { lang, entries: merged, languages: meta.languages || ["uz", "en", "ru"], version: meta.version || "1.0.0" };
+});
+
+/**
+ * ADMIN 5: Tarjimalarni saqlash. entries = {kalit: qiymat}.
+ *  translations/{lang}/sections/admin_overrides ga yoziladi (ilova o'qiydigan joy),
+ *  metadata.version oshiriladi va til ro'yxatga qo'shiladi — ilova keyingi
+ *  ochilishda yangi matnlarni oladi (APK shart emas).
+ */
+exports.adminSaveTranslations = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const lang = data && data.lang ? String(data.lang) : "";
+  const entries = data && data.entries ? data.entries : null;
+  if (!lang || !entries || typeof entries !== "object" || Array.isArray(entries)) {
+    throw new functions.https.HttpsError("invalid-argument", "lang va entries (obyekt) talab qilinadi.");
+  }
+  const keys = Object.keys(entries);
+  if (keys.length > 2000) {
+    throw new functions.https.HttpsError("invalid-argument", "Bir martada 2000 tadan ko'p kalit bo'lmasin.");
+  }
+
+  await db.collection("translations").doc(lang).collection("sections")
+    .doc("admin_overrides").set(entries, { merge: true });
+
+  // metadata: versiyani oshirish + tilni ro'yxatga qo'shish
+  const metaRef = db.collection("translations").doc("metadata");
+  const metaSnap = await metaRef.get();
+  const meta = metaSnap.exists ? (metaSnap.data() || {}) : {};
+  const langs = Array.isArray(meta.languages) ? meta.languages : ["uz", "en", "ru"];
+  if (!langs.includes(lang)) langs.push(lang);
+  const bump = (v) => {
+    const p = String(v || "1.0.0").split(".").map((n) => parseInt(n, 10) || 0);
+    p[2] = (p[2] || 0) + 1;
+    return p.join(".");
+  };
+  await metaRef.set({
+    languages: langs,
+    version: bump(meta.version),
+    updatedAt: Date.now(),
+    updatedBy: context.auth.uid,
+  }, { merge: true });
+
+  return { success: true, savedKeys: keys.length, lang };
+});
+

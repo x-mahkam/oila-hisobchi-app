@@ -5,7 +5,7 @@ import globals from "globals";
 
 export default [
   {
-    ignores: ["dist/**", "android/**", "node_modules/**", "functions/**"],
+    ignores: ["**/dist/**", "android/**", "**/node_modules/**", "functions/**"],
   },
   js.configs.recommended,
   {
@@ -27,6 +27,9 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
       "react/prop-types": "off",
       "react/react-in-jsx-scope": "off",
+      // O'zbekcha matnlarda apostrof ("yo'q", "qo'yish") juda ko'p — bu
+      // JSX matnida xato emas. Kosmetik qoida, o'chiramiz.
+      "react/no-unescaped-entities": "off",
       "no-unused-vars": ["warn", { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" }],
       "no-empty": ["warn", { allowEmptyCatch: true }],
     },
