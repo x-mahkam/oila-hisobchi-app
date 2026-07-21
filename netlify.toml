@@ -2,6 +2,12 @@
   command = "npm run build"
   publish = "dist"
 
+# Admin panel /admin da (dist/admin/index.html)
+[[redirects]]
+  from = "/admin/*"
+  to = "/admin/index.html"
+  status = 200
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
