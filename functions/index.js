@@ -386,6 +386,22 @@ function assertAdmin(context) {
   }
 }
 
+// ── Audit log: har muhim admin amali yozib boriladi ──
+// audit_log/{auto} = { t, uid, email, action, detail }
+async function logAdmin(context, action, detail) {
+  try {
+    await db.collection("audit_log").add({
+      t: Date.now(),
+      uid: context.auth?.uid || null,
+      email: context.auth?.token?.email || null,
+      action,
+      detail: detail || {},
+    });
+  } catch (e) {
+    console.error("audit_log yozishda xato:", e); // amalni to'xtatmaydi
+  }
+}
+
 // docId prefiksi bo'yicha oraliq (masalan "oilaV7_user_" bilan boshlanadigan hammasi).
 function prefixRange(coll, prefix) {
   return coll
@@ -481,9 +497,11 @@ exports.adminSetPremium = functions.https.onCall(async (data, context) => {
     const days = Math.min(Math.max(parseInt((data && data.days) || 365, 10), 1), 36500);
     const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
     await enablePremiumForOila(oilaId, "admin_manual", "admin_grant", expiresAt);
+    await logAdmin(context, "premium.grant", { oilaId, days });
     return { success: true, premium: true, expiresAt };
   } else {
     await disablePremiumForOila(oilaId);
+    await logAdmin(context, "premium.revoke", { oilaId });
     return { success: true, premium: false };
   }
 });
@@ -553,6 +571,95 @@ exports.adminSaveTranslations = functions.https.onCall(async (data, context) => 
     updatedBy: context.auth.uid,
   }, { merge: true });
 
+  await logAdmin(context, "i18n.save", { lang, keys: keys.length });
   return { success: true, savedKeys: keys.length, lang };
+});
+
+/**
+ * ADMIN 6: Dashboard v2 — DAU/WAU/MAU, ro'yxatdan o'tish grafigi,
+ * platforma/til taqsimoti, so'nggi admin amallari (audit feed).
+ *
+ * Manba: act_<uid> hujjatlari (ilova kuniga 1 marta yozadi) + user_ +
+ * oila_ skanlari + audit_log. Bitta chaqiruvda dashboard uchun hammasi.
+ */
+exports.adminDashboard = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const appdata = db.collection("appdata");
+  const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // 1) Foydalanuvchilar: totals + ro'yxatdan o'tish seriyasi (90 kun) + tillar
+  let totalUsers = 0, kids = 0, adults = 0;
+  const regByDay = {};
+  const recent = [];
+  const usersSnap = await prefixRange(appdata, DBP + "user_").get();
+  usersSnap.forEach((docSnap) => {
+    totalUsers++;
+    const v = docSnap.data().v || {};
+    if (v.rol === "kid") kids++; else adults++;
+    if (v.registeredAt) {
+      const dayKey = String(v.registeredAt).slice(0, 10);
+      if (now - new Date(dayKey).getTime() <= 90 * DAY) {
+        regByDay[dayKey] = (regByDay[dayKey] || 0) + 1;
+      }
+      recent.push({ ism: v.ism || "", email: v.email || "", rol: v.rol || "", oilaId: v.oilaId || "", registeredAt: v.registeredAt });
+    }
+  });
+  recent.sort((a, b) => String(b.registeredAt).localeCompare(String(a.registeredAt)));
+
+  // 2) Faollik (act_): DAU/WAU/MAU + platforma + til taqsimoti
+  let dau = 0, wau = 0, mau = 0;
+  const platforms = {}, langs = {};
+  const actSnap = await prefixRange(appdata, DBP + "act_").get();
+  actSnap.forEach((docSnap) => {
+    const v = docSnap.data().v || {};
+    const t = Number(v.t || 0);
+    if (!t) return;
+    const age = now - t;
+    if (age <= DAY) dau++;
+    if (age <= 7 * DAY) wau++;
+    if (age <= 30 * DAY) {
+      mau++;
+      platforms[v.platform || "?"] = (platforms[v.platform || "?"] || 0) + 1;
+      langs[v.lg || "?"] = (langs[v.lg || "?"] || 0) + 1;
+    }
+  });
+
+  // 3) Oilalar: jami + premium (mahsulot bo'yicha)
+  let totalFamilies = 0, premiumFamilies = 0;
+  const premiumByProduct = {};
+  const famSnap = await prefixRange(appdata, DBP + "oila_").get();
+  famSnap.forEach((docSnap) => {
+    totalFamilies++;
+    const v = docSnap.data().v || {};
+    if (v.premium === true) {
+      premiumFamilies++;
+      const p = v.premiumProductId || "noma'lum";
+      premiumByProduct[p] = (premiumByProduct[p] || 0) + 1;
+    }
+  });
+
+  // 4) Activity feed: so'nggi admin amallari
+  let activity = [];
+  try {
+    const audSnap = await db.collection("audit_log").orderBy("t", "desc").limit(15).get();
+    audSnap.forEach((d) => { const a = d.data(); activity.push({ t: a.t, email: a.email, action: a.action, detail: a.detail || {} }); });
+  } catch (e) {
+    console.warn("audit_log o'qilmadi (birinchi ishga tushishda normal):", e.message);
+  }
+
+  // Reg seriyasini massivga aylantirish (kun bo'yicha, 90 kun to'ldirilgan)
+  const regSeries = [];
+  for (let i = 89; i >= 0; i--) {
+    const dayKey = new Date(now - i * DAY).toISOString().slice(0, 10);
+    regSeries.push({ day: dayKey, count: regByDay[dayKey] || 0 });
+  }
+
+  return {
+    totalUsers, adults, kids, totalFamilies, premiumFamilies,
+    dau, wau, mau, platforms, langs, premiumByProduct,
+    regSeries, recent: recent.slice(0, 10), activity,
+    generatedAt: now,
+  };
 });
 
