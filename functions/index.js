@@ -377,9 +377,10 @@ const ROLE_PERMS = {
   admin: [
     "dashboard.read", "users.read", "users.write", "families.read",
     "premium.write", "i18n.read", "i18n.write", "push.send", "config.write",
+    "support.read", "support.write",
   ],
-  moderator: ["dashboard.read", "users.read", "families.read", "i18n.read", "i18n.write"],
-  support: ["dashboard.read", "users.read", "families.read"],
+  moderator: ["dashboard.read", "users.read", "families.read", "i18n.read", "i18n.write", "support.read"],
+  support: ["dashboard.read", "users.read", "families.read", "support.read", "support.write"],
 };
 
 function permOk(role, permission) {
@@ -1464,6 +1465,101 @@ exports.adminRoles = functions.https.onCall(async (data, context) => {
     await db.collection("admin_roles").doc(uid).delete();
     await logAdmin(context, "roles.remove", { uid });
     return { success: true };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
+});
+
+/**
+ * ADMIN 16: Support murojaatlari.
+ * support_tickets/{id} = { authUid, userId, ism, email, lg, text, t,
+ *                          status: new|answered|closed, messages: [{from, text, t}] }
+ * data.op:
+ *  "list"      → { status? } holat bo'yicha ro'yxat
+ *  "reply"     → { id, text } javob yozish — foydalanuvchiga bildirishnoma
+ *                (notif_<userId>) yoziladi; mavjud sendNotificationPush
+ *                triggeri FCM push'ni O'ZI yuboradi.
+ *  "setStatus" → { id, status } holatni o'zgartirish
+ */
+exports.adminSupport = functions.https.onCall(async (data, context) => {
+  const myRole = await assertAdmin(context, "support.read");
+  const op = data?.op ? String(data.op) : "list";
+
+  if (op === "list") {
+    const statusF = data?.status ? String(data.status) : "";
+    let q = db.collection("support_tickets").orderBy("t", "desc").limit(200);
+    const snap = await q.get();
+    const out = [];
+    snap.forEach((d) => {
+      const v = d.data();
+      if (statusF && v.status !== statusF) return;
+      out.push({
+        id: d.id, t: v.t, ism: v.ism || "", email: v.email || "", tel: v.tel || "",
+        userId: v.userId || "", oilaId: v.oilaId || "", lg: v.lg || "",
+        text: v.text || "", status: v.status || "new",
+        messages: Array.isArray(v.messages) ? v.messages : [],
+      });
+    });
+    // Yangi murojaatlar soni (sidebar badge uchun foydali)
+    let newCount = 0;
+    snap.forEach((d) => { if (d.data().status === "new") newCount++; });
+    return { tickets: out, newCount };
+  }
+
+  if (op === "reply") {
+    if (!permOk(myRole, "support.write")) {
+      throw new functions.https.HttpsError("permission-denied", "Javob yozish uchun ruxsat yo'q.");
+    }
+    const id = data?.id ? String(data.id) : "";
+    const text = String(data?.text || "").trim().slice(0, 2000);
+    if (!id || !text) throw new functions.https.HttpsError("invalid-argument", "id va text talab qilinadi.");
+
+    const ref = db.collection("support_tickets").doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) throw new functions.https.HttpsError("not-found", "Murojaat topilmadi.");
+    const v = snap.data();
+    const messages = Array.isArray(v.messages) ? v.messages : [];
+    messages.push({ from: "admin", text, t: Date.now(), byEmail: context.auth.token?.email || null });
+    await ref.update({ messages, status: "answered", answeredAt: Date.now() });
+
+    // Foydalanuvchiga bildirishnoma (mavjud trigger FCM push yuboradi)
+    const userId = v.userId;
+    if (userId) {
+      try {
+        const notifRef = db.collection("appdata").doc(safeKey("notif_" + userId));
+        const notifSnap = await notifRef.get();
+        const cur = notifSnap.exists ? (notifSnap.data().v || []) : [];
+        const n = {
+          id: Date.now() + Math.random(),
+          type: "yordam",
+          title: "💬 Yordam xizmati javobi",
+          body: text,
+          sana: new Date().toISOString(),
+          read: false,
+        };
+        await notifRef.set({
+          v: [n, ...(Array.isArray(cur) ? cur : [])].slice(0, 100),
+          t: Date.now(), _u: "system_support",
+        }, { merge: true });
+      } catch (e) { console.error("support notif yozish:", e.message); }
+    }
+
+    await logAdmin(context, "support.reply", { id, userId });
+    return { success: true };
+  }
+
+  if (op === "setStatus") {
+    if (!permOk(myRole, "support.write")) {
+      throw new functions.https.HttpsError("permission-denied", "Holat o'zgartirish uchun ruxsat yo'q.");
+    }
+    const id = data?.id ? String(data.id) : "";
+    const status = String(data?.status || "");
+    if (!id || !["new", "answered", "closed"].includes(status)) {
+      throw new functions.https.HttpsError("invalid-argument", "id va to'g'ri status talab qilinadi.");
+    }
+    await db.collection("support_tickets").doc(id).update({ status });
+    await logAdmin(context, "support.status", { id, status });
+    return { success: true, status };
   }
 
   throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);

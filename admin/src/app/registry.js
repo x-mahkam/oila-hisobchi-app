@@ -63,6 +63,15 @@ export const MODULES = [
     component: lazy(() => import("../modules/i18n/Page.jsx")),
   },
   {
+    id: "support",
+    title: "Support",
+    icon: "💬",
+    route: "/support",
+    group: "Boshqaruv",
+    permission: "support.read",
+    component: lazy(() => import("../modules/support/Page.jsx")),
+  },
+  {
     id: "push",
     title: "Push xabarlar",
     icon: "🔔",
