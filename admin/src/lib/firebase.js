@@ -30,8 +30,16 @@ export async function call(name, data) {
     const res = await fn(data || {});
     return res.data;
   } catch (e) {
-    const err = new Error(e?.message || String(e));
-    err.code = e?.code || "";
+    const code = e?.code || "";
+    let msg = e?.message || String(e);
+    // "internal" / "not-found" — odatda funksiya serverga hali deploy
+    // qilinmaganida chiqadi. Foydalanuvchiga aniq yo'l ko'rsatamiz.
+    if (code === "functions/internal" || code === "functions/not-found" || msg === "internal") {
+      msg = `"${name}" funksiyasi serverda topilmadi — katta ehtimol hali deploy qilinmagan. ` +
+        `Yechim: kompyuterda "firebase deploy --only functions --project oila-hisobchi" ni ishga tushiring (yangi kod bilan).`;
+    }
+    const err = new Error(msg);
+    err.code = code;
     throw err;
   }
 }
