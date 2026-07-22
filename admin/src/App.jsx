@@ -4,7 +4,7 @@ import { auth, call, loginEmail, loginGoogle, signOut, onAuthStateChanged } from
 import { seedCache, prefetch } from "./lib/useQuery.js";
 import { ThemeProvider } from "./lib/theme.jsx";
 import { ToastProvider } from "./shared/ui.jsx";
-import { resolveRole } from "./lib/rbac.js";
+import { ROLES } from "./lib/rbac.js";
 import { MODULES } from "./app/registry.js";
 import AppShell from "./app/AppShell.jsx";
 
@@ -24,6 +24,7 @@ function Root() {
   const [user, setUser] = useState(undefined); // undefined = aniqlanmoqda
   const [access, setAccess] = useState("checking"); // checking | ok | denied
   const [accessMsg, setAccessMsg] = useState("");
+  const [role, setRole] = useState("super_admin"); // serverdan (adminDashboard.myRole)
 
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u || null)), []);
 
@@ -34,6 +35,7 @@ function Root() {
       // ham ruxsat aniqlanadi, ham Dashboard keshi to'ladi (tab bir zumda ochiladi).
       const dash = await call("adminDashboard");
       seedCache("adminDashboard", undefined, dash);
+      if (dash?.myRole && ROLES[dash.myRole]) setRole(dash.myRole);
       setAccess("ok");
       // Qolgan modullarni FONDA isitamiz: cold start login paytida bo'lib
       // o'tadi — foydalanuvchi tab ochganda funksiya issiq + natija keshda.
@@ -55,8 +57,6 @@ function Root() {
   if (!user) return <Login />;
   if (access === "checking") return <Center>Ruxsat tekshirilmoqda…</Center>;
   if (access === "denied") return <NotAdmin user={user} msg={accessMsg} />;
-
-  const role = resolveRole(user);
 
   return (
     <HashRouter>

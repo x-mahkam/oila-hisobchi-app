@@ -368,22 +368,60 @@ exports.sendNotificationPush = functions.firestore
 // ═══════════════════════════════════════════════════════════════════
 const DBP = "oilaV7_";
 
-// Faqat admin — aks holda rad. context.auth.uid ADMIN_UIDS ichida bo'lishi shart.
-function assertAdmin(context) {
-  const admins = (process.env.ADMIN_UIDS || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+// ── ROLLAR (RBAC) ──────────────────────────────────────────
+// ADMIN_UIDS (env) — o'zgarmas super adminlar (bosh kalit).
+// admin_roles/{uid} — panel orqali berilgan rollar: { role, email }.
+// Har rolning ruxsatlari quyida; "*" = hamma narsa.
+const ROLE_PERMS = {
+  super_admin: ["*"],
+  admin: [
+    "dashboard.read", "users.read", "users.write", "families.read",
+    "premium.write", "i18n.read", "i18n.write", "push.send", "config.write",
+  ],
+  moderator: ["dashboard.read", "users.read", "families.read", "i18n.read", "i18n.write"],
+  support: ["dashboard.read", "users.read", "families.read"],
+};
+
+function permOk(role, permission) {
+  const perms = ROLE_PERMS[role] || [];
+  return perms.includes("*") || perms.includes(permission);
+}
+
+// Rolni tekshirib qaytaradi; permission berilsa — ruxsatni ham tekshiradi.
+async function assertAdmin(context, permission) {
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
   }
-  if (admins.length === 0) {
-    throw new functions.https.HttpsError(
-      "failed-precondition",
-      "ADMIN_UIDS sozlanmagan. Administratorga murojaat qiling."
-    );
+  const uid = context.auth.uid;
+  const superAdmins = (process.env.ADMIN_UIDS || "")
+    .split(",").map((s) => s.trim()).filter(Boolean);
+
+  let role = null;
+  if (superAdmins.includes(uid)) {
+    role = "super_admin";
+  } else {
+    try {
+      const snap = await db.collection("admin_roles").doc(uid).get();
+      if (snap.exists && ROLE_PERMS[snap.data().role]) role = snap.data().role;
+    } catch (e) { console.error("admin_roles o'qish:", e.message); }
   }
-  if (!admins.includes(context.auth.uid)) {
+
+  if (!role) {
+    if (superAdmins.length === 0) {
+      throw new functions.https.HttpsError(
+        "failed-precondition",
+        "ADMIN_UIDS sozlanmagan. Administratorga murojaat qiling."
+      );
+    }
     throw new functions.https.HttpsError("permission-denied", "Ruxsat yo'q (admin emas).");
   }
+  if (permission && !permOk(role, permission)) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      `Rolingiz (${role}) uchun bu amalga ruxsat yo'q: ${permission}`
+    );
+  }
+  return role;
 }
 
 // ── Audit log: har muhim admin amali yozib boriladi ──
@@ -414,7 +452,7 @@ function prefixRange(coll, prefix) {
  * ADMIN 1: Umumiy statistika (foydalanuvchi/oila/premium/bola sonlari + oxirgi ro'yxatdan o'tganlar).
  */
 exports.adminStats = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "dashboard.read");
   const appdata = db.collection("appdata");
 
   // Foydalanuvchilar
@@ -458,7 +496,7 @@ exports.adminStats = functions.https.onCall(async (data, context) => {
  * ADMIN 2: Oilalar ro'yxati (ixtiyoriy qidiruv bilan). Har biri qisqa xulosa.
  */
 exports.adminListFamilies = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "families.read");
   const search = (data && data.search ? String(data.search) : "").toLowerCase().trim();
   const limit = Math.min(Math.max(parseInt((data && data.limit) || 200, 10), 1), 1000);
 
@@ -487,7 +525,7 @@ exports.adminListFamilies = functions.https.onCall(async (data, context) => {
  * ADMIN 3: Oilaga qo'lda premium berish / olib qo'yish.
  */
 exports.adminSetPremium = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "premium.write");
   const oilaId = data && data.oilaId ? String(data.oilaId) : "";
   const enable = !!(data && data.enable);
   if (!oilaId) {
@@ -529,7 +567,7 @@ const i18nBundleId = (lang, ns) => (ns === "translation" ? lang : `${lang}__${ns
  *  "toggleLanguage" → { code } → tilni yoqish/o'chirish
  */
 exports.adminI18n = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  const myRole = await assertAdmin(context, "i18n.read");
   const op = data?.op ? String(data.op) : "meta";
 
   if (op === "meta") {
@@ -559,6 +597,9 @@ exports.adminI18n = functions.https.onCall(async (data, context) => {
   }
 
   if (op === "save") {
+    if (!permOk(myRole, "i18n.write")) {
+      throw new functions.https.HttpsError("permission-denied", "Tarjima saqlash uchun ruxsat yo'q.");
+    }
     const lang = data?.lang ? String(data.lang) : "";
     const ns = data?.ns ? String(data.ns) : "translation";
     const entries = data?.entries;
@@ -585,6 +626,9 @@ exports.adminI18n = functions.https.onCall(async (data, context) => {
   }
 
   if (op === "addLanguage") {
+    if (!permOk(myRole, "i18n.write")) {
+      throw new functions.https.HttpsError("permission-denied", "Til qo'shish uchun ruxsat yo'q.");
+    }
     const code = (data?.code ? String(data.code) : "").toLowerCase().replace(/[^a-z]/g, "").slice(0, 5);
     const name = data?.name ? String(data.name).slice(0, 40) : code.toUpperCase();
     if (!code) throw new functions.https.HttpsError("invalid-argument", "Til kodi kiriting (masalan: kk).");
@@ -594,6 +638,9 @@ exports.adminI18n = functions.https.onCall(async (data, context) => {
   }
 
   if (op === "toggleLanguage") {
+    if (!permOk(myRole, "i18n.write")) {
+      throw new functions.https.HttpsError("permission-denied", "Tilni o'zgartirish uchun ruxsat yo'q.");
+    }
     const code = (data?.code ? String(data.code) : "").toLowerCase();
     if (!code) throw new functions.https.HttpsError("invalid-argument", "code talab qilinadi.");
     const ref = db.collection("languages").doc(code);
@@ -616,7 +663,7 @@ exports.adminI18n = functions.https.onCall(async (data, context) => {
  * oila_ skanlari + audit_log. Bitta chaqiruvda dashboard uchun hammasi.
  */
 exports.adminDashboard = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  const myRole = await assertAdmin(context, "dashboard.read");
   const appdata = db.collection("appdata");
   const now = Date.now();
   const DAY = 24 * 60 * 60 * 1000;
@@ -692,6 +739,7 @@ exports.adminDashboard = functions.https.onCall(async (data, context) => {
     totalUsers, adults, kids, totalFamilies, premiumFamilies,
     dau, wau, mau, platforms, langs, premiumByProduct,
     regSeries, recent: recent.slice(0, 10), activity,
+    myRole, // UI sidebar shu rolga qarab bo'limlarni ko'rsatadi
     generatedAt: now,
   };
 });
@@ -701,7 +749,7 @@ exports.adminDashboard = functions.https.onCall(async (data, context) => {
  * data: { search?, rol? ("bosh"|"azo"|"kid"), status? ("blocked"|"active"), limit? }
  */
 exports.adminListUsers = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "users.read");
   const search = (data?.search ? String(data.search) : "").toLowerCase().trim();
   const rolF = data?.rol ? String(data.rol) : "";
   const statusF = data?.status ? String(data.status) : "";
@@ -754,7 +802,7 @@ exports.adminListUsers = functions.https.onCall(async (data, context) => {
  * (Bola profillari auth'siz — ularda faqat flag qo'yiladi.)
  */
 exports.adminSetUserBlocked = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "users.write");
   const uid = data?.uid ? String(data.uid) : "";
   const blocked = !!data?.blocked;
   if (!uid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
@@ -786,7 +834,7 @@ exports.adminSetUserBlocked = functions.https.onCall(async (data, context) => {
  * oila a'zolar ro'yxatidan. Moliyaviy tarix (x_/d_) oila hisobida qoladi.
  */
 exports.adminDeleteUser = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "users.write");
   const uid = data?.uid ? String(data.uid) : "";
   if (!uid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
 
@@ -835,7 +883,7 @@ exports.adminDeleteUser = functions.https.onCall(async (data, context) => {
  * mahsulot kesimi, yaqin 7/30 kunda tugaydiganlar.
  */
 exports.adminPremiumOverview = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "premium.write");
   const now = Date.now();
   const DAY = 24 * 60 * 60 * 1000;
 
@@ -889,7 +937,7 @@ exports.adminPremiumOverview = functions.https.onCall(async (data, context) => {
  * data.op: "list" | "create" | "toggle" | "delete"
  */
 exports.adminPromo = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "premium.write");
   const op = data?.op ? String(data.op) : "list";
   const coll = db.collection("promo_codes");
 
@@ -1012,7 +1060,7 @@ exports.redeemPromo = functions.https.onCall(async (data, context) => {
  * data.op: "get" | "set" (patch merge qilinadi)
  */
 exports.adminConfig = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  const myRole = await assertAdmin(context, "dashboard.read");
   const op = data?.op ? String(data.op) : "get";
   const ref = db.collection("app_config").doc("main");
 
@@ -1022,6 +1070,9 @@ exports.adminConfig = functions.https.onCall(async (data, context) => {
   }
 
   if (op === "set") {
+    if (!permOk(myRole, "config.write")) {
+      throw new functions.https.HttpsError("permission-denied", "Sozlamalarni o'zgartirish uchun ruxsat yo'q.");
+    }
     const patch = data?.patch;
     if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
       throw new functions.https.HttpsError("invalid-argument", "patch (obyekt) talab qilinadi.");
@@ -1142,7 +1193,7 @@ async function sendPushToTokens(tokens, title, body) {
 }
 
 exports.adminPush = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "push.send");
   const op = data?.op ? String(data.op) : "list";
 
   if (op === "audience") {
@@ -1252,7 +1303,7 @@ exports.pushScheduler = functions.pubsub.schedule("every 10 minutes").onRun(asyn
  * Eslatma: sessiya davomiyligi kuzatilmaydi (event-tracking yo'q) — halol.
  */
 exports.adminAnalytics = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
+  await assertAdmin(context, "dashboard.read");
   const appdata = db.collection("appdata");
   const now = Date.now();
   const DAY = 24 * 60 * 60 * 1000;
@@ -1353,4 +1404,67 @@ exports.adminAnalytics = functions.https.onCall(async (data, context) => {
     topUsers, topFamilies,
     generatedAt: now,
   };
+});
+
+/**
+ * ADMIN 15: Rollarni boshqarish — FAQAT super_admin (ADMIN_UIDS'dagi).
+ * admin_roles/{uid} = { role, email, addedBy, t }
+ * data.op: "list" | "set" {email, role} | "remove" {uid}
+ * Email orqali UID topiladi (appdata em_<email> lookup hujjati).
+ */
+exports.adminRoles = functions.https.onCall(async (data, context) => {
+  const myRole = await assertAdmin(context, "roles.manage"); // faqat "*" (super_admin) o'tadi
+  const op = data?.op ? String(data.op) : "list";
+
+  if (op === "list") {
+    const superAdmins = (process.env.ADMIN_UIDS || "")
+      .split(",").map((s) => s.trim()).filter(Boolean);
+    const out = superAdmins.map((uid) => ({
+      uid, role: "super_admin", email: null, fixed: true, // env'dan — panel orqali o'chirib bo'lmaydi
+    }));
+    const snap = await db.collection("admin_roles").get();
+    snap.forEach((d) => {
+      const r = d.data();
+      out.push({ uid: d.id, role: r.role, email: r.email || null, addedBy: r.addedBy || null, t: r.t || null, fixed: false });
+    });
+    return { admins: out, roles: Object.keys(ROLE_PERMS), perms: ROLE_PERMS, myRole };
+  }
+
+  if (op === "set") {
+    const email = (data?.email ? String(data.email) : "").toLowerCase().trim();
+    const role = data?.role ? String(data.role) : "";
+    if (!email || !ROLE_PERMS[role]) {
+      throw new functions.https.HttpsError("invalid-argument", "email va to'g'ri role talab qilinadi.");
+    }
+    if (role === "super_admin") {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "super_admin faqat serverdagi ADMIN_UIDS orqali beriladi (bosh kalit)."
+      );
+    }
+    // Email -> UID (ilovaning login-lookup hujjati)
+    const emSnap = await db.collection("appdata").doc(safeKey("em_" + email)).get();
+    if (!emSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Bu email bilan foydalanuvchi topilmadi: " + email);
+    }
+    const uid = emSnap.data().v;
+    if (!uid || typeof uid !== "string") {
+      throw new functions.https.HttpsError("internal", "Email lookup formati kutilmagan.");
+    }
+    await db.collection("admin_roles").doc(uid).set({
+      role, email, addedBy: context.auth.uid, t: Date.now(),
+    });
+    await logAdmin(context, "roles.set", { uid, email, role });
+    return { success: true, uid, role };
+  }
+
+  if (op === "remove") {
+    const uid = data?.uid ? String(data.uid) : "";
+    if (!uid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
+    await db.collection("admin_roles").doc(uid).delete();
+    await logAdmin(context, "roles.remove", { uid });
+    return { success: true };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
 });
