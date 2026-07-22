@@ -1,88 +1,77 @@
-import { useEffect, useState, useCallback } from "react";
-import {
-  auth,
-  call,
-  signInWithEmailAndPassword,
-  signOut,
-  onAuthStateChanged,
-} from "./firebase.js";
-import Stats from "./panels/Stats.jsx";
-import Families from "./panels/Families.jsx";
-import Translations from "./panels/Translations.jsx";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { auth, call, loginEmail, loginGoogle, signOut, onAuthStateChanged } from "./lib/firebase.js";
+import { ThemeProvider } from "./lib/theme.jsx";
+import { ToastProvider } from "./shared/ui.jsx";
+import { resolveRole } from "./lib/rbac.js";
+import { MODULES } from "./app/registry.js";
+import AppShell from "./app/AppShell.jsx";
 
-const TABS = [
-  { id: "stats", label: "📊 Statistika" },
-  { id: "families", label: "👨‍👩‍👧 Oilalar" },
-  { id: "i18n", label: "🌐 Tarjima" },
-];
-
+// HashRouter — /admin/ ost-yo'lida ham server sozlamasiz ishlaydi
+// (URL: /admin/#/families). Vercel rewrite bilan ham mos.
 export default function App() {
-  const [user, setUser] = useState(undefined); // undefined = hali aniqlanmagan
-  const [tab, setTab] = useState("stats");
+  return (
+    <ThemeProvider>
+      <ToastProvider>
+        <Root />
+      </ToastProvider>
+    </ThemeProvider>
+  );
+}
 
-  // Admin ekanini tekshirish
+function Root() {
+  const [user, setUser] = useState(undefined); // undefined = aniqlanmoqda
   const [access, setAccess] = useState("checking"); // checking | ok | denied
   const [accessMsg, setAccessMsg] = useState("");
   const [initialStats, setInitialStats] = useState(null);
 
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u || null)), []);
 
-  const probeAdmin = useCallback(async () => {
+  const probe = useCallback(async () => {
     setAccess("checking");
     try {
       const stats = await call("adminStats");
       setInitialStats(stats);
       setAccess("ok");
     } catch (e) {
-      setAccess("denied");
       setAccessMsg(e.message || "Ruxsat yo'q");
+      setAccess("denied");
     }
   }, []);
 
-  useEffect(() => {
-    if (user) probeAdmin();
-  }, [user, probeAdmin]);
+  useEffect(() => { if (user) probe(); }, [user, probe]);
 
-  if (user === undefined) {
-    return <div className="loading" style={{ marginTop: 80 }}>Yuklanmoqda…</div>;
-  }
-
+  if (user === undefined) return <Center>Yuklanmoqda…</Center>;
   if (!user) return <Login />;
+  if (access === "checking") return <Center>Ruxsat tekshirilmoqda…</Center>;
+  if (access === "denied") return <NotAdmin user={user} msg={accessMsg} />;
 
-  if (access === "checking") {
-    return <div className="loading" style={{ marginTop: 80 }}>Ruxsat tekshirilmoqda…</div>;
-  }
-
-  if (access === "denied") {
-    return <NotAdmin uid={user.uid} email={user.email} msg={accessMsg} />;
-  }
+  const role = resolveRole(user);
 
   return (
-    <div className="shell">
-      <div className="topbar">
-        <div className="brand">Oila Hisobchi <span>Admin</span></div>
-        <div className="tabs">
-          {TABS.map((t) => (
-            <button
-              key={t.id}
-              className={"tab" + (tab === t.id ? " active" : "")}
-              onClick={() => setTab(t.id)}
-            >
-              {t.label}
-            </button>
+    <HashRouter>
+      <Routes>
+        <Route element={<AppShell user={user} role={role} />}>
+          {MODULES.map((m) => (
+            <Route
+              key={m.id}
+              path={m.route === "/" ? "/" : m.route}
+              element={
+                <Suspense fallback={<div className="loading">Yuklanmoqda…</div>}>
+                  <m.component initialStats={m.id === "dashboard" ? initialStats : undefined} />
+                </Suspense>
+              }
+            />
           ))}
-        </div>
-        <div className="spacer" />
-        <div className="who">{user.email}</div>
-        <button className="btn ghost small" onClick={() => signOut(auth)}>Chiqish</button>
-      </div>
-      <div className="content">
-        {tab === "stats" && <Stats initial={initialStats} onReload={probeAdmin} />}
-        {tab === "families" && <Families />}
-        {tab === "i18n" && <Translations />}
-      </div>
-    </div>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </HashRouter>
   );
+}
+
+function Center({ children }) {
+  return <div className="loading" style={{ marginTop: 90 }}>{children}</div>;
 }
 
 function Login() {
@@ -93,54 +82,61 @@ function Login() {
 
   const submit = async (e) => {
     e.preventDefault();
-    setErr("");
-    setBusy(true);
-    try {
-      await signInWithEmailAndPassword(auth, email.trim(), pw);
-    } catch (e2) {
-      setErr("Kirish xatosi: " + (e2?.code || e2?.message || ""));
-    } finally {
-      setBusy(false);
-    }
+    setErr(""); setBusy(true);
+    try { await loginEmail(email.trim(), pw); }
+    catch (e2) { setErr("Kirish xatosi: " + (e2?.code || e2?.message || "")); }
+    finally { setBusy(false); }
+  };
+
+  const google = async () => {
+    setErr(""); setBusy(true);
+    try { await loginGoogle(); }
+    catch (e2) { setErr("Google kirish xatosi: " + (e2?.code || e2?.message || "")); }
+    finally { setBusy(false); }
   };
 
   return (
-    <div className="login-wrap">
-      <form className="login-card" onSubmit={submit}>
+    <div className="center-wrap">
+      <form className="center-card" onSubmit={submit}>
         <h1>Admin panel</h1>
-        <p className="sub">Oila Hisobchi — boshqaruv paneli. Admin hisobingiz bilan kiring.</p>
+        <p className="sub">Oila Hisobchi — boshqaruv markazi. Admin hisobingiz bilan kiring.</p>
         <div className="field">
           <label>Email</label>
-          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
+          <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="username" required />
         </div>
         <div className="field">
           <label>Parol</label>
-          <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required />
+          <input className="input" type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" required />
         </div>
-        <button className="btn" disabled={busy}>{busy ? "Kirilmoqda…" : "Kirish"}</button>
-        {err && <div className="error">{err}</div>}
+        <button className="btn block" disabled={busy}>{busy ? "Kirilmoqda…" : "Kirish"}</button>
+        <button type="button" className="btn ghost block" style={{ marginTop: 10 }} disabled={busy} onClick={google}>
+          Google bilan kirish
+        </button>
+        {err && <div className="error" style={{ marginTop: 12 }}>{err}</div>}
       </form>
     </div>
   );
 }
 
-function NotAdmin({ uid, email, msg }) {
+function NotAdmin({ user, msg }) {
   return (
-    <div className="login-wrap">
-      <div className="login-card">
+    <div className="center-wrap">
+      <div className="center-card">
         <h1>Ruxsat yo'q</h1>
-        <p className="sub">Bu hisob admin emas. Sizni admin qilish uchun quyidagi UID'ni
-          Cloud Functions muhitidagi <code>ADMIN_UIDS</code> ro'yxatiga qo'shing.</p>
+        <p className="sub">
+          Bu hisob admin emas. Admin qilish uchun quyidagi UID'ni Cloud Functions
+          muhitidagi <code>ADMIN_UIDS</code> ro'yxatiga qo'shib, funksiyalarni qayta deploy qiling.
+        </p>
         <div className="field">
           <label>Hisob</label>
-          <input value={email || ""} readOnly />
+          <input className="input" value={user.email || "(email yo'q)"} readOnly />
         </div>
         <div className="field">
-          <label>Sizning UID</label>
-          <input value={uid} readOnly onFocus={(e) => e.target.select()} />
+          <label>Sizning UID (nusxa oling)</label>
+          <input className="input mono" value={user.uid} readOnly onFocus={(e) => e.target.select()} />
         </div>
         <p className="notice">{msg}</p>
-        <button className="btn ghost" onClick={() => signOut(auth)}>Chiqish</button>
+        <button className="btn ghost block" onClick={() => signOut(auth)}>Chiqish</button>
       </div>
     </div>
   );

@@ -2,14 +2,14 @@ import { initializeApp } from "firebase/app";
 import {
   getAuth,
   signInWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
 import { getFunctions, httpsCallable } from "firebase/functions";
 
-// Asosiy ilova bilan bir xil Firebase loyihasi (oila-hisobchi).
-// Bu qiymatlar maxfiy emas (Firebase web konfiguratsiyasi commit qilinadi).
-// Kerak bo'lsa .env orqali override qilinadi.
+// Asosiy ilova bilan bir xil Firebase loyihasi. Bu qiymatlar maxfiy emas.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyBGXVfk0W24o9Y_Q5hntQzxhg2fz8y-IxA",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "oila-hisobchi.firebaseapp.com",
@@ -21,24 +21,30 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-
-// Funksiya regioni asosiy ilova bilan bir xil (default us-central1).
 const functions = getFunctions(app);
 
-// Admin callable funksiyalarni chaqirish yordamchisi.
-// Xatoni tushunarli qilib qaytaradi.
+// Callable funksiya chaqiruvi — xatoni tushunarli qaytaradi.
 export async function call(name, data) {
   try {
     const fn = httpsCallable(functions, name);
     const res = await fn(data || {});
     return res.data;
   } catch (e) {
-    const msg = e?.message || String(e);
-    const code = e?.code || "";
-    const err = new Error(msg);
-    err.code = code;
+    const err = new Error(e?.message || String(e));
+    err.code = e?.code || "";
     throw err;
   }
 }
 
-export { signInWithEmailAndPassword, signOut, onAuthStateChanged };
+export async function loginEmail(email, password) {
+  return signInWithEmailAndPassword(auth, email, password);
+}
+
+// Google bilan kirish (admin hisob Google bo'lsa ham kira olsin)
+export async function loginGoogle() {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  return signInWithPopup(auth, provider);
+}
+
+export { signOut, onAuthStateChanged };
