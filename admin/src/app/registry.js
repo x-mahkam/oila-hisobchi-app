@@ -80,6 +80,15 @@ export const MODULES = [
     permission: "config.write",
     component: lazy(() => import("../modules/settings/Page.jsx")),
   },
+  {
+    id: "roles",
+    title: "Rollar",
+    icon: "🛡️",
+    route: "/roles",
+    group: "Tizim",
+    permission: "roles.manage",
+    component: lazy(() => import("../modules/roles/Page.jsx")),
+  },
   // Keyingi fazalar shu yerga qo'shiladi:
   // push, ai, analytics, logs, support, backup...
 ];
