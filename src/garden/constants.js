@@ -29,12 +29,14 @@ export const SPEEDUP_COST   = 100;                // 100 Coin = −30 daqiqa
 export const SUN_ENERGY     = 15;                 // bitta quyosh = +15 energiya
 
 // Quyoshlarning osmondagi joylashuvi (har uchastka uchun, %)
+// DIQQAT: quyosh koordinatalari HUD'lardan uzoqda bo'lishi shart —
+// chapda valyuta chiplari (~28% gacha), o'ngda tugmalar (~82% dan).
 export const SUN_POS = [
-  { x: 50, y: 30 },
-  { x: 23, y: 66 },
-  { x: 77, y: 62 },
-  { x: 13, y: 26 },
-  { x: 87, y: 24 },
+  { x: 50, y: 26 },
+  { x: 33, y: 66 },
+  { x: 67, y: 62 },
+  { x: 36, y: 34 },
+  { x: 64, y: 32 },
 ];
 
 // Uchastkalarning yaylovdagi joylashuvi (sahna layout ma'lumoti)
