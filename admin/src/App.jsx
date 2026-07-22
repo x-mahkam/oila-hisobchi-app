@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { auth, call, loginEmail, loginGoogle, signOut, onAuthStateChanged } from "./lib/firebase.js";
+import { seedCache, prefetch } from "./lib/useQuery.js";
 import { ThemeProvider } from "./lib/theme.jsx";
 import { ToastProvider } from "./shared/ui.jsx";
 import { resolveRole } from "./lib/rbac.js";
@@ -29,8 +30,19 @@ function Root() {
   const probe = useCallback(async () => {
     setAccess("checking");
     try {
-      await call("adminStats"); // admin ekanini tekshirish (engil so'rov)
+      // Kirish tekshiruvi = Dashboard ma'lumotining o'zi: bitta chaqiruvda
+      // ham ruxsat aniqlanadi, ham Dashboard keshi to'ladi (tab bir zumda ochiladi).
+      const dash = await call("adminDashboard");
+      seedCache("adminDashboard", undefined, dash);
       setAccess("ok");
+      // Qolgan modullarni FONDA isitamiz: cold start login paytida bo'lib
+      // o'tadi — foydalanuvchi tab ochganda funksiya issiq + natija keshda.
+      prefetch("adminListUsers", { search: "", rol: "", status: "" });
+      prefetch("adminListFamilies", { search: "" });
+      prefetch("adminPremiumOverview");
+      prefetch("adminPromo", { op: "list" });
+      prefetch("adminI18n", { op: "meta" });
+      prefetch("adminConfig", { op: "get" });
     } catch (e) {
       setAccessMsg(e.message || "Ruxsat yo'q");
       setAccess("denied");
