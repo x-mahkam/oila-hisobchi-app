@@ -121,7 +121,18 @@ export function useAuth() {
         let g = await db.g("baraka_garden_" + oilaId);
         if (!g) g = await db.g("garden_" + oilaId);
         let s = await db.g("stars_" + oilaId);
-        if (g) setGardenData(g);
+        if (g) {
+          // DARAJA SINXRONI: baraka hujjatida "level" maydoni yo'q —
+          // Profil/KidHome ko'rsatadigan daraja = eng rivojlangan
+          // uchastka bosqichi. (Eski garden_ hujjatida level tayyor.)
+          if (g.level == null) {
+            const allPlots = g.gardensPlots
+              ? Object.values(g.gardensPlots).flat()
+              : (g.plots || []);
+            g = { ...g, level: allPlots.reduce((m, p) => Math.max(m, p?.stage || 0), 0) };
+          }
+          setGardenData(g);
+        }
         if (s != null) {
           if (s < 0) {
             s = 0;

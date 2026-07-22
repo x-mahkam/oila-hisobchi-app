@@ -53,6 +53,33 @@ const WaterFX = memo(function WaterFX() {
   );
 });
 
+// ── Palma (Oazis bog'i uchun buta o'rnida) ──────────────────
+const PalmSVG = ({ w = 70 }) => (
+  <svg width={w} height={w * 1.15} viewBox="0 0 70 80" style={{ overflow: "visible" }}>
+    <ellipse cx="35" cy="75" rx="20" ry="5" fill="#b08a4f" opacity="0.5" />
+    <path d="M32 76 Q30 50 34 30 L40 30 Q42 52 38 76 Z" fill="#a16207" />
+    <path d="M34 44 L38 44 M33 56 L38 56 M33 66 L37 66" stroke="#854d0e" strokeWidth="1.6" />
+    {[[-38, 0.9], [-18, 1], [4, 1], [24, 0.95], [44, 0.85]].map(([a, k], i) => (
+      <path key={i}
+        d={"M37 30 q" + (28 * k * Math.sin((a * Math.PI) / 180)).toFixed(1) + " " + (-26 * k * Math.cos((a * Math.PI) / 180)).toFixed(1) + " " + (44 * k * Math.sin((a * Math.PI) / 180)).toFixed(1) + " " + (-14 * k * Math.cos((a * Math.PI) / 180)).toFixed(1)}
+        stroke={i % 2 ? "#16a34a" : "#15803d"} strokeWidth="7" fill="none" strokeLinecap="round"
+        style={{ animation: "gdSway " + (4 + i * 0.4) + "s ease-in-out infinite", transformOrigin: "37px 30px" }} />
+    ))}
+    <circle cx="34" cy="31" r="3.4" fill="#ca8a04" />
+    <circle cx="41" cy="32" r="3" fill="#a16207" />
+  </svg>
+);
+
+// ── Dekor o'lchamlari (daraxt ~190px ga mutanosib) ──────────
+// SVG'lardagi px o'lchamlar kichik; bu masshtab jadvali qasr/uy kabi
+// "katta" obyektlarni daraxt bilan mutanosib qiladi.
+const DECOR_SCALE = {
+  lola: 1, atorgul: 1, moychechak: 1, kamalak_guli: 1.05,
+  archa: 1.5, olcha_daraxti: 1.9,
+  uycha: 1.8, favvora: 1.55, favvora_sehrli: 1.6,
+  skameyka: 1.1, tosh: 0.95, oltin_qasr: 2.3,
+};
+
 // ── Dekoratsiyalar SVGlari (Premium, Tirik va Animatsiyali) ─────────────────
 const LolaSVG = () => (
   <div style={{ animation: "gdSway 3.2s ease-in-out infinite", transformOrigin: "bottom center" }}>
@@ -123,7 +150,7 @@ const ArchaSVG = () => (
 );
 
 const CottageSVG = () => (
-  <div style={{ animation: "gdSway 5.5s ease-in-out infinite", transformOrigin: "bottom center" }}>
+  <div>
     <svg width="60" height="56" viewBox="0 0 60 56" style={{ overflow: "visible", filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.15))" }}>
       <rect x="8" y="20" width="44" height="30" rx="4" fill="#fffaf0" stroke="#f5d0a9" strokeWidth="1.5" />
       <polygon points="4,20 30,2 56,20" fill="#dc2626" stroke="#991b1b" strokeWidth="1.5" strokeLinejoin="round" />
@@ -136,7 +163,7 @@ const CottageSVG = () => (
 );
 
 const FavvoraSVG = () => (
-  <div style={{ animation: "gdBounce 3s ease-in-out infinite", transformOrigin: "bottom center" }}>
+  <div>
     <svg width="60" height="54" viewBox="0 0 60 54" style={{ overflow: "visible" }}>
       <defs>
         <radialGradient id="fountainGlow" cx="50%" cy="50%" r="50%">
@@ -206,7 +233,7 @@ const OlchaDaraxtiSVG = () => (
 
 // ── Sehrli Favvora SVG (with pulsing neon elements) ──
 const FavvoraSehrliSVG = () => (
-  <div style={{ animation: "gdBounce 3.2s ease-in-out infinite", transformOrigin: "bottom center" }}>
+  <div>
     <svg width="60" height="54" viewBox="0 0 60 54" style={{ overflow: "visible" }}>
       <defs>
         <radialGradient id="magicFountGlow" cx="50%" cy="50%" r="50%">
@@ -231,7 +258,7 @@ const FavvoraSehrliSVG = () => (
 
 // ── Dam Olish Skameykasi SVG (Isometric wooden style) ──
 const SkameykaSVG = () => (
-  <div style={{ animation: "gdSway 6.5s ease-in-out infinite", transformOrigin: "bottom center" }}>
+  <div>
     <svg width="48" height="36" viewBox="0 0 48 36" style={{ overflow: "visible" }}>
       <rect x="8" y="20" width="3" height="14" rx="1" fill="#1e293b" />
       <rect x="37" y="20" width="3" height="14" rx="1" fill="#1e293b" />
@@ -248,7 +275,7 @@ const SkameykaSVG = () => (
 
 // ── Baxt Toshi (Zen stacked balancing stones) ──
 const ToshSVG = () => (
-  <div style={{ animation: "gdSway 7.5s ease-in-out infinite", transformOrigin: "bottom center" }}>
+  <div>
     <svg width="34" height="36" viewBox="0 0 34 36" style={{ overflow: "visible" }}>
       <ellipse cx="17" cy="28" rx="16" ry="7" fill="#64748b" stroke="#475569" strokeWidth="1.2" />
       <ellipse cx="12" cy="26" rx="4" ry="2" fill="#22c55e" opacity="0.8" />
@@ -261,7 +288,7 @@ const ToshSVG = () => (
 
 // ── Oltin Qasr SVG (The supreme palace) ──
 const OltinQasrSVG = () => (
-  <div style={{ animation: "gdBounce 4s ease-in-out infinite", transformOrigin: "bottom center" }}>
+  <div>
     <svg width="68" height="64" viewBox="0 0 68 64" style={{ overflow: "visible", filter: "drop-shadow(0 6px 15px rgba(234,179,8,0.3))" }}>
       <defs>
         <radialGradient id="castleGlow" cx="50%" cy="50%" r="50%">
@@ -445,6 +472,7 @@ export const GardenScene = memo(function GardenScene({
   onGoalClick = null,
   season = "spring",
   weather = null,
+  gardenId = 0,
 }) {
   const [zoom, setZoom] = useState(1.0);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -591,6 +619,21 @@ export const GardenScene = memo(function GardenScene({
         };
     }
   }, [computedSeason]);
+
+  // ── BOG' MAVZUSI: har bog' o'z landshaftiga ega ──────────
+  // 0 = Asosiy (yashil vodiy, fasllarga mos), 1 = Oazis (qumloq +
+  // palma + ko'l). Qishda Oazis ham oqarmaydi — cho'lda qor kam :)
+  const isOasis = gardenId === 1;
+  const themeColors = useMemo(() => {
+    if (!isOasis) return seasonalColors;
+    return {
+      grassHi: "#f0dc9f",
+      grass: "#e3c37f",
+      grassLo: "#c9a25a",
+      skyOverlay: "rgba(251, 191, 36, 0.10)",
+      meadowOverlay: "rgba(251, 191, 36, 0.05)",
+    };
+  }, [isOasis, seasonalColors]);
 
   // Make sure useMemo is imported
   // ── Flying Watering Can local state ──
@@ -761,8 +804,8 @@ export const GardenScene = memo(function GardenScene({
           50% { opacity: 0.95; transform: scale(1.1); }
         }
         @keyframes gdSway {
-          0% { transform: rotate(calc(-3deg * var(--wind-sway-intensity, 1))); }
-          100% { transform: rotate(calc(3deg * var(--wind-sway-intensity, 1))); }
+          0%, 100% { transform: rotate(calc(-2.2deg * var(--wind-sway-intensity, 1))); }
+          50% { transform: rotate(calc(2.2deg * var(--wind-sway-intensity, 1))); }
         }
         [style*="gdSway"] {
           animation-duration: calc(var(--sway-dur, 4.4s) * var(--wind-sway-mult, 1)) !important;
@@ -1015,24 +1058,46 @@ export const GardenScene = memo(function GardenScene({
         ? undefined
         : { position: "relative", height: "clamp(300px, 68vw, 420px)", zIndex: 11 }}>
         <svg viewBox="0 0 480 80" preserveAspectRatio="none" style={{ position: "absolute", top: -46, left: 0, width: "100%", height: 60 }}>
-          <path d="M0 80 Q 90 6 230 34 Q 260 40 300 28 Q 390 4 480 42 L480 80 Z" fill={seasonalColors.grassHi} />
-          <ellipse cx="415" cy="34" rx="14" ry="9" fill={seasonalColors.grass === "#e2e8f0" ? "#94a3b8" : ART.leafLo} />
-          <ellipse cx="368" cy="44" rx="9" ry="6" fill={seasonalColors.grass === "#e2e8f0" ? "#64748b" : ART.leafLo} />
+          <path d="M0 80 Q 90 6 230 34 Q 260 40 300 28 Q 390 4 480 42 L480 80 Z" fill={themeColors.grassHi} />
+          <ellipse cx="415" cy="34" rx="14" ry="9" fill={themeColors.grass === "#e2e8f0" ? "#94a3b8" : ART.leafLo} />
+          <ellipse cx="368" cy="44" rx="9" ry="6" fill={themeColors.grass === "#e2e8f0" ? "#64748b" : ART.leafLo} />
         </svg>
-        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg," + seasonalColors.grassHi + " 0%," + seasonalColors.grass + " 45%," + seasonalColors.grassLo + " 100%)" }} />
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg," + themeColors.grassHi + " 0%," + themeColors.grass + " 45%," + themeColors.grassLo + " 100%)" }} />
 
-        <div style={{ position: "absolute", top: -8, left: "4%" }}><Fence w={150} /></div>
-        <div style={{ position: "absolute", top: "24%", right: "-2%" }}><Fence w={120} flip /></div>
-        <div style={{ position: "absolute", top: -20, left: -22 }}><Bush w={82} /></div>
-        <div style={{ position: "absolute", top: "38%", left: -30 }}><Bush w={64} /></div>
+        {!isOasis && <>
+          <div style={{ position: "absolute", top: -8, left: "4%" }}><Fence w={150} /></div>
+          <div style={{ position: "absolute", top: "24%", right: "-2%" }}><Fence w={120} flip /></div>
+          <div style={{ position: "absolute", top: -20, left: -22 }}><Bush w={82} /></div>
+          <div style={{ position: "absolute", top: "38%", left: -30 }}><Bush w={64} /></div>
+        </>}
+        {isOasis && <>
+          {/* Oazis: palmalar va ko'l */}
+          <div style={{ position: "absolute", top: -34, left: "2%", zIndex: 8 }}><PalmSVG w={72} /></div>
+          <div style={{ position: "absolute", top: "20%", right: "-1%", zIndex: 8, transform: "scaleX(-1)" }}><PalmSVG w={60} /></div>
+          <div style={{ position: "absolute", bottom: "4%", left: "6%", zIndex: 9 }}>
+            <svg width="120" height="44" viewBox="0 0 120 44" style={{ overflow: "visible" }}>
+              <ellipse cx="60" cy="24" rx="56" ry="18" fill="#7dd3fc" opacity="0.9" />
+              <ellipse cx="60" cy="22" rx="50" ry="15" fill="#38bdf8" />
+              <ellipse cx="44" cy="18" rx="16" ry="4.5" fill="#bae6fd" opacity="0.75" />
+              <ellipse cx="80" cy="26" rx="10" ry="3" fill="#bae6fd" opacity="0.5" />
+              <path d="M18 34 q6 4 14 3 M88 34 q8 3 16 0" stroke="#c9a25a" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </svg>
+          </div>
+        </>}
 
         {/* Dynamic Placed Decorations */}
-        {placedDecorations && placedDecorations.map((p) => (
+        {placedDecorations && placedDecorations.map((p) => {
+          // Tur bo'yicha asosiy masshtab (qasr/uy daraxt bilan mutanosib bo'lsin)
+          const base = DECOR_SCALE[p.itemId] || 1;
+          // Chuqurlik: pastda turgan (yaqin) kattaroq, tepada (uzoq) kichikroq
+          const depth = 0.74 + (Math.min(Math.max(p.y, 0), 100) / 100) * 0.52;
+          return (
           <div key={p.instanceId} onClick={(e) => { e.stopPropagation(); if (onPlacedDecorClick) onPlacedDecorClick(p); }}
-            style={{ position: "absolute", left: p.x + "%", top: p.y + "%", transform: "translate(-50%, -50%)", zIndex: Math.round(p.y) + 12, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
+            style={{ position: "absolute", left: p.x + "%", top: p.y + "%", transform: "translate(-50%, -50%) scale(" + (base * depth).toFixed(2) + ")", transformOrigin: "center bottom", zIndex: Math.round(p.y) + 12, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>
             <DecorSprite id={p.itemId} />
           </div>
-        ))}
+          );
+        })}
 
         {/* Dynamic growing grass and flower blades from rain */}
         {grassBlades && grassBlades.map(g => (
