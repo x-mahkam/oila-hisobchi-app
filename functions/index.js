@@ -663,3 +663,136 @@ exports.adminDashboard = functions.https.onCall(async (data, context) => {
   };
 });
 
+/**
+ * ADMIN 7: Foydalanuvchilar ro'yxati — qidiruv + filtr + faollik (act_) join.
+ * data: { search?, rol? ("bosh"|"azo"|"kid"), status? ("blocked"|"active"), limit? }
+ */
+exports.adminListUsers = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const search = (data?.search ? String(data.search) : "").toLowerCase().trim();
+  const rolF = data?.rol ? String(data.rol) : "";
+  const statusF = data?.status ? String(data.status) : "";
+  const limit = Math.min(Math.max(parseInt(data?.limit || 300, 10), 1), 1000);
+  const appdata = db.collection("appdata");
+
+  // Faollik xaritasi: uid -> {t, platform, lg}
+  const act = {};
+  const actSnap = await prefixRange(appdata, DBP + "act_").get();
+  actSnap.forEach((d) => {
+    const uid = d.id.slice((DBP + "act_").length);
+    const v = d.data().v || {};
+    act[uid] = { t: v.t || null, platform: v.platform || null, lg: v.lg || null };
+  });
+
+  const out = [];
+  let total = 0;
+  const usersSnap = await prefixRange(appdata, DBP + "user_").get();
+  usersSnap.forEach((docSnap) => {
+    const uid = docSnap.id.slice((DBP + "user_").length);
+    const v = docSnap.data().v || {};
+    total++;
+    const rol = v.rol || "azo";
+    if (rolF && rol !== rolF) return;
+    const blocked = v.blocked === true;
+    if (statusF === "blocked" && !blocked) return;
+    if (statusF === "active" && blocked) return;
+    if (search) {
+      const hay = [v.ism, v.familya, v.email, v.tel, v.login, uid, v.oilaId]
+        .filter(Boolean).join(" ").toLowerCase();
+      if (!hay.includes(search)) return;
+    }
+    const a = act[uid] || {};
+    out.push({
+      uid, ism: v.ism || "", familya: v.familya || "", email: v.email || "",
+      tel: v.tel || "", login: v.login || "", rol, oilaId: v.oilaId || "",
+      blocked, registeredAt: v.registeredAt || null, loginMethod: v.loginMethod || null,
+      lastActiveAt: a.t || null, platform: a.platform || null, lg: a.lg || null,
+    });
+  });
+  // Oxirgi faollik bo'yicha tartib (faollari yuqorida)
+  out.sort((a, b) => (b.lastActiveAt || 0) - (a.lastActiveAt || 0) ||
+    String(b.registeredAt || "").localeCompare(String(a.registeredAt || "")));
+  return { users: out.slice(0, limit), matched: out.length, total };
+});
+
+/**
+ * ADMIN 8: Foydalanuvchini bloklash / blokdan chiqarish.
+ * Auth hisobini o'chirib qo'yadi (disable) — qayta kira olmaydi.
+ * (Bola profillari auth'siz — ularda faqat flag qo'yiladi.)
+ */
+exports.adminSetUserBlocked = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const uid = data?.uid ? String(data.uid) : "";
+  const blocked = !!data?.blocked;
+  if (!uid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
+
+  const ref = db.collection("appdata").doc(DBP + "user_" + uid);
+  const snap = await ref.get();
+  if (!snap.exists) throw new functions.https.HttpsError("not-found", "Foydalanuvchi topilmadi.");
+  const cur = snap.data();
+  const v = cur.v || {};
+  v.blocked = blocked;
+  await ref.set({ ...cur, v, t: Date.now() }, { merge: true });
+
+  // Auth hisobini bloklash (bola/anonim bo'lsa yo'q bo'lishi mumkin — jim)
+  let authDisabled = false;
+  try {
+    await admin.auth().updateUser(uid, { disabled: blocked });
+    authDisabled = true;
+  } catch (e) {
+    console.warn("auth updateUser (blok):", uid, e.message);
+  }
+
+  await logAdmin(context, blocked ? "user.block" : "user.unblock", { uid, authDisabled });
+  return { success: true, blocked, authDisabled };
+});
+
+/**
+ * ADMIN 9: Foydalanuvchi hisobini o'chirish.
+ * O'chiradi: auth hisobi, user_ hujjati, act_, em_/kidlogin_ lookuplari,
+ * oila a'zolar ro'yxatidan. Moliyaviy tarix (x_/d_) oila hisobida qoladi.
+ */
+exports.adminDeleteUser = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const uid = data?.uid ? String(data.uid) : "";
+  if (!uid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
+
+  const ref = db.collection("appdata").doc(DBP + "user_" + uid);
+  const snap = await ref.get();
+  if (!snap.exists) throw new functions.https.HttpsError("not-found", "Foydalanuvchi topilmadi.");
+  const v = snap.data().v || {};
+
+  // 1) Auth hisobi (bo'lmasa jim)
+  try { await admin.auth().deleteUser(uid); } catch (e) { console.warn("auth deleteUser:", e.message); }
+
+  // 2) Lookup hujjatlari
+  const dels = [];
+  if (v.email) dels.push(db.collection("appdata").doc(safeKey("em_" + String(v.email).toLowerCase())).delete().catch(() => {}));
+  if (v.login) dels.push(db.collection("appdata").doc(safeKey("kidlogin_" + v.login)).delete().catch(() => {}));
+  dels.push(db.collection("appdata").doc(DBP + "act_" + uid).delete().catch(() => {}));
+  await Promise.all(dels);
+
+  // 3) Oila a'zolar ro'yxatidan chiqarish
+  if (v.oilaId) {
+    for (const key of ["oila_" + v.oilaId, "fam_" + v.oilaId]) {
+      try {
+        const fref = db.collection("appdata").doc(safeKey(key));
+        const fsnap = await fref.get();
+        if (fsnap.exists) {
+          const fcur = fsnap.data();
+          const fv = fcur.v || {};
+          const ids = (fv.azolarIds || fv.azolar || []).filter((id) => id !== uid);
+          fv.azolarIds = ids; fv.azolar = ids;
+          await fref.set({ ...fcur, v: fv, t: Date.now() }, { merge: true });
+        }
+      } catch (e) { console.warn("oila ro'yxatidan chiqarish:", key, e.message); }
+    }
+  }
+
+  // 4) User hujjatining o'zi
+  await ref.delete();
+
+  await logAdmin(context, "user.delete", { uid, ism: v.ism || "", email: v.email || "", oilaId: v.oilaId || "" });
+  return { success: true };
+});
+
