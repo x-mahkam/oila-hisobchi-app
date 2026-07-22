@@ -2,6 +2,7 @@ import { useState } from "react";
 import { call } from "../../lib/firebase.js";
 import { useQuery } from "../../lib/useQuery.js";
 import { DataTable, Badge, Drawer, ConfirmDialog, Skeleton, useToast } from "../../shared/ui.jsx";
+import { downloadCsv, stamp } from "../../lib/csv.js";
 
 function fmtT(ms) {
   if (!ms) return "—";
@@ -85,6 +86,23 @@ export default function UsersPage() {
           {STATUS_OPTIONS.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
         </select>
         <button className="btn sm" onClick={doSearch}>Qidirish</button>
+        <button className="btn ghost sm" disabled={!rows.length}
+          onClick={() => downloadCsv("foydalanuvchilar-" + stamp(), [
+            { key: "ism", title: "Ism" },
+            { key: "familya", title: "Familiya" },
+            { key: "email", title: "Email" },
+            { key: "tel", title: "Telefon" },
+            { key: "rol", title: "Rol" },
+            { key: "oilaId", title: "Oila ID" },
+            { key: "registeredAt", title: "Ro'yxatdan o'tgan" },
+            { key: "lastActiveAt", title: "Oxirgi faollik", value: (r) => r.lastActiveAt ? new Date(r.lastActiveAt).toISOString() : "" },
+            { key: "platform", title: "Platforma" },
+            { key: "lg", title: "Til" },
+            { key: "blocked", title: "Bloklangan", value: (r) => r.blocked ? "ha" : "yo'q" },
+            { key: "uid", title: "UID" },
+          ], rows)}>
+          ⬇ CSV
+        </button>
       </div>
 
       {error && <div className="error">{error}</div>}
