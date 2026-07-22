@@ -509,70 +509,103 @@ exports.adminSetPremium = functions.https.onCall(async (data, context) => {
 /**
  * ADMIN 4: Til tarjimalarini o'qish (translations/{lang}/sections/* birlashtirilgan).
  */
-exports.adminGetTranslations = functions.https.onCall(async (data, context) => {
-  assertAdmin(context);
-  const lang = data && data.lang ? String(data.lang) : "";
-  if (!lang) throw new functions.https.HttpsError("invalid-argument", "lang talab qilinadi.");
-
-  const merged = {};
-  const sectionsSnap = await db.collection("translations").doc(lang).collection("sections").get();
-  sectionsSnap.forEach((s) => {
-    Object.entries(s.data() || {}).forEach(([k, v]) => { merged[k] = v; });
-  });
-  // Yassi hujjat (fallback tuzilma) ni ham qo'shamiz
-  const flatSnap = await db.collection("translations").doc(lang).get();
-  if (flatSnap.exists) {
-    Object.entries(flatSnap.data() || {}).forEach(([k, v]) => {
-      if (typeof v !== "object") merged[k] = v;
-    });
-  }
-
-  const metaSnap = await db.collection("translations").doc("metadata").get();
-  const meta = metaSnap.exists ? (metaSnap.data() || {}) : {};
-  return { lang, entries: merged, languages: meta.languages || ["uz", "en", "ru"], version: meta.version || "1.0.0" };
-});
+// ═══ I18N v2 — ilova HAQIQATAN o'qiydigan format ═══
+// Ilova (src/i18n/translationService.js):
+//   translations/{lang}            — "translation" namespace  { version, updatedAt, data }
+//   translations/{lang}__{ns}      — boshqa namespace'lar     { version, updatedAt, data }
+//   i18n_meta/current              — { versions: { "<id>": <raqam> } }  (id = lang yoki lang__ns)
+//   languages                      — { code, name, enabled, sort } (til tanlash ro'yxati)
+// Saqlash = versiya +1 → ilova keyingi ochilishda yangi matnni oladi (publish).
+const I18N_NAMESPACES = ["translation", "goals", "budgetai", "garden", "wedding", "bilimbozor"];
+const i18nBundleId = (lang, ns) => (ns === "translation" ? lang : `${lang}__${ns}`);
 
 /**
- * ADMIN 5: Tarjimalarni saqlash. entries = {kalit: qiymat}.
- *  translations/{lang}/sections/admin_overrides ga yoziladi (ilova o'qiydigan joy),
- *  metadata.version oshiriladi va til ro'yxatga qo'shiladi — ilova keyingi
- *  ochilishda yangi matnlarni oladi (APK shart emas).
+ * ADMIN 4/5: Tarjima boshqaruvi (bitta ko'p amalli funksiya).
+ * data.op:
+ *  "meta"        → namespace'lar, tillar ro'yxati, joriy versiyalar
+ *  "get"         → { lang, ns } → bundle { version, data }
+ *  "save"        → { lang, ns, entries, replace? } → merge (yoki to'liq almashtirish) + versiya +1 (publish)
+ *  "addLanguage" → { code, name } → languages ro'yxatiga qo'shish
+ *  "toggleLanguage" → { code } → tilni yoqish/o'chirish
  */
-exports.adminSaveTranslations = functions.https.onCall(async (data, context) => {
+exports.adminI18n = functions.https.onCall(async (data, context) => {
   assertAdmin(context);
-  const lang = data && data.lang ? String(data.lang) : "";
-  const entries = data && data.entries ? data.entries : null;
-  if (!lang || !entries || typeof entries !== "object" || Array.isArray(entries)) {
-    throw new functions.https.HttpsError("invalid-argument", "lang va entries (obyekt) talab qilinadi.");
+  const op = data?.op ? String(data.op) : "meta";
+
+  if (op === "meta") {
+    const metaSnap = await db.collection("i18n_meta").doc("current").get();
+    const versions = metaSnap.exists ? (metaSnap.data().versions || {}) : {};
+    const langs = [];
+    try {
+      const lSnap = await db.collection("languages").get();
+      lSnap.forEach((d) => { const v = d.data(); langs.push({ code: v.code || d.id, name: v.name || v.nomi || d.id, enabled: v.enabled !== false, sort: v.sort || 0 }); });
+      langs.sort((a, b) => (a.sort || 0) - (b.sort || 0));
+    } catch (e) { console.warn("languages o'qish:", e.message); }
+    if (langs.length === 0) {
+      // Hali languages kolleksiyasi bo'lmasa — build ichidagi standart uchlik
+      for (const c of ["uz", "ru", "en"]) langs.push({ code: c, name: c.toUpperCase(), enabled: true, sort: 0 });
+    }
+    return { namespaces: I18N_NAMESPACES, languages: langs, versions };
   }
-  const keys = Object.keys(entries);
-  if (keys.length > 2000) {
-    throw new functions.https.HttpsError("invalid-argument", "Bir martada 2000 tadan ko'p kalit bo'lmasin.");
+
+  if (op === "get") {
+    const lang = data?.lang ? String(data.lang) : "";
+    const ns = data?.ns ? String(data.ns) : "translation";
+    if (!lang) throw new functions.https.HttpsError("invalid-argument", "lang talab qilinadi.");
+    const snap = await db.collection("translations").doc(i18nBundleId(lang, ns)).get();
+    if (!snap.exists) return { lang, ns, version: 0, data: {} };
+    const b = snap.data();
+    return { lang, ns, version: b.version || 0, data: b.data || {} };
   }
 
-  await db.collection("translations").doc(lang).collection("sections")
-    .doc("admin_overrides").set(entries, { merge: true });
+  if (op === "save") {
+    const lang = data?.lang ? String(data.lang) : "";
+    const ns = data?.ns ? String(data.ns) : "translation";
+    const entries = data?.entries;
+    const replace = data?.replace === true;
+    if (!lang || !entries || typeof entries !== "object" || Array.isArray(entries)) {
+      throw new functions.https.HttpsError("invalid-argument", "lang va entries (obyekt) talab qilinadi.");
+    }
+    if (Object.keys(entries).length > 5000) {
+      throw new functions.https.HttpsError("invalid-argument", "Bir martada 5000 tadan ko'p kalit bo'lmasin.");
+    }
+    const id = i18nBundleId(lang, ns);
+    const ref = db.collection("translations").doc(id);
+    const snap = await ref.get();
+    const cur = snap.exists ? (snap.data() || {}) : {};
+    const newData = replace ? { ...entries } : { ...(cur.data || {}), ...entries };
+    const newVersion = (Number(cur.version) || 0) + 1;
+    await ref.set({ version: newVersion, updatedAt: Date.now(), data: newData });
+    // i18n_meta/current.versions — ilova aynan shu raqamga qarab yangilanadi
+    await db.collection("i18n_meta").doc("current").set(
+      { versions: { [id]: newVersion } }, { merge: true }
+    );
+    await logAdmin(context, "i18n.save", { lang, ns, keys: Object.keys(entries).length, version: newVersion, replace });
+    return { success: true, lang, ns, version: newVersion, totalKeys: Object.keys(newData).length };
+  }
 
-  // metadata: versiyani oshirish + tilni ro'yxatga qo'shish
-  const metaRef = db.collection("translations").doc("metadata");
-  const metaSnap = await metaRef.get();
-  const meta = metaSnap.exists ? (metaSnap.data() || {}) : {};
-  const langs = Array.isArray(meta.languages) ? meta.languages : ["uz", "en", "ru"];
-  if (!langs.includes(lang)) langs.push(lang);
-  const bump = (v) => {
-    const p = String(v || "1.0.0").split(".").map((n) => parseInt(n, 10) || 0);
-    p[2] = (p[2] || 0) + 1;
-    return p.join(".");
-  };
-  await metaRef.set({
-    languages: langs,
-    version: bump(meta.version),
-    updatedAt: Date.now(),
-    updatedBy: context.auth.uid,
-  }, { merge: true });
+  if (op === "addLanguage") {
+    const code = (data?.code ? String(data.code) : "").toLowerCase().replace(/[^a-z]/g, "").slice(0, 5);
+    const name = data?.name ? String(data.name).slice(0, 40) : code.toUpperCase();
+    if (!code) throw new functions.https.HttpsError("invalid-argument", "Til kodi kiriting (masalan: kk).");
+    await db.collection("languages").doc(code).set({ code, name, enabled: true, sort: Date.now() }, { merge: true });
+    await logAdmin(context, "i18n.addLanguage", { code, name });
+    return { success: true, code };
+  }
 
-  await logAdmin(context, "i18n.save", { lang, keys: keys.length });
-  return { success: true, savedKeys: keys.length, lang };
+  if (op === "toggleLanguage") {
+    const code = (data?.code ? String(data.code) : "").toLowerCase();
+    if (!code) throw new functions.https.HttpsError("invalid-argument", "code talab qilinadi.");
+    const ref = db.collection("languages").doc(code);
+    const snap = await ref.get();
+    const cur = snap.exists ? snap.data() : { code, name: code.toUpperCase(), sort: Date.now() };
+    const enabled = !(cur.enabled !== false);
+    await ref.set({ ...cur, enabled }, { merge: true });
+    await logAdmin(context, "i18n.toggleLanguage", { code, enabled });
+    return { success: true, code, enabled };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
 });
 
 /**
