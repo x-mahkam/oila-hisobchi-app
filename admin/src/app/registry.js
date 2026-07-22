@@ -54,6 +54,15 @@ export const MODULES = [
     component: lazy(() => import("../modules/i18n/Page.jsx")),
   },
   {
+    id: "push",
+    title: "Push xabarlar",
+    icon: "🔔",
+    route: "/push",
+    group: "Kontent",
+    permission: "push.send",
+    component: lazy(() => import("../modules/push/Page.jsx")),
+  },
+  {
     id: "settings",
     title: "Sozlamalar",
     icon: "⚙️",
