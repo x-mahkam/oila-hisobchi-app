@@ -17,6 +17,7 @@ const DEFAULTS = {
   minVersion: "",
   forceUpdate: false,
   flags: {},
+  testers: [], // sinovchi foydalanuvchi ID'lari (cheat/test vositalari faqat ularga)
 };
 
 export function useAppConfig() {
@@ -33,6 +34,7 @@ export function useAppConfig() {
             minVersion: d.minVersion || "",
             forceUpdate: d.forceUpdate === true,
             flags: d.flags || {},
+            testers: Array.isArray(d.testers) ? d.testers : [],
           });
         }
       },

@@ -584,78 +584,121 @@ export const PlantSVG = memo(function PlantSVG({ stage, size = 120, animated = t
       <Lobe cx={66} cy={45} rx={15} ry={10} fill={leafFill} fillLo={leafLoColor} />
       <Lobe cx={50} cy={28} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
     </svg>,
-    // 3: katta daraxt - Majestic mature tree, thicker branched wooden trunk with full, gorgeous layered canopy of 5 lush lobes
-    <svg key="s3" style={style} width={size * 1.25} height={size * 1.3} viewBox="0 0 100 118">
-      <ellipse cx="50" cy="112" rx="32" ry="6" fill="#4a2e1b" opacity="0.4" />
-      <path d="M42 114 L42 66 Q 32 54 22 50 L27 44 Q38 50 42 56 Q45 44 38 32 L44 30 Q50 42 49 52 Q53 45 64 41 L67 47 Q56 51 53 60 L53 114 Z" fill={trunkFill} />
-      <g opacity="0.9">
-        <Lobe cx={30} cy={52} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-        <Lobe cx={70} cy={52} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+    // 3: katta daraxt — KENG yoyilgan siluet: yo'g'on ikki shoxli tana,
+    // past-u keng 7 bo'lakli shox-barg (bo'yidan ko'ra eni katta)
+    <svg key="s3" style={style} width={size * 1.3} height={size * 1.18} viewBox="0 0 124 108">
+      <ellipse cx="62" cy="102" rx="36" ry="6" fill="#4a2e1b" opacity="0.4" />
+      {/* Tana: pastda keng, ikkiga ayri */}
+      <path d="M55 104 L55 62 Q46 50 32 44 L36 37 Q50 44 56 52 L56 40 L62 40 L62 52 Q70 43 86 38 L89 45 Q75 50 67 60 L67 104 Q61 101 55 104 Z" fill={trunkFill} />
+      <path d="M58 104 L58 55" stroke={leafLoColor} strokeWidth="1.4" opacity="0.25" />
+      {/* Orqa qatlam */}
+      <g opacity="0.88">
+        <Lobe cx={22} cy={46} rx={17} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
+        <Lobe cx={100} cy={44} rx={18} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
+        <Lobe cx={62} cy={20} rx={22} ry={14} fill={leafDarkFill} fillLo={leafLoColor} />
       </g>
-      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
+      {/* Old qatlam — keng gumbaz */}
+      <Lobe cx={36} cy={34} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={88} cy={33} rx={21} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={62} cy={36} rx={24} ry={16} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={62} cy={18} rx={18} ry={12} fill={leafFill} fillLo={leafLoColor} />
+      {/* Barg tekstura chizgilari */}
+      <path d="M30 32 q6 -6 14 -7 M74 28 q8 -4 15 -2 M52 16 q6 -5 14 -4" stroke={leafLoColor} strokeWidth="1.2" fill="none" opacity="0.35" strokeLinecap="round" />
     </svg>,
-    // 4: gullagan - Lush mature tree beautifully covered with pink/red blooming flowers
-    <svg key="s4" style={style} width={size * 1.25} height={size * 1.3} viewBox="0 0 100 118">
-      <ellipse cx="50" cy="112" rx="32" ry="6" fill="#4a2e1b" opacity="0.4" />
-      <path d="M42 114 L42 66 Q 32 54 22 50 L27 44 Q38 50 42 56 Q45 44 38 32 L44 30 Q50 42 49 52 Q53 45 64 41 L67 47 Q56 51 53 60 L53 114 Z" fill={trunkFill} />
-      <g opacity="0.9">
-        <Lobe cx={30} cy={52} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-        <Lobe cx={70} cy={52} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+    // 4: gullagan — NAFIS vaza shakli: baland ingichka tana, yuqoriga
+    // intilgan ikki qo'l, ikki qavatli toj + gullar va tushayotgan barglar
+    <svg key="s4" style={style} width={size * 1.24} height={size * 1.38} viewBox="0 0 112 126">
+      <ellipse cx="56" cy="120" rx="30" ry="6" fill="#4a2e1b" opacity="0.4" />
+      {/* Tana: V shaklida yuqoriga ochilgan */}
+      <path d="M51 122 L51 74 Q44 58 30 48 L34 42 Q48 51 53 62 L53 50 L59 50 L59 62 Q64 51 78 42 L82 48 Q68 58 61 74 L61 122 Q56 119 51 122 Z" fill={trunkFill} />
+      {/* Pastki keng qavat */}
+      <g opacity="0.88">
+        <Lobe cx={26} cy={44} rx={16} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
+        <Lobe cx={86} cy={44} rx={16} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
       </g>
-      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
-      {[[24, 32], [42, 20], [62, 16], [76, 28], [66, 46], [32, 48], [50, 10], [48, 30], [28, 54], [72, 50]].map(([x, y], i) => (
+      <Lobe cx={33} cy={34} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={79} cy={34} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      {/* Yuqori kichik qavat */}
+      <Lobe cx={56} cy={18} rx={20} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={56} cy={34} rx={14} ry={10} fill={leafDarkFill} fillLo={leafLoColor} />
+      {/* Gullar */}
+      {[[26, 38], [40, 26], [56, 12], [72, 26], [86, 38], [48, 34], [64, 34], [33, 28], [79, 28]].map(([x, y], i) => (
         <g key={i}>
           {[0, 72, 144, 216, 288].map(a => (
-            <ellipse key={a} cx={x} cy={y - 3.4} rx="3" ry="4.2" fill={i % 2 ? ART.bloomHi : ART.bloom} transform={"rotate(" + a + " " + x + " " + y + ")"} />
+            <ellipse key={a} cx={x} cy={y - 3} rx="2.7" ry="3.8" fill={i % 2 ? ART.bloomHi : ART.bloom} transform={"rotate(" + a + " " + x + " " + y + ")"} />
           ))}
-          <circle cx={x} cy={y} r="2.2" fill={ART.petalCore} />
+          <circle cx={x} cy={y} r="2" fill={ART.petalCore} />
         </g>
       ))}
+      {/* Tushayotgan gulbarglar */}
+      <ellipse cx="20" cy="70" rx="2.4" ry="1.6" fill={ART.bloomHi} opacity="0.8" transform="rotate(30 20 70)" />
+      <ellipse cx="92" cy="80" rx="2.4" ry="1.6" fill={ART.bloom} opacity="0.7" transform="rotate(-25 92 80)" />
+      <ellipse cx="34" cy="94" rx="2.2" ry="1.5" fill={ART.bloomHi} opacity="0.6" transform="rotate(50 34 94)" />
     </svg>,
-    // 5: mevali - Lush mature tree laden with shiny, glossy ripe fruits
-    <svg key="s5" style={style} width={size * 1.25} height={size * 1.3} viewBox="0 0 100 118">
-      <ellipse cx="50" cy="112" rx="32" ry="6" fill="#4a2e1b" opacity="0.4" />
-      <path d="M42 114 L42 66 Q 32 54 22 50 L27 44 Q38 50 42 56 Q45 44 38 32 L44 30 Q50 42 49 52 Q53 45 64 41 L67 47 Q56 51 53 60 L53 114 Z" fill={trunkFill} />
-      <g opacity="0.9">
-        <Lobe cx={30} cy={52} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-        <Lobe cx={70} cy={52} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+    // 5: mevali — GUMBAZ (soyabon) shakli: bitta zich yumaloq toj,
+    // qirralarida osilib turgan mevali shoxchalar, tagida tushgan meva
+    <svg key="s5" style={style} width={size * 1.34} height={size * 1.26} viewBox="0 0 122 114">
+      <ellipse cx="61" cy="108" rx="36" ry="6" fill="#4a2e1b" opacity="0.4" />
+      {/* Yo'g'on kalta tana, ildiz kengaygan */}
+      <path d="M53 110 Q52 84 54 66 L47 58 L51 53 L57 60 L57 50 L65 50 L65 60 L71 53 L75 58 L68 66 Q70 84 69 110 Q61 106 53 110 Z" fill={trunkFill} />
+      {/* Zich gumbaz — uch qavat */}
+      <g opacity="0.85">
+        <Lobe cx={26} cy={52} rx={16} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
+        <Lobe cx={96} cy={52} rx={16} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
+        <Lobe cx={61} cy={48} rx={26} ry={15} fill={leafDarkFill} fillLo={leafLoColor} />
       </g>
-      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
-      {[[26, 34], [46, 22], [66, 18], [76, 32], [64, 48], [36, 50], [50, 10], [48, 34], [30, 54], [70, 50]].map(([x, y], i) => (
+      <Lobe cx={38} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={84} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={61} cy={26} rx={26} ry={16} fill={leafFill} fillLo={leafLoColor} />
+      {/* Osilgan mevali shoxchalar */}
+      {[[26, 56], [46, 50], [61, 54], [78, 50], [96, 56], [38, 30], [61, 18], [84, 30], [52, 38], [72, 38]].map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="5.8" fill={i % 2 ? fruitAltFill : fruitFill} />
-          <ellipse cx={x - 2} cy={y - 2} rx="2" ry="1.4" fill={fruitHiFill} opacity="0.9" />
-          <path d={"M" + x + " " + (y - 5.4) + " q1 -3 3.5 -4.5"} stroke={ART.fruitStem} strokeWidth="1.6" fill="none" />
+          <path d={"M" + x + " " + (y - 6) + " q0.5 3 0 5"} stroke={ART.fruitStem} strokeWidth="1.4" fill="none" />
+          <circle cx={x} cy={y} r="5.4" fill={i % 2 ? fruitAltFill : fruitFill} />
+          <ellipse cx={x - 1.8} cy={y - 1.8} rx="1.8" ry="1.3" fill={fruitHiFill} opacity="0.9" />
         </g>
       ))}
+      {/* Tagida tushgan meva */}
+      <circle cx="32" cy="103" r="4" fill={fruitFill} />
+      <ellipse cx="30.8" cy="101.8" rx="1.3" ry="1" fill={fruitHiFill} opacity="0.8" />
+      <circle cx="88" cy="105" r="3.6" fill={fruitAltFill} />
     </svg>,
-    // 6: baraka daraxti (oltin yaltiroq) - Breathtaking legendary golden tree with glittering coins and gold sparkles
-    <svg key="s6" style={style} width={size * 1.3} height={size * 1.35} viewBox="0 0 100 126">
-      <ellipse cx="50" cy="120" rx="34" ry="6" fill="#4a2e1b" opacity="0.4" />
-      <path d="M41 122 L41 70 Q 31 56 21 52 L26 46 Q37 52 41 58 Q44 46 37 34 L43 32 Q49 44 48 54 Q52 46 63 42 L66 48 Q55 52 52 61 L52 122 Z" fill={trunkFill} />
-      <g opacity="0.9">
-        <Lobe cx={30} cy={54} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-        <Lobe cx={70} cy={54} rx={18} ry={13} fill={leafFill} fillLo={leafLoColor} />
+    // 6: baraka daraxti — AFSONAVIY: baland uch qavatli toj (pagoda),
+    // kengaygan ildizlar, orqada nur halqasi, tangalar va uchqunlar
+    <svg key="s6" style={style} width={size * 1.42} height={size * 1.5} viewBox="0 0 128 140">
+      <ellipse cx="64" cy="134" rx="38" ry="6" fill="#4a2e1b" opacity="0.4" />
+      {/* Nur halqasi (orqa fon) */}
+      <circle cx="64" cy="46" r="44" fill="#fde68a" opacity="0.18" />
+      <circle cx="64" cy="46" r="34" fill="#fde68a" opacity="0.14" />
+      {/* Baland tana + kengaygan ildizlar */}
+      <path d="M55 136 Q50 132 42 132 Q52 128 55 122 L55 78 Q46 64 32 56 L36 49 Q50 58 56 68 L56 44 L64 44 L64 68 Q70 58 84 49 L88 56 Q74 64 65 78 L65 122 Q68 128 78 132 Q70 132 65 136 Q60 132 55 136 Z" fill={trunkFill} />
+      <path d="M60 130 L60 60" stroke={leafLoColor} strokeWidth="1.4" opacity="0.25" />
+      {/* Uch qavatli toj: pastki keng */}
+      <g opacity="0.88">
+        <Lobe cx={26} cy={62} rx={17} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
+        <Lobe cx={102} cy={62} rx={17} ry={12} fill={leafDarkFill} fillLo={leafLoColor} />
       </g>
-      <Lobe cx={25} cy={38} rx={22} ry={15} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={75} cy={38} rx={20} ry={14} fill={leafFill} fillLo={leafLoColor} />
-      <Lobe cx={50} cy={22} rx={26} ry={18} fill={leafFill} fillLo={leafLoColor} />
-      {[[24, 36], [44, 20], [64, 18], [76, 32], [64, 50], [34, 52], [50, 8], [46, 32], [28, 54], [70, 48]].map(([x, y], i) => (
+      <Lobe cx={38} cy={54} rx={20} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={90} cy={54} rx={20} ry={13} fill={leafFill} fillLo={leafLoColor} />
+      {/* O'rta qavat */}
+      <Lobe cx={46} cy={36} rx={18} ry={12} fill={leafFill} fillLo={leafLoColor} />
+      <Lobe cx={82} cy={36} rx={18} ry={12} fill={leafFill} fillLo={leafLoColor} />
+      {/* Yuqori kichik gumbaz */}
+      <Lobe cx={64} cy={18} rx={17} ry={12} fill={leafFill} fillLo={leafLoColor} />
+      {/* Tangalar */}
+      {[[26, 64], [44, 52], [64, 12], [84, 52], [102, 64], [46, 34], [82, 34], [64, 40], [34, 46], [94, 46]].map(([x, y], i) => (
         <g key={i}>
-          <circle cx={x} cy={y} r="6.2" fill="url(#gdCoin)" stroke={ART.coinLo} strokeWidth="1.2" />
-          <path d={"M" + x + " " + (y - 2.8) + " l1 2.2 2.4.2 -1.8 1.6 .5 2.4 -2.1-1.3 -2.1 1.3 .5-2.4 -1.8-1.6 2.4-.2 Z"} fill={ART.coinLo} />
+          <circle cx={x} cy={y} r="5.8" fill="url(#gdCoin)" stroke={ART.coinLo} strokeWidth="1.1" />
+          <path d={"M" + x + " " + (y - 2.6) + " l0.9 2 2.2.2 -1.6 1.5 .4 2.2 -1.9-1.2 -1.9 1.2 .4-2.2 -1.6-1.5 2.2-.2 Z"} fill={ART.coinLo} />
         </g>
       ))}
+      {/* Uchqunlar */}
       <g opacity="0.9">
-        <path d="M15 25 L17 27 L15 29 L13 27 Z" fill="#ffd700" />
-        <path d="M85 22 L87 24 L85 26 L83 24 Z" fill="#ffd700" />
-        <path d="M50 45 L52 47 L50 49 L48 47 Z" fill="#ffd700" />
+        <path d="M14 30 L16.4 32.4 L14 34.8 L11.6 32.4 Z" fill="#ffd700" />
+        <path d="M114 26 L116.4 28.4 L114 30.8 L111.6 28.4 Z" fill="#ffd700" />
+        <path d="M64 58 L66 60 L64 62 L62 60 Z" fill="#ffd700" />
+        <path d="M22 14 L23.6 15.6 L22 17.2 L20.4 15.6 Z" fill="#fef08a" />
+        <path d="M106 10 L107.6 11.6 L106 13.2 L104.4 11.6 Z" fill="#fef08a" />
       </g>
     </svg>,
   ];

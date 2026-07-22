@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { db } from "./firebase.js";
 import { useApp } from "./context/AppContext.jsx";
+import { useAppConfig } from "./hooks/useAppConfig.js";
 import i18n from "./i18n/index.js";
 import { RADIUS, SPACE, TYPE, SHADOW, MOTION, OPACITY, COMP, Z } from "./utils/tokens.js";
 import { injectUiCss } from "./components/ui/motion.js";
@@ -145,6 +146,10 @@ const GModal = memo(function GModal({ gt, onClose, children }) {
 export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }) {
   const { xar, dar, maq, qarzlar, vazifalar, azolar, oila, setGardenData } = useApp() || { xar: [], dar: [], maq: [], qarzlar: [], vazifalar: [], azolar: [], oila: {}, setGardenData: null };
   const oilaId = user?.oilaId;
+  // Sinovchi rejimi: cheat/test vositalari faqat admin panelda
+  // (Sozlamalar -> Sinovchilar) ro'yxatga kiritilganlarga ko'rinadi.
+  const appCfg = useAppConfig();
+  const isTester = !!(user?.id && appCfg.testers.includes(user.id));
   const { t } = useTranslation("garden");
   const gt = gardenTheme(dark);
   injectUiCss();
@@ -1008,8 +1013,22 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   };
 
   // ── DINAMIK BOZOR NARXLARI GENERATORI ──
+  // MUHIM: narx KUN bo'yicha barqaror (sana seed'idan) — ilgari har
+  // kirishda qayta tushar edi, chiqib-kirib eng baland narxni "tanlash"
+  // mumkin edi. Endi kunига bitta narx, ertaga yangisi.
   const generateDynamicPrices = () => {
-    const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const day = new Date().toISOString().slice(0, 10);
+    let seed = 0;
+    for (let i = 0; i < day.length; i++) seed = (seed * 31 + day.charCodeAt(i)) >>> 0;
+    const rand = () => {
+      // mulberry32 — kichik deterministik PRNG
+      seed = (seed + 0x6D2B79F5) >>> 0;
+      let z = seed;
+      z = Math.imul(z ^ (z >>> 15), z | 1);
+      z ^= z + Math.imul(z ^ (z >>> 7), z | 61);
+      return ((z ^ (z >>> 14)) >>> 0) / 4294967296;
+    };
+    const r = (min, max) => Math.floor(rand() * (max - min + 1)) + min;
     const normPrice = r(120, 320);
     const goldPrice = r(350, 750);
     const rainPrice = r(1000, 2200);
@@ -1124,7 +1143,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     } else {
       if (coins < item.cost) {
         showMsg(t("g_needCoinItem", { cost: item.cost }), "coin");
-        setShowAdModal(true);
+        if (isTester) setShowAdModal(true);
         return;
       }
       const nextCoins = coins - item.cost;
@@ -1448,7 +1467,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     if (plantType === "normal") {
       if (coins < 100) {
         showMsg(t("g013"), "coin");
-        setShowAdModal(true);
+        if (isTester) setShowAdModal(true);
         return;
       }
       const nextCoins = coins - 100;
@@ -1523,7 +1542,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
     } else if (plantType === "tulip") {
       if (coins < 50) {
         showMsg(t("g013"), "coin");
-        setShowAdModal(true);
+        if (isTester) setShowAdModal(true);
         return;
       }
       const nextCoins = coins - 50;
@@ -1597,7 +1616,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
   const handleSpeedUp = async () => {
     if (waterReady) return;
     if (coins < SPEEDUP_COST) {
-      setShowAdModal(true);
+      if (isTester) setShowAdModal(true);
       return;
     }
     const newCoins = coins - SPEEDUP_COST;
@@ -1914,6 +1933,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
 
       {/* ── SAHNA: ekranning ~88% ── */}
       <GardenScene
+        gardenId={activeGardenId}
         full
         gt={gt} mode={mode} t={t}
         plots={plots} selected={selected} coins={coins}
@@ -2025,8 +2045,8 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           )}
         </div>
         <div style={{ display: "flex", gap: SPACE.s2, alignItems: "center" }}>
-          {/* Cheat / Admin Mode */}
-          <button 
+          {/* Cheat / Sinovchi rejimi — faqat testers ro'yxatidagilarga */}
+          {isTester && <button 
             className="ui-press" 
             onClick={async () => {
               playGardenSound("click");
@@ -2073,7 +2093,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             }}
           >
             <span style={{ fontSize: 11, fontWeight: "bold" }}>👑 CHEAT</span>
-          </button>
+          </button>}
 
           {/* Musiqa sozlamasi */}
           <button className="ui-press" onClick={() => {

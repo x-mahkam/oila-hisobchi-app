@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const [minVersion, setMinVersion] = useState("");
   const [forceUpdate, setForceUpdate] = useState(false);
   const [flags, setFlags] = useState({});
+  const [testers, setTesters] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -36,6 +37,7 @@ export default function SettingsPage() {
       const f = {};
       for (const def of FLAG_DEFS) f[def.key] = (d.flags?.[def.key] !== false);
       setFlags(f);
+      setTesters(Array.isArray(d.testers) ? d.testers.join(", ") : "");
     } catch (e) { toast("Xato: " + e.message, "err"); }
     finally { setLoading(false); }
   };
@@ -51,6 +53,7 @@ export default function SettingsPage() {
           maintenance: { on: maintOn, message: maintMsg },
           minVersion, forceUpdate,
           flags,
+          testers: testers.split(",").map((x) => x.trim()).filter(Boolean),
         },
       });
       toast("Sozlamalar saqlandi — ilovalar bir necha soniyada oladi (jonli)", "ok");
@@ -121,6 +124,19 @@ export default function SettingsPage() {
         <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 8 }}>
           O'chirilgan funksiya foydalanuvchi ilovasida yashiriladi. "Ilovaga ulangan" belgisi bor
           flaglar hozirdanoq jonli ishlaydi; qolganlari ilovaning keyingi yangilanishida kuchga kiradi.
+        </div>
+      </div>
+
+      {/* ── Sinovchilar ── */}
+      <div className="panel" style={{ marginTop: 18 }}>
+        <h2>🧪 Sinovchilar (test rejimi)</h2>
+        <input className="input" style={{ width: "100%" }}
+          placeholder="Foydalanuvchi ID'lari, vergul bilan (masalan: zw3vVzJD..., abc123...)"
+          value={testers} onChange={(e) => setTesters(e.target.value)} />
+        <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 8 }}>
+          Bog' o'yinidagi CHEAT tugmasi va test-reklama FAQAT shu ro'yxatdagi foydalanuvchilarga
+          ko'rinadi. O'z ilova hisobingiz ID'sini "Foydalanuvchilar" bo'limidan (UID ustuni) nusxalang.
+          Bo'sh qoldirilsa — hech kimga ko'rinmaydi.
         </div>
       </div>
     </div>
