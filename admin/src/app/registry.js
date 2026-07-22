@@ -18,6 +18,15 @@ export const MODULES = [
     component: lazy(() => import("../modules/dashboard/Page.jsx")),
   },
   {
+    id: "users",
+    title: "Foydalanuvchilar",
+    icon: "👤",
+    route: "/users",
+    group: "Boshqaruv",
+    permission: "users.read",
+    component: lazy(() => import("../modules/users/Page.jsx")),
+  },
+  {
     id: "families",
     title: "Oilalar",
     icon: "👨‍👩‍👧",
