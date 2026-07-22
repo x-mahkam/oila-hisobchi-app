@@ -174,6 +174,18 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Support murojaatlari: foydalanuvchi O'ZINIKINI yaratadi/o'qiydi.
+    // O'zgartirish/o'chirish faqat server (admin panel funksiyalari) orqali.
+    match /support_tickets/{id} {
+      allow create: if signedIn()
+        && request.resource.data.authUid == uid()
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() < 2001;
+      allow read: if signedIn() && resource.data.authUid == uid();
+      allow update, delete: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

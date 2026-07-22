@@ -956,7 +956,7 @@ export default function App() {
       )}
       {confetti && <Confetti th={th} />}
       {showNotifs && <NotifCenter notifs={notifs} th={th} lg={lg} isKid={isKid} onClose={() => setShowNotifs(false)} onMarkRead={markNotifRead} onMarkAll={markAllRead} onClear={clearNotifs} onConfirmParent={confirmMaqParent} onConfirmKid={confirmMaqKid} setScr={setScr} setBilimInitialView={setBilimInitialView} onApproveTime={screenTime.approveExtraTime} onDenyTime={screenTime.denyExtraTime} setHighlightVazifaId={setHighlightVazifaId} />}
-      {showHelp && <HelpModal th={th} lg={lg} onClose={() => setShowHelp(false)} onReplayTour={() => { setShowHelp(false); setShowTour(true); }} />}
+      {showHelp && <HelpModal th={th} lg={lg} user={user} onClose={() => setShowHelp(false)} onReplayTour={() => { setShowHelp(false); setShowTour(true); }} />}
       {showTour && <ProductTour th={th} lg={lg} steps={DASHBOARD_TOUR_STEPS} onFinish={() => { localStorage.setItem("oilaV7Tour", "1"); setShowTour(false); }} />}
       {showPremModal && <PremiumModal th={th} STY={STY} lg={lg} onActivate={activatePremium} onClose={() => setShowPremModal(false)} />}
       {askTel && user && (

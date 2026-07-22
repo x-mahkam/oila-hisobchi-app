@@ -16,15 +16,16 @@ export const ROLES = {
     permissions: [
       "dashboard.read", "users.read", "users.write", "families.read",
       "premium.write", "i18n.read", "i18n.write", "push.send", "config.write",
+      "support.read", "support.write",
     ],
   },
   moderator: {
     label: "Moderator",
-    permissions: ["dashboard.read", "users.read", "families.read", "i18n.read", "i18n.write"],
+    permissions: ["dashboard.read", "users.read", "families.read", "i18n.read", "i18n.write", "support.read"],
   },
   support: {
     label: "Support",
-    permissions: ["dashboard.read", "users.read", "families.read"],
+    permissions: ["dashboard.read", "users.read", "families.read", "support.read", "support.write"],
   },
 };
 

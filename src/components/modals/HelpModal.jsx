@@ -3,22 +3,55 @@ import { AppCard, ListItem } from "../ui/index.js";
 import { SPACE, RADIUS, ALPHA, SHADOW, TYPE } from "../../utils/tokens.js";
 import { Ico } from "../../utils/icons.jsx";
 import { FAQS } from "../../utils/constants.js";
+import { fbDB, fbAuth } from "../../firebase.js";
+import { collection, addDoc } from "firebase/firestore";
 
 const T = {
-  uz: { title: "Yordam", close: "Yopish" },
-  ru: { title: "Помощь", close: "Закрыть" },
-  en: { title: "Help", close: "Close" },
-  kk: { title: "Көмек", close: "Жабу" },
-  ky: { title: "Жардам", close: "Жабуу" },
-  tg: { title: "Ёрдам", close: "Пӯшидан" },
-  qr: { title: "Ja'rdem", close: "Jabiw" },
+  uz: { title: "Yordam", close: "Yopish", contact: "Murojaat yuborish", contactPh: "Savolingiz yoki muammoingizni yozing…", send: "Yuborish", sent: "Yuborildi! Javob bildirishnoma sifatida keladi.", err: "Yuborilmadi, qayta urinib ko'ring" },
+  ru: { title: "Помощь", close: "Закрыть", contact: "Написать в поддержку", contactPh: "Опишите вопрос или проблему…", send: "Отправить", sent: "Отправлено! Ответ придёт уведомлением.", err: "Не отправлено, попробуйте ещё раз" },
+  en: { title: "Help", close: "Close", contact: "Contact support", contactPh: "Describe your question or issue…", send: "Send", sent: "Sent! You'll get a reply as a notification.", err: "Failed to send, please retry" },
+  kk: { title: "Көмек", close: "Жабу", contact: "Қолдауға жазу", contactPh: "Сұрағыңызды жазыңыз…", send: "Жіберу", sent: "Жіберілді!", err: "Жіберілмеді" },
+  ky: { title: "Жардам", close: "Жабуу", contact: "Колдоого жазуу", contactPh: "Сурооңузду жазыңыз…", send: "Жөнөтүү", sent: "Жөнөтүлдү!", err: "Жөнөтүлгөн жок" },
+  tg: { title: "Ёрдам", close: "Пӯшидан", contact: "Ба дастгирӣ нависед", contactPh: "Саволатонро нависед…", send: "Фиристодан", sent: "Фиристода шуд!", err: "Фиристода нашуд" },
+  qr: { title: "Ja'rdem", close: "Jabiw", contact: "Qollawg'a jazıw", contactPh: "Sorawın'ızdı jazın'…", send: "Jiberiw", sent: "Jiberildi!", err: "Jiberilmedi" },
 };
 
-export default function HelpModal({ th, lg, onClose, onReplayTour }) {
+export default function HelpModal({ th, lg, onClose, onReplayTour, user }) {
   const [openIdx, setOpenIdx] = useState(null);
   const lang = lg || "uz";
   const t = T[lang] || T.uz;
   const faqList = FAQS[lang] || FAQS.uz;
+
+  // ── Support murojaati ──
+  const [msg, setMsg] = useState("");
+  const [sendState, setSendState] = useState(""); // "" | "busy" | "ok" | "err"
+  const sendTicket = async () => {
+    const text = msg.trim();
+    if (!text || sendState === "busy") return;
+    setSendState("busy");
+    try {
+      const authUid = fbAuth.currentUser?.uid;
+      if (!authUid) throw new Error("auth yo'q");
+      await addDoc(collection(fbDB, "support_tickets"), {
+        authUid,
+        userId: user?.id || authUid,
+        ism: user?.ism || "",
+        email: user?.email || "",
+        tel: user?.tel || "",
+        oilaId: user?.oilaId || "",
+        lg: lang,
+        text,
+        t: Date.now(),
+        status: "new",
+        messages: [{ from: "user", text, t: Date.now() }],
+      });
+      setMsg("");
+      setSendState("ok");
+    } catch (e) {
+      console.error("support ticket:", e);
+      setSendState("err");
+    }
+  };
 
   return (
     <div
@@ -110,6 +143,37 @@ export default function HelpModal({ th, lg, onClose, onReplayTour }) {
               )}
             </AppCard>
           ))}
+        </div>
+
+        {/* ── Murojaat yuborish (support) ── */}
+        <div style={{ marginBottom: 14 }}>
+          <div style={{ ...TYPE.caption, color: th.t1, fontWeight: 700, marginBottom: 6 }}>💬 {t.contact}</div>
+          <textarea
+            value={msg}
+            onChange={(e) => { setMsg(e.target.value); if (sendState) setSendState(""); }}
+            placeholder={t.contactPh}
+            maxLength={2000}
+            rows={3}
+            style={{
+              width: "100%", boxSizing: "border-box", resize: "vertical",
+              background: th.surH, border: "1px solid " + th.bor, borderRadius: RADIUS.m,
+              padding: "10px 12px", color: th.t1, fontSize: 13, fontFamily: "inherit", outline: "none",
+            }}
+          />
+          {sendState === "ok" && <div style={{ ...TYPE.caption, color: th.ac, marginTop: 4 }}>{t.sent}</div>}
+          {sendState === "err" && <div style={{ ...TYPE.caption, color: "#e5484d", marginTop: 4 }}>{t.err}</div>}
+          <button
+            onClick={sendTicket}
+            disabled={!msg.trim() || sendState === "busy"}
+            style={{
+              width: "100%", marginTop: 8, background: msg.trim() ? th.ac : th.surH,
+              border: "1px solid " + (msg.trim() ? th.ac : th.bor), borderRadius: RADIUS.m,
+              padding: "11px", color: msg.trim() ? "#fff" : th.t2, cursor: msg.trim() ? "pointer" : "default",
+              fontWeight: 700, fontSize: 13,
+            }}
+          >
+            {sendState === "busy" ? "…" : t.send}
+          </button>
         </div>
 
         {/* Action Button */}
