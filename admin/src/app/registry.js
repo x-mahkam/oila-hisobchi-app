@@ -36,6 +36,15 @@ export const MODULES = [
     component: lazy(() => import("../modules/families/Page.jsx")),
   },
   {
+    id: "premium",
+    title: "Premium",
+    icon: "⭐",
+    route: "/premium",
+    group: "Boshqaruv",
+    permission: "premium.write",
+    component: lazy(() => import("../modules/premium/Page.jsx")),
+  },
+  {
     id: "i18n",
     title: "Tarjimalar",
     icon: "🌐",

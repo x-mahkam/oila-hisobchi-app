@@ -796,3 +796,174 @@ exports.adminDeleteUser = functions.https.onCall(async (data, context) => {
   return { success: true };
 });
 
+
+/**
+ * ADMIN 10: Premium ko'rinishi — premium oilalar ro'yxati (muddat bilan),
+ * mahsulot kesimi, yaqin 7/30 kunda tugaydiganlar.
+ */
+exports.adminPremiumOverview = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+
+  const families = [];
+  const byProduct = {};
+  let exp7 = 0, exp30 = 0;
+  const famSnap = await prefixRange(db.collection("appdata"), DBP + "oila_").get();
+  famSnap.forEach((docSnap) => {
+    const v = docSnap.data().v || {};
+    if (v.premium !== true) return;
+    const oilaId = v.id || docSnap.id.slice((DBP + "oila_").length);
+    const exp = Number(v.premiumExpiresAt || 0) || null;
+    const product = v.premiumProductId || "noma'lum";
+    byProduct[product] = (byProduct[product] || 0) + 1;
+    if (exp) {
+      const left = exp - now;
+      if (left > 0 && left <= 7 * DAY) exp7++;
+      if (left > 0 && left <= 30 * DAY) exp30++;
+    }
+    families.push({
+      oilaId, nomi: v.nomi || "",
+      members: (v.azolarIds || v.azolar || []).length,
+      product, expiresAt: exp,
+      daysLeft: exp ? Math.ceil((exp - now) / DAY) : null,
+      verifiedAt: v.verifiedAt || null,
+    });
+  });
+  families.sort((a, b) => (a.expiresAt || Infinity) - (b.expiresAt || Infinity));
+
+  // Promo kodlar xulosasi
+  let promoActive = 0, promoUses = 0;
+  try {
+    const pSnap = await db.collection("promo_codes").get();
+    pSnap.forEach((d) => {
+      const p = d.data();
+      if (p.active) promoActive++;
+      promoUses += Number(p.usedCount || 0);
+    });
+  } catch (e) { console.warn("promo o'qish:", e.message); }
+
+  return {
+    total: families.length, byProduct, expiringIn7: exp7, expiringIn30: exp30,
+    promoActive, promoUses, families, generatedAt: now,
+  };
+});
+
+/**
+ * ADMIN 11: Promo kodlar CRUD.
+ * promo_codes/{KOD} = { code, days, maxUses, usedCount, active, createdAt,
+ *                       createdBy, note, usedBy: {uid: ts} }
+ * data.op: "list" | "create" | "toggle" | "delete"
+ */
+exports.adminPromo = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const op = data?.op ? String(data.op) : "list";
+  const coll = db.collection("promo_codes");
+
+  if (op === "list") {
+    const out = [];
+    const snap = await coll.orderBy("createdAt", "desc").limit(200).get();
+    snap.forEach((d) => {
+      const p = d.data();
+      out.push({
+        code: d.id, days: p.days, maxUses: p.maxUses, usedCount: p.usedCount || 0,
+        active: p.active !== false, createdAt: p.createdAt || null, note: p.note || "",
+      });
+    });
+    return { promos: out };
+  }
+
+  if (op === "create") {
+    let code = (data?.code ? String(data.code) : "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+    if (!code) {
+      // Avto-kod: OILA- + 6 belgi (adashtiruvchi 0/O/1/I belgilarisiz)
+      const alpha = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      code = "OILA";
+      for (let i = 0; i < 6; i++) code += alpha[Math.floor(Math.random() * alpha.length)];
+    }
+    const days = Math.min(Math.max(parseInt(data?.days || 30, 10), 1), 3650);
+    const maxUses = Math.min(Math.max(parseInt(data?.maxUses || 1, 10), 1), 100000);
+    const note = data?.note ? String(data.note).slice(0, 200) : "";
+    const ref = coll.doc(code);
+    if ((await ref.get()).exists) {
+      throw new functions.https.HttpsError("already-exists", "Bu kod allaqachon mavjud: " + code);
+    }
+    await ref.set({
+      code, days, maxUses, usedCount: 0, active: true,
+      createdAt: Date.now(), createdBy: context.auth.uid, note, usedBy: {},
+    });
+    await logAdmin(context, "promo.create", { code, days, maxUses });
+    return { success: true, code };
+  }
+
+  const code = (data?.code ? String(data.code) : "").toUpperCase();
+  if (!code) throw new functions.https.HttpsError("invalid-argument", "code talab qilinadi.");
+  const ref = coll.doc(code);
+  const snap = await ref.get();
+  if (!snap.exists) throw new functions.https.HttpsError("not-found", "Promo kod topilmadi.");
+
+  if (op === "toggle") {
+    const cur = snap.data();
+    await ref.update({ active: cur.active === false });
+    await logAdmin(context, "promo.toggle", { code, active: cur.active === false });
+    return { success: true, active: cur.active === false };
+  }
+  if (op === "delete") {
+    await ref.delete();
+    await logAdmin(context, "promo.delete", { code });
+    return { success: true };
+  }
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
+});
+
+/**
+ * FOYDALANUVCHI: Promo kodni ishlatish (admin emas — oddiy foydalanuvchi).
+ * Faqat oila boshlig'i. Bir oila bir kodni bir marta ishlatadi.
+ * Transaction bilan: parallel ishlatishda limit oshib ketmaydi.
+ */
+exports.redeemPromo = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
+  }
+  const code = (data?.code ? String(data.code) : "").toUpperCase().replace(/[^A-Z0-9]/g, "");
+  if (!code) throw new functions.https.HttpsError("invalid-argument", "Promo kod kiriting.");
+
+  // Chaqiruvchining oilasi va roli — o'z profilidan (server tomonda)
+  const uSnap = await db.collection("appdata").doc(DBP + "user_" + context.auth.uid).get();
+  if (!uSnap.exists) throw new functions.https.HttpsError("failed-precondition", "Profil topilmadi.");
+  const uv = uSnap.data().v || {};
+  if (uv.rol !== "bosh") {
+    throw new functions.https.HttpsError("permission-denied", "Faqat oila boshlig'i promo kodni faollashtira oladi.");
+  }
+  const oilaId = uv.oilaId;
+  if (!oilaId) throw new functions.https.HttpsError("failed-precondition", "Profilingizda oila topilmadi.");
+
+  const ref = db.collection("promo_codes").doc(code);
+  const days = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new functions.https.HttpsError("not-found", "Bunday promo kod yo'q.");
+    const p = snap.data();
+    if (p.active === false) throw new functions.https.HttpsError("failed-precondition", "Bu kod o'chirilgan.");
+    if ((p.usedCount || 0) >= p.maxUses) {
+      throw new functions.https.HttpsError("resource-exhausted", "Bu kodning limiti tugagan.");
+    }
+    const usedBy = p.usedBy || {};
+    if (usedBy["oila_" + oilaId]) {
+      throw new functions.https.HttpsError("already-exists", "Bu kod oilangizda allaqachon ishlatilgan.");
+    }
+    usedBy["oila_" + oilaId] = Date.now();
+    tx.update(ref, { usedCount: (p.usedCount || 0) + 1, usedBy });
+    return p.days;
+  });
+
+  const expiresAt = Date.now() + days * 24 * 60 * 60 * 1000;
+  await enablePremiumForOila(oilaId, "promo_" + code, "promo", expiresAt);
+  try {
+    await db.collection("audit_log").add({
+      t: Date.now(), uid: context.auth.uid, email: context.auth.token?.email || null,
+      action: "promo.redeem", detail: { code, oilaId, days },
+    });
+  } catch (e) { console.warn("audit:", e.message); }
+
+  return { success: true, days, expiresAt };
+});
