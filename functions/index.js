@@ -1055,3 +1055,190 @@ exports.adminConfig = functions.https.onCall(async (data, context) => {
 
   throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
 });
+
+/**
+ * ADMIN 13: Push xabarlar.
+ * Auditoriya: all | premium | lang (act_ dagi til) | platform (android/web).
+ * data.op:
+ *  "audience" → auditoriya hajmini sanash (yubormasdan)
+ *  "send"     → darhol yuborish yoki sendAtMs bilan rejalashtirish
+ *  "list"     → so'nggi kampaniyalar tarixi
+ *  "cancel"   → rejalashtirilganini bekor qilish
+ * Tokenlar: appdata/oilaV7_fcm_tokens_<uid> (v = token massivi).
+ */
+async function collectPushTargets(audience) {
+  const appdata = db.collection("appdata");
+  const type = audience?.type || "all";
+
+  // Premium oilalar to'plami (kerak bo'lsa)
+  let premiumOilas = null;
+  if (type === "premium") {
+    premiumOilas = new Set();
+    const famSnap = await prefixRange(appdata, DBP + "oila_").get();
+    famSnap.forEach((d) => {
+      const v = d.data().v || {};
+      if (v.premium === true) premiumOilas.add(v.id || d.id.slice((DBP + "oila_").length));
+    });
+  }
+
+  // Til/platforma xaritasi (act_ — oxirgi faollik metasi)
+  let actMap = null;
+  if (type === "lang" || type === "platform") {
+    actMap = {};
+    const actSnap = await prefixRange(appdata, DBP + "act_").get();
+    actSnap.forEach((d) => {
+      const uid = d.id.slice((DBP + "act_").length);
+      const v = d.data().v || {};
+      actMap[uid] = { lg: v.lg || null, platform: v.platform || null };
+    });
+  }
+
+  // Foydalanuvchilarni filtrlash
+  const uidSet = new Set();
+  const usersSnap = await prefixRange(appdata, DBP + "user_").get();
+  usersSnap.forEach((d) => {
+    const uid = d.id.slice((DBP + "user_").length);
+    const v = d.data().v || {};
+    if (type === "premium" && !premiumOilas.has(v.oilaId)) return;
+    if (type === "lang" && (actMap[uid] || {}).lg !== audience.lang) return;
+    if (type === "platform" && (actMap[uid] || {}).platform !== audience.platform) return;
+    uidSet.add(uid);
+  });
+
+  // Tokenlarni yig'ish (bitta prefix-skan)
+  const tokens = new Set();
+  let usersWithTokens = 0;
+  const tokSnap = await prefixRange(appdata, DBP + "fcm_tokens_").get();
+  tokSnap.forEach((d) => {
+    const uid = d.id.slice((DBP + "fcm_tokens_").length);
+    if (!uidSet.has(uid)) return;
+    const arr = d.data().v || [];
+    if (Array.isArray(arr) && arr.length) {
+      usersWithTokens++;
+      arr.forEach((t) => { if (t) tokens.add(t); });
+    }
+  });
+
+  return { matchedUsers: uidSet.size, usersWithTokens, tokens: [...tokens] };
+}
+
+async function sendPushToTokens(tokens, title, body) {
+  let sent = 0, failed = 0;
+  for (let i = 0; i < tokens.length; i += 500) {
+    const chunk = tokens.slice(i, i + 500);
+    try {
+      const res = await admin.messaging().sendEachForMulticast({
+        tokens: chunk,
+        notification: { title, body },
+      });
+      sent += res.successCount;
+      failed += res.failureCount;
+    } catch (e) {
+      console.error("push chunk xatosi:", e.message);
+      failed += chunk.length;
+    }
+  }
+  return { sent, failed };
+}
+
+exports.adminPush = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const op = data?.op ? String(data.op) : "list";
+
+  if (op === "audience") {
+    const t = await collectPushTargets(data?.audience);
+    return { matchedUsers: t.matchedUsers, usersWithTokens: t.usersWithTokens, tokenCount: t.tokens.length };
+  }
+
+  if (op === "send") {
+    const title = String(data?.title || "").trim().slice(0, 120);
+    const body = String(data?.body || "").trim().slice(0, 500);
+    if (!title || !body) {
+      throw new functions.https.HttpsError("invalid-argument", "Sarlavha va matn talab qilinadi.");
+    }
+    const audience = {
+      type: ["all", "premium", "lang", "platform"].includes(data?.audience?.type) ? data.audience.type : "all",
+      lang: data?.audience?.lang ? String(data.audience.lang).slice(0, 5) : null,
+      platform: data?.audience?.platform ? String(data.audience.platform).slice(0, 10) : null,
+    };
+    const sendAtMs = Number(data?.sendAtMs || 0);
+
+    // Rejalashtirish: kelajak vaqti berilgan bo'lsa — saqlab qo'yamiz
+    if (sendAtMs && sendAtMs > Date.now() + 60 * 1000) {
+      const ref = await db.collection("push_campaigns").add({
+        t: Date.now(), title, body, audience, status: "scheduled", sendAt: sendAtMs,
+        by: context.auth.uid, byEmail: context.auth.token?.email || null,
+      });
+      await logAdmin(context, "push.schedule", { id: ref.id, title, audience, sendAt: sendAtMs });
+      return { success: true, scheduled: true, id: ref.id, sendAt: sendAtMs };
+    }
+
+    // Darhol yuborish
+    const targets = await collectPushTargets(audience);
+    const { sent, failed } = await sendPushToTokens(targets.tokens, title, body);
+    const ref = await db.collection("push_campaigns").add({
+      t: Date.now(), title, body, audience, status: "sent", sentAt: Date.now(),
+      matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed,
+      by: context.auth.uid, byEmail: context.auth.token?.email || null,
+    });
+    await logAdmin(context, "push.send", { id: ref.id, title, audience, sent, failed });
+    return { success: true, sent, failed, matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length };
+  }
+
+  if (op === "list") {
+    const out = [];
+    const snap = await db.collection("push_campaigns").orderBy("t", "desc").limit(50).get();
+    snap.forEach((d) => {
+      const c = d.data();
+      out.push({
+        id: d.id, t: c.t, title: c.title, body: c.body, audience: c.audience,
+        status: c.status, sendAt: c.sendAt || null, sentAt: c.sentAt || null,
+        sent: c.sent ?? null, failed: c.failed ?? null, tokenCount: c.tokenCount ?? null,
+        byEmail: c.byEmail || null,
+      });
+    });
+    return { campaigns: out };
+  }
+
+  if (op === "cancel") {
+    const id = data?.id ? String(data.id) : "";
+    if (!id) throw new functions.https.HttpsError("invalid-argument", "id talab qilinadi.");
+    const ref = db.collection("push_campaigns").doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) throw new functions.https.HttpsError("not-found", "Kampaniya topilmadi.");
+    if (snap.data().status !== "scheduled") {
+      throw new functions.https.HttpsError("failed-precondition", "Faqat rejalashtirilganini bekor qilish mumkin.");
+    }
+    await ref.update({ status: "cancelled", cancelledAt: Date.now() });
+    await logAdmin(context, "push.cancel", { id });
+    return { success: true };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
+});
+
+/**
+ * Rejalashtirilgan push'larni yuboruvchi — har 10 daqiqada ishlaydi.
+ * push_campaigns: status=scheduled va sendAt <= hozir bo'lganlarni yuboradi.
+ */
+exports.pushScheduler = functions.pubsub.schedule("every 10 minutes").onRun(async () => {
+  const now = Date.now();
+  const snap = await db.collection("push_campaigns").where("status", "==", "scheduled").get();
+  for (const d of snap.docs) {
+    const c = d.data();
+    if (!c.sendAt || c.sendAt > now) continue;
+    try {
+      const targets = await collectPushTargets(c.audience);
+      const { sent, failed } = await sendPushToTokens(targets.tokens, c.title, c.body);
+      await d.ref.update({
+        status: "sent", sentAt: Date.now(),
+        matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed,
+      });
+      console.log(`pushScheduler: "${c.title}" yuborildi (${sent} ok, ${failed} xato)`);
+    } catch (e) {
+      console.error("pushScheduler xatosi:", d.id, e.message);
+      await d.ref.update({ status: "error", error: String(e.message || e) });
+    }
+  }
+  return null;
+});
