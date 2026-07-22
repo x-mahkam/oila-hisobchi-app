@@ -166,6 +166,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Tizim sozlamalari va feature flag'lar (admin panel boshqaradi).
+    // Ilova jonli o'qiydi (maintenance/flags) — maxfiy ma'lumot yo'q.
+    // Yozish faqat Cloud Functions (Admin SDK, rules chetlab o'tadi).
+    match /app_config/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }

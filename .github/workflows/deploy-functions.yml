@@ -14,7 +14,7 @@ name: Deploy Functions
 on:
   push:
     branches: [main]
-    paths: ["functions/**"]
+    paths: ["functions/**", "firestore.rules"]
   workflow_dispatch:
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
             echo "GOOGLE_PLAY_SERVICE_ACCOUNT=${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}" >> functions/.env
           fi
 
-      - name: Firebase'ga deploy
-        run: npx firebase-tools@latest deploy --only functions --project oila-hisobchi --non-interactive --force
+      - name: Firebase'ga deploy (functions + firestore rules)
+        run: npx firebase-tools@latest deploy --only functions,firestore:rules --project oila-hisobchi --non-interactive --force
         env:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

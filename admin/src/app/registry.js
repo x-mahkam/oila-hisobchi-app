@@ -53,6 +53,15 @@ export const MODULES = [
     permission: "i18n.read",
     component: lazy(() => import("../modules/i18n/Page.jsx")),
   },
+  {
+    id: "settings",
+    title: "Sozlamalar",
+    icon: "⚙️",
+    route: "/settings",
+    group: "Tizim",
+    permission: "config.write",
+    component: lazy(() => import("../modules/settings/Page.jsx")),
+  },
   // Keyingi fazalar shu yerga qo'shiladi:
-  // users, premium, push, ai, flags, analytics, logs, support, backup...
+  // push, ai, analytics, logs, support, backup...
 ];
