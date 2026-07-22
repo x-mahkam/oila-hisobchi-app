@@ -1000,3 +1000,58 @@ exports.redeemPromo = functions.https.onCall(async (data, context) => {
 
   return { success: true, days, expiresAt };
 });
+
+/**
+ * ADMIN 12: Tizim sozlamalari + Feature Flags.
+ * app_config/main = {
+ *   maintenance: { on, message },   — texnik tanaffus rejimi
+ *   minVersion, forceUpdate,        — majburiy yangilash
+ *   flags: { bilim, garden, ai, wedding, kidsGames, ... } — false = o'chiq
+ * }
+ * Ilova bu hujjatni onSnapshot bilan JONLI o'qiydi (rules: read ochiq).
+ * data.op: "get" | "set" (patch merge qilinadi)
+ */
+exports.adminConfig = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const op = data?.op ? String(data.op) : "get";
+  const ref = db.collection("app_config").doc("main");
+
+  if (op === "get") {
+    const snap = await ref.get();
+    return snap.exists ? snap.data() : {};
+  }
+
+  if (op === "set") {
+    const patch = data?.patch;
+    if (!patch || typeof patch !== "object" || Array.isArray(patch)) {
+      throw new functions.https.HttpsError("invalid-argument", "patch (obyekt) talab qilinadi.");
+    }
+    // Faqat ruxsat etilgan maydonlar (ixtiyoriy kalit kirmasin)
+    const clean = {};
+    if (patch.maintenance && typeof patch.maintenance === "object") {
+      clean.maintenance = {
+        on: patch.maintenance.on === true,
+        message: String(patch.maintenance.message || "").slice(0, 300),
+      };
+    }
+    if (patch.minVersion !== undefined) clean.minVersion = String(patch.minVersion || "").slice(0, 20);
+    if (patch.forceUpdate !== undefined) clean.forceUpdate = patch.forceUpdate === true;
+    if (patch.flags && typeof patch.flags === "object" && !Array.isArray(patch.flags)) {
+      clean.flags = {};
+      for (const [k, v] of Object.entries(patch.flags)) {
+        clean.flags[String(k).slice(0, 30)] = v === true;
+      }
+    }
+    if (Object.keys(clean).length === 0) {
+      throw new functions.https.HttpsError("invalid-argument", "patch'da ruxsat etilgan maydon yo'q.");
+    }
+    clean.updatedAt = Date.now();
+    clean.updatedBy = context.auth.uid;
+    await ref.set(clean, { merge: true });
+    await logAdmin(context, "config.set", clean);
+    const snap = await ref.get();
+    return { success: true, config: snap.data() };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
+});

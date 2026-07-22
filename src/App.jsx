@@ -58,6 +58,7 @@ import { useVoiceInput }     from "./hooks/useVoiceInput.js";
 import { useQRScanner }      from "./hooks/useQRScanner.js";
 import { useExport }         from "./hooks/useExport.js";
 import { useScreenTime }     from "./hooks/useScreenTime.js";
+import { useAppConfig, flagOn, versionLess } from "./hooks/useAppConfig.js";
 import { useDailyReminder }  from "./hooks/useDailyReminder.js";
 import { usePushToken }      from "./hooks/usePushToken.js";
 import ScreenTimeLockScreen  from "./components/ScreenTimeLockScreen.jsx";
@@ -441,6 +442,8 @@ export default function App() {
 
   const importFileRef = useRef(null);
   const APP_VER = "1.0.0";
+  // Masofaviy sozlamalar (admin panel): maintenance, flags, majburiy update
+  const appCfg = useAppConfig();
   const adminStats = null;
   const adminLoad = false;
   const loadAdminStats = () => {};
@@ -888,10 +891,39 @@ export default function App() {
     return <AppLockScreen th={th} uid={user.id} onUnlock={() => setAppUnlocked(true)} />;
   }
 
+  // ── Texnik tanaffus (admin panel: Sozlamalar → Maintenance) ──
+  if (appCfg.maintenance.on) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: th.bg, color: th.t1, padding: 24, textAlign: "center" }}>
+        <div style={{ fontSize: 64, marginBottom: 12 }}>🛠️</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Texnik ishlar olib borilmoqda</div>
+        <div style={{ color: th.t2, fontSize: 14, maxWidth: 320 }}>
+          {appCfg.maintenance.message || "Ilova tez orada qayta ishga tushadi. Iltimos, birozdan so'ng urinib ko'ring."}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Majburiy yangilash (minVersion + forceUpdate) ──
+  if (appCfg.forceUpdate && appCfg.minVersion && versionLess(APP_VER, appCfg.minVersion)) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: th.bg, color: th.t1, padding: 24, textAlign: "center" }}>
+        <div style={{ fontSize: 64, marginBottom: 12 }}>⬆️</div>
+        <div style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Yangilash kerak</div>
+        <div style={{ color: th.t2, fontSize: 14, maxWidth: 320 }}>
+          Ilovaning yangi versiyasi chiqdi (v{appCfg.minVersion}). Davom etish uchun Play Market'dan yangilang.
+        </div>
+      </div>
+    );
+  }
+
   // ── Nav items ─────────────────────────────────────────────
-  const navItems = isKid
+  // flagOn: admin panel Sozlamalar → Feature Flags (masalan bilim o'chiq
+  // bo'lsa, bola navigatsiyasidan "Bilim" yo'qoladi).
+  const navItems = (isKid
     ? [{ id: "bosh", lb: t.home }, { id: "vazifa", lb: t.tasks }, { id: "bilim", lb: t.learn }, { id: "maqsad", lb: t.goal }]
-    : [{ id: "bosh", lb: t.home }, { id: "qarz", lb: t.debts }, { id: "qoshish", pr: true }, { id: "maqsad", lb: t.goal }, { id: "hisobot", lb: t.rep }];
+    : [{ id: "bosh", lb: t.home }, { id: "qarz", lb: t.debts }, { id: "qoshish", pr: true }, { id: "maqsad", lb: t.goal }, { id: "hisobot", lb: t.rep }]
+  ).filter((item) => item.id !== "bilim" || flagOn(appCfg, "bilim"));
 
   // ── Shared page props ─────────────────────────────────────
   const pageProps = {
@@ -1049,7 +1081,13 @@ export default function App() {
         {scr === "activity" && <ActivityCenter {...pageProps} />}
         {scr === "maqsad"  && <GoalsPage      {...pageProps} tupId={tupId} setTupId={setTupId} tupS={tupS} setTupS={setTupS} editMq={editMq} setEditMq={setEditMq} editMqN={editMqN} setEditMqN={setEditMqN} editMqS={editMqS} setEditMqS={setEditMqS} maqsadConfirmNotif={maqsadConfirmNotif} setMaqsadConfirmNotif={setMaqsadConfirmNotif} addMq={addMq} tupMq={tupMq} delMq={delMq} saveEditMq={saveEditMq} confirmMaqBought={confirmMaqBought} cancelMaqReturn={cancelMaqReturn} parentBoughtMaqsad={parentBoughtMaqsad} parentLaterMaqsad={parentLaterMaqsad} kidAcceptMaqsad={kidAcceptMaqsad} kidRejectMaqsad={kidRejectMaqsad} />}
         {scr === "vazifa"  && <TasksPage      {...pageProps} showAddVazifa={showAddVazifa} setShowAddVazifa={setShowAddVazifa} showGift={showGift} setShowGift={setShowGift} giftSum={giftSum} setGiftSum={setGiftSum} giftFrom={giftFrom} setGiftFrom={setGiftFrom} vTitle={vTitle} setVTitle={setVTitle} vReward={vReward} setVReward={setVReward} vAssignee={vAssignee} setVAssignee={setVAssignee} vEmoji={vEmoji} setVEmoji={setVEmoji} vDeadline={vDeadline} setVDeadline={setVDeadline} addVazifa={addVazifa} vazifaDone={vazifaDone} vazifaApprove={vazifaApprove} vazifaAcceptProposed={vazifaAcceptProposed} delVazifa={delVazifa} addGiftMoney={addGiftMoney} cleanupKidDuplicates={cleanupKidDuplicates} isBosh={isBosh} highlightVazifaId={highlightVazifaId} setHighlightVazifaId={setHighlightVazifaId} />}
-        {scr === "bilim"   && <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} initialView={bilimInitialView} onBack={() => setScr("bosh")} gardenData={gardenData} onGarden={() => { setScr("profil"); setPTab("garden"); }} />}
+        {scr === "bilim"   && flagOn(appCfg, "bilim") && <BilimHub user={user} lg={lg} dark={dark} oila={oila} azolar={azolar} initialView={bilimInitialView} onBack={() => setScr("bosh")} gardenData={gardenData} onGarden={() => { setScr("profil"); setPTab("garden"); }} />}
+        {scr === "bilim"   && !flagOn(appCfg, "bilim") && (
+          <div style={{ textAlign: "center", padding: "60px 20px", color: th.t2 }}>
+            <div style={{ fontSize: 48, marginBottom: 10 }}>🚧</div>
+            Bu bo'lim vaqtincha o'chirilgan.
+          </div>
+        )}
         {scr === "qarz"    && <DebtsPage      {...pageProps} {...debts} generateTilxat={generateTilxat} verifyTilxat={verifyTilxat} setVerifyTilxat={setVerifyTilxat} />}
         {(scr === "hisobot" || scr === "maslahat") && <ReportsPage    {...pageProps} hisFil={hisFil} setHisFil={setHisFil} exportLoading={exportLoading} exportExcel={exportExcel} exportPDF={exportPDF} adv={aiAdvice.adv} setAdv={aiAdvice.setAdv} advL={aiAdvice.advL} advErr={aiAdvice.advErr} aiAdv={aiAdv} adminStats={adminStats} adminLoad={adminLoad} loadAdminStats={loadAdminStats} />}
         {scr === "profil"  && <ProfilePage    {...pageProps} pTab={pTab} setPTab={setPTab} waterGarden={waterGarden} activatePremium={activatePremium} setShowPremModal={setShowPremModal} notifEnabled={notifEnabled} toggleNotif={toggleNotif} notifTime={notifTime} saveNotifTime={saveNotifTime} APP_VER={APP_VER} showBilim={showBilim} setShowBilim={setShowBilim} setBilimInitialView={setBilimInitialView} />}
