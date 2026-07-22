@@ -1,0 +1,58 @@
+# ═══════════════════════════════════════════════════════════════════
+#  Firebase Functions AVTOMATIK deploy.
+#  Qachon ishlaydi:
+#   - main'ga functions/ ichida o'zgarish qo'shilganda (avtomatik)
+#   - qo'lda ishga tushirilganda (Actions -> Deploy Functions -> Run workflow)
+#
+#  BIR MARTALIK SOZLASH (repo Settings -> Secrets and variables -> Actions):
+#   FIREBASE_TOKEN  - kompyuterda "firebase login:ci" buyrug'i bergan token
+#   ADMIN_UIDS      - admin Firebase UID'lar (vergul bilan)
+#   REVENUECAT_WEBHOOK_SECRET - (ixtiyoriy) webhook kaliti
+# ═══════════════════════════════════════════════════════════════════
+name: Deploy Functions
+
+on:
+  push:
+    branches: [main]
+    paths: ["functions/**"]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Sozlash tekshiruvi (secrets bormi?)
+        run: |
+          if [ -z "${{ secrets.FIREBASE_TOKEN }}" ]; then
+            echo "::error::FIREBASE_TOKEN secret qo'shilmagan. Kompyuterda 'firebase login:ci' ishga tushirib, chiqqan tokenni GitHub -> Settings -> Secrets and variables -> Actions ga FIREBASE_TOKEN nomi bilan qo'shing."
+            exit 1
+          fi
+          if [ -z "${{ secrets.ADMIN_UIDS }}" ]; then
+            echo "::error::ADMIN_UIDS secret qo'shilmagan. Admin UID'ni GitHub -> Settings -> Secrets and variables -> Actions ga ADMIN_UIDS nomi bilan qo'shing."
+            exit 1
+          fi
+
+      - name: Functions kutubxonalarini o'rnatish
+        run: npm install --no-audit --no-fund
+        working-directory: functions
+
+      - name: functions/.env yaratish (secrets'dan)
+        run: |
+          echo "ADMIN_UIDS=${{ secrets.ADMIN_UIDS }}" > functions/.env
+          if [ -n "${{ secrets.REVENUECAT_WEBHOOK_SECRET }}" ]; then
+            echo "REVENUECAT_WEBHOOK_SECRET=${{ secrets.REVENUECAT_WEBHOOK_SECRET }}" >> functions/.env
+          fi
+          if [ -n "${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}" ]; then
+            echo "GOOGLE_PLAY_SERVICE_ACCOUNT=${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}" >> functions/.env
+          fi
+
+      - name: Firebase'ga deploy
+        run: npx firebase-tools@latest deploy --only functions --project oila-hisobchi --non-interactive --force
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
