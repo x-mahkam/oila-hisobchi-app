@@ -1242,3 +1242,115 @@ exports.pushScheduler = functions.pubsub.schedule("every 10 minutes").onRun(asyn
   }
   return null;
 });
+
+/**
+ * ADMIN 14: Analytics — mavjud ma'lumotlardan hisoblangan ko'rsatkichlar.
+ *  - Retention: ro'yxatdan o'tganiga 7/30 kundan oshgan foydalanuvchilarning
+ *    qanchasi so'nggi 7/30 kunda faol bo'lgan (act_ oxirgi faollik).
+ *  - Top foydalanuvchilar/oilalar: tranzaksiyalar soni bo'yicha (x_/d_).
+ *  - Feature usage: qaysi oilalar maqsad/qarz/vazifa'dan foydalanadi.
+ * Eslatma: sessiya davomiyligi kuzatilmaydi (event-tracking yo'q) — halol.
+ */
+exports.adminAnalytics = functions.https.onCall(async (data, context) => {
+  assertAdmin(context);
+  const appdata = db.collection("appdata");
+  const now = Date.now();
+  const DAY = 24 * 60 * 60 * 1000;
+
+  // 1) Foydalanuvchilar: registeredAt + nomi (top jadval uchun)
+  const users = {}; // uid -> { ism, oilaId, rol, registeredAt }
+  const usersSnap = await prefixRange(appdata, DBP + "user_").get();
+  usersSnap.forEach((d) => {
+    const uid = d.id.slice((DBP + "user_").length);
+    const v = d.data().v || {};
+    users[uid] = { ism: v.ism || "", oilaId: v.oilaId || "", rol: v.rol || "azo", registeredAt: v.registeredAt || null };
+  });
+
+  // 2) Faollik (act_): uid -> lastActive
+  const lastActive = {};
+  const actSnap = await prefixRange(appdata, DBP + "act_").get();
+  actSnap.forEach((d) => {
+    const uid = d.id.slice((DBP + "act_").length);
+    lastActive[uid] = Number((d.data().v || {}).t || 0);
+  });
+
+  // 3) Retention (taxminiy, oxirgi faollik asosida)
+  let eligible7 = 0, retained7 = 0, eligible30 = 0, retained30 = 0;
+  for (const [uid, u] of Object.entries(users)) {
+    if (!u.registeredAt) continue;
+    const regMs = new Date(u.registeredAt).getTime();
+    if (!regMs) continue;
+    const la = lastActive[uid] || 0;
+    if (now - regMs > 7 * DAY) {
+      eligible7++;
+      if (la && now - la <= 7 * DAY) retained7++;
+    }
+    if (now - regMs > 30 * DAY) {
+      eligible30++;
+      if (la && now - la <= 30 * DAY) retained30++;
+    }
+  }
+
+  // 4) Tranzaksiyalar: x_<oila>_<uid> va d_<oila>_<uid> massiv uzunliklari
+  const txByUser = {}; // uid -> count
+  const txByOila = {}; // oilaId -> count
+  for (const prefix of ["x_", "d_"]) {
+    const snap = await prefixRange(appdata, DBP + prefix).get();
+    snap.forEach((d) => {
+      const v = d.data().v;
+      if (!Array.isArray(v) || v.length === 0) return;
+      const rest = d.id.slice((DBP + prefix).length);
+      const i = rest.lastIndexOf("_");
+      if (i <= 0) return;
+      const oilaId = rest.slice(0, i);
+      const uid = rest.slice(i + 1);
+      txByUser[uid] = (txByUser[uid] || 0) + v.length;
+      txByOila[oilaId] = (txByOila[oilaId] || 0) + v.length;
+    });
+  }
+
+  // 5) Feature usage: nechta oila qaysi funksiyani ishlatadi
+  const famCount = async (prefix) => {
+    const s = await prefixRange(appdata, DBP + prefix).get();
+    let n = 0;
+    s.forEach((d) => {
+      const v = d.data().v;
+      if (Array.isArray(v) ? v.length > 0 : v != null) n++;
+    });
+    return n;
+  };
+  const [goalsFam, debtsFam, tasksFam, toyFam] = await Promise.all([
+    famCount("maq_"), famCount("qarz_"), famCount("vazifa_"), famCount("toy_"),
+  ]);
+  const totalFamilies = Object.keys(txByOila).length;
+
+  // 6) Top ro'yxatlar
+  const oilaNames = {}; // oilaId -> nomi
+  const famSnap = await prefixRange(appdata, DBP + "oila_").get();
+  famSnap.forEach((d) => {
+    const v = d.data().v || {};
+    oilaNames[v.id || d.id.slice((DBP + "oila_").length)] = v.nomi || "";
+  });
+  const topUsers = Object.entries(txByUser)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([uid, n]) => ({ uid, ism: users[uid]?.ism || "(noma'lum)", rol: users[uid]?.rol || "", tx: n, lastActive: lastActive[uid] || null }));
+  const topFamilies = Object.entries(txByOila)
+    .sort((a, b) => b[1] - a[1]).slice(0, 10)
+    .map(([oilaId, n]) => ({ oilaId, nomi: oilaNames[oilaId] || "", tx: n }));
+
+  return {
+    retention: {
+      d7: { eligible: eligible7, retained: retained7, pct: eligible7 ? Math.round((retained7 / eligible7) * 100) : null },
+      d30: { eligible: eligible30, retained: retained30, pct: eligible30 ? Math.round((retained30 / eligible30) * 100) : null },
+    },
+    features: [
+      { key: "transactions", label: "Kirim-chiqim", families: totalFamilies },
+      { key: "goals", label: "Maqsadlar", families: goalsFam },
+      { key: "debts", label: "Qarzlar", families: debtsFam },
+      { key: "tasks", label: "Vazifalar", families: tasksFam },
+      { key: "wedding", label: "To'y kalkulyatori", families: toyFam },
+    ],
+    topUsers, topFamilies,
+    generatedAt: now,
+  };
+});
