@@ -2,6 +2,7 @@ import { useState } from "react";
 import { call } from "../../lib/firebase.js";
 import { useQuery } from "../../lib/useQuery.js";
 import { StatTile, DataTable, Badge, ConfirmDialog, Skeleton, useToast } from "../../shared/ui.jsx";
+import { downloadCsv, stamp } from "../../lib/csv.js";
 
 function fmtT(ms) {
   if (!ms) return "—";
@@ -89,6 +90,17 @@ export default function PremiumPage() {
     <div>
       <div className="toolbar">
         <button className="btn ghost sm" onClick={() => { reload(); promoQ.reload({ op: "list" }); }}>↻ Yangilash</button>
+        <button className="btn ghost sm" disabled={!d?.families?.length}
+          onClick={() => downloadCsv("premium-oilalar-" + stamp(), [
+            { key: "nomi", title: "Oila nomi" },
+            { key: "oilaId", title: "Oila ID" },
+            { key: "members", title: "A'zolar" },
+            { key: "product", title: "Mahsulot" },
+            { key: "expiresAt", title: "Tugash sanasi", value: (r) => r.expiresAt ? new Date(Number(r.expiresAt)).toISOString().slice(0, 10) : "" },
+            { key: "daysLeft", title: "Qolgan kun" },
+          ], d.families)}>
+          ⬇ CSV
+        </button>
       </div>
 
       {error && <div className="error">{error}</div>}

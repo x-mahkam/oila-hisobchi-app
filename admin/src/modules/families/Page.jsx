@@ -2,6 +2,7 @@ import { useState } from "react";
 import { call } from "../../lib/firebase.js";
 import { useQuery } from "../../lib/useQuery.js";
 import { DataTable, Badge, ConfirmDialog, Skeleton, useToast } from "../../shared/ui.jsx";
+import { downloadCsv, stamp } from "../../lib/csv.js";
 
 function fmtExp(ms) {
   if (!ms) return "—";
@@ -46,6 +47,17 @@ export default function FamiliesPage() {
           onKeyDown={(e) => e.key === "Enter" && doSearch()}
         />
         <button className="btn sm" onClick={doSearch}>Qidirish</button>
+        <button className="btn ghost sm" disabled={!rows.length}
+          onClick={() => downloadCsv("oilalar-" + stamp(), [
+            { key: "nomi", title: "Oila nomi" },
+            { key: "oilaId", title: "Oila ID" },
+            { key: "members", title: "A'zolar soni" },
+            { key: "premium", title: "Premium", value: (r) => r.premium ? "ha" : "yo'q" },
+            { key: "premiumExpiresAt", title: "Premium tugashi", value: (r) => r.premiumExpiresAt ? new Date(Number(r.premiumExpiresAt)).toISOString().slice(0, 10) : "" },
+            { key: "premiumProductId", title: "Mahsulot" },
+          ], rows)}>
+          ⬇ CSV
+        </button>
         <button className="btn ghost sm" onClick={() => { setSearch(""); reload({ search: "" }); }}>Tozalash</button>
       </div>
 
