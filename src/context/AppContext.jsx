@@ -101,6 +101,28 @@ export function AppProvider({ children }) {
     return () => unsub();
   }, [user?.oilaId]);
 
+  // ── Faollik pingi (admin statistikasi: DAU/WAU/MAU) ─────
+  // Kuniga 1 marta act_<uid> hujjatiga engil meta yoziladi.
+  // User profilini QAYTA YOZMAYMIZ (stale-overwrite xavfi yo'q) —
+  // alohida kichik hujjat. Xato bo'lsa jim o'tamiz (UXga ta'sirsiz).
+  useEffect(() => {
+    if (!user?.id) return;
+    const day = new Date().toISOString().slice(0, 10);
+    const lsKey = "oilaV7ActPing";
+    try {
+      const prev = JSON.parse(localStorage.getItem(lsKey) || "{}");
+      if (prev.uid === user.id && prev.day === day) return; // bugun yozilgan
+    } catch { /* buzuq kesh — davom etamiz */ }
+    const isNative = typeof window !== "undefined" && window.Capacitor?.isNativePlatform?.();
+    db.s("act_" + user.id, {
+      t: Date.now(), day,
+      platform: isNative ? "android" : "web",
+      lg, rol: user.rol || null, oilaId: user.oilaId || null,
+    }).then(() => {
+      try { localStorage.setItem(lsKey, JSON.stringify({ uid: user.id, day })); } catch { /* joy yo'q */ }
+    }).catch(() => {});
+  }, [user?.id, user?.rol, user?.oilaId, lg]);
+
   // ── Maqsad confirm modal ─────────────────────────────────
   const [maqsadConfirmNotif, setMaqsadConfirmNotif] = useState(null);
   const syncDailyReminderRef = useRef(null);

@@ -23,15 +23,13 @@ function Root() {
   const [user, setUser] = useState(undefined); // undefined = aniqlanmoqda
   const [access, setAccess] = useState("checking"); // checking | ok | denied
   const [accessMsg, setAccessMsg] = useState("");
-  const [initialStats, setInitialStats] = useState(null);
 
   useEffect(() => onAuthStateChanged(auth, (u) => setUser(u || null)), []);
 
   const probe = useCallback(async () => {
     setAccess("checking");
     try {
-      const stats = await call("adminStats");
-      setInitialStats(stats);
+      await call("adminStats"); // admin ekanini tekshirish (engil so'rov)
       setAccess("ok");
     } catch (e) {
       setAccessMsg(e.message || "Ruxsat yo'q");
@@ -58,7 +56,7 @@ function Root() {
               path={m.route === "/" ? "/" : m.route}
               element={
                 <Suspense fallback={<div className="loading">Yuklanmoqda…</div>}>
-                  <m.component initialStats={m.id === "dashboard" ? initialStats : undefined} />
+                  <m.component />
                 </Suspense>
               }
             />
