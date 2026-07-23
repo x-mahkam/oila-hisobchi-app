@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { db } from "../firebase.js";
 import { td, nt, f, hp } from "../utils/formatters.js";
 import { canApproveTask, canCompleteTask, canAssignTask, canDeleteTask } from "../utils/permissions.js";
@@ -184,7 +185,19 @@ export function useFamily() {
     }
 
     try {
-      const uid = "kid" + Date.now();
+      // Bola uchun HAQIQIY (doimiy) Firebase Auth hisobi — server ochadi.
+      // Muvaffaqiyatsiz bo'lsa (funksiya hali deploy qilinmagan / tarmoq) —
+      // eski usul: mahalliy uid; birinchi kirishda avtomatik migratsiya bo'ladi.
+      let uid = null;
+      try {
+        const kidAuthFn = httpsCallable(getFunctions(), "kidAuth");
+        const res = await kidAuthFn({ op: "create", login: loginKey, password: kidPw });
+        uid = res?.data?.uid || null;
+      } catch (eFn) {
+        if (eFn.code === "functions/already-exists") return ok$(t("uf_loginTaken"), "err");
+        console.warn("kidAuth create fallback:", eFn.message);
+      }
+      if (!uid) uid = "kid" + Date.now();
       const ph = await hp(kidPw);
       const nu = { id: uid, ism: kidName.trim(), familya: kidSurname.trim(), birthYear: by, gender: kidGender || null, sinf: kidGrade !== "" ? Number(kidGrade) : null, login: loginKey, ph, oilaId: user.oilaId, rol: "kid", rel: "farzand", photo: null, parentId: user.id };
       await db.s("user_" + uid, nu); await db.s("kidlogin_" + loginKey, { uid, oila: user.oilaId });
@@ -221,6 +234,11 @@ export function useFamily() {
       return ok$(t("uf_onlyHeadCanDelete"), "err");
     buzz(15);
     try {
+      // Firebase Auth hisobini ham o'chirish (server orqali, best-effort)
+      try {
+        const kidAuthFn = httpsCallable(getFunctions(), "kidAuth");
+        await kidAuthFn({ op: "delete", uid: kid.id });
+      } catch (eFn) { console.warn("kidAuth delete:", eFn.message); }
       if (kid.login) await db.del("kidlogin_" + kid.login);
       await db.del("user_" + kid.id);
       const ids = (oila?.azolarIds || oila?.azolar || []).filter(id => id !== kid.id);

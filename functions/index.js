@@ -340,20 +340,37 @@ exports.sendNotificationPush = functions.firestore
     if (newItems.length === 0) return null;
 
     // Read target user's registered FCM tokens
-    const tokDoc = await db.collection("appdata").doc(safeKey("fcm_tokens_" + uid)).get();
+    const tokDocRef = db.collection("appdata").doc(safeKey("fcm_tokens_" + uid));
+    const tokDoc = await tokDocRef.get();
     const tokens = (tokDoc.exists ? tokDoc.data()?.v : []) || [];
     if (!Array.isArray(tokens) || tokens.length === 0) return null;
 
     // Send push for the latest notification (index 0 of newItems)
     const latest = newItems[0];
     try {
-      await admin.messaging().sendEachForMulticast({
+      const res = await admin.messaging().sendEachForMulticast({
         tokens,
         notification: {
           title: latest.title || "Oila Hisobchi",
-          body: latest.text || "",
+          body: latest.text || latest.body || "",
         },
       });
+      // O'lik tokenlarni hujjatdan olib tashlash (ilova o'chirilgan qurilmalar)
+      const bad = new Set();
+      res.responses.forEach((r, idx) => {
+        const code = r.error?.code;
+        if (!r.success && (
+          code === "messaging/registration-token-not-registered" ||
+          code === "messaging/invalid-registration-token" ||
+          code === "messaging/invalid-argument"
+        )) bad.add(tokens[idx]);
+      });
+      if (bad.size > 0) {
+        const cur = tokDoc.data();
+        const next = tokens.filter((t) => !bad.has(t));
+        await tokDocRef.set({ ...cur, v: next, t: Date.now() }, { merge: true });
+        console.log(`sendNotificationPush: ${bad.size} ta o'lik token o'chirildi (${uid})`);
+      }
     } catch (e) {
       console.error("FCM push error", e);
     }
@@ -1164,7 +1181,10 @@ async function collectPushTargets(audience) {
   });
 
   // Tokenlarni yig'ish (bitta prefix-skan)
+  // tokenDocs: token -> [docId, ...] — o'lik tokenlarni keyin qaysi
+  // hujjatlardan o'chirishni bilish uchun.
   const tokens = new Set();
+  const tokenDocs = {};
   let usersWithTokens = 0;
   const tokSnap = await prefixRange(appdata, DBP + "fcm_tokens_").get();
   tokSnap.forEach((d) => {
@@ -1173,15 +1193,28 @@ async function collectPushTargets(audience) {
     const arr = d.data().v || [];
     if (Array.isArray(arr) && arr.length) {
       usersWithTokens++;
-      arr.forEach((t) => { if (t) tokens.add(t); });
+      arr.forEach((t) => {
+        if (!t) return;
+        tokens.add(t);
+        (tokenDocs[t] = tokenDocs[t] || []).push(d.id);
+      });
     }
   });
 
-  return { matchedUsers: uidSet.size, usersWithTokens, tokens: [...tokens] };
+  return { matchedUsers: uidSet.size, usersWithTokens, tokens: [...tokens], tokenDocs };
 }
+
+// FCM javobidagi "bu token endi yaroqsiz" xatolari — bunday tokenlarni
+// saqlab yurish foydasiz: ilova o'chirilgan/qayta o'rnatilgan qurilmalar.
+const DEAD_TOKEN_CODES = new Set([
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+  "messaging/invalid-argument",
+]);
 
 async function sendPushToTokens(tokens, title, body) {
   let sent = 0, failed = 0;
+  const badTokens = [];
   for (let i = 0; i < tokens.length; i += 500) {
     const chunk = tokens.slice(i, i + 500);
     try {
@@ -1191,12 +1224,44 @@ async function sendPushToTokens(tokens, title, body) {
       });
       sent += res.successCount;
       failed += res.failureCount;
+      res.responses.forEach((r, idx) => {
+        if (!r.success && DEAD_TOKEN_CODES.has(r.error?.code)) badTokens.push(chunk[idx]);
+      });
     } catch (e) {
       console.error("push chunk xatosi:", e.message);
       failed += chunk.length;
     }
   }
-  return { sent, failed };
+  return { sent, failed, badTokens };
+}
+
+// O'lik tokenlarni fcm_tokens_ hujjatlaridan olib tashlash.
+// tokenDocs — collectPushTargets qaytargan token -> [docId] xaritasi.
+async function cleanupBadTokens(badTokens, tokenDocs) {
+  if (!badTokens || badTokens.length === 0) return 0;
+  const bad = new Set(badTokens);
+  // Qaysi hujjatlarga tegish kerak?
+  const docIds = new Set();
+  for (const t of badTokens) (tokenDocs[t] || []).forEach((id) => docIds.add(id));
+  let cleaned = 0;
+  for (const docId of docIds) {
+    try {
+      const ref = db.collection("appdata").doc(docId);
+      const snap = await ref.get();
+      if (!snap.exists) continue;
+      const cur = snap.data();
+      const arr = Array.isArray(cur.v) ? cur.v : [];
+      const next = arr.filter((t) => !bad.has(t));
+      if (next.length !== arr.length) {
+        cleaned += arr.length - next.length;
+        await ref.set({ ...cur, v: next, t: Date.now() }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("token tozalash xatosi:", docId, e.message);
+    }
+  }
+  if (cleaned) console.log(`cleanupBadTokens: ${cleaned} ta o'lik token o'chirildi`);
+  return cleaned;
 }
 
 exports.adminPush = functions.https.onCall(async (data, context) => {
@@ -1233,10 +1298,11 @@ exports.adminPush = functions.https.onCall(async (data, context) => {
 
     // Darhol yuborish
     const targets = await collectPushTargets(audience);
-    const { sent, failed } = await sendPushToTokens(targets.tokens, title, body);
+    const { sent, failed, badTokens } = await sendPushToTokens(targets.tokens, title, body);
+    const cleaned = await cleanupBadTokens(badTokens, targets.tokenDocs);
     const ref = await db.collection("push_campaigns").add({
       t: Date.now(), title, body, audience, status: "sent", sentAt: Date.now(),
-      matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed,
+      matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed, cleaned,
       by: context.auth.uid, byEmail: context.auth.token?.email || null,
     });
     await logAdmin(context, "push.send", { id: ref.id, title, audience, sent, failed });
@@ -1287,10 +1353,11 @@ exports.pushScheduler = functions.pubsub.schedule("every 10 minutes").onRun(asyn
     if (!c.sendAt || c.sendAt > now) continue;
     try {
       const targets = await collectPushTargets(c.audience);
-      const { sent, failed } = await sendPushToTokens(targets.tokens, c.title, c.body);
+      const { sent, failed, badTokens } = await sendPushToTokens(targets.tokens, c.title, c.body);
+      const cleaned = await cleanupBadTokens(badTokens, targets.tokenDocs);
       await d.ref.update({
         status: "sent", sentAt: Date.now(),
-        matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed,
+        matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed, cleaned,
       });
       console.log(`pushScheduler: "${c.title}" yuborildi (${sent} ok, ${failed} xato)`);
     } catch (e) {
@@ -1566,6 +1633,141 @@ exports.adminSupport = functions.https.onCall(async (data, context) => {
     await db.collection("support_tickets").doc(id).update({ status });
     await logAdmin(context, "support.status", { id, status });
     return { success: true, status };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
+});
+
+// ═══════════════════════════════════════════════════════════════════
+//  BOLA AUTH — bola akkauntiga HAQIQIY (doimiy) Firebase Auth hisobi.
+//  Ilgari bola har kirishda yangi ANONIM akkaunt olardi — Firebase
+//  Auth ro'yxati keraksiz anonim hisoblarga to'lib ketardi.
+//  Endi: login'dan sintetik email (<login>@kid.oila-hisobchi.app) +
+//  hosila parol bilan BITTA doimiy hisob. Eski bolalar birinchi
+//  kirishda avtomatik migratsiya qilinadi (o'sha kidUid saqlanadi).
+// ═══════════════════════════════════════════════════════════════════
+const KID_EMAIL_DOMAIN = "@kid.oila-hisobchi.app";
+const sha256hex = (s) => crypto.createHash("sha256").update(s).digest("hex");
+// Firebase Auth paroli: xom parol emas — hosila (min 6 belgi talabini ham qoplaydi)
+const kidAuthPassword = (login, pw) => sha256hex("kidauth:" + login + ":" + pw);
+
+exports.kidAuth = functions.https.onCall(async (data, context) => {
+  const op = data?.op ? String(data.op) : "";
+  const login = String(data?.login || "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30);
+  const password = String(data?.password || "");
+  if (!login || login.length < 3) {
+    throw new functions.https.HttpsError("invalid-argument", "Login noto'g'ri.");
+  }
+  const email = login + KID_EMAIL_DOMAIN;
+
+  // ── CREATE: ota-ona yangi bola uchun auth hisobi ochadi ──
+  if (op === "create") {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
+    }
+    if (password.length < 4) {
+      throw new functions.https.HttpsError("invalid-argument", "Parol kamida 4 belgi.");
+    }
+    // Chaqiruvchi haqiqatan oiladagi katta odammi?
+    const pSnap = await db.collection("appdata").doc(DBP + "user_" + context.auth.uid).get();
+    if (!pSnap.exists) {
+      throw new functions.https.HttpsError("failed-precondition", "Profil topilmadi.");
+    }
+    const pv = pSnap.data().v || {};
+    if (pv.rol === "kid" || !pv.oilaId) {
+      throw new functions.https.HttpsError("permission-denied", "Faqat ota-ona bola akkauntini ocha oladi.");
+    }
+    // Login bandligini tekshirish
+    const lookSnap = await db.collection("appdata").doc(safeKey("kidlogin_" + login)).get();
+    if (lookSnap.exists) {
+      throw new functions.https.HttpsError("already-exists", "Bu login band.");
+    }
+    try {
+      const u = await admin.auth().createUser({
+        email,
+        password: kidAuthPassword(login, password),
+        displayName: "kid:" + login,
+      });
+      return { uid: u.uid };
+    } catch (e) {
+      if (e.code === "auth/email-already-exists") {
+        throw new functions.https.HttpsError("already-exists", "Bu login band.");
+      }
+      console.error("kidAuth create:", e);
+      throw new functions.https.HttpsError("internal", "Bola hisobini yaratishda xato: " + e.message);
+    }
+  }
+
+  // ── MIGRATE: eski (anonim davri) bola birinchi kirishda ──
+  //  Parol user_<kidUid>.ph (SHA-256) bilan tekshiriladi — shundan
+  //  keyingina O'SHA kidUid bilan auth hisobi ochiladi (UID o'zgarmaydi).
+  if (op === "migrate") {
+    if (!password) {
+      throw new functions.https.HttpsError("invalid-argument", "Parol kiriting.");
+    }
+    const lookSnap = await db.collection("appdata").doc(safeKey("kidlogin_" + login)).get();
+    if (!lookSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Bunday login topilmadi.");
+    }
+    const look = lookSnap.data().v;
+    const kidUid = (look && typeof look === "object") ? look.uid : look;
+    if (!kidUid || typeof kidUid !== "string") {
+      throw new functions.https.HttpsError("internal", "Login lookup formati kutilmagan.");
+    }
+    const kSnap = await db.collection("appdata").doc(DBP + "user_" + kidUid).get();
+    if (!kSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Bola profili topilmadi.");
+    }
+    const kv = kSnap.data().v || {};
+    if (kv.rol !== "kid") {
+      throw new functions.https.HttpsError("failed-precondition", "Bu login bola akkauntiga tegishli emas.");
+    }
+    if (sha256hex(password) !== kv.ph) {
+      throw new functions.https.HttpsError("permission-denied", "Parol noto'g'ri.");
+    }
+    const authPw = kidAuthPassword(login, password);
+    try {
+      await admin.auth().createUser({ uid: kidUid, email, password: authPw });
+    } catch (e) {
+      if (e.code === "auth/uid-already-exists" || e.code === "auth/email-already-exists") {
+        // Allaqachon migratsiya qilingan — parol to'g'ri tekshirildi, yangilab qo'yamiz
+        try { await admin.auth().updateUser(kidUid, { password: authPw }); } catch (e2) {
+          console.warn("kidAuth migrate updateUser:", e2.message);
+        }
+      } else {
+        console.error("kidAuth migrate:", e);
+        throw new functions.https.HttpsError("internal", "Migratsiya xatosi: " + e.message);
+      }
+    }
+    return { success: true, uid: kidUid };
+  }
+
+  // ── DELETE: ota-ona bola akkauntini o'chirganda auth hisobini ham ──
+  if (op === "delete") {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
+    }
+    const kidUid = data?.uid ? String(data.uid) : "";
+    if (!kidUid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
+    const pSnap = await db.collection("appdata").doc(DBP + "user_" + context.auth.uid).get();
+    const pv = pSnap.exists ? (pSnap.data().v || {}) : {};
+    const kSnap = await db.collection("appdata").doc(DBP + "user_" + kidUid).get();
+    // Bola hujjati allaqachon o'chirilgan bo'lishi mumkin — u holda faqat
+    // chaqiruvchining kattaligini tekshiramiz.
+    if (kSnap.exists) {
+      const kv = kSnap.data().v || {};
+      if (kv.rol !== "kid" || kv.oilaId !== pv.oilaId) {
+        throw new functions.https.HttpsError("permission-denied", "Bu bola sizning oilangizda emas.");
+      }
+    }
+    if (pv.rol === "kid" || !pv.oilaId) {
+      throw new functions.https.HttpsError("permission-denied", "Faqat ota-ona o'chira oladi.");
+    }
+    try { await admin.auth().deleteUser(kidUid); } catch (e) {
+      // Hisob yo'q bo'lsa (eski, migratsiya qilinmagan bola) — jim
+      if (e.code !== "auth/user-not-found") console.warn("kidAuth delete:", e.message);
+    }
+    return { success: true };
   }
 
   throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
