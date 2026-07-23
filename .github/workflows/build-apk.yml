@@ -1,0 +1,123 @@
+# ═══════════════════════════════════════════════════════════════════
+#  Android APK AVTOMATIK build.
+#  Qachon ishlaydi:
+#   - main'ga har push'da (functions'dan boshqa o'zgarishlarda)
+#   - qo'lda: Actions -> Build APK -> Run workflow
+#
+#  Natija QAYERDA: Repo bosh sahifasi -> o'ng paneldagi "Releases" ->
+#  "APK (oxirgi build)" -> Assets ichida .apk fayl. Har build'da yangilanadi.
+#
+#  IMZOLASH (ixtiyoriy, Play Store uchun SHART):
+#  Repo Settings -> Secrets and variables -> Actions ga qo'shing:
+#   ANDROID_KEYSTORE_BASE64   - keystore fayl base64'da:
+#                               base64 -w0 my-release-key.keystore
+#   ANDROID_KEYSTORE_PASSWORD - keystore paroli
+#   ANDROID_KEY_ALIAS         - kalit nomi (alias)
+#   ANDROID_KEY_PASSWORD      - kalit paroli
+#  Secrets bo'lmasa — debug-imzoli APK chiqadi (telefonga o'rnatib
+#  sinash uchun yetarli, lekin Play Store qabul qilmaydi).
+#
+#  RevenueCat uchun (ixtiyoriy): VITE_REVENUECAT_API_KEY secret
+#  qo'shilsa, premium to'lovlar real API kalit bilan build bo'ladi.
+# ═══════════════════════════════════════════════════════════════════
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ["functions/**", "firestore.rules", "**.md"]
+  workflow_dispatch:
+
+permissions:
+  contents: write   # Release yaratish uchun
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Web build (vite)
+        run: |
+          npm install --no-audit --no-fund
+          if [ -n "${{ secrets.VITE_REVENUECAT_API_KEY }}" ]; then
+            echo "VITE_REVENUECAT_API_KEY=${{ secrets.VITE_REVENUECAT_API_KEY }}" > .env
+          fi
+          npm run build
+
+      - name: Capacitor sync (dist -> android assets)
+        run: npx cap sync android
+
+      - name: Keystore tayyorlash (secrets bo'lsa)
+        id: keystore
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+            echo "Release imzo bilan build qilinadi."
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Keystore secrets yo'q — DEBUG APK build qilinadi (Play Store uchun yaroqsiz, sinash uchun yaroqli)."
+          fi
+
+      - name: APK build (release, imzolangan)
+        if: steps.keystore.outputs.signed == 'true'
+        working-directory: android
+        env:
+          RELEASE_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          APP_VERSION_CODE: ${{ github.run_number }}
+          APP_VERSION_NAME: "1.0.${{ github.run_number }}"
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease --no-daemon
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/oila-hisobchi.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$RUNNER_TEMP/oila-hisobchi.aab"
+
+      - name: APK build (debug — keystore yo'q)
+        if: steps.keystore.outputs.signed == 'false'
+        working-directory: android
+        env:
+          APP_VERSION_CODE: ${{ github.run_number }}
+          APP_VERSION_NAME: "1.0.${{ github.run_number }}"
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$RUNNER_TEMP/oila-hisobchi.apk"
+
+      - name: Artifact sifatida saqlash
+        uses: actions/upload-artifact@v4
+        with:
+          name: oila-hisobchi-apk-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/oila-hisobchi.apk
+            ${{ runner.temp }}/oila-hisobchi.aab
+          if-no-files-found: error
+
+      - name: Releases'ga chiqarish (doimiy yuklab olish havolasi)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: "APK (oxirgi build #${{ github.run_number }})"
+          body: |
+            Oxirgi avtomatik APK build.
+            - Versiya: 1.0.${{ github.run_number }}
+            - Commit: ${{ github.sha }}
+            - Imzo: ${{ steps.keystore.outputs.signed == 'true' && 'release (Play Store uchun yaroqli)' || 'debug (faqat sinash uchun)' }}
+
+            Telefonga o'rnatish: pastdagi Assets'dan `oila-hisobchi.apk` ni yuklab oling.
+          files: |
+            ${{ runner.temp }}/oila-hisobchi.apk
+            ${{ runner.temp }}/oila-hisobchi.aab

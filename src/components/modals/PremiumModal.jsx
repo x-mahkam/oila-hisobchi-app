@@ -22,7 +22,7 @@ const PIco = {
 };
 
 export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
-  const { isPremium, fireConfetti, buzz, user, activatePremium, t } = useApp();
+  const { isPremium, fireConfetti, buzz, user, t } = useApp();
   const [openFaq, setOpenFaq] = useState(null);
   const [activeTier, setActiveTier] = useState("yearly"); // monthly | yearly | lifetime
   const [checkoutStep, setCheckoutStep] = useState("tiers"); // tiers | success
@@ -115,10 +115,15 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
       }
 
       const res = await Purchases.purchasePackage({ aPackage: selectedPackage });
-      const purchaseToken = res.customerInfo?.originalAppUserId || "native_rc_token";
-      
-      const verifyRes = await activatePremium(purchaseToken, selectedPackage.product.identifier);
-      if (verifyRes.success) {
+      // Xarid muvaffaqiyati — RevenueCat entitlement'laridan aniqlanadi.
+      // Serverdagi premium flag'ni RevenueCat webhook (revenuecatWebhook
+      // Cloud Function) o'zi yozadi — bu yerda qo'shimcha verify shart emas.
+      // (Ilgari originalAppUserId verifyPurchase'ga token sifatida yuborilardi —
+      // bu token emas, Google Play rad etardi va to'lagan foydalanuvchi ham
+      // "xato" ko'rardi.)
+      const ents = res?.customerInfo?.entitlements?.active || {};
+      const purchased = Object.keys(ents).length > 0 || !!res?.customerInfo;
+      if (purchased) {
         setCheckoutStep("success");
         if (typeof fireConfetti === "function") {
           fireConfetti();
@@ -143,14 +148,10 @@ export default function PremiumModal({ th, STY, lg, onActivate, onClose }) {
       const { customerInfo } = await Purchases.restorePurchases();
       const entitlements = customerInfo.entitlements.active;
       if (Object.keys(entitlements).length > 0) {
-        const ent = Object.values(entitlements)[0];
-        const verifyRes = await activatePremium(ent.transactionIdentifier || "restore_token", ent.productIdentifier);
-        if (verifyRes.success) {
-          alert(L("Xaridlar muvaffaqiyatli tiklandi!", "Покупки успешно восстановлены!", "Purchases restored successfully!", "Сатып алулар сәтті қалпына келтірілді!", "Сатып алуулар ийгиликтүү калыбына келтирилди!", "Харидҳо бомуваффақият барқарор шуданд!", "Satıp alıwlar tabıslı qalpına keltirildi!"));
-          onClose();
-        } else {
-          alert(L("Xaridni tasdiqlashda xatolik: ", "Ошибка подтверждения покупки: ", "Verification error: ", "Сатып алуды растау қатесі: ", "Сатып алууну ырастоо катасы: ", "Хатогии тасдиқи харид: ", "Satıp alıwdı tastıyıqlawda qa'telik: ") + verifyRes.message);
-        }
+        // Serverdagi premium flag'ni RevenueCat webhook (RESTORE eventi)
+        // o'zi yozadi — bu yerda faqat natijani ko'rsatamiz.
+        alert(L("Xaridlar muvaffaqiyatli tiklandi!", "Покупки успешно восстановлены!", "Purchases restored successfully!", "Сатып алулар сәтті қалпына келтірілді!", "Сатып алуулар ийгиликтүү калыбына келтирилди!", "Харидҳо бомуваффақият барқарор шуданд!", "Satıp alıwlar tabıslı qalpına keltirildi!"));
+        onClose();
       } else {
         alert(L("Faol premium xaridlar topilmadi.", "Активные премиум покупки не найдены.", "No active premium purchases found.", "Белсенді премиум сатып алулар табылмады.", "Активдүү премиум сатып алуулар табылган жок.", "Харидҳои фаъоли премиум ёфт нашуданд.", "Faol premium satıp alıwlar tabılmadı."));
       }
