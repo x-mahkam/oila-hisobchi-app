@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { getFunctions, httpsCallable } from "firebase/functions";
 import { useApp } from "../context/AppContext.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { KatIco, DarIco, MoneyInput, Tst } from "../components/common/index.jsx";
@@ -174,52 +175,103 @@ export default function LoginPage() {
     }
   };
 
+  // ── Bola kirishining yakuni (real yoki anonim yo'ldan keyin bir xil) ──
+  const finishKidLogin = async (ku, kidOila) => {
+    setOwnerCtx(ku.id, ku.oilaId || kidOila);
+    try {
+      if (ku.parentId) {
+        const pu = await db.g("user_" + ku.parentId);
+        if (pu?.oilaId && pu.oilaId !== ku.oilaId) { ku.oilaId = pu.oilaId; await db.s("user_" + ku.id, ku); }
+      }
+    } catch (e2) {}
+    localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
+    setUser(ku); setScr("bosh"); loadFam(ku);
+    ok$(t("log_welcome", { name: ku.ism }));
+  };
+
+  // ── ESKI usul (anonim + ksess_) — faqat kidAuth funksiyasi ishlamasa (fallback) ──
+  const kidAnonLogin = async (loginKey, kidUid, kidOila) => {
+    try {
+      if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
+    } catch (e) { console.error("Anon login:", e); return ok$(t("log007"), "err"); }
+    const anonUid = auth.current()?.uid;
+    const phv = await hp(fPw);
+    setOwnerCtx(kidUid, kidOila);
+    try {
+      if (anonUid) await db.s("ksess_" + anonUid, { kid: kidUid, oila: kidOila, ph: phv });
+    } catch (e) {
+      try { await auth.logout(); } catch (e2) {}
+      return ok$(t("log008"), "err");
+    }
+    const ku = await db.g("user_" + kidUid);
+    if (!ku || ku.rol !== "kid") {
+      try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
+      try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
+      return ok$(kidOila ? t("log009") : t("log010"), "err");
+    }
+    if (phv !== ku.ph) {
+      try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
+      try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
+      return ok$(t("log011"), "err");
+    }
+    try { if (anonUid && (ku.oilaId || null) !== kidOila) await db.s("ksess_" + anonUid, { kid: kidUid, oila: ku.oilaId || null, ph: phv }); } catch (e) {}
+    await finishKidLogin(ku, kidOila);
+  };
+
+  // ── YANGI usul: bola HAQIQIY (doimiy) Firebase Auth hisobi bilan kiradi ──
+  //  Email: <login>@kid.oila-hisobchi.app, parol: hosila (hash).
+  //  Eski (anonim davri) bolalar birinchi kirishda serverda avtomatik
+  //  migratsiya qilinadi — UID o'zgarmaydi, ma'lumotlar joyida qoladi.
+  const doKidLogin = async (loginKey, notFoundMsg) => {
+    if (!loginKey || !fPw.trim()) return ok$(t("log005"), "err");
+    const look = await db.gFresh("kidlogin_" + loginKey);
+    if (!look) return ok$(notFoundMsg, "err");
+    const kidUid  = (typeof look === "object" && look) ? look.uid : look;
+    const kidOila = (typeof look === "object" && look) ? (look.oila || null) : null;
+    if (!kidUid) return ok$(notFoundMsg, "err");
+    buzz(15);
+
+    const email = loginKey + "@kid.oila-hisobchi.app";
+    const authPw = await hp("kidauth:" + loginKey + ":" + fPw);
+
+    try {
+      await auth.login(email, authPw);
+    } catch (e) {
+      // Hisob hali yo'q (eski bola) YOKI parol xato — migratsiya serverda
+      // parolni tekshiradi va ikkalasini farqlab beradi.
+      try {
+        const kidAuthFn = httpsCallable(getFunctions(), "kidAuth");
+        await kidAuthFn({ op: "migrate", login: loginKey, password: fPw });
+        await auth.login(email, authPw);
+      } catch (e2) {
+        if (e2.code === "functions/permission-denied") return ok$(t("log011"), "err");
+        if (e2.code === "functions/not-found") return ok$(notFoundMsg, "err");
+        // Funksiya ishlamadi (hali deploy qilinmagan / tarmoq) — eski usul
+        console.warn("kidAuth migrate fallback:", e2.code || e2.message);
+        return kidAnonLogin(loginKey, kidUid, kidOila);
+      }
+    }
+
+    // Haqiqiy hisob bilan kirdik — profilni yuklaymiz
+    setOwnerCtx(kidUid, kidOila);
+    const ku = await db.g("user_" + kidUid);
+    if (!ku || ku.rol !== "kid") {
+      try { await auth.logout(); } catch (e) {}
+      return ok$(kidOila ? t("log009") : t("log010"), "err");
+    }
+    const phv = await hp(fPw);
+    if (phv !== ku.ph) {
+      try { await auth.logout(); } catch (e) {}
+      return ok$(t("log011"), "err");
+    }
+    await finishKidLogin(ku, kidOila);
+  };
+
   const doAuth = async () => {
     authBusyRef.current = true;
     try {
       if (kidLoginMode) {
-        const loginKey = fTel.trim().toLowerCase();
-        if (!loginKey || !fPw.trim()) return ok$(t("log005"), "err");
-        const look = await db.gFresh("kidlogin_" + loginKey);
-        if (!look) return ok$(t("log006"), "err");
-        const kidUid  = (typeof look === "object" && look) ? look.uid : look;
-        const kidOila = (typeof look === "object" && look) ? (look.oila || null) : null;
-        if (!kidUid) return ok$(t("log006"), "err");
-        buzz(15);
-        try {
-          if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
-        } catch (e) { console.error("Anon login:", e); return ok$(t("log007"), "err"); }
-        const anonUid = auth.current()?.uid;
-        const phv = await hp(fPw);
-        setOwnerCtx(kidUid, kidOila);
-        try {
-          if (anonUid) await db.s("ksess_" + anonUid, { kid: kidUid, oila: kidOila, ph: phv });
-        } catch (e) {
-          try { await auth.logout(); } catch (e2) {}
-          return ok$(t("log008"), "err");
-        }
-        const ku = await db.g("user_" + kidUid);
-        if (!ku || ku.rol !== "kid") {
-          try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
-          try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
-          return ok$(kidOila ? t("log009") : t("log010"), "err");
-        }
-        if (phv !== ku.ph) {
-          try { if (anonUid) await db.del("ksess_" + anonUid); } catch (e) {}
-          try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
-          return ok$(t("log011"), "err");
-        }
-        try { if (anonUid && (ku.oilaId || null) !== kidOila) await db.s("ksess_" + anonUid, { kid: kidUid, oila: ku.oilaId || null, ph: phv }); } catch (e) {}
-        setOwnerCtx(kidUid, ku.oilaId || kidOila);
-        try {
-          if (ku.parentId) {
-            const pu = await db.g("user_" + ku.parentId);
-            if (pu?.oilaId && pu.oilaId !== ku.oilaId) { ku.oilaId = pu.oilaId; await db.s("user_" + ku.id, ku); }
-          }
-        } catch (e2) {}
-        localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
-        setUser(ku); setScr("bosh"); loadFam(ku);
-        ok$(t("log_welcome", { name: ku.ism }));
+        await doKidLogin(fTel.trim().toLowerCase(), t("log006"));
         return;
       }
       if (reg) {
@@ -300,43 +352,8 @@ export default function LoginPage() {
       } else {
         const tryLogin = fTel.trim().toLowerCase();
         if (tryLogin && !tryLogin.includes("@") && !/^[0-9+ ]+$/.test(tryLogin)) {
-          const look2 = await db.gFresh("kidlogin_" + tryLogin);
-          const kidUid  = (typeof look2 === "object" && look2) ? look2.uid : look2;
-          const kidOila2 = (typeof look2 === "object" && look2) ? (look2.oila || null) : null;
-          if (kidUid) {
-            buzz(15);
-            try {
-              if (!fbAuth.currentUser || !fbAuth.currentUser.isAnonymous) await auth.loginAnon();
-            } catch (e) {}
-            const anonUid2 = auth.current()?.uid;
-            const phv2 = await hp(fPw);
-            setOwnerCtx(kidUid, kidOila2);
-            try { if (anonUid2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: kidOila2, ph: phv2 }); } catch (e) {}
-            const ku = await db.g("user_" + kidUid);
-            if (ku && ku.rol === "kid") {
-              if (phv2 !== ku.ph) {
-                try { if (anonUid2) await db.del("ksess_" + anonUid2); } catch (e) {}
-                try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
-                return ok$(t("log011"), "err");
-              }
-              try { if (anonUid2 && (ku.oilaId || null) !== kidOila2) await db.s("ksess_" + anonUid2, { kid: kidUid, oila: ku.oilaId || null, ph: phv2 }); } catch (e) {}
-              setOwnerCtx(kidUid, ku.oilaId || kidOila2);
-              try {
-                if (ku.parentId) {
-                  const pu = await db.g("user_" + ku.parentId);
-                  if (pu?.oilaId && pu.oilaId !== ku.oilaId) { ku.oilaId = pu.oilaId; await db.s("user_" + ku.id, ku); }
-                }
-              } catch (e2) {}
-              localStorage.setItem("oilaV7", JSON.stringify({ uid: ku.id, kid: true }));
-              setUser(ku); setScr("bosh"); loadFam(ku);
-              ok$(t("log_welcome", { name: ku.ism }));
-              return;
-            }
-            try { if (anonUid2) await db.del("ksess_" + anonUid2); } catch (e) {}
-            try { await auth.deleteCurrentUser(); } catch (e) { try { await auth.logout(); } catch (e2) {} }
-            return ok$(kidOila2 ? t("log009") : t("log010"), "err");
-          }
-          return ok$(t("log019"), "err");
+          await doKidLogin(tryLogin, t("log019"));
+          return;
         }
 
         let email = fEm.trim().toLowerCase();

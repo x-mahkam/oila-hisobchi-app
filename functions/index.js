@@ -1571,6 +1571,141 @@ exports.adminSupport = functions.https.onCall(async (data, context) => {
   throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
 });
 
+// ═══════════════════════════════════════════════════════════════════
+//  BOLA AUTH — bola akkauntiga HAQIQIY (doimiy) Firebase Auth hisobi.
+//  Ilgari bola har kirishda yangi ANONIM akkaunt olardi — Firebase
+//  Auth ro'yxati keraksiz anonim hisoblarga to'lib ketardi.
+//  Endi: login'dan sintetik email (<login>@kid.oila-hisobchi.app) +
+//  hosila parol bilan BITTA doimiy hisob. Eski bolalar birinchi
+//  kirishda avtomatik migratsiya qilinadi (o'sha kidUid saqlanadi).
+// ═══════════════════════════════════════════════════════════════════
+const KID_EMAIL_DOMAIN = "@kid.oila-hisobchi.app";
+const sha256hex = (s) => crypto.createHash("sha256").update(s).digest("hex");
+// Firebase Auth paroli: xom parol emas — hosila (min 6 belgi talabini ham qoplaydi)
+const kidAuthPassword = (login, pw) => sha256hex("kidauth:" + login + ":" + pw);
+
+exports.kidAuth = functions.https.onCall(async (data, context) => {
+  const op = data?.op ? String(data.op) : "";
+  const login = String(data?.login || "").toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 30);
+  const password = String(data?.password || "");
+  if (!login || login.length < 3) {
+    throw new functions.https.HttpsError("invalid-argument", "Login noto'g'ri.");
+  }
+  const email = login + KID_EMAIL_DOMAIN;
+
+  // ── CREATE: ota-ona yangi bola uchun auth hisobi ochadi ──
+  if (op === "create") {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
+    }
+    if (password.length < 4) {
+      throw new functions.https.HttpsError("invalid-argument", "Parol kamida 4 belgi.");
+    }
+    // Chaqiruvchi haqiqatan oiladagi katta odammi?
+    const pSnap = await db.collection("appdata").doc(DBP + "user_" + context.auth.uid).get();
+    if (!pSnap.exists) {
+      throw new functions.https.HttpsError("failed-precondition", "Profil topilmadi.");
+    }
+    const pv = pSnap.data().v || {};
+    if (pv.rol === "kid" || !pv.oilaId) {
+      throw new functions.https.HttpsError("permission-denied", "Faqat ota-ona bola akkauntini ocha oladi.");
+    }
+    // Login bandligini tekshirish
+    const lookSnap = await db.collection("appdata").doc(safeKey("kidlogin_" + login)).get();
+    if (lookSnap.exists) {
+      throw new functions.https.HttpsError("already-exists", "Bu login band.");
+    }
+    try {
+      const u = await admin.auth().createUser({
+        email,
+        password: kidAuthPassword(login, password),
+        displayName: "kid:" + login,
+      });
+      return { uid: u.uid };
+    } catch (e) {
+      if (e.code === "auth/email-already-exists") {
+        throw new functions.https.HttpsError("already-exists", "Bu login band.");
+      }
+      console.error("kidAuth create:", e);
+      throw new functions.https.HttpsError("internal", "Bola hisobini yaratishda xato: " + e.message);
+    }
+  }
+
+  // ── MIGRATE: eski (anonim davri) bola birinchi kirishda ──
+  //  Parol user_<kidUid>.ph (SHA-256) bilan tekshiriladi — shundan
+  //  keyingina O'SHA kidUid bilan auth hisobi ochiladi (UID o'zgarmaydi).
+  if (op === "migrate") {
+    if (!password) {
+      throw new functions.https.HttpsError("invalid-argument", "Parol kiriting.");
+    }
+    const lookSnap = await db.collection("appdata").doc(safeKey("kidlogin_" + login)).get();
+    if (!lookSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Bunday login topilmadi.");
+    }
+    const look = lookSnap.data().v;
+    const kidUid = (look && typeof look === "object") ? look.uid : look;
+    if (!kidUid || typeof kidUid !== "string") {
+      throw new functions.https.HttpsError("internal", "Login lookup formati kutilmagan.");
+    }
+    const kSnap = await db.collection("appdata").doc(DBP + "user_" + kidUid).get();
+    if (!kSnap.exists) {
+      throw new functions.https.HttpsError("not-found", "Bola profili topilmadi.");
+    }
+    const kv = kSnap.data().v || {};
+    if (kv.rol !== "kid") {
+      throw new functions.https.HttpsError("failed-precondition", "Bu login bola akkauntiga tegishli emas.");
+    }
+    if (sha256hex(password) !== kv.ph) {
+      throw new functions.https.HttpsError("permission-denied", "Parol noto'g'ri.");
+    }
+    const authPw = kidAuthPassword(login, password);
+    try {
+      await admin.auth().createUser({ uid: kidUid, email, password: authPw });
+    } catch (e) {
+      if (e.code === "auth/uid-already-exists" || e.code === "auth/email-already-exists") {
+        // Allaqachon migratsiya qilingan — parol to'g'ri tekshirildi, yangilab qo'yamiz
+        try { await admin.auth().updateUser(kidUid, { password: authPw }); } catch (e2) {
+          console.warn("kidAuth migrate updateUser:", e2.message);
+        }
+      } else {
+        console.error("kidAuth migrate:", e);
+        throw new functions.https.HttpsError("internal", "Migratsiya xatosi: " + e.message);
+      }
+    }
+    return { success: true, uid: kidUid };
+  }
+
+  // ── DELETE: ota-ona bola akkauntini o'chirganda auth hisobini ham ──
+  if (op === "delete") {
+    if (!context.auth) {
+      throw new functions.https.HttpsError("unauthenticated", "Tizimga kiring.");
+    }
+    const kidUid = data?.uid ? String(data.uid) : "";
+    if (!kidUid) throw new functions.https.HttpsError("invalid-argument", "uid talab qilinadi.");
+    const pSnap = await db.collection("appdata").doc(DBP + "user_" + context.auth.uid).get();
+    const pv = pSnap.exists ? (pSnap.data().v || {}) : {};
+    const kSnap = await db.collection("appdata").doc(DBP + "user_" + kidUid).get();
+    // Bola hujjati allaqachon o'chirilgan bo'lishi mumkin — u holda faqat
+    // chaqiruvchining kattaligini tekshiramiz.
+    if (kSnap.exists) {
+      const kv = kSnap.data().v || {};
+      if (kv.rol !== "kid" || kv.oilaId !== pv.oilaId) {
+        throw new functions.https.HttpsError("permission-denied", "Bu bola sizning oilangizda emas.");
+      }
+    }
+    if (pv.rol === "kid" || !pv.oilaId) {
+      throw new functions.https.HttpsError("permission-denied", "Faqat ota-ona o'chira oladi.");
+    }
+    try { await admin.auth().deleteUser(kidUid); } catch (e) {
+      // Hisob yo'q bo'lsa (eski, migratsiya qilinmagan bola) — jim
+      if (e.code !== "auth/user-not-found") console.warn("kidAuth delete:", e.message);
+    }
+    return { success: true };
+  }
+
+  throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
+});
+
 /**
  * Foydalanuvchi yangi support murojaat yuborganda adminlarga bildirishnoma.
  * support_tickets/{id} yaratilganda yoki foydalanuvchi xabar qo'shganda
