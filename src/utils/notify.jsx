@@ -56,6 +56,7 @@ const TYPE_CAT = {
   ai_weekly: "ai", ai_monthly: "ai",
   reminder: "reminder", daily_reminder: "reminder",
   vaqt_sorov: "family", vaqt_tasdiq: "family", vaqt_rad: "family",
+  yordam: "family", support_new: "family",
 };
 export const catOf = (n) => (n && (n.cat || TYPE_CAT[n.type])) || "reminder";
 
@@ -73,6 +74,7 @@ const TYPE_PRIO = {
   vazifa_proposed: "high", vazifa_accepted: "normal", vazifa_done: "normal",
   // mavjud turlar
   maqsad_confirm: "high", maqsad_kid_confirm: "high", qarz: "high", budjet: "high", yangilik: "low",
+  yordam: "high", support_new: "high",
 };
 export const prioOf = (n) => (n && (n.prio || TYPE_PRIO[n.type])) || "normal";
 const PRIO_RANK = { critical: 0, high: 1, normal: 2, low: 3 };
