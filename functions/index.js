@@ -340,20 +340,37 @@ exports.sendNotificationPush = functions.firestore
     if (newItems.length === 0) return null;
 
     // Read target user's registered FCM tokens
-    const tokDoc = await db.collection("appdata").doc(safeKey("fcm_tokens_" + uid)).get();
+    const tokDocRef = db.collection("appdata").doc(safeKey("fcm_tokens_" + uid));
+    const tokDoc = await tokDocRef.get();
     const tokens = (tokDoc.exists ? tokDoc.data()?.v : []) || [];
     if (!Array.isArray(tokens) || tokens.length === 0) return null;
 
     // Send push for the latest notification (index 0 of newItems)
     const latest = newItems[0];
     try {
-      await admin.messaging().sendEachForMulticast({
+      const res = await admin.messaging().sendEachForMulticast({
         tokens,
         notification: {
           title: latest.title || "Oila Hisobchi",
-          body: latest.text || "",
+          body: latest.text || latest.body || "",
         },
       });
+      // O'lik tokenlarni hujjatdan olib tashlash (ilova o'chirilgan qurilmalar)
+      const bad = new Set();
+      res.responses.forEach((r, idx) => {
+        const code = r.error?.code;
+        if (!r.success && (
+          code === "messaging/registration-token-not-registered" ||
+          code === "messaging/invalid-registration-token" ||
+          code === "messaging/invalid-argument"
+        )) bad.add(tokens[idx]);
+      });
+      if (bad.size > 0) {
+        const cur = tokDoc.data();
+        const next = tokens.filter((t) => !bad.has(t));
+        await tokDocRef.set({ ...cur, v: next, t: Date.now() }, { merge: true });
+        console.log(`sendNotificationPush: ${bad.size} ta o'lik token o'chirildi (${uid})`);
+      }
     } catch (e) {
       console.error("FCM push error", e);
     }
@@ -1164,7 +1181,10 @@ async function collectPushTargets(audience) {
   });
 
   // Tokenlarni yig'ish (bitta prefix-skan)
+  // tokenDocs: token -> [docId, ...] — o'lik tokenlarni keyin qaysi
+  // hujjatlardan o'chirishni bilish uchun.
   const tokens = new Set();
+  const tokenDocs = {};
   let usersWithTokens = 0;
   const tokSnap = await prefixRange(appdata, DBP + "fcm_tokens_").get();
   tokSnap.forEach((d) => {
@@ -1173,15 +1193,28 @@ async function collectPushTargets(audience) {
     const arr = d.data().v || [];
     if (Array.isArray(arr) && arr.length) {
       usersWithTokens++;
-      arr.forEach((t) => { if (t) tokens.add(t); });
+      arr.forEach((t) => {
+        if (!t) return;
+        tokens.add(t);
+        (tokenDocs[t] = tokenDocs[t] || []).push(d.id);
+      });
     }
   });
 
-  return { matchedUsers: uidSet.size, usersWithTokens, tokens: [...tokens] };
+  return { matchedUsers: uidSet.size, usersWithTokens, tokens: [...tokens], tokenDocs };
 }
+
+// FCM javobidagi "bu token endi yaroqsiz" xatolari — bunday tokenlarni
+// saqlab yurish foydasiz: ilova o'chirilgan/qayta o'rnatilgan qurilmalar.
+const DEAD_TOKEN_CODES = new Set([
+  "messaging/registration-token-not-registered",
+  "messaging/invalid-registration-token",
+  "messaging/invalid-argument",
+]);
 
 async function sendPushToTokens(tokens, title, body) {
   let sent = 0, failed = 0;
+  const badTokens = [];
   for (let i = 0; i < tokens.length; i += 500) {
     const chunk = tokens.slice(i, i + 500);
     try {
@@ -1191,12 +1224,44 @@ async function sendPushToTokens(tokens, title, body) {
       });
       sent += res.successCount;
       failed += res.failureCount;
+      res.responses.forEach((r, idx) => {
+        if (!r.success && DEAD_TOKEN_CODES.has(r.error?.code)) badTokens.push(chunk[idx]);
+      });
     } catch (e) {
       console.error("push chunk xatosi:", e.message);
       failed += chunk.length;
     }
   }
-  return { sent, failed };
+  return { sent, failed, badTokens };
+}
+
+// O'lik tokenlarni fcm_tokens_ hujjatlaridan olib tashlash.
+// tokenDocs — collectPushTargets qaytargan token -> [docId] xaritasi.
+async function cleanupBadTokens(badTokens, tokenDocs) {
+  if (!badTokens || badTokens.length === 0) return 0;
+  const bad = new Set(badTokens);
+  // Qaysi hujjatlarga tegish kerak?
+  const docIds = new Set();
+  for (const t of badTokens) (tokenDocs[t] || []).forEach((id) => docIds.add(id));
+  let cleaned = 0;
+  for (const docId of docIds) {
+    try {
+      const ref = db.collection("appdata").doc(docId);
+      const snap = await ref.get();
+      if (!snap.exists) continue;
+      const cur = snap.data();
+      const arr = Array.isArray(cur.v) ? cur.v : [];
+      const next = arr.filter((t) => !bad.has(t));
+      if (next.length !== arr.length) {
+        cleaned += arr.length - next.length;
+        await ref.set({ ...cur, v: next, t: Date.now() }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("token tozalash xatosi:", docId, e.message);
+    }
+  }
+  if (cleaned) console.log(`cleanupBadTokens: ${cleaned} ta o'lik token o'chirildi`);
+  return cleaned;
 }
 
 exports.adminPush = functions.https.onCall(async (data, context) => {
@@ -1233,10 +1298,11 @@ exports.adminPush = functions.https.onCall(async (data, context) => {
 
     // Darhol yuborish
     const targets = await collectPushTargets(audience);
-    const { sent, failed } = await sendPushToTokens(targets.tokens, title, body);
+    const { sent, failed, badTokens } = await sendPushToTokens(targets.tokens, title, body);
+    const cleaned = await cleanupBadTokens(badTokens, targets.tokenDocs);
     const ref = await db.collection("push_campaigns").add({
       t: Date.now(), title, body, audience, status: "sent", sentAt: Date.now(),
-      matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed,
+      matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed, cleaned,
       by: context.auth.uid, byEmail: context.auth.token?.email || null,
     });
     await logAdmin(context, "push.send", { id: ref.id, title, audience, sent, failed });
@@ -1287,10 +1353,11 @@ exports.pushScheduler = functions.pubsub.schedule("every 10 minutes").onRun(asyn
     if (!c.sendAt || c.sendAt > now) continue;
     try {
       const targets = await collectPushTargets(c.audience);
-      const { sent, failed } = await sendPushToTokens(targets.tokens, c.title, c.body);
+      const { sent, failed, badTokens } = await sendPushToTokens(targets.tokens, c.title, c.body);
+      const cleaned = await cleanupBadTokens(badTokens, targets.tokenDocs);
       await d.ref.update({
         status: "sent", sentAt: Date.now(),
-        matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed,
+        matchedUsers: targets.matchedUsers, tokenCount: targets.tokens.length, sent, failed, cleaned,
       });
       console.log(`pushScheduler: "${c.title}" yuborildi (${sent} ok, ${failed} xato)`);
     } catch (e) {

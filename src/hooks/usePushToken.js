@@ -33,7 +33,9 @@ export function usePushToken(userId) {
       try {
         const key = "fcm_tokens_" + userId;
         const currentTokens = (await db.gFresh(key)) || [];
-        const updatedTokens = Array.from(new Set([...currentTokens, tokVal]));
+        // Yangi token oxiriga; ko'pi bilan 10 ta saqlaymiz (eskilari o'lik
+        // bo'ladi — server ham yuborishda o'liklarni avtomatik tozalaydi)
+        const updatedTokens = Array.from(new Set([...currentTokens, tokVal])).slice(-10);
         await db.s(key, updatedTokens);
         console.log("FCM token registered successfully:", tokVal);
       } catch (e) {
