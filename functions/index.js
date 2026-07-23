@@ -1539,7 +1539,7 @@ exports.adminSupport = functions.https.onCall(async (data, context) => {
           id: Date.now() + Math.random(),
           type: "yordam",
           title: "💬 Yordam xizmati javobi",
-          body: text,
+          text,
           sana: new Date().toISOString(),
           read: false,
         };
@@ -1570,3 +1570,62 @@ exports.adminSupport = functions.https.onCall(async (data, context) => {
 
   throw new functions.https.HttpsError("invalid-argument", "Noma'lum op: " + op);
 });
+
+/**
+ * Foydalanuvchi yangi support murojaat yuborganda adminlarga bildirishnoma.
+ * support_tickets/{id} yaratilganda yoki foydalanuvchi xabar qo'shganda
+ * ADMIN_UIDS (env) ro'yxatidagi har bir adminga notif_ yozadi —
+ * mavjud sendNotificationPush triggeri FCM push'ni O'ZI yuboradi.
+ */
+exports.notifyAdminOnSupportTicket = functions.firestore
+  .document("support_tickets/{ticketId}")
+  .onWrite(async (change, context) => {
+    const before = change.before.exists ? change.before.data() : null;
+    const after = change.after.exists ? change.after.data() : null;
+    if (!after) return null;
+
+    const beforeMsgs = before ? (Array.isArray(before.messages) ? before.messages : []) : [];
+    const afterMsgs = Array.isArray(after.messages) ? after.messages : [];
+
+    // Faqat yangi foydalanuvchi xabarlarini aniqlaymiz
+    const newUserMsgs = afterMsgs.slice(beforeMsgs.length).filter(m => m.from === "user");
+    if (newUserMsgs.length === 0) return null;
+
+    const adminUids = (process.env.ADMIN_UIDS || "")
+      .split(",").map(s => s.trim()).filter(Boolean);
+    if (adminUids.length === 0) return null;
+
+    const ticketId = context.params.ticketId;
+    const senderName = after.ism || after.email || "(nomsiz)";
+    const lastMsg = newUserMsgs[newUserMsgs.length - 1];
+    const preview = String(lastMsg.text || "").slice(0, 120);
+    const isNew = !before;
+
+    const title = isNew
+      ? `🆕 Yangi murojaat: ${senderName}`
+      : `💬 Yangi xabar: ${senderName}`;
+
+    for (const adminUid of adminUids) {
+      try {
+        const notifRef = db.collection("appdata").doc(safeKey("notif_" + adminUid));
+        const notifSnap = await notifRef.get();
+        const cur = notifSnap.exists ? (notifSnap.data().v || []) : [];
+        const n = {
+          id: Date.now() + Math.random(),
+          type: "support_new",
+          title,
+          text: preview,
+          ticketId,
+          sana: new Date().toISOString(),
+          read: false,
+        };
+        await notifRef.set({
+          v: [n, ...(Array.isArray(cur) ? cur : [])].slice(0, 100),
+          t: Date.now(), _u: "system_support",
+        }, { merge: true });
+      } catch (e) {
+        console.error("Admin support notif yozishda xato:", adminUid, e.message);
+      }
+    }
+    return null;
+  });
