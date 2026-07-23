@@ -73,11 +73,14 @@ const PalmSVG = ({ w = 70 }) => (
 // ── Dekor o'lchamlari (daraxt ~190px ga mutanosib) ──────────
 // SVG'lardagi px o'lchamlar kichik; bu masshtab jadvali qasr/uy kabi
 // "katta" obyektlarni daraxt bilan mutanosib qiladi.
+// Maqsadli balandliklar (katta daraxt ~190px ga nisbatan):
+// qasr ~205, uy ~150, olcha ~140, archa ~110, favvora ~105,
+// skameyka ~54, tosh ~46, gullar ~36. scale = maqsad / SVG balandligi.
 const DECOR_SCALE = {
-  lola: 1, atorgul: 1, moychechak: 1, kamalak_guli: 1.05,
-  archa: 1.5, olcha_daraxti: 1.9,
-  uycha: 1.8, favvora: 1.55, favvora_sehrli: 1.6,
-  skameyka: 1.1, tosh: 0.95, oltin_qasr: 2.3,
+  lola: 1.05, atorgul: 1, moychechak: 1.05, kamalak_guli: 1.05,
+  archa: 2.3, olcha_daraxti: 2.6,
+  uycha: 2.7, favvora: 1.95, favvora_sehrli: 2.05,
+  skameyka: 1.5, tosh: 1.3, oltin_qasr: 3.2,
 };
 
 // ── Dekoratsiyalar SVGlari (Premium, Tirik va Animatsiyali) ─────────────────
@@ -1036,7 +1039,7 @@ export const GardenScene = memo(function GardenScene({
           const ready = rem <= 0;
           return (
             <div key={p.id} onClick={() => onSunTap(p.id, ready)}
-              style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
+              style={{ position: "absolute", left: pos.x + "%", top: pos.y + "%", transform: "translate(-50%,-50%)", cursor: "pointer", zIndex: ready ? 30 : 12, display: "flex", flexDirection: "column", alignItems: "center", gap: 2, WebkitTapHighlightColor: "transparent" }}>
               {!ready && sunNote !== p.id && (
                 <div style={{ background: gt.skyScrim, borderRadius: RADIUS.pill, padding: SPACE.s1 - 1 + "px " + (SPACE.s2 + 2) + "px", ...TYPE.caption, fontWeight: 700, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{fTime(rem)}</div>
               )}
@@ -1090,7 +1093,7 @@ export const GardenScene = memo(function GardenScene({
           // Tur bo'yicha asosiy masshtab (qasr/uy daraxt bilan mutanosib bo'lsin)
           const base = DECOR_SCALE[p.itemId] || 1;
           // Chuqurlik: pastda turgan (yaqin) kattaroq, tepada (uzoq) kichikroq
-          const depth = 0.74 + (Math.min(Math.max(p.y, 0), 100) / 100) * 0.52;
+          const depth = 0.86 + (Math.min(Math.max(p.y, 0), 100) / 100) * 0.28;
           return (
           <div key={p.instanceId} onClick={(e) => { e.stopPropagation(); if (onPlacedDecorClick) onPlacedDecorClick(p); }}
             style={{ position: "absolute", left: p.x + "%", top: p.y + "%", transform: "translate(-50%, -50%) scale(" + (base * depth).toFixed(2) + ")", transformOrigin: "center bottom", zIndex: Math.round(p.y) + 12, cursor: "pointer", WebkitTapHighlightColor: "transparent" }}>

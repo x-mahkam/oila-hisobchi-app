@@ -2121,50 +2121,52 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
       <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + 80px)", right: SPACE.s4, zIndex: 40, display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
         {/* Omad G'ildiragi (Lucky Spin) */}
         <button className="ui-press" onClick={() => setShowSpinModal(true)} 
-          style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.22))", border: "1.5px solid #fbbf24", boxShadow: "0 0 12px rgba(245, 158, 11, 0.55)", cursor: "pointer" }} 
+          style={{ ...glassBtn, width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(217, 119, 6, 0.22))", border: "1.5px solid #fbbf24", boxShadow: "0 0 12px rgba(245, 158, 11, 0.55)", cursor: "pointer" }} 
           title={t("g071")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2s ease-in-out infinite" }}>🎡</span>
         </button>
 
         {/* Baraka yomg'iri (Rain Control) */}
         <button className="ui-press" onClick={handleTriggerRain} 
-          style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(3, 105, 161, 0.22))", border: "1.5px solid #38bdf8", boxShadow: "0 0 12px rgba(56, 189, 248, 0.55)", cursor: "pointer" }} 
+          style={{ ...glassBtn, width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(3, 105, 161, 0.22))", border: "1.5px solid #38bdf8", boxShadow: "0 0 12px rgba(56, 189, 248, 0.55)", cursor: "pointer" }} 
           title={t("g072")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.4s ease-in-out infinite 0.2s" }}>🌧️</span>
         </button>
 
         {/* AI Maslahatchi */}
         <button className="ui-press" onClick={() => { setShowAiAdvisorModal(true); handleGetAiAdvice(); }} 
-          style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(109, 33, 168, 0.22))", border: "1.5px solid #c084fc", boxShadow: "0 0 12px rgba(168, 85, 247, 0.55)", cursor: "pointer" }} 
+          style={{ ...glassBtn, width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(168, 85, 247, 0.22), rgba(109, 33, 168, 0.22))", border: "1.5px solid #c084fc", boxShadow: "0 0 12px rgba(168, 85, 247, 0.55)", cursor: "pointer" }} 
           title={t("g073")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.8s ease-in-out infinite 0.4s" }}>🔮</span>
         </button>
 
         {/* Baraka Prestij */}
         <button className="ui-press" onClick={() => setShowPrestigeModal(true)} 
-          style={{ ...glassBtn, width: 44, height: 44, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(234, 179, 8, 0.22), rgba(202, 138, 4, 0.22))", border: "1.5px solid #facc15", boxShadow: "0 0 12px rgba(234, 179, 8, 0.65)", cursor: "pointer" }} 
+          style={{ ...glassBtn, width: 40, height: 40, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(234, 179, 8, 0.22), rgba(202, 138, 4, 0.22))", border: "1.5px solid #facc15", boxShadow: "0 0 12px rgba(234, 179, 8, 0.65)", cursor: "pointer" }} 
           title={t("g074")}>
           <span style={{ fontSize: 22, animation: "gdBounce 2.2s ease-in-out infinite 0.6s" }}>👑</span>
         </button>
       </div>
 
       {/* ── HUD: resurslar (yig'ilgan quyosh energiyasi, tomchilar, yulduzlar va kristallar) ── */}
-      <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + " + (SPACE.s16 - SPACE.s2) + "px)", left: SPACE.s4, zIndex: 40, display: "flex", flexDirection: "column", gap: SPACE.s2 - 2 }}>
+      {/* pointerEvents:"none" — displey chiplar ostidagi quyosh/sahna bosiladi;
+          interaktiv bolalarga pointerEvents:"auto" qaytarilgan */}
+      <div style={{ position: "absolute", top: "calc(env(safe-area-inset-top) + " + (SPACE.s16 - SPACE.s2) + "px)", left: SPACE.s4, zIndex: 40, display: "flex", flexDirection: "column", gap: SPACE.s2 - 2, pointerEvents: "none" }}>
         <div key={"e" + energy} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px " + (SPACE.s1 - 1) + "px " + SPACE.s1 + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
-          <SunSprite size={20} />
-          <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{energy.toLocaleString()}</span>
+          <SunSprite size={16} />
+          <span style={{ ...TYPE.tiny, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{energy.toLocaleString()}</span>
         </div>
-        <button className="ui-press" onClick={() => setShowBuyDropsModal(true)} style={{ outline: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
-          <span style={{ fontSize: 13 }}>💧</span>
-          <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{waterDrops.toLocaleString()}</span>
+        <button className="ui-press" onClick={() => setShowBuyDropsModal(true)} style={{ pointerEvents: "auto", outline: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
+          <span style={{ fontSize: 12 }}>💧</span>
+          <span style={{ ...TYPE.tiny, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{waterDrops.toLocaleString()}</span>
         </button>
         <div key={"s" + barakaStarsCount} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
-          <span style={{ fontSize: 13 }}>⭐</span>
-          <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{barakaStarsCount.toLocaleString()}</span>
+          <span style={{ fontSize: 12 }}>⭐</span>
+          <span style={{ ...TYPE.tiny, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{barakaStarsCount.toLocaleString()}</span>
         </div>
         <div key={"c" + crystals} style={{ display: "flex", alignItems: "center", gap: SPACE.s1 + 2, background: gt.skyScrim, border: "1px solid " + gt.glassBorder, borderRadius: RADIUS.pill, padding: (SPACE.s1 - 1) + "px " + (SPACE.s2 + 2) + "px", animation: "gdHudPop " + MOTION.slow + " " + MOTION.spring }}>
-          <GemSVG size={15} />
-          <span style={{ ...TYPE.caption, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{crystals.toLocaleString()}</span>
+          <GemSVG size={13} />
+          <span style={{ ...TYPE.tiny, fontWeight: 800, color: gt.onSky, fontVariantNumeric: "tabular-nums" }}>{crystals.toLocaleString()}</span>
         </div>
 
         {/* Real vaqtdagi Ob-havo ko'rsatkichi (HUD) */}
@@ -2173,6 +2175,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
           onClick={detectLocationAndWeather}
           title={t("weather_btn_tooltip")}
           style={{ 
+            pointerEvents: "auto",
             display: "flex", 
             flexDirection: "column", 
             gap: 2, 
@@ -2181,7 +2184,7 @@ export default function Garden({ user, lg = "uz", onBack, dark, addCoin, stars }
             borderRadius: RADIUS.m, 
             padding: "5px 9px", 
             marginTop: 4,
-            maxWidth: 105,
+            maxWidth: 92,
             boxShadow: "0 2px 8px rgba(0,0,0,0.12)",
             cursor: "pointer",
             outline: "none",
