@@ -7,6 +7,7 @@ import { addXp } from "../engine/xp.js";
 import { playSound } from "../engine/sound.js";
 import { starsFor } from "./levels/logicLevels.js";
 import { decisionScenarios } from "./data/decisionScenarios.js";
+import { DECISION_EN } from "./data/decisionEn.js";
 import { 
   Compass, 
   HelpCircle, 
@@ -21,13 +22,31 @@ import {
   Star
 } from "lucide-react";
 
-// Stsenariy matnlari hozircha faqat uz/ru tillarida. Boshqa tillar uchun eng
+// Stsenariy matnlari uz/ru (asl) + en (decisionEn.js). Qolgan tillar uchun eng
 // yaqin tushunarli tilga qaytamiz: kirill yozuvli kk/ky/tg -> ru, qolganlar -> uz.
 const scenarioText = (obj, lg) => {
   if (!obj) return "";
   if (obj[lg]) return obj[lg];
   if (lg === "kk" || lg === "ky" || lg === "tg") return obj.ru || obj.uz || "";
   return obj.uz || obj.ru || "";
+};
+
+// Inglizcha tarjimani stsenariyga singdirish. MUHIM: bu variantlar
+// ARALASHTIRILISHIDAN OLDIN chaqirilishi shart — DECISION_EN'dagi o[0]/f[0]
+// asl fayldagi birinchi variantga mos keladi.
+const withEn = (s) => {
+  const en = DECISION_EN[String(s.id)];
+  if (!en) return s;
+  return {
+    ...s,
+    title: { ...s.title, en: en.title },
+    text: { ...s.text, en: en.text },
+    options: s.options.map((opt, i) => ({
+      ...opt,
+      text: { ...opt.text, en: en.o[i] },
+      feedback: { ...opt.feedback, en: en.f[i] },
+    })),
+  };
 };
 
 export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/decision", name = "", level, onBack, onNextLevel }) {
@@ -56,6 +75,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
     const shuffled = scenarios
       .sort(() => Math.random() - 0.5)
       .slice(0, count)
+      .map(withEn) // EN tarjima ARALASHTIRISHDAN OLDIN singdiriladi (indeks mosligi)
       .map(s => ({ ...s, options: [...s.options].sort(() => Math.random() - 0.5) }));
     setSelectedScenarios(shuffled);
     setCurrentIndex(0);
