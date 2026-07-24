@@ -39,7 +39,14 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
       scenarios = scenarios.filter(s => s.difficulty === level.difficulty);
     }
     const count = level ? level.questionCount : 5;
-    const shuffled = scenarios.sort(() => Math.random() - 0.5).slice(0, count);
+    // MUHIM: har stsenariyning A/B variantlarini ARALASHTIRAMIZ. Ma'lumotda
+    // to'g'ri (ijobiy) variant DOIM birinchi turardi — bola "A ni bos" degan
+    // hiylani o'rganib olardi. To'g'rilik pozitsiyaga emas, opt.effect.coins ga
+    // bog'liq, shuning uchun bu xavfsiz. Asl ma'lumotni buzmaslik uchun nusxa.
+    const shuffled = scenarios
+      .sort(() => Math.random() - 0.5)
+      .slice(0, count)
+      .map(s => ({ ...s, options: [...s.options].sort(() => Math.random() - 0.5) }));
     setSelectedScenarios(shuffled);
     setCurrentIndex(0);
     setChosenOption(null);

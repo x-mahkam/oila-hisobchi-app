@@ -122,6 +122,13 @@ export const GAMES = [
     icon: BIco.finance, difficulty: "medium", minutes: 10, maxCoin: 20, premium: false, load: "finance/bank-sim"
   },
   {
+    id: "finance/bozor",
+    category: "finance",
+    name: { uz: "Bozor: Savdo o'yini", ru: "Базар: Торговая игра", en: "Bazaar: Trading Game" },
+    desc: { uz: "Mol ol, narx qo'y, sot va foyda top. Savdolashish va qaytim berishni o'rgan!", ru: "Купи товар, назначь цену, продай и получи прибыль. Учись торговаться и давать сдачу!", en: "Buy goods, set prices, sell for profit. Learn haggling and giving change!" },
+    icon: BIco.finance, difficulty: "hard", minutes: 10, maxCoin: 45, premium: false, load: "finance/bozor"
+  },
+  {
     id: "english/words",
     category: "english",
     name: { uz: "So'z o'rgan", ru: "Учи слова", en: "Learn words" },

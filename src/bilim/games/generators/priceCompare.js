@@ -20,6 +20,7 @@ const SCENARIOS = [
     hard: [
       { q1: 1.5, p1: 15000, q2: 4, p2: 36000 }, // B is cheaper: 9k vs 10k
       { q1: 2, p1: 19000, q2: 3, p2: 27000 }, // B is cheaper: 9k vs 9.5k
+      { q1: 2, p1: 19000, q2: 4, p2: 38000 }, // TENG: 9.5k vs 9.5k
     ]
   },
   {
@@ -29,6 +30,7 @@ const SCENARIOS = [
     easy: [
       { q1: 1, p1: 15000, q2: 2, p2: 26000 }, // B is cheaper: 13k vs 15k
       { q1: 1, p1: 16000, q2: 5, p2: 70000 }, // B is cheaper: 14k vs 16k
+      { q1: 2, p1: 30000, q2: 4, p2: 60000 }, // TENG: 15k vs 15k
     ],
     medium: [
       { q1: 3, p1: 45000, q2: 5, p2: 70000 }, // B is cheaper: 14k vs 15k
@@ -50,6 +52,7 @@ const SCENARIOS = [
     medium: [
       { q1: 2, p1: 9000, q2: 6, p2: 24000 }, // B is cheaper: 4k vs 4.5k
       { q1: 3, p1: 15000, q2: 5, p2: 22000 }, // B is cheaper: 4.4k vs 5k
+      { q1: 2, p1: 8000, q2: 5, p2: 20000 }, // TENG: 4k vs 4k
     ],
     hard: [
       { q1: 4, p1: 18000, q2: 7, p2: 28000 }, // B is cheaper: 4k vs 4.5k
@@ -63,6 +66,7 @@ const SCENARIOS = [
     easy: [
       { q1: 1, p1: 12000, q2: 2, p2: 20000 }, // B is cheaper: 10k vs 12k
       { q1: 1, p1: 15000, q2: 3, p2: 39000 }, // B is cheaper: 13k vs 15k
+      { q1: 2, p1: 24000, q2: 3, p2: 36000 }, // TENG: 12k vs 12k
     ],
     medium: [
       { q1: 2, p1: 24000, q2: 5, p2: 55000 }, // B is cheaper: 11k vs 12k
@@ -110,19 +114,18 @@ export const priceCompareGenerator = (difficulty = "easy") => {
     qr: `${sc.icon} ${sc.name.qr}:\n🔹 A usınıs: ${itemA.q} ${sc.unit.qr} — ${itemA.p.toLocaleString()} sum\n🔹 B usınıs: ${itemB.q} ${sc.unit.qr} — ${itemB.p.toLocaleString()} sum`
   };
 
+  // 3 variant: A arzon / B arzon / Teng. "Aniqmas" olib tashlandi — raqamlar
+  // to'liq berilganda u HECH QACHON to'g'ri bo'lolmaydi, faqat "tanlamaslik"
+  // hiylasini o'rgatardi. Endi uchala variant ham chin javob bo'lishi mumkin.
   const options = [
     { id: "A", text: { uz: "A taklif arzonroq", ru: "Опция А выгоднее", en: "Offer A is cheaper", kk: "A ұсынысы тиімдірек", ky: "A сунушу пайдалуу", tg: "Пешниҳоди A арзонтар", qr: "A usınıs arzanıraq" } },
     { id: "B", text: { uz: "B taklif arzonroq", ru: "Опция Б выгоднее", en: "Offer B is cheaper", kk: "B ұсынысы тиімдірек", ky: "B сунушу пайдалуу", tg: "Пешниҳоди B арзонтар", qr: "B usınıs arzanıraq" } },
-    { id: "equal", text: { uz: "Ikkalasi bir xil", ru: "Оба одинаковы", en: "Both are the same", kk: "Екеуі бірдей", ky: "Экөө тең", tg: "Ҳарду якхела", qr: "Ekewi birdey" } },
-    { id: "none", text: { uz: "Aniqmas", ru: "Невозможно определить", en: "Cannot determine", kk: "Анықталмайды", ky: "Аныктоо мүмкүн эмес", tg: "Муайян карда намешавад", qr: "Anıqlanbaydı" } }
+    { id: "equal", text: { uz: "Ikkalasi bir xil", ru: "Оба одинаковы", en: "Both are the same", kk: "Екеуі бірдей", ky: "Экөө тең", tg: "Ҳарду якхела", qr: "Ekewi birdey" } }
   ];
 
   return {
     prompt,
     answer: correctAnswer,
-    options, // useGameEngine expects options array directly, wait!
-    // wait, useGameEngine does: "correct = choice === question.answer" and maps over "question.options".
-    // If choice is compared with question.answer, our choices can be "A", "B", "equal", "none".
-    // Let's check how AdditionGame displays option buttons. Let's look at lines 760 to 790 of AdditionGame.jsx.
+    options: shuffle(options), // pozitsiya tasodifiy bo'lsin
   };
 };
