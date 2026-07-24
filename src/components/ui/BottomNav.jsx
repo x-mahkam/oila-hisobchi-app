@@ -30,8 +30,12 @@ export default function BottomNav({
             id={"tour-nav-" + item.id}
             onClick={() => {
               buzz(8);
+              // Bilim tab ASOSIY sahifani (kategoriyalar) ochadi. Ilgari bu yerda
+              // "market" o'rnatilardi — natijada Bilim bo'limi doim to'g'ridan
+              // to'g'ri Bilim Bozori (do'kon) ga o'tib, o'yinlar katalogiga
+              // umuman yetib bo'lmasdi. Do'konga yo'l dashboard ichida bor.
               if (item.id === "bilim" && setBilimInitialView) {
-                setBilimInitialView("market");
+                setBilimInitialView("cats");
               }
               setScr(item.id);
             }}
