@@ -34,6 +34,7 @@ import MoneyWordsGame from "./games/MoneyWordsGame.jsx";
 import DecisionGame from "./games/DecisionGame.jsx";
 import SavingsSequenceGame from "./games/SavingsSequenceGame.jsx";
 import BankSimGame from "./games/BankSimGame.jsx";
+import BozorGame from "./games/BozorGame.jsx";
 import PriceMemoryGame from "./games/PriceMemoryGame.jsx";
 import PatternGame from "./games/PatternGame.jsx";
 import OddOneOutGame from "./games/OddOneOutGame.jsx";
@@ -244,6 +245,9 @@ export default function BilimHub({ user, lg = "uz", dark, oila, azolar = [], onB
   }
   if (view === "play" && game && game.load === "finance/bank-sim") {
     return <BankSimGame dark={dark} onBack={() => setView("detail")} />;
+  }
+  if (view === "play" && game && game.load === "finance/bozor") {
+    return <BozorGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
   }
   if (view === "play" && game && game.load === "memory/pairs") {
     return <PriceMemoryGame user={user} lg={lg} dark={dark} gameId={game.id} name={fullName(user)} onBack={() => setView("detail")} />;
