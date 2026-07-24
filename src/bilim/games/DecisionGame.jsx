@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useApp } from "../../context/AppContext.jsx";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE } from "../../utils/tokens.js";
-import { addCoins, logGameSession, saveLevelProgress } from "../engine/persist.js";
+import { addCoins, logGameSession, saveLevelProgress, dailyCoinMultiplier } from "../engine/persist.js";
 import { addXp } from "../engine/xp.js";
 import { playSound } from "../engine/sound.js";
 import { starsFor } from "./levels/logicLevels.js";
@@ -21,6 +21,15 @@ import {
   Star
 } from "lucide-react";
 
+// Stsenariy matnlari hozircha faqat uz/ru tillarida. Boshqa tillar uchun eng
+// yaqin tushunarli tilga qaytamiz: kirill yozuvli kk/ky/tg -> ru, qolganlar -> uz.
+const scenarioText = (obj, lg) => {
+  if (!obj) return "";
+  if (obj[lg]) return obj[lg];
+  if (lg === "kk" || lg === "ky" || lg === "tg") return obj.ru || obj.uz || "";
+  return obj.uz || obj.ru || "";
+};
+
 export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/decision", name = "", level, onBack, onNextLevel }) {
   const { t } = useApp();
   const th = dark ? PALETTE.dark : PALETTE.light;
@@ -31,6 +40,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
   const [chosenOption, setChosenOption] = useState(null);
   const [runningTotals, setRunningTotals] = useState({ coins: 0, xp: 0 });
   const [history, setHistory] = useState([]); // tracks choices made
+  const startTimeRef = useRef(0); // haqiqiy o'yin vaqti (ilgari 120s qotirilgan edi)
 
   // Start the game by picking scenarios based on level/difficulty
   const startGame = () => {
@@ -52,6 +62,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
     setChosenOption(null);
     setRunningTotals({ coins: 0, xp: 0 });
     setHistory([]);
+    startTimeRef.current = Date.now();
     setPhase("play");
   };
 
@@ -113,22 +124,27 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
     }
 
     if (user?.id) {
-      addCoins(user.id, finalCoins);
-      addXp(user.id, finalXp);
-      logGameSession(user.id, {
-        gameId,
-        correct: correctCount,
-        total: totalCount,
-        pct,
-        seconds: 120, // estimated
-        coins: finalCoins,
-        xp: finalXp,
-        difficulty: level ? level.difficulty : "hard"
-      });
+      (async () => {
+        // Kunlik takror o'ynashda mukofot kamayadi (farmga qarshi, math kabi)
+        const mult = await dailyCoinMultiplier(user.id, gameId);
+        const dayCoins = Math.max(finalCoins > 0 ? 1 : 0, Math.round(finalCoins * mult));
+        await addCoins(user.id, dayCoins);
+        await addXp(user.id, finalXp);
+        await logGameSession(user.id, {
+          gameId,
+          correct: correctCount,
+          total: totalCount,
+          pct,
+          seconds: Math.max(1, Math.round((Date.now() - startTimeRef.current) / 1000)),
+          coins: dayCoins,
+          xp: finalXp,
+          difficulty: level ? level.difficulty : "hard"
+        });
 
-      if (level && stars > 0) {
-        saveLevelProgress(user.id, "logic", level.id, stars);
-      }
+        if (level && stars > 0) {
+          await saveLevelProgress(user.id, "logic", level.id, stars);
+        }
+      })();
     }
   };
 
@@ -259,7 +275,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
   return (
     <div style={{ minHeight: "70vh", display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
       {/* Step progress */}
-      <div style={{ display: "flex", justifySpace: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ ...TYPE.caption, color: th.t2, fontWeight: 700 }}>
           {t("gam_dec_situationOf", { n: currentIndex + 1, total: totalCount })}
         </span>
@@ -281,11 +297,11 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
         <div style={{ display: "flex", alignItems: "center", gap: SPACE.s2, marginBottom: SPACE.s1 }}>
           <Bookmark size={18} color={th.ac} />
           <span style={{ fontSize: 13, fontWeight: 800, color: th.ac, textTransform: "uppercase", letterSpacing: 1 }}>
-            {currentScenario.title[lg] || currentScenario.title.uz}
+            {scenarioText(currentScenario.title, lg)}
           </span>
         </div>
         <p style={{ ...TYPE.body, fontSize: 15, color: th.t1, lineHeight: 1.6, fontWeight: 500 }}>
-          {currentScenario.text[lg] || currentScenario.text.uz}
+          {scenarioText(currentScenario.text, lg)}
         </p>
       </AppCard>
 
@@ -329,7 +345,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
               }}>
                 {idx === 0 ? "A" : "B"}
               </span>
-              <span style={{ flex: 1 }}>{opt.text[lg] || opt.text.uz}</span>
+              <span style={{ flex: 1 }}>{scenarioText(opt.text, lg)}</span>
             </button>
           ))}
         </div>
@@ -362,7 +378,7 @@ export default function DecisionGame({ user, lg = "uz", dark, gameId = "logic/de
             </div>
 
             <p style={{ ...TYPE.caption, fontSize: 13, color: th.t1, lineHeight: 1.5, marginTop: 4 }}>
-              {chosenOption.feedback[lg] || chosenOption.feedback.uz}
+              {scenarioText(chosenOption.feedback, lg)}
             </p>
 
             <div style={{ display: "flex", gap: SPACE.s3, marginTop: SPACE.s1 }}>

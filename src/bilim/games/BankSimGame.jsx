@@ -173,7 +173,7 @@ export default function BankSimGame({ dark, onBack }) {
           {/* Inputs Section */}
           <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
             <div>
-              <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_initialPrincipal")}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{f(depPrincipal, true)}</span>
               </div>
@@ -189,7 +189,7 @@ export default function BankSimGame({ dark, onBack }) {
             </div>
 
             <div>
-              <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_monthlyContribution")}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{f(depMonthly, true)}</span>
               </div>
@@ -206,7 +206,7 @@ export default function BankSimGame({ dark, onBack }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3 }}>
               <div>
-                <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                   <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_annualRate")}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{depRate}%</span>
                 </div>
@@ -222,7 +222,7 @@ export default function BankSimGame({ dark, onBack }) {
               </div>
 
               <div>
-                <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                   <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_termYears")}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: th.gr }}>{depYears} {t("gam_bank_yearsUnit")}</span>
                 </div>
@@ -257,7 +257,7 @@ export default function BankSimGame({ dark, onBack }) {
                       <div style={{ width: `${principalPct}%`, background: th.ac, transition: "width 0.3s" }} title={t("gam_bank_savingsPrincipalTooltip", { amt: f(d.principal, true) })} />
                       <div style={{ width: `${interestPct}%`, background: th.gr, transition: "width 0.3s" }} title={t("gam_bank_savingsInterestTooltip", { amt: f(d.interest, true) })} />
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: th.t1, width: 85, textStyle: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: th.t1, width: 85, textAlign: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
                       {f(d.total, false)}
                     </span>
                   </div>
@@ -326,7 +326,7 @@ export default function BankSimGame({ dark, onBack }) {
           {/* Inputs Section */}
           <AppCard th={th} style={{ display: "flex", flexDirection: "column", gap: SPACE.s3 }}>
             <div>
-              <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                 <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_loanAmount")}</span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{f(loanPrincipal, true)}</span>
               </div>
@@ -343,7 +343,7 @@ export default function BankSimGame({ dark, onBack }) {
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: SPACE.s3 }}>
               <div>
-                <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                   <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_loanRateLabel")}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{loanRate}%</span>
                 </div>
@@ -359,7 +359,7 @@ export default function BankSimGame({ dark, onBack }) {
               </div>
 
               <div>
-                <div style={{ display: "flex", justifySpace: "space-between", marginBottom: 4 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
                   <span style={{ ...TYPE.caption, fontWeight: 700, color: th.t1 }}>{t("gam_bank_termYears")}</span>
                   <span style={{ fontSize: 13, fontWeight: 800, color: th.rd }}>{loanYears} {t("gam_bank_yearsUnit")}</span>
                 </div>
@@ -406,7 +406,7 @@ export default function BankSimGame({ dark, onBack }) {
                       <div style={{ width: `${principalPct}%`, background: th.ac, transition: "width 0.3s" }} title={t("gam_bank_principalPaidTooltip", { amt: f(d.paidPrincipal, true) })} />
                       <div style={{ width: `${interestPct}%`, background: th.rd, transition: "width 0.3s" }} title={t("gam_bank_interestPaidTooltip", { amt: f(d.paidInterest, true) })} />
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: th.t1, width: 85, textStyle: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: th.t1, width: 85, textAlign: "right", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>
                       {f(d.totalPaid, false)}
                     </span>
                   </div>
