@@ -139,6 +139,25 @@ export const saveLevelProgress = async (uid, gameId, levelId, stars) => {
   }
 };
 
+/**
+ * Kunlik takror o'ynash mukofot koeffitsiyenti (farmga qarshi).
+ * 1-o'yin: 100%, 2-chi: 60%, 3-chi: 30%, 4+ : 10%.
+ * Matematika o'yinlarida shu qoida ichki yozilgan edi — endi umumiy helper:
+ * mantiq/xotira/moliyaviy o'yinlar ham cheksiz "sog'ilmasin".
+ */
+export const dailyCoinMultiplier = async (uid, gameId) => {
+  try {
+    const sessions = await readSessions(uid);
+    const d = new Date();
+    const today = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const n = sessions.filter(s => s && s.date === today && s.gameId === gameId).length;
+    if (n === 0) return 1.0;
+    if (n === 1) return 0.6;
+    if (n === 2) return 0.3;
+    return 0.1;
+  } catch (e) { return 1.0; }
+};
+
 /** Coin sarflash — yetarli bo'lmasa false qaytaradi, lifetime hisoblagichga TEGMAYDI. */
 export const spendCoins = async (uid, amount) => {
   try {

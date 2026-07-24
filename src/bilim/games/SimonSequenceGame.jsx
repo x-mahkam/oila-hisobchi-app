@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, PREMIUM, PALETTE } from "../../utils/tokens.js";
-import { addCoins, logGameSession, bestForGame, readCoins, saveLevelProgress } from "../engine/persist.js";
+import { addCoins, logGameSession, bestForGame, readCoins, saveLevelProgress, dailyCoinMultiplier } from "../engine/persist.js";
 import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
 import { rewardOf, tierFor, medalSvg } from "../registry.jsx";
 import { playSound } from "../engine/sound.js";
@@ -389,7 +389,9 @@ export default function SimonSequenceGame({ user, lg = "uz", dark, gameId = "mem
         bonusXp = 4;
       }
 
-      const coinReward = Math.round(score * 1.2) + bonusCoins;
+      // Kunlik takror o'ynashda mukofot kamayadi (farmga qarshi, math kabi)
+      const mult = await dailyCoinMultiplier(user.id, gameId);
+      const coinReward = Math.max(1, Math.round((Math.round(score * 1.2) + bonusCoins) * mult));
       const xpReward = Math.round(score * 2.0) + bonusXp;
 
       // Update coins and XP

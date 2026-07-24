@@ -7,14 +7,14 @@ export const priceMemoryPairs = [
   { id: 6, product: { uz: "Ruchka", ru: "Ручка", en: "Pen", kk: "Қалам", ky: "Калем", tg: "Қалам", qr: "Qalam" }, price: 2000 },
   { id: 7, product: { uz: "Shokolad", ru: "Шоколад", en: "Chocolate", kk: "Шоколад", ky: "Шоколад", tg: "Шоколад", qr: "Shokolad" }, price: 10000 },
   { id: 8, product: { uz: "Olma", ru: "Яблоко", en: "Apple", kk: "Алма", ky: "Алма", tg: "Себ", qr: "Alma" }, price: 7000 },
-  { id: 9, product: { uz: "Suv", ru: "Вода", en: "Water", kk: "Су", ky: "Суу", tg: "Об", qr: "Suw" }, price: 3000 },
+  { id: 9, product: { uz: "Suv", ru: "Вода", en: "Water", kk: "Су", ky: "Суу", tg: "Об", qr: "Suw" }, price: 2500 },
   { id: 10, product: { uz: "Sharbat", ru: "Сок", en: "Juice", kk: "Шырын", ky: "Шире", tg: "Шарбат", qr: "Sharbat" }, price: 9000 },
   { id: 11, product: { uz: "Pitsa", ru: "Пицца", en: "Pizza", kk: "Пицца", ky: "Пицца", tg: "Пицца", qr: "Pitsa" }, price: 18000 },
   { id: 12, product: { uz: "Kitob", ru: "Книга", en: "Book", kk: "Кітап", ky: "Китеп", tg: "Китоб", qr: "Kitap" }, price: 15000 },
   { id: 13, product: { uz: "Banan", ru: "Банан", en: "Banana", kk: "Банан", ky: "Банан", tg: "Банан", qr: "Banan" }, price: 20000 },
   { id: 14, product: { uz: "Pishiriq", ru: "Печенье", en: "Cookie", kk: "Печенье", ky: "Печенье", tg: "Бисквит", qr: "Peshenya" }, price: 8000 },
-  { id: 15, product: { uz: "Pishloq", ru: "Сыр", en: "Cheese", kk: "Ірімшік", ky: "Быштак", tg: "Панир", qr: "Irimshik" }, price: 25000 },
-  { id: 16, product: { uz: "Choy", ru: "Чай", en: "Tea", kk: "Шай", ky: "Чай", tg: "Чой", qr: "Shay" }, price: 4000 },
+  { id: 15, product: { uz: "Pishloq", ru: "Сыр", en: "Cheese", kk: "Ірімшік", ky: "Быштак", tg: "Панир", qr: "Irimshik" }, price: 45000 },
+  { id: 16, product: { uz: "Choy", ru: "Чай", en: "Tea", kk: "Шай", ky: "Чай", tg: "Чой", qr: "Shay" }, price: 5500 },
   { id: 17, product: { uz: "Tuxum", ru: "Яйцо", en: "Egg", kk: "Жұмыртқа", ky: "Жумуртка", tg: "Тухм", qr: "Juwmırtqa" }, price: 1500 },
-  { id: 18, product: { uz: "Asal", ru: "Мед", en: "Honey", kk: "Бал", ky: "Бал", tg: "Асал", qr: "Bal" }, price: 30000 }
+  { id: 18, product: { uz: "Asal", ru: "Мед", en: "Honey", kk: "Бал", ky: "Бал", tg: "Асал", qr: "Bal" }, price: 60000 }
 ];

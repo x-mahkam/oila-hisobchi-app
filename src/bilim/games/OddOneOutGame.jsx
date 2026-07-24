@@ -3,7 +3,7 @@ import { PageHeader, PrimaryButton, StatCard, AppCard } from "../../components/u
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, PREMIUM, PALETTE } from "../../utils/tokens.js";
 import { useGameEngine } from "../engine/useGameEngine.js";
 import { oddOneOutGenerator } from "./generators/oddOneOut.js";
-import { addCoins, logGameSession, saveLevelProgress } from "../engine/persist.js";
+import { addCoins, logGameSession, saveLevelProgress, dailyCoinMultiplier } from "../engine/persist.js";
 import { addXp } from "../engine/xp.js";
 import { playSound } from "../engine/sound.js";
 import { starsFor } from "./levels/logicLevels.js";
@@ -606,22 +606,28 @@ export default function OddOneOutGame({ user, lg = "uz", dark, gameId = "logic/o
       }
 
       if (user?.id) {
-        addCoins(user.id, r.coins);
-        addXp(user.id, r.xp);
-        logGameSession(user.id, {
-          gameId,
-          correct: r.correct,
-          total: r.total,
-          pct,
-          seconds: r.seconds,
-          coins: r.coins,
-          xp: r.xp,
-          difficulty: difficulty
-        });
+        (async () => {
+          // Kunlik takror o'ynashda mukofot kamayadi (farmga qarshi, math kabi)
+          const mult = await dailyCoinMultiplier(user.id, gameId);
+          const dayCoins = Math.max(1, Math.round(r.coins * mult));
+          r.coins = dayCoins;
+          await addCoins(user.id, dayCoins);
+          await addXp(user.id, r.xp);
+          await logGameSession(user.id, {
+            gameId,
+            correct: r.correct,
+            total: r.total,
+            pct,
+            seconds: r.seconds,
+            coins: dayCoins,
+            xp: r.xp,
+            difficulty: difficulty
+          });
 
-        if (level && stars > 0) {
-          saveLevelProgress(user.id, "logic", level.id, stars);
-        }
+          if (level && stars > 0) {
+            await saveLevelProgress(user.id, "logic", level.id, stars);
+          }
+        })();
       }
     } else if (eng.phase !== "result") {
       hasSavedRef.current = false;

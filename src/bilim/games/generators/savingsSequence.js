@@ -81,12 +81,14 @@ export const savingsSequenceGenerator = (difficulty = "easy") => {
 
   const options = shuffle([...opts]).slice(0, 4).map(v => f(v, true));
 
-  // Build string prompt
-  const weeksStr = values.map((v, i) => {
-    const isMissing = i === missingIdx;
-    return `${i + 1}-hafta: ${isMissing ? "?" : f(v, false)}`;
-  }).join(", ");
-  const prompt = `${weeksStr}. Maqsad: ${f(goal, true)}`;
+  // Lokalizatsiyalangan prompt (ilgari faqat o'zbekcha "1-hafta"/"Maqsad" edi)
+  const WEEK = { uz: (n) => `${n}-hafta`, ru: (n) => `${n}-неделя`, en: (n) => `Week ${n}`, kk: (n) => `${n}-апта`, ky: (n) => `${n}-жума`, tg: (n) => `Ҳафтаи ${n}`, qr: (n) => `${n}-hápte` };
+  const GOAL = { uz: "Maqsad", ru: "Цель", en: "Goal", kk: "Мақсат", ky: "Максат", tg: "Ҳадаф", qr: "Maqset" };
+  const prompt = {};
+  for (const lang of ["uz", "ru", "en", "kk", "ky", "tg", "qr"]) {
+    const weeksStr = values.map((v, i) => `${WEEK[lang](i + 1)}: ${i === missingIdx ? "?" : f(v, false)}`).join(", ");
+    prompt[lang] = `${weeksStr}. ${GOAL[lang]}: ${f(goal, true)}`;
+  }
 
   return {
     prompt,

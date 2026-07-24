@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { PageHeader, PrimaryButton, StatCard, AppCard, Badge } from "../../components/ui/index.js";
 import { SPACE, RADIUS, TYPE, ALPHA, SHADOW, COMP, PREMIUM, PALETTE, MOTION } from "../../utils/tokens.js";
 import { needsWantsData } from "./data/needsWants.js";
-import { addCoins, logGameSession, bestForGame, readCoins } from "../engine/persist.js";
+import { addCoins, logGameSession, bestForGame, readCoins, dailyCoinMultiplier } from "../engine/persist.js";
 import { addXp, readXp, levelFor, didLevelUp } from "../engine/xp.js";
 import { DIFF, rewardOf, tierFor, medalSvg } from "../registry.jsx";
 import { playSound } from "../engine/sound.js";
@@ -115,7 +115,9 @@ export default function SortGame({ user, lg = "uz", dark, gameId = "finance/need
       const beforeXp = await readXp(user.id);
 
       // standard rewards for finance subject: coin=2.2, xp=4 per correct answer
-      const baseCoinReward = Math.round(score.correct * 2.2);
+      // Kunlik takror o'ynashda mukofot kamayadi (farmga qarshi, math kabi)
+      const mult = await dailyCoinMultiplier(user.id, gameId);
+      const baseCoinReward = Math.max(1, Math.round(score.correct * 2.2 * mult));
       const baseXpReward = Math.round(score.correct * 4);
 
       // Save to database

@@ -2,6 +2,10 @@ import { ODD_ONE_OUT_SETS } from "../data/oddOneOutSets.js";
 
 const rnd = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
+// Yaqinda ko'rsatilgan to'plamlar (sessiya ichida ketma-ket takror bo'lmasin).
+// Hovuz kichik (ayniqsa hard'da) — oxirgi ko'rsatilganlarni chetlab o'tamiz.
+let recentIds = [];
+
 export const oddOneOutGenerator = (difficulty = "easy") => {
   // Filter sets by difficulty
   let eligible = ODD_ONE_OUT_SETS.filter(s => s.difficulty === difficulty);
@@ -9,8 +13,14 @@ export const oddOneOutGenerator = (difficulty = "easy") => {
     eligible = ODD_ONE_OUT_SETS; // fallback
   }
 
-  // Pick a random set
-  const set = eligible[rnd(0, eligible.length - 1)];
+  // Takror oldini olish: yaqinda chiqmaganlardan tanlaymiz (iloji bo'lsa)
+  const fresh = eligible.filter(s => !recentIds.includes(s.id));
+  const pool = fresh.length > 0 ? fresh : eligible;
+  const set = pool[rnd(0, pool.length - 1)];
+  recentIds.push(set.id);
+  // Xotira hajmi: hovuzning yarmigacha (kamida 1) — hovuz to'liq bloklanmasin
+  const memSize = Math.max(1, Math.floor(eligible.length / 2));
+  if (recentIds.length > memSize) recentIds = recentIds.slice(-memSize);
 
   // MUHIM: kartalarni ARALASHTIRAMIZ. Ilgari toq narsa DOIM oxirgi kartada
   // (barcha to'plamda oddIndex:3) turardi — bola o'qimasdan "4-chisini bos"
