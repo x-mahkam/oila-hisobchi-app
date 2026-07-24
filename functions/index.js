@@ -361,8 +361,7 @@ exports.sendNotificationPush = functions.firestore
         const code = r.error?.code;
         if (!r.success && (
           code === "messaging/registration-token-not-registered" ||
-          code === "messaging/invalid-registration-token" ||
-          code === "messaging/invalid-argument"
+          code === "messaging/invalid-registration-token"
         )) bad.add(tokens[idx]);
       });
       if (bad.size > 0) {
@@ -1206,10 +1205,11 @@ async function collectPushTargets(audience) {
 
 // FCM javobidagi "bu token endi yaroqsiz" xatolari — bunday tokenlarni
 // saqlab yurish foydasiz: ilova o'chirilgan/qayta o'rnatilgan qurilmalar.
+// DIQQAT: "invalid-argument" ATAYIN kiritilmagan — u payload xatosida ham
+// qaytadi va yaxshi tokenlarni adashib o'chirishga olib kelishi mumkin.
 const DEAD_TOKEN_CODES = new Set([
   "messaging/registration-token-not-registered",
   "messaging/invalid-registration-token",
-  "messaging/invalid-argument",
 ]);
 
 async function sendPushToTokens(tokens, title, body) {
