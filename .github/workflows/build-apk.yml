@@ -79,7 +79,9 @@ jobs:
           RELEASE_KEYSTORE_FILE: ${{ runner.temp }}/release.keystore
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # RELEASE_KEY_PASSWORD ATAYIN berilmaydi: keystore PKCS12 bo'lib,
+          # kalit paroli DOIM store paroliga teng. build.gradle bu env bo'lmasa
+          # store parolini ishlatadi. (ANDROID_KEY_PASSWORD secret'i endi kerak emas.)
           APP_VERSION_CODE: ${{ github.run_number }}
           APP_VERSION_NAME: "1.0.${{ github.run_number }}"
         run: |

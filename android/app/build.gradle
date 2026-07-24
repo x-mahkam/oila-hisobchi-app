@@ -38,7 +38,11 @@ android {
                 storeFile file(System.getenv("RELEASE_KEYSTORE_FILE"))
                 storePassword System.getenv("RELEASE_KEYSTORE_PASSWORD")
                 keyAlias System.getenv("RELEASE_KEY_ALIAS")
-                keyPassword System.getenv("RELEASE_KEY_PASSWORD")
+                // PKCS12 keystore'da kalit paroli DOIM store paroliga teng
+                // (keytool alohida -keypass'ni e'tiborsiz qoldiradi). RELEASE_KEY_PASSWORD
+                // berilmasa store parolini ishlatamiz — "Given final block not properly
+                // padded" imzolash xatosi butunlay yo'qoladi.
+                keyPassword System.getenv("RELEASE_KEY_PASSWORD") ?: System.getenv("RELEASE_KEYSTORE_PASSWORD")
             }
         }
     }

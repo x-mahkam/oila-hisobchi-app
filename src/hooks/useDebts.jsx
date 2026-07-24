@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { db } from "../firebase.js";
 import { qmail } from "../utils/qmail.js";
 import { td, nt, f, normTel, fmtN, sonSoz } from "../utils/formatters.js";
+import { LOGO_DATA_URI } from "../utils/brand.js";
 import { useApp } from "../context/AppContext.jsx";
 import i18n from "../i18n/index.js";
 import QRCode from "qrcode";
@@ -83,13 +84,7 @@ export function useDebts() {
       </style></head><body>
         <div class="doc-num">${i18n.t("dt_docNum")} ${hujjatRaqami}</div>
         <div class="head">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" style="width:54px;height:54px;display:block;margin:0 auto 8px;">
-            <rect width="120" height="120" rx="28" fill="#5D5CFF" />
-            <path d="M12 46 L60 12 L108 46" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-            <rect x="18" y="47" width="84" height="58" rx="14" stroke="#FFFFFF" stroke-width="7" fill="none" />
-            <path d="M18 58 L102 58" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" />
-            <path d="M60 95 C54 89 44 81 44 73 C44 68 48 64 53 64 C56.5 64 58.5 66 60 67 C61.5 66 63.5 64 67 64 C72 64 76 68 76 73 C76 81 66 89 60 95 Z" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" fill="none" />
-          </svg>
+          <img src="${LOGO_DATA_URI}" style="width:54px;height:54px;display:block;margin:0 auto 8px;border-radius:12px;" />
           <div class="title">${i18n.t("dt_title")}</div>
           <div class="sub">${i18n.t("dt_subtitle")}</div>
         </div>
