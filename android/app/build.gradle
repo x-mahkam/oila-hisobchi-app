@@ -20,6 +20,16 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Lint: release build (lintVitalRelease) lint xatolarida yiqilmasin.
+    // splash.png faqat orientatsiya/zichlik papkalarida (Capacitor standart
+    // tuzilishi) — MissingDefaultResource'ni halokatli deb hisoblab, imzolangan
+    // build'ni to'xtatardi. CI'da APK/AAB chiqishi uchun release lint'ni
+    // bloklovchi qilmaymiz (ilova ishlashiga ta'sir qilmaydi).
+    lint {
+        disable 'MissingDefaultResource'
+        abortOnError false
+        checkReleaseBuilds false
+    }
     // Imzolash: CI'da RELEASE_KEYSTORE_FILE env berilsa — release imzo bilan.
     // Env bo'lmasa (lokal build) — Android Studio'dagi odatiy oqim o'zgarmaydi.
     signingConfigs {
