@@ -12,19 +12,26 @@ export const oddOneOutGenerator = (difficulty = "easy") => {
   // Pick a random set
   const set = eligible[rnd(0, eligible.length - 1)];
 
-  // The options are the item IDs
-  const options = set.items.map(item => item.id);
-  // The answer is the ID of the odd item
-  const answer = set.items[set.oddIndex].id;
+  // MUHIM: kartalarni ARALASHTIRAMIZ. Ilgari toq narsa DOIM oxirgi kartada
+  // (barcha to'plamda oddIndex:3) turardi — bola o'qimasdan "4-chisini bos"
+  // hiylasini o'rganib, o'yin ma'nosi yo'qolardi. Endi har o'ynashda pozitsiya
+  // tasodifiy. Javob ID bo'yicha tekshiriladi, shuning uchun bu xavfsiz.
+  const oddItem = set.items[set.oddIndex];
+  const shuffled = [...set.items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  const newOddIndex = shuffled.indexOf(oddItem);
 
   return {
     prompt: "Guruhdagi toq/boshqacha narsani toping:",
-    answer,
-    options, // [item_id1, item_id2, item_id3, item_id4]
+    answer: oddItem.id,
+    options: shuffled.map(item => item.id),
     meta: {
       set,
-      oddIndex: set.oddIndex,
-      items: set.items,
+      oddIndex: newOddIndex,
+      items: shuffled,
       explanation: set.explanation,
       difficulty
     }
